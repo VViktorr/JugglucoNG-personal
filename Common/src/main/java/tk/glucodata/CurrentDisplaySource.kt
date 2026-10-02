@@ -92,27 +92,39 @@ object CurrentDisplaySource {
 
         // A newer NFC/history reading must supersede an older-but-still-fresh BLE
         // callback. Otherwise the number can stay on the old callback while the
-        // trend arrow already follows the newer history points.
-        val displayCurrent = if (current != null) {
-            val newestHistory = recentPoints.lastOrNull()
-            if (newestHistory != null && newestHistory.timestamp > current.timeMillis) {
-                CurrentGlucoseSource.Snapshot(
-                    timeMillis = newestHistory.timestamp,
-                    valueText = "",
-                    numericValue = newestHistory.value,
-                    rawNumericValue = newestHistory.rawValue,
-                    calibratedNumericValue = Float.NaN,
-                    rate = Float.NaN,
-                    sensorId = resolvedSensorId ?: current.sensorId,
-                    sensorGen = current.sensorGen,
-                    index = current.index,
-                    source = "history"
-                )
-            } else {
-                current
-            }
+        // trend arrow already follows the newer history points. History may also
+        // act as the current-value fallback when the live source is temporarily
+        // unavailable, but only while that history reading is itself fresh.
+        val newestHistory = recentPoints.lastOrNull()
+        val newestHistoryIsFresh = newestHistory != null &&
+            newestHistory.timestamp > 0L &&
+            kotlin.math.abs(now - newestHistory.timestamp) <= maxAgeMillis
+
+        // Do not let the wider trend-history window resurrect a stale reading as
+        // the current value. Trend history can be much older than the current-value
+        // timeout and remains useful for charts even after the numeric value expires.
+        if (current == null && !newestHistoryIsFresh) {
+            return null
+        }
+
+        val displayCurrent = if (current != null &&
+            newestHistoryIsFresh &&
+            newestHistory!!.timestamp > current.timeMillis
+        ) {
+            CurrentGlucoseSource.Snapshot(
+                timeMillis = newestHistory.timestamp,
+                valueText = "",
+                numericValue = newestHistory.value,
+                rawNumericValue = newestHistory.rawValue,
+                calibratedNumericValue = Float.NaN,
+                rate = Float.NaN,
+                sensorId = resolvedSensorId ?: current.sensorId,
+                sensorGen = current.sensorGen,
+                index = current.index,
+                source = "history"
+            )
         } else {
-            null
+            current
         }
 
         val viewMode = resolveSensorViewMode(resolvedSensorId)
