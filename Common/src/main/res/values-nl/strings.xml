@@ -2938,4 +2938,8 @@ Als je op OK drukt, wordt er een verbinding gemaakt op deze telefoon en wordt er
     <string name="clone_network_summary">Servers en lokaal zoeken</string>
     <string name="clone_connections_empty">Nog geen gekoppelde apparaten.</string>
     <string name="clone_background_desc">Verbruikt meer batterij</string>
+
+    <string name="alert_profile_label">Alarmprofiel</string>
+    <string name="alert_delivery_method_label">Meldingsmethode</string>
+    <string name="alert_signals_label">Alarmsignalen</string>
 </resources>

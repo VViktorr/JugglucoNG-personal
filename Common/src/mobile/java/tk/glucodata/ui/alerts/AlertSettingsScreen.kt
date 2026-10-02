@@ -1960,6 +1960,41 @@ internal fun formatTimeRange(start: Int, end: Int): String {
     return "${formatHour(start)}–${formatHour(end)}"
 }
 
+
+@Composable
+private fun AlertChoiceChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    text: String
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            Color.Transparent
+        },
+        contentColor = if (selected) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+        border = if (selected) {
+            null
+        } else {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        }
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+}
 // === NEW: Retry Settings ===
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -2002,22 +2037,16 @@ internal fun RetrySettings(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = intervalMinutes <= 0,
                         onClick = { onIntervalChange(0) },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.retry_constantly),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        text = stringResource(R.string.retry_constantly)
                     )
                     listOf(1, 2, 3, 5, 10, 15).forEach { minutes ->
-                        FilterChip(
+                        AlertChoiceChip(
                             selected = intervalMinutes == minutes,
                             onClick = { onIntervalChange(minutes) },
-                            label = { Text(stringResource(R.string.minutes_short_format, minutes)) }
+                            text = stringResource(R.string.minutes_short_format, minutes)
                         )
                     }
                 }
@@ -2031,16 +2060,10 @@ internal fun RetrySettings(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(0 to stringResource(R.string.retry_forever), 1 to "1", 2 to "2", 3 to "3", 5 to "5").forEach { (count, label) ->
-                        FilterChip(
+                        AlertChoiceChip(
                             selected = retryCount == count,
                             onClick = { onCountChange(count) },
-                            label = {
-                                Text(
-                                    text = label,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                            text = label
                         )
                     }
                 }

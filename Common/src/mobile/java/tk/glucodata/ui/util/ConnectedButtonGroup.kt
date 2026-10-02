@@ -2,6 +2,7 @@ package tk.glucodata.ui.util
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -67,6 +68,9 @@ fun <T> ConnectedButtonGroup(
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
     unselectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh, // Slightly darker than surface for contrast
     unselectedContentColor: Color = MaterialTheme.colorScheme.onSurface,
+    selectedBorder: BorderStroke? = null,
+    unselectedBorder: BorderStroke? = null,
+    pillShapeForAll: Boolean = false,
     selectedContainerColorFor: ((T) -> Color)? = null,
     selectedContentColorFor: ((T) -> Color)? = null,
     iconTint: ((T, Boolean) -> Color)? = null,
@@ -107,12 +111,12 @@ fun <T> ConnectedButtonGroup(
             // User photo suggests quite square inner edges. Let's use 4% for "Small" and 50% for "Full".
             
             // Start Corners
-            val targetTopStart = if (isSelected || index == 0) fullRadiusPercent else smallRadiusPercent
-            val targetBottomStart = if (isSelected || index == 0) fullRadiusPercent else smallRadiusPercent
+            val targetTopStart = if (pillShapeForAll || isSelected || index == 0) fullRadiusPercent else smallRadiusPercent
+            val targetBottomStart = if (pillShapeForAll || isSelected || index == 0) fullRadiusPercent else smallRadiusPercent
             
             // End Corners
-            val targetTopEnd = if (isSelected || index == options.lastIndex) fullRadiusPercent else smallRadiusPercent
-            val targetBottomEnd = if (isSelected || index == options.lastIndex) fullRadiusPercent else smallRadiusPercent
+            val targetTopEnd = if (pillShapeForAll || isSelected || index == options.lastIndex) fullRadiusPercent else smallRadiusPercent
+            val targetBottomEnd = if (pillShapeForAll || isSelected || index == options.lastIndex) fullRadiusPercent else smallRadiusPercent
 
             val topStart by animateIntAsState(targetTopStart, label = "topStart")
             val bottomStart by animateIntAsState(targetBottomStart, label = "bottomStart")
@@ -132,7 +136,7 @@ fun <T> ConnectedButtonGroup(
                 ),
                 color = containerColor,
                 contentColor = contentColor,
-                border = null 
+                border = if (isSelected) selectedBorder else unselectedBorder
             ) {
                 var availableWidthPx by remember(option) { mutableIntStateOf(0) }
                 val customIcon = icon?.invoke(option)

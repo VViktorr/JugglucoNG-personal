@@ -1152,6 +1152,7 @@ void libreviewthread() {
   LOGGERN(view, sizeof(view) - 1);
   prctl(PR_SET_NAME, view, 0, 0, 0);
   int waitmin = 10;
+  bool libre2SessionAuthenticated = false;
   while (true) {
     if (!networkpresent || !librecondition.dobackup) {
       if (!networkpresent) {
@@ -1217,6 +1218,11 @@ void libreviewthread() {
       }
       if (settings->data()->haslibre2) {
         LOGAR("Libreview: haslibre2");
+        // Never let the first Libre 2 upload of this process reuse a persisted
+        // authenticated/configured state from an older app session. Resolve
+        // config + auth first, then allow measurements to be sent.
+        if (!libre2SessionAuthenticated)
+          settings->data()->libreinit = false;
         if (!settings->data()->libreinit) {
           if (!(settings->data()->libreinit =
                     initlibreconfig(false, alwaysnewstatus))) {
@@ -1225,6 +1231,7 @@ void libreviewthread() {
             continue;
           }
           alwaysnewstatus = false;
+          libre2SessionAuthenticated = true;
         }
         if (!settings->data()->sendtolibreview) {
           askforaccount = false;
@@ -1447,6 +1454,13 @@ void startlibrethread() {
     std::thread libre(libreviewthread);
     libre.detach();
   }
+}
+extern "C" JNIEXPORT void JNICALL fromjava(resetLibre2ViewAuth)(JNIEnv *env,
+                                                                 jclass cl) {
+  settings->data()->libreinit = false;
+  alwaysnewstatus = true;
+  startlibrethread();
+  librecondition.wakebackup(Backup::wakeall);
 }
 void endlibrethread() {
   if (libreviewrunning) {

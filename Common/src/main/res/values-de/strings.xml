@@ -3015,4 +3015,8 @@ Durch Drücken von „OK“ wird eine Verbindung auf diesem Telefon hergestellt 
     <string name="clone_network_summary">Server und lokale Suche</string>
     <string name="clone_connections_empty">Noch keine gekoppelten Geräte.</string>
     <string name="clone_background_desc">Erhöht den Akkuverbrauch</string>
+
+    <string name="alert_profile_label">Alarmprofil</string>
+    <string name="alert_delivery_method_label">Benachrichtigungsart</string>
+    <string name="alert_signals_label">Alarmsignale</string>
 </resources>

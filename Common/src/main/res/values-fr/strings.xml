@@ -2901,4 +2901,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="clone_network_summary">Serveurs et recherche locale</string>
     <string name="clone_connections_empty">Aucun appareil associé.</string>
     <string name="clone_background_desc">Consomme plus de batterie</string>
+
+    <string name="alert_profile_label">Profil d’alarme</string>
+    <string name="alert_delivery_method_label">Mode de notification</string>
+    <string name="alert_signals_label">Signaux d’alarme</string>
 </resources>

@@ -91,10 +91,12 @@ fun LibreViewSettingsScreen(navController: NavController) {
     var isSendingNow by remember { mutableStateOf(false) }
     var isResendingData by remember { mutableStateOf(false) }
     var isFetchingAccountId by remember { mutableStateOf(false) }
+    var isReregisteringLibre2 by remember { mutableStateOf(false) }
     val hasCredentials = email.isNotBlank() && password.isNotBlank()
     val sendingNowText = stringResource(R.string.sending_now)
     val requestingAccountIdText = stringResource(R.string.requesting_account_id)
     val resendTriggeredText = stringResource(R.string.resend_triggered)
+    val reregisteringLibre2Text = stringResource(R.string.libreview_reregistering_libre2_device)
     val accountIdTimeoutText = stringResource(R.string.libre_setup_account_id_timeout)
     val accountIdObtainedText = stringResource(R.string.libre_setup_account_id_obtained)
     val manualText = stringResource(R.string.manual)
@@ -182,7 +184,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        val isBusy = isSendingNow || isResendingData || isFetchingAccountId
+        val isBusy = isSendingNow || isResendingData || isFetchingAccountId || isReregisteringLibre2
         val canSendData = isActive && !isBusy
         Column(
             modifier = Modifier
@@ -429,6 +431,48 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.libreview_get_account_id))
             }
 
+            OutlinedButton(
+                onClick = {
+                    saveLibreViewSettings()
+                    tk.glucodata.Libreview.clearStatus()
+                    statusText = reregisteringLibre2Text
+                    isReregisteringLibre2 = true
+                    tk.glucodata.Libreview.requestLibre2DeviceReregistration()
+                    coroutineScope.launch {
+                        var elapsed = 0
+                        var latestStatus = ""
+                        while (elapsed < 30_000) {
+                            delay(500)
+                            elapsed += 500
+                            latestStatus = tk.glucodata.Libreview.getStatus()
+                            refreshAccountIdState()
+                            if (latestStatus.isNotEmpty()) {
+                                statusText = latestStatus
+                                if (latestStatus.contains("AccountID", ignoreCase = true) ||
+                                    isTerminalStatus(latestStatus)) {
+                                    break
+                                }
+                            }
+                        }
+                        if (latestStatus.isEmpty() && statusText == reregisteringLibre2Text) {
+                            statusText = accountIdTimeoutText
+                        }
+                        isReregisteringLibre2 = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isActive && hasCredentials && !isBusy
+            ) {
+                if (isReregisteringLibre2) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.size(8.dp))
+                } else {
+                    Icon(Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.size(8.dp))
+                }
+                Text(stringResource(R.string.libreview_reregister_libre2_device))
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingsSwitchItem(
                     title = stringResource(R.string.libreview_russia),
@@ -499,6 +543,31 @@ private fun LibreViewStatusCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            Text(
+                text = stringResource(
+                    R.string.libreview_region_value,
+                    tk.glucodata.Libreview.getConfiguredCountryCode()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.libreview_uom_value,
+                    tk.glucodata.Libreview.getConfiguredUom()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.libreview_model_value,
+                    tk.glucodata.Libreview.getConfiguredModelName()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             if (statusText.isNotEmpty()) {
                 Text(

@@ -2885,4 +2885,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="clone_network_summary">Server e ricerca locale</string>
     <string name="clone_connections_empty">Nessun dispositivo associato.</string>
     <string name="clone_background_desc">Consuma più batteria</string>
+
+    <string name="alert_profile_label">Profilo allarme</string>
+    <string name="alert_delivery_method_label">Modalità di notifica</string>
+    <string name="alert_signals_label">Segnali di allarme</string>
 </resources>

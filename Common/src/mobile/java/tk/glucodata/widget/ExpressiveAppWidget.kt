@@ -132,12 +132,13 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val showArrow = prefs.getBoolean("notification_show_arrow", true)
         val arrowScale = prefs.getFloat("notification_arrow_size", 1.0f)
 
-        val displayValue = currentDisplay?.primaryValue ?: 0f
+        val freshDisplay = currentDisplay?.takeIf { dataState.isFresh }
+        val displayValue = freshDisplay?.primaryValue ?: 0f
         val glucoseColor = remember(displayValue, isMmol) {
             NotificationChartDrawer.getGlucoseColor(context, displayValue, isMmol)
         }
-        val valueText = currentDisplay?.fullFormatted
-        val rate = currentDisplay?.rate ?: Float.NaN
+        val valueText = freshDisplay?.fullFormatted
+        val rate = freshDisplay?.rate ?: Float.NaN
 
         val valueBitmap = remember(valueText, glucoseColor, fontSize, fontWeight, useSystemFont) {
             valueText?.let {

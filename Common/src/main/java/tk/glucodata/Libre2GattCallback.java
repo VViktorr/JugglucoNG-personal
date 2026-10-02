@@ -74,6 +74,75 @@ public class Libre2GattCallback extends SuperGattCallback {
 		{if(doLog) {Log.d(LOG_ID, "Libre2GattCallback(..)");};};
 	}
 
+    @Override
+    protected boolean useAutoConnect() {
+        return false;
+    }
+
+    /*
+     * Libre 2 reconnects with a direct GATT connection.  Normally Android sends
+     * STATE_DISCONNECTED after disconnect(); if that callback is lost, retire
+     * the old transport after a short timeout and start a fresh connection.
+     */
+    private long libre2ReconnectGeneration = 0L;
+    private BluetoothGatt libre2ReconnectWaitingGatt = null;
+    private static final long LIBRE2_DISCONNECT_CALLBACK_TIMEOUT_MS = 2000L;
+
+    @Override
+    public boolean reconnect(long now) {
+        final var old = now - showtime + 20;
+        if (charcha[1] < old && connectTime < (now - 60 * 1000)) {
+            final BluetoothGatt oldGatt;
+            final long generation;
+            try {
+                noteLossOfSignal(now);
+                synchronized (this) {
+                    oldGatt = mBluetoothGatt;
+                    if (oldGatt == null) {
+                        return connectDevice(0);
+                    }
+                    libre2ReconnectWaitingGatt = oldGatt;
+                    generation = ++libre2ReconnectGeneration;
+                }
+                oldGatt.disconnect();
+                Applic.scheduler.schedule(
+                        () -> libre2ReconnectWithoutDisconnectCallback(oldGatt, generation),
+                        LIBRE2_DISCONNECT_CALLBACK_TIMEOUT_MS,
+                        TimeUnit.MILLISECONDS);
+                return true;
+            } catch (Throwable ignored) {
+                closeGattTransport();
+                return connectDevice(0);
+            }
+        }
+        return true;
+    }
+
+    private void libre2ReconnectWithoutDisconnectCallback(BluetoothGatt oldGatt, long generation) {
+        synchronized (this) {
+            if (generation != libre2ReconnectGeneration
+                    || libre2ReconnectWaitingGatt != oldGatt
+                    || mBluetoothGatt != oldGatt) {
+                return;
+            }
+            libre2ReconnectWaitingGatt = null;
+            ++libre2ReconnectGeneration;
+            closeGattTransport();
+        }
+        if (!stop) {
+            connectDevice(0);
+        }
+    }
+
+    private void completeLibre2DisconnectWait(BluetoothGatt gatt) {
+        synchronized (this) {
+            if (libre2ReconnectWaitingGatt == gatt) {
+                libre2ReconnectWaitingGatt = null;
+                ++libre2ReconnectGeneration;
+            }
+        }
+    }
+
 
 	boolean pack1 = false, pack2 = false;
 	final byte[] packet = new byte[46];
@@ -141,8 +210,18 @@ private PendingIntent onalarm=null;
 	@Override
 	public void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
 		noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
+		if (!acceptConnectionAttemptCallback(bluetoothGatt, newState)) {
+			try {
+				bluetoothGatt.close();
+			} catch (Throwable ignored) {
+			}
+			return;
+		}
 		super.onConnectionStateChange(bluetoothGatt, status, newState);
 		endBLEHandler();
+		if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+			completeLibre2DisconnectWait(bluetoothGatt);
+		}
 		if(stop) {
 			{if(doLog) {Log.i(LOG_ID,"onConnectionStateChange stop==true");};};
                         close();
@@ -174,9 +253,8 @@ private PendingIntent onalarm=null;
 							}
 					    }
 					;
-					if(!autoconnect) {
-						bluetoothGatt.close();
-						mBluetoothGatt = null;
+					if(!useAutoConnect()) {
+						closeGattTransport();
 						if(!stop) {
 							var sensorbluetooth=SensorBluetooth.blueone;
 							if(sensorbluetooth!=null)  {
@@ -201,8 +279,7 @@ private PendingIntent onalarm=null;
 							bluetoothGatt.connect();
 							}
 						else {
-							bluetoothGatt.close();
-							mBluetoothGatt = null;
+							closeGattTransport();
 							}
 						}
 					conphase = 0;

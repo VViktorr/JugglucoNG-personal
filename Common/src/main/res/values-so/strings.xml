@@ -3085,4 +3085,8 @@ Marka la cadaadiyo OK waxay dhalin doontaa xidhiidh teleefankan oo waxa ay soo b
     <string name="clone_network_summary">Adeegayaal iyo raadinta gudaha</string>
     <string name="clone_connections_empty">Weli ma jiraan aalado lammaansan.</string>
     <string name="clone_background_desc">Waxay isticmaashaa batari badan</string>
+
+    <string name="alert_profile_label">Astaanta digniinta</string>
+    <string name="alert_delivery_method_label">Habka ogeysiiska</string>
+    <string name="alert_signals_label">Calaamadaha digniinta</string>
 </resources>

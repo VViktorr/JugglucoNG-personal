@@ -2944,4 +2944,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="clone_network_summary">Серверы и локальный поиск</string>
     <string name="clone_connections_empty">Подключённых устройств пока нет.</string>
     <string name="clone_background_desc">Повышает расход батареи</string>
+
+    <string name="alert_profile_label">Профиль оповещения</string>
+    <string name="alert_delivery_method_label">Способ уведомления</string>
+    <string name="alert_signals_label">Сигналы тревоги</string>
 </resources>

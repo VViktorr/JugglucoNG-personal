@@ -562,7 +562,7 @@ fun DashboardCombinedHeader(
                 // Single-sensor padding defines the target card height. Multi mode
                 // uses a smaller inner padding so the scaled value + chip cluster
                 // fills the SAME pinned height (heroContentMinHeight) below.
-                val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 10.dp else 12.dp
+                val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 10.dp
                 val resolvedVerticalPadding = if (isMultiHero) 4.dp else singleVerticalPadding
                 // Full (single-sensor) value style. The card height is pinned to
                 // the MEASURED height of this style (incl. font padding) + padding,
@@ -831,18 +831,13 @@ fun DashboardCombinedHeader(
     }
 
     val heroCard: @Composable (Modifier) -> Unit = { modifier ->
-        val heroShape = RoundedCornerShape(
-            topStart = heroTopStart,
-            topEnd = heroTopEnd,
-            bottomEnd = heroBottomEnd,
-            bottomStart = heroBottomStart
-        )
+        val heroShape = RoundedCornerShape(20.dp)
         val heroColors = CardDefaults.cardColors(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
         val stabilizedModifier = if (statusCopy != null) {
-            modifier.heightIn(min = 96.dp)
+            modifier.heightIn(min = 88.dp)
         } else {
             modifier
         }
@@ -875,12 +870,7 @@ fun DashboardCombinedHeader(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
             ),
-            shape = RoundedCornerShape(
-                topStart = sensorTopStart,
-                topEnd = sensorTopEnd,
-                bottomEnd = sensorBottomEnd,
-                bottomStart = sensorBottomStart
-            )
+            shape = RoundedCornerShape(20.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -915,17 +905,21 @@ fun DashboardCombinedHeader(
                         else -> androidx.compose.ui.graphics.Color(0xFF66BB6A) // Muted Green (400) - "Make it Green"
                     }
                     Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(sensorProgress)
-                            .background(fillColor.copy(alpha = 0.25f)) // Slightly increased opacity for visibility
-                    )
+                        modifier = Modifier.matchParentSize()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(sensorProgress)
+                                .background(fillColor.copy(alpha = 0.25f)) // Slightly increased opacity for visibility
+                        )
+                    }
                 }
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 12.dp), // Matched Vertical Padding (12dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp), // Compact stacked sensor card
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -1062,32 +1056,12 @@ fun DashboardCombinedHeader(
         }
     }
 
-    if (isLandscape) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            heroCard(Modifier.fillMaxWidth())
-            sensorCard(Modifier.fillMaxWidth())
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            heroCard(
-                Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight()
-            )
-            sensorCard(
-                Modifier
-                    .weight(0.3f)
-                    .fillMaxHeight()
-            )
-        }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        sensorCard(Modifier.fillMaxWidth())
+        heroCard(Modifier.fillMaxWidth())
     }
 }
 

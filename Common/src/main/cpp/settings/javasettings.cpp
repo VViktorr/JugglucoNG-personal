@@ -2020,6 +2020,14 @@ extern "C" JNIEXPORT void JNICALL fromjava(setLibreCountry)(JNIEnv *env,
                                                             int val) {
   settings->data()->librecountry = val + 1;
 }
+extern "C" JNIEXPORT void JNICALL fromjava(initLibreCountryIfUnset)(
+    JNIEnv *env, jclass cl, int val) {
+  if (val < 0 || val > 4)
+    return;
+  auto *data = settings->data();
+  if (!data->librecountry || data->librecountry > 5)
+    data->librecountry = val + 1;
+}
 
 extern bool switchgen2();
 

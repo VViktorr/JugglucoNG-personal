@@ -2968,4 +2968,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="clone_network_summary">Серверы і лакальны пошук</string>
     <string name="clone_connections_empty">Падключаных прылад пакуль няма.</string>
     <string name="clone_background_desc">Павялічвае расход батарэі</string>
+
+    <string name="alert_profile_label">Профіль трывогі</string>
+    <string name="alert_delivery_method_label">Спосаб апавяшчэння</string>
+    <string name="alert_signals_label">Сігналы трывогі</string>
 </resources>

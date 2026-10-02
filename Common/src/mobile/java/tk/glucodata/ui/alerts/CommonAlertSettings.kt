@@ -106,6 +106,12 @@ fun CommonAlertSettings(
                 "Flash" to stringResource(R.string.flash)
             )
 
+            Text(
+                text = stringResource(R.string.alert_signals_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
             ConnectedButtonGroup(
                 options = modes,
                 selectedOptions = selectedModes,
@@ -139,8 +145,10 @@ fun CommonAlertSettings(
                 modifier = Modifier.fillMaxWidth(),
                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                 selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), // Transparent-ish on PrimaryContainer
-                unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface,
+                unselectedBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                pillShapeForAll = true
             )
         }
 
@@ -221,6 +229,14 @@ fun CommonAlertSettings(
                         Column(modifier = Modifier.padding(horizontal = sectionHorizontalPadding)) {
                             run {
                                 val hapticProfileLabels = HapticProfile.entries.associateWith { it.localizedName() }
+
+                                Text(
+                                    text = stringResource(R.string.alert_profile_label),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(8.dp))
+
                                 ConnectedButtonGroup(
                                     options = listOf(
                                         HapticProfile.SOFT,
@@ -234,10 +250,12 @@ fun CommonAlertSettings(
                                     label = { Text(hapticProfileLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelMedium) },
                                     modifier = Modifier.fillMaxWidth(),
                                     itemHeight = 36.dp,
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    selectedContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                                    unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+                                    unselectedContentColor = MaterialTheme.colorScheme.onSurface,
+                                    unselectedBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                    pillShapeForAll = true
                                 )
                             }
                         }
@@ -246,6 +264,14 @@ fun CommonAlertSettings(
                     // === Notification / alarm / both ===
                     Column(modifier = Modifier.padding(horizontal = sectionHorizontalPadding)) {
                         val deliveryModeLabels = AlertDeliveryMode.entries.associateWith { it.localizedName() }
+
+                        Text(
+                            text = stringResource(R.string.alert_delivery_method_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(8.dp))
+
                         ConnectedButtonGroup(
                             options = AlertDeliveryMode.entries,
                             selectedOption = config.deliveryMode,
@@ -255,8 +281,10 @@ fun CommonAlertSettings(
                             modifier = Modifier.fillMaxWidth(),
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                            unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurface,
+                            unselectedBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            pillShapeForAll = true
                         )
                     }
 

@@ -3130,4 +3130,13 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="clone_network_summary">Servers and local discovery</string>
     <string name="clone_connections_empty">No paired devices yet.</string>
     <string name="clone_background_desc">Uses more battery</string>
+
+    <string name="alert_profile_label">Alarm profile</string>
+    <string name="alert_delivery_method_label">Notification method</string>
+    <string name="alert_signals_label">Alarm signals</string>
+    <string name="libreview_reregister_libre2_device">Re-register Libre 2 device</string>
+    <string name="libreview_reregistering_libre2_device">Re-registering Libre 2 device…</string>
+    <string name="libreview_region_value">Region: %1$s</string>
+    <string name="libreview_uom_value">Upload unit: %1$s</string>
+    <string name="libreview_model_value">Model: %1$s</string>
 </resources>

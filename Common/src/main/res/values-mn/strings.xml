@@ -3000,4 +3000,8 @@ OK дарснаар энэ утсан дээр холболт үүсч, өөр A
     <string name="clone_network_summary">Серверүүд ба дотоод хайлт</string>
     <string name="clone_connections_empty">Хосолсон төхөөрөмж одоогоор алга.</string>
     <string name="clone_background_desc">Батарейн зарцуулалт нэмэгдэнэ</string>
+
+    <string name="alert_profile_label">Сэрүүлгийн профайл</string>
+    <string name="alert_delivery_method_label">Мэдэгдлийн арга</string>
+    <string name="alert_signals_label">Сэрүүлгийн дохио</string>
 </resources>

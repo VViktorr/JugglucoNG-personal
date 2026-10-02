@@ -94,6 +94,64 @@ import static tk.glucodata.util.getlocale;
 
 public class Libreview  {
    private static final String LOG_ID="Libreview";
+   private static final String LIBRE_COUNTRY_PREFS = "libreview_country_state";
+   private static final String LIBRE_COUNTRY_ACCOUNT_KEY = "account_country_applied_id";
+   private static final String LIBRE_FORCE_LIBRE2_DEVICE_KEY = "force_libre2_device_registration_once";
+
+   private static void applyLibreCountryFromAccountOnce(JSONObject result, String accountId) {
+      if (Applic.app == null || accountId == null || accountId.isEmpty())
+         return;
+      final int country = Natives.libreCountryIndex(result.optString("Country", ""));
+      if (country < 0)
+         return;
+      final var prefs = Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE);
+      if (accountId.equals(prefs.getString(LIBRE_COUNTRY_ACCOUNT_KEY, "")))
+         return;
+      Natives.setLibreCountry(country);
+      prefs.edit().putString(LIBRE_COUNTRY_ACCOUNT_KEY, accountId).apply();
+   }
+
+   private static boolean forceLibre2DeviceRegistrationRequested() {
+      if (Applic.app == null)
+         return false;
+      return Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE)
+            .getBoolean(LIBRE_FORCE_LIBRE2_DEVICE_KEY, false);
+   }
+
+   private static void clearForcedLibre2DeviceRegistration() {
+      if (Applic.app == null)
+         return;
+      Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE)
+            .edit().remove(LIBRE_FORCE_LIBRE2_DEVICE_KEY).apply();
+   }
+
+   public static void requestLibre2DeviceReregistration() {
+      if (Applic.app == null)
+         return;
+      Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(LIBRE_FORCE_LIBRE2_DEVICE_KEY, true).apply();
+      Natives.resetLibre2ViewAuth();
+   }
+
+   public static String getConfiguredCountryCode() {
+      switch (Natives.getLibreCountry()) {
+         case 0: return "GB";
+         case 1: return "FR";
+         case 2: return "NL";
+         case 3: return "PL";
+         case 4: return "RU";
+         default: return "?";
+      }
+   }
+
+   public static String getConfiguredUom() {
+      return Natives.getunit() == 1 ? "mmol/L" : "mg/dL";
+   }
+
+   public static String getConfiguredModelName() {
+      return "com.freestylelibre.app." + getConfiguredCountryCode().toLowerCase(Locale.ROOT);
+   }
+
 private static String getputtext(String sensorid,String usertoken,String gateway) {
  return "{\"DomainData\":\"{\\\"activeSensor\\\":\\\""+sensorid+"\\\"}\",\"UserToken\":\""+usertoken +"\",\"Domain\":\"Libreview\",\"GatewayType\":\""+gateway+"\"}";
  }
@@ -216,6 +274,7 @@ static private boolean gettermversion(String lang) {
    }
 
 static boolean postgetauth(boolean libre3) {
+   Natives.initLibreCountryFromLocale();
    String gateway=getlibregateway(libre3);
    String one= Natives.getlibreDeviceID(libre3);
 
@@ -236,7 +295,8 @@ static boolean postgetauth(boolean libre3) {
    var loc= Locale.getDefault();
    String language=loc.getLanguage()+'-'+loc.getCountry();
    String culture=language;
-   String setdevice="false";
+   final boolean forceLibre2DeviceRegistration = !libre3 && forceLibre2DeviceRegistrationRequested();
+   String setdevice=forceLibre2DeviceRegistration ? "true" : "false";
    while(true) {
       try {
       final String baseurl=getlibrebaseurl(libre3);
@@ -322,7 +382,7 @@ static boolean postgetauth(boolean libre3) {
             String poststatus="postgetauth: status="+status+" reason="+reason;
             Log.e(LOG_ID,poststatus);
             if(status==20) {
-               if("wrongDeviceForUser".equals(reason)) {
+               if("wrongDeviceForUser".equals(reason) && !"true".equals(setdevice)) {
                   setdevice="true";
                   continue;   
                   }
@@ -336,6 +396,9 @@ static boolean postgetauth(boolean libre3) {
          Natives.setlibreUserToken(libre3,usertoken);
          String accountid=result.getString("AccountId");
          setlibreAccountID(accountid);
+         applyLibreCountryFromAccountOnce(result, accountid);
+         if(forceLibre2DeviceRegistration)
+            clearForcedLibre2DeviceRegistration();
          librestatus="Received AccountID";
          if(libre3) {//TODO enkel als send to libreview aanstaat?
             String DateOfBirth=result.getString("DateOfBirth");
@@ -533,6 +596,7 @@ public static void testlibre3() {
 //https://fsll.freestyleserver.com/Payloads/Mobile/Android/FSLibreLink/Config/FreeStyleLibreLink_Android_2.3_DE_config.json
 @Keep
 public static boolean libreconfig(boolean libre3,boolean restart){
+   Natives.initLibreCountryFromLocale();
    if(restart||librestatus==nothing||librestatus==success)
       librestatus=datestr(System.currentTimeMillis())+" libreconfig";
    {if(doLog) {Log.i(LOG_ID,librestatus);};};

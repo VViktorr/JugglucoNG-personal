@@ -2935,4 +2935,13 @@
     <string name="clone_network_summary">Serwery i wyszukiwanie lokalne</string>
     <string name="clone_connections_empty">Brak sparowanych urządzeń.</string>
     <string name="clone_background_desc">Zwiększa zużycie baterii</string>
+
+    <string name="alert_profile_label">Profil alarmu</string>
+    <string name="alert_delivery_method_label">Sposób powiadamiania</string>
+    <string name="alert_signals_label">Sygnały alarmu</string>
+    <string name="libreview_reregister_libre2_device">Zarejestruj urządzenie Libre 2 ponownie</string>
+    <string name="libreview_reregistering_libre2_device">Ponowna rejestracja urządzenia Libre 2…</string>
+    <string name="libreview_region_value">Region: %1$s</string>
+    <string name="libreview_uom_value">Wysyłana jednostka: %1$s</string>
+    <string name="libreview_model_value">Model: %1$s</string>
 </resources>

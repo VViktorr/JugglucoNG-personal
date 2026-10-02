@@ -1059,7 +1059,16 @@ public class Notify {
 
     private static CurrentDisplaySource.Snapshot resolveNotificationCurrentSnapshot(String activeSensorSerial) {
         try {
-            return CurrentDisplaySource.resolveCurrent(glucosetimeout, activeSensorSerial);
+            final CurrentDisplaySource.Snapshot current =
+                    CurrentDisplaySource.resolveCurrent(glucosetimeout, activeSensorSerial);
+            if (current == null) {
+                return null;
+            }
+            final long timeMillis = current.getTimeMillis();
+            if (timeMillis <= 0L || Math.abs(System.currentTimeMillis() - timeMillis) > glucosetimeout) {
+                return null;
+            }
+            return current;
         } catch (Throwable th) {
             Log.stack(LOG_ID, "resolveNotificationCurrentSnapshot", th);
             return null;
@@ -3946,7 +3955,7 @@ public class Notify {
 
     Notification getforgroundnotification() {
         // Use custom layout even for initial notification to show Graph Grid
-        final String message = app
+        String message = app
                 .getString(SensorBluetooth.blueone != null ? R.string.connectwithsensor : R.string.exchangedata);
 
         long endT = System.currentTimeMillis();
@@ -3961,6 +3970,12 @@ public class Notify {
             chartPoints = NotificationHistorySource.getDisplayHistory(startT, isMmol, activeSensorSerial);
         } catch (Exception e) {
             chartPoints = new java.util.ArrayList<>();
+        }
+
+        final DisplayDataState.Status notificationDataState =
+                resolveNotificationDataState(current, chartPoints, activeSensorSerial);
+        if (notificationDataState.getKind() == DisplayDataState.Kind.STALE) {
+            message = staleMessage(notificationDataState.getLatestTimestampMillis());
         }
 
         // Same canonical trend list as the update path, the dashboard hero and the broadcast.
@@ -4000,7 +4015,7 @@ public class Notify {
             GlucosePoint latest = chartPoints.get(chartPoints.size() - 1);
             // Also check staleness of history
             long now = System.currentTimeMillis();
-            if (Math.abs(now - latest.timestamp) < 15 * 60 * 1000L) {
+            if (Math.abs(now - latest.timestamp) <= glucosetimeout) {
                 startupReadingMillis = latest.timestamp;
                 String vStr = format(usedlocale, pureglucoseformat, latest.value);
 
@@ -4064,7 +4079,7 @@ public class Notify {
                     java.util.Collections.<NotificationChartDrawer.PeerSeries>emptyList(), startupModel, predictionBatch);
         }
 
-        Bitmap arrowBitmap;
+        Bitmap arrowBitmap = null;
 
         // Semantic Color Logic for Startup
         float colorVal = 0f;
@@ -4075,10 +4090,11 @@ public class Notify {
         }
         int glucoseColor = NotificationChartDrawer.getGlucoseColor(Applic.app, colorVal, isMmol);
 
-        float startupRate = DisplayTrendSource.resolveArrowRate(nativePoints, current, viewMode, isMmol, 0f);
-
-        arrowBitmap = NotificationChartDrawer.drawArrow(Applic.app, startupRate, isMmol,
-                glucoseColor);
+        if (startupReadingMillis > 0L) {
+            float startupRate = DisplayTrendSource.resolveArrowRate(nativePoints, current, viewMode, isMmol, 0f);
+            arrowBitmap = NotificationChartDrawer.drawArrow(Applic.app, startupRate, isMmol,
+                    glucoseColor);
+        }
 
         // Use native TextView for startup value
         RemoteViews remoteViews = new RemoteViews(Applic.app.getPackageName(), R.layout.notification_material);
@@ -4177,7 +4193,12 @@ public class Notify {
             finalText = ssb;
         }
 
-        remoteViews.setImageViewBitmap(R.id.notification_arrow, arrowBitmap);
+        if (arrowBitmap != null) {
+            remoteViews.setViewVisibility(R.id.notification_arrow, View.VISIBLE);
+            remoteViews.setImageViewBitmap(R.id.notification_arrow, arrowBitmap);
+        } else {
+            remoteViews.setViewVisibility(R.id.notification_arrow, View.GONE);
+        }
 
         if (showChart && chartBitmapCollapsed != null) {
             remoteViews.setViewVisibility(R.id.chart_container, View.VISIBLE);

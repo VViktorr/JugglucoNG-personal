@@ -89,9 +89,35 @@ object CurrentDisplaySource {
         } catch (_: Throwable) {
             emptyList()
         }
+
+        // A newer NFC/history reading must supersede an older-but-still-fresh BLE
+        // callback. Otherwise the number can stay on the old callback while the
+        // trend arrow already follows the newer history points.
+        val displayCurrent = if (current != null) {
+            val newestHistory = recentPoints.lastOrNull()
+            if (newestHistory != null && newestHistory.timestamp > current.timeMillis) {
+                CurrentGlucoseSource.Snapshot(
+                    timeMillis = newestHistory.timestamp,
+                    valueText = "",
+                    numericValue = newestHistory.value,
+                    rawNumericValue = newestHistory.rawValue,
+                    calibratedNumericValue = Float.NaN,
+                    rate = Float.NaN,
+                    sensorId = resolvedSensorId ?: current.sensorId,
+                    sensorGen = current.sensorGen,
+                    index = current.index,
+                    source = "history"
+                )
+            } else {
+                current
+            }
+        } else {
+            null
+        }
+
         val viewMode = resolveSensorViewMode(resolvedSensorId)
         return resolveSnapshot(
-            current = current,
+            current = displayCurrent,
             recentPoints = recentPoints,
             historyStart = historyStart,
             viewMode = viewMode,
