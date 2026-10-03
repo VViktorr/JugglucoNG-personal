@@ -97,6 +97,11 @@ fun getview(type: ComplicationType):WearComplicationValue {
                 "Glucose Value",
                 tapAction,
             )
+            LONG_TEXT -> GlucoseComplicationData.longTextData(
+                reading,
+                "Glucose Value",
+                tapAction,
+            )
             RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
                 reading,
                 "Glucose Value",
@@ -126,6 +131,13 @@ fun getview(type: ComplicationType):WearComplicationValue {
             } 
     else if (type == SHORT_TEXT) {
             return GlucoseComplicationData.shortValueData(
+                glucose,
+                "Glucose Value",
+                GlucoseComplicationData.tapAction(),
+            )
+            }
+    else if (type == LONG_TEXT) {
+            return GlucoseComplicationData.longTextData(
                 glucose,
                 "Glucose Value",
                 GlucoseComplicationData.tapAction(),
