@@ -2122,8 +2122,8 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
   if (algres == ALGDUP_VALUE) {
     /*
      * The frame itself was valid; only its current glucose was already present
-     * in polls (for example because WearSync2 mirrored the phone's last reading
-     * just before the watch took over Libre 2).
+     * in polls (for example because WearSync2 mirrored the peer's last reading
+     * just before this device took Libre 2 back).
      *
      * processBlue() has nevertheless advanced the Abbott stream state in
      * newstate. Dropping that state leaves the parser one frame behind, so every
