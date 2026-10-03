@@ -596,6 +596,9 @@ private	void oldonCharacteristicChanged(byte[] value) {
                                 resetWearAutoTakeoverConnectMode();
 								handleGlucoseResult(res,timmsec);
 								}
+                            else if(doLog) {
+                                Log.i(LOG_ID, SerialNumber + " duplicate glucose frame; parser state advanced");
+                                }
 							}
 						datatime=timmsec;
 						}
