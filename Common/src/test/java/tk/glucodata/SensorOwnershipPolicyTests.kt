@@ -331,12 +331,104 @@ class SensorOwnershipPolicyTests {
             ),
         )
         assertEquals(
-            Intent.TAKE,
+            Intent.PREFER,
             resolveSensorOwnershipIntent(
                 isWearable = false,
                 companionEnabled = false,
                 directRequested = false,
                 assignedToWatch = true,
+            ),
+        )
+    }
+
+    @Test
+    fun companionModeWithRoutingOffPinsTheSensorToThePhone() {
+        assertEquals(
+            Intent.PREFER,
+            resolveSensorOwnershipIntent(
+                isWearable = false,
+                companionEnabled = true,
+                directRequested = false,
+                assignedToWatch = false,
+                autoSwitchEnabled = false,
+            ),
+        )
+        assertEquals(
+            Intent.NEVER,
+            resolveSensorOwnershipIntent(
+                isWearable = true,
+                companionEnabled = true,
+                directRequested = false,
+                assignedToWatch = false,
+                autoSwitchEnabled = false,
+            ),
+        )
+    }
+
+    @Test
+    fun automaticSwitchingMakesBothDevicesEligibleAgain() {
+        assertEquals(
+            Intent.TAKE,
+            resolveSensorOwnershipIntent(
+                isWearable = false,
+                companionEnabled = true,
+                directRequested = false,
+                assignedToWatch = false,
+                autoSwitchEnabled = true,
+            ),
+        )
+        assertEquals(
+            Intent.TAKE,
+            resolveSensorOwnershipIntent(
+                isWearable = true,
+                companionEnabled = true,
+                directRequested = false,
+                assignedToWatch = false,
+                autoSwitchEnabled = true,
+            ),
+        )
+    }
+
+    @Test
+    fun phoneOnlyModeHardBlocksWearableGattBeforeReconcileRuns() {
+        assertTrue(
+            resolveLocalConnectionBlocked(
+                isWearable = true,
+                directRequested = false,
+                autoSwitchEnabled = false,
+                released = false,
+            ),
+        )
+        assertFalse(
+            resolveLocalConnectionBlocked(
+                isWearable = true,
+                directRequested = true,
+                autoSwitchEnabled = false,
+                released = false,
+            ),
+        )
+        assertFalse(
+            resolveLocalConnectionBlocked(
+                isWearable = true,
+                directRequested = false,
+                autoSwitchEnabled = true,
+                released = false,
+            ),
+        )
+        assertFalse(
+            resolveLocalConnectionBlocked(
+                isWearable = false,
+                directRequested = false,
+                autoSwitchEnabled = false,
+                released = false,
+            ),
+        )
+        assertTrue(
+            resolveLocalConnectionBlocked(
+                isWearable = false,
+                directRequested = false,
+                autoSwitchEnabled = false,
+                released = true,
             ),
         )
     }

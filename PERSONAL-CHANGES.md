@@ -119,7 +119,35 @@ Naprawiono przypadek, w którym:
 
 Dzięki temu liczba i strzałka korzystają z tego samego najnowszego stanu.
 
-## 8. Dashboard
+## 8. Telefon jako stały właściciel BLE sensora przy wyłączonym handoffie
+
+Naprawiono konflikt telefonu i zegarka, który mógł prowadzić do równoległych prób połączenia BLE z tym samym sensorem, zrywania połączenia i serii reconnectów (m.in. obserwowane wcześniej statusy `147 / 0x93` i `19 / 0x13`).
+
+W upstreamowym mechanizmie `SensorOwnershipRuntime` zegarek otrzymywał wcześniej zamiar `TAKE` nawet wtedy, gdy jednocześnie były wyłączone:
+
+- `Automatyczne przełączanie czujnika`,
+- `Bezpośredni sensor na zegarku`.
+
+Oznaczało to, że sam fakt działania aplikacji na zegarku nadal pozwalał zegarkowi próbować wejść na BLE sensora. Dla sensorów obsługujących praktycznie jednego klienta naraz mogło to powodować walkę telefonu i zegarka o GATT.
+
+Po poprawce tryby własności są jednoznaczne:
+
+- oba przełączniki wyłączone: **telefon jest stałym właścicielem sensora**, a zegarek działa wyłącznie jako companion i odbiera odczyty z telefonu,
+- `Automatyczne przełączanie czujnika` włączone: telefon i zegarek mogą uczestniczyć w istniejącym arbitrażu i przejmować sensor zależnie od dostępności,
+- `Bezpośredni sensor na zegarku` włączony: zegarek jest preferowanym właścicielem, a telefon wykonuje istniejący handoff i ustępuje.
+
+Dodano również twardą blokadę przed `connectGatt()` po stronie zegarka. Gdy zegarek jest w trybie companion-only, blokada działa natychmiast, również zanim okresowy `reconcile()` zdąży ustawić stan ownership. Dzięki temu zamknięte jest krótkie okno startowe, w którym zegarek mógł wcześniej rozpocząć połączenie z sensorem.
+
+Zmiana jest centralna w `SensorOwnershipRuntime.kt`, więc nie wymaga specjalnej poprawki wyłącznie dla Libre 2 i zachowuje istniejący mechanizm bezpośredniego sensora na zegarku oraz automatycznego handoffu.
+
+Dodano testy dla:
+
+- trybu phone-only,
+- ponownego dopuszczenia obu urządzeń po włączeniu auto-switch,
+- twardej blokady GATT zegarka przed pierwszym reconciliation,
+- zachowania istniejącego bezpośredniego przypisania sensora do zegarka.
+
+## 9. Dashboard
 
 Wprowadzono zmiany w układzie dashboardu, przede wszystkim w celu uzyskania bardziej zwartego widoku i ograniczenia niepotrzebnie zajmowanego miejsca.
 
@@ -127,7 +155,7 @@ Zmiany znajdują się głównie w:
 
 `Common/src/mobile/java/tk/glucodata/ui/DashboardComponents.kt`.
 
-## 9. Ustawienia alertów
+## 10. Ustawienia alertów
 
 Zmodyfikowano ekrany ustawień alertów oraz wspólne komponenty UI.
 
@@ -145,7 +173,7 @@ Najważniejsze pliki:
 - `ConnectedButtonGroup.kt`
 - pliki `strings.xml`.
 
-## 10. Skrypt BUILD.ps1
+## 11. Skrypt BUILD.ps1
 
 Do repo dodano `BUILD.ps1` dla Windows / PowerShell.
 
@@ -164,7 +192,7 @@ Archiwa trafiają do:
 
 Uwaga: katalog `Builds/` jest lokalnym wynikiem kompilacji i nie powinien być dodawany do Git.
 
-## 11. Pliki celowo nieprzechowywane w repo
+## 12. Pliki celowo nieprzechowywane w repo
 
 Do prywatnego repo nie są dodawane:
 
@@ -176,7 +204,7 @@ Do prywatnego repo nie są dodawane:
 
 Szczególnie biblioteki wyciągnięte z oryginalnego APK pozostają wyłącznie lokalnie.
 
-## 12. Stan zmian względem upstream
+## 13. Stan zmian względem upstream
 
 Gałąź `personal` jest oparta bezpośrednio na:
 
@@ -194,6 +222,15 @@ Dzięki temu można nadal porównywać własne zmiany z upstreamem bez przepisyw
 ---
 
 ## Historia
+
+### 2026-10-03
+
+Dodano tryb stabilnego właściciela sensora dla konfiguracji telefon + Wear OS:
+
+- gdy auto-switch i direct-sensor są wyłączone, tylko telefon może łączyć się z sensorem po BLE,
+- zegarek nadal odbiera dane z telefonu,
+- twarda blokada zapobiega `connectGatt()` na zegarku także przed pierwszym przebiegiem arbitrażu,
+- automatyczne przełączanie i jawny direct-sensor na zegarku zachowują swoje dotychczasowe funkcje.
 
 ### 2026-10-02
 
