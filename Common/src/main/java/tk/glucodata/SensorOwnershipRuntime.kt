@@ -34,12 +34,9 @@ internal fun resolveSensorOwnershipIntent(
     // Explicit direct mode always wins: the watch is the preferred BLE owner.
     isWearable && directRequested -> SensorOwnershipPolicy.Intent.PREFER
 
-    // Automatic switching is the only mode in which an unassigned watch is
-    // allowed to compete for the sensor.
-    isWearable && autoSwitchEnabled -> SensorOwnershipPolicy.Intent.TAKE
-
-    // Companion mode with both switches off means phone-only. The watch still
-    // receives readings over Wear OS, but must not open its own sensor GATT.
+    // Wear companion mode is phone-only. Losing the phone never authorizes
+    // the watch to open its own sensor GATT; only an explicit Direct sensor
+    // request above may do that.
     isWearable -> SensorOwnershipPolicy.Intent.NEVER
 
     // An explicit "Direct sensor on watch" request makes the phone yield.
@@ -60,7 +57,7 @@ internal fun resolveLocalConnectionBlocked(
     autoSwitchEnabled: Boolean,
     released: Boolean,
 ): Boolean =
-    released || (isWearable && !directRequested && !autoSwitchEnabled)
+    released || (isWearable && !directRequested)
 
 /**
  * Whether the other device should be treated as gone rather than merely quiet.
@@ -357,11 +354,10 @@ object SensorOwnershipRuntime {
     /**
      * Hard gate consulted at every route to connectGatt.
      *
-     * A released sensor is always blocked. On Wear OS there is an additional
-     * phone-only gate: with both automatic switching and direct-sensor mode off,
-     * the watch may receive glucose from the phone but may not connect to the
-     * physical sensor itself. Keeping this check here closes the startup race
-     * before the periodic ownership reconciler has had a chance to run.
+     * A released sensor is always blocked. On Wear OS the watch may receive
+     * glucose from the phone but may not connect to the physical sensor unless
+     * the user explicitly requested Direct sensor on watch. Losing the phone or
+     * enabling the legacy automatic-switch setting does not relax this gate.
      */
     @JvmStatic
     fun blocksLocalConnection(serial: String?): Boolean {
