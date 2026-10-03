@@ -111,18 +111,27 @@ fun getview(type: ComplicationType):WearComplicationValue {
         val type=        request.complicationType
       val glucose = GlucoseComplicationData.currentReading()
       if(glucose==null) {
-         Log.i(LOG_ID,"no glucose") 
+         Log.i(LOG_ID,"no glucose")
            return when (type) {
                RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
                    null,
                    "Small Glucose",
                    complicationPendingIntent,
                )
-               else -> GlucoseComplicationData.shortValueData(
+               LONG_TEXT -> GlucoseComplicationData.longTextData(
                    null,
                    "Small Glucose",
                    complicationPendingIntent,
                )
+               SHORT_TEXT -> GlucoseComplicationData.shortValueData(
+                   null,
+                   "Small Glucose",
+                   complicationPendingIntent,
+               )
+               else -> {
+                   Log.w(LOG_ID, "Unexpected complication type ${request.complicationType}")
+                   null
+               }
            }
          }
       else {
