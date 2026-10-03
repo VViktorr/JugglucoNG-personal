@@ -72,18 +72,9 @@ fun getview(type: ComplicationType):WearComplicationValue {
       return glview as WearComplicationValue;
       }
     override fun getPreviewData(type: ComplicationType): ComplicationData {
-      val glucose=CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout)
-      val time:Long
-      val rate:Float
-      if(glucose==null) {
-          rate=1.0f
-          time= System.currentTimeMillis();
-
-          }
-      else  {
-                time=glucose.timeMillis
-                rate= glucose.rate
-                }
+      val glucose = GlucoseComplicationData.previewReading()
+      val time = glucose.timeMillis
+      val rate = glucose.rate
       return MonochromaticImageComplicationData.Builder(
 //          MonochromaticImage.Builder( Icon.createWithBitmap(getview(type).getArrowBitmap(rate))).build(),
           MonochromaticImage.Builder( Icon.createWithBitmap(arrowTimeBitmap(rate, time))).build(),
@@ -97,9 +88,8 @@ fun getview(type: ComplicationType):WearComplicationValue {
         Log.d(LOG_ID, "onComplicationRequest() id: ${request.complicationInstanceId}")
         val type=        request.complicationType
     if(type== MONOCHROMATIC_IMAGE) {
-            val glucose = CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout)
-            val now = System.currentTimeMillis()
-            val bitmap= if(glucose==null ||(now-glucose.timeMillis)>=tk.glucodata.Notify.glucosetimeout){
+            val glucose = GlucoseComplicationData.currentReading()
+            val bitmap= if(glucose==null){
                  Log.i(LOG_ID,"MonochromaticImage novalue")
                  getview(type).getnovalue()
                  } else {
