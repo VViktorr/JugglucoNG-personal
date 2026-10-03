@@ -2120,7 +2120,22 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
   data_t::deleteex(bluedata);
   //    delete newstate;
   if (algres == ALGDUP_VALUE) {
-    delete newstate;
+    /*
+     * The frame itself was valid; only its current glucose was already present
+     * in polls (for example because WearSync2 mirrored the phone's last reading
+     * just before the watch took over Libre 2).
+     *
+     * processBlue() has nevertheless advanced the Abbott stream state in
+     * newstate. Dropping that state leaves the parser one frame behind, so every
+     * following notification can reproduce the same already-stored id forever:
+     * GATT stays healthy and 20/18/8 packets arrive each minute, but Juggluco's
+     * displayed reading never advances.
+     *
+     * Keep the new parser state while still returning the duplicate sentinel so
+     * Java does not publish the same glucose twice. The next physical frame can
+     * then advance to its new id normally.
+     */
+    sdata->setstate(newstate);
     return 1LL;
   }
   if (algres) {
