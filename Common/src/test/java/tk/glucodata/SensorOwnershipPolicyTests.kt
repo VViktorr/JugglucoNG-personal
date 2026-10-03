@@ -366,7 +366,7 @@ class SensorOwnershipPolicyTests {
     }
 
     @Test
-    fun automaticSwitchingMakesBothDevicesEligibleAgain() {
+    fun automaticSwitchingNeverMakesCompanionWatchEligibleForSensorGatt() {
         assertEquals(
             Intent.TAKE,
             resolveSensorOwnershipIntent(
@@ -378,7 +378,7 @@ class SensorOwnershipPolicyTests {
             ),
         )
         assertEquals(
-            Intent.TAKE,
+            Intent.NEVER,
             resolveSensorOwnershipIntent(
                 isWearable = true,
                 companionEnabled = true,
@@ -407,7 +407,7 @@ class SensorOwnershipPolicyTests {
                 released = false,
             ),
         )
-        assertFalse(
+        assertTrue(
             resolveLocalConnectionBlocked(
                 isWearable = true,
                 directRequested = false,
