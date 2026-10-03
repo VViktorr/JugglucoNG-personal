@@ -74,9 +74,39 @@ public class Libre2GattCallback extends SuperGattCallback {
 		{if(doLog) {Log.d(LOG_ID, "Libre2GattCallback(..)");};};
 	}
 
+    /*
+     * Libre 2 normally reconnects directly. During automatic Wear handover the
+     * sensor can still be held by the phone for a while; Android then burns its
+     * ~30 s direct-connect timer and reports 147 (or 133 on older stacks).
+     * After one such proven timeout, keep a background GATT parked until Libre 2
+     * becomes connectable instead of starting another fixed 30 s attempt.
+     */
+    private volatile boolean wearAutoSwitchBackgroundConnect = false;
+
     @Override
     protected boolean useAutoConnect() {
-        return false;
+        return isWearable && AutoSensorSwitch.isEnabled() && wearAutoSwitchBackgroundConnect;
+    }
+
+    private boolean shouldSwitchWearAutoTakeoverToBackground(
+            int status, int newState, boolean wasConnected) {
+        if (!isWearable || !AutoSensorSwitch.isEnabled() || wearAutoSwitchBackgroundConnect) {
+            return false;
+        }
+        if (newState != BluetoothProfile.STATE_DISCONNECTED || wasConnected) {
+            return false;
+        }
+        // API 35+: GATT_CONNECTION_TIMEOUT (0x93). Older Android commonly
+        // surfaces the same ~30 s direct-connect expiry as GATT_ERROR (133).
+        return status == 147 || status == 133;
+    }
+
+    private void resetWearAutoTakeoverConnectMode() {
+        if (!wearAutoSwitchBackgroundConnect) return;
+        wearAutoSwitchBackgroundConnect = false;
+        if (doLog) {
+            Log.i(LOG_ID, SerialNumber + " sensor data received; next reconnect uses direct GATT again");
+        }
     }
 
     /*
@@ -228,6 +258,7 @@ private PendingIntent onalarm=null;
 			return;
 			}
 		long tim = System.currentTimeMillis();
+        final boolean wasConnected = connected;
 		try {
 			if (doLog) {
 				final String[] state = {"DISCONNECTED", "CONNECTING", "CONNECTED", "DISCONNECTING"};
@@ -243,6 +274,25 @@ private PendingIntent onalarm=null;
 			} else {
                connected=false;
 				if(newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    if (shouldSwitchWearAutoTakeoverToBackground(status, newState, wasConnected)) {
+                        wearAutoSwitchBackgroundConnect = true;
+                        Log.i(
+                                LOG_ID,
+                                SerialNumber + " direct Wear takeover timed out (status=" + status
+                                        + "); recreating GATT with autoConnect=true"
+                        );
+                        closeGattTransport();
+                        if (!stop) {
+                            var sensorbluetooth = SensorBluetooth.blueone;
+                            if (sensorbluetooth != null) {
+                                sensorbluetooth.connectToActiveDevice(this, 0);
+                            }
+                        }
+                        conphase = 0;
+                        setConStatus(status);
+                        constatchange[1] = tim;
+                        return;
+                    }
 					if(status == 19) {
 						if(justenablednotification) {
 							Natives.resetbluetooth(dataptr);
@@ -540,6 +590,10 @@ private	void oldonCharacteristicChanged(byte[] value) {
 						if(newpacket!=null) {
 							long res = processTooth(dataptr, newpacket);
 							if(res!=1L) {
+                                // Reaching a complete Libre frame proves the sensor is
+                                // connectable again. Future outages start with the fast
+                                // direct path; only another real timeout flips back.
+                                resetWearAutoTakeoverConnectMode();
 								handleGlucoseResult(res,timmsec);
 								}
 							}
