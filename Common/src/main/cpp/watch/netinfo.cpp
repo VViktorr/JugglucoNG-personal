@@ -730,13 +730,19 @@ extern "C" JNIEXPORT jboolean  JNICALL   fromjava(setmynetinfo)(JNIEnv *env, jcl
     else {
         LOGGER("is no watch watchsensor=%d sendstream=%d\n",info->watchsensor,host->isSender()&&getsendto(host).sendstream);
         if(info->watchsensor) {
-            settings->data()->nobluetooth=true;
-            if(host->isSender()) {
-                getsendto(host).sendstream=false;
-                getsendto(host).sendnums=!info->sendnums;
-                }
+            // A /netinfo packet may report that the watch currently has a
+            // local sensor connection, but it is not an ownership command.
+            // JugglucoNG already has an explicit Direct-sensor request and
+            // SensorOwnershipRuntime for the actual handoff. Letting /netinfo
+            // disable phone Bluetooth as well created a second, independent
+            // ownership path, so a stale watch claim could drop a healthy
+            // phone sensor connection.
+            //
+            // Keep the receive direction available for a real Direct handoff,
+            // but never switch off phone Bluetooth or its outgoing stream just
+            // because the peer advertises watchsensor=1.
             host->receivefrom= host->receivefrom|2;
-            LOGGER("sendstream(%d)=false\n",index);
+            LOGGER("watchsensor=1 reported; keeping phone bluetooth/sendstream unchanged\n");
             }
         else {
             // Peer explicitly does not own the sensor: restore the phone to
