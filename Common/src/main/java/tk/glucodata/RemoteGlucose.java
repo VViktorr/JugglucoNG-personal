@@ -56,6 +56,7 @@ import java.util.Date;
 
 class RemoteGlucose {
    final private static String LOG_ID = "RemoteGlucose";
+   private static final int LEGACY_WIDGET_DIM_COLOR = Color.argb(128, 0, 0, 0);
    final private Bitmap glucoseBitmap;
    final private Canvas canvas;
    final private Paint glucosePaint;
@@ -179,6 +180,7 @@ class RemoteGlucose {
       float rate = snapshot.getRate();
 
       canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      canvas.drawColor(LEGACY_WIDGET_DIM_COLOR);
       glucosePaint.setColor(glucoseColor);
       applyWidgetTypeface(glucosePaint);
 
