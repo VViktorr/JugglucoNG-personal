@@ -1950,19 +1950,62 @@ static void appendStoredHistory(const SensorGlucoseData *hist, jlong starttime,
   }
 }
 
+static bool plausibleNfcTrendRaw(uint16_t raw) {
+  // Same plausibility window used by Glucose::valid()/the old saveScanTrend().
+  return raw > 380 && raw < 5020;
+}
+
 static void appendScanHistory(const SensorGlucoseData *hist, jlong starttime,
                               HistorySamples &samples) {
   const auto scans = hist->getScandata();
-  for (const auto &item : scans) {
-    if (!item.valid() || item.t <= starttime)
+  const bool includeNfcTrend = hist->isLibre2();
+  constexpr int nfcTrendCount = 16;
+
+  for (size_t scanIndex = 0; scanIndex < scans.size(); ++scanIndex) {
+    const auto &item = scans[scanIndex];
+    if (!item.valid())
       continue;
 
-    const double cali = calibrateNow(hist, item);
-    const jlong valAuto = !isnan(cali) ? (jlong)(cali * 10) : (jlong)item.g * 10;
+    if (item.t > starttime) {
+      const double cali = calibrateNow(hist, item);
+      const jlong valAuto =
+          !isnan(cali) ? (jlong)(cali * 10) : (jlong)item.g * 10;
 
-    // Scans have no dedicated raw lane like rawpolls.dat. Assignment is
-    // intentional: a scan is a newer source than the periodic history point.
-    samples[item.t] = {valAuto, 0};
+      // Scans are newer than periodic history. Preserve a raw trend value that
+      // may already have been supplied by a later overlapping NFC scan.
+      samples[item.t].first = valAuto;
+    }
+
+    if (!includeNfcTrend)
+      continue;
+
+    /*
+     * Libre 2 NFC stores the preceding 16 one-minute raw samples in trends.dat.
+     * Export the first 15 directly to Room history instead of appending them to
+     * polls.dat. polls.dat is the live BLE stream cursor; letting scan history
+     * advance it can make subsequent physical readings look like duplicates.
+     * The newest trend entry is intentionally omitted because the scan itself
+     * supplies that minute's algorithm value.
+     */
+    const auto &trendValues = hist->gettrendsbuf(static_cast<int>(scanIndex));
+    for (int i = 0; i < nfcTrendCount - 1; ++i) {
+      const uint16_t raw = trendValues[i];
+      if (!plausibleNfcTrendRaw(raw))
+        continue;
+
+      const int minutesBack = nfcTrendCount - 1 - i;
+      const uint32_t secondsBack = static_cast<uint32_t>(minutesBack * 60);
+      if (item.t <= secondsBack)
+        continue;
+
+      const jlong trendTime = static_cast<jlong>(item.t - secondsBack);
+      if (trendTime <= starttime)
+        continue;
+
+      // trends.dat carries the same raw unit HistorySamples exposes
+      // (mg/dL x 10). BLE polls, appended afterwards, still win collisions.
+      samples[trendTime].second = static_cast<jlong>(raw);
+    }
   }
 }
 
