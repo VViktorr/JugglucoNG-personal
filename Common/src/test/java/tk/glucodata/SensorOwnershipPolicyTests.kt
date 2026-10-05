@@ -366,9 +366,9 @@ class SensorOwnershipPolicyTests {
     }
 
     @Test
-    fun automaticSwitchingNeverMakesCompanionWatchEligibleForSensorGatt() {
+    fun automaticSwitchingKeepsPhoneAsPreferredCompanionOwner() {
         assertEquals(
-            Intent.TAKE,
+            Intent.PREFER,
             resolveSensorOwnershipIntent(
                 isWearable = false,
                 companionEnabled = true,
