@@ -1905,15 +1905,38 @@ uint32_t getlastpolltime() const {
 
   bool savepoll(time_t tim, int id, int glu, int trend, float change,
                 int raw = 0) {
-    if (pollcount()) {
-      int count = pollcount() - 1;
-      int previd = polls[count].id;
+    const int count = pollcount();
+    int previousValueIndex = -1;
+    int replaceRawOnlyIndex = -1;
+
+    /*
+     * NFC trend recovery used to append raw-only rows to polls. Those rows are
+     * useful history, but they must never become the BLE stream cursor: a scan
+     * can place several raw-only ids ahead of the last real streamed value and
+     * make every following physical frame look like a duplicate.
+     *
+     * Keep compatibility with stores written by those builds. Deduplicate
+     * against the newest glucose-bearing poll, and when the live stream reaches
+     * an existing raw-only id, upgrade that row in place instead of rejecting
+     * the real reading.
+     */
+    for (int i = count - 1; i >= 0; --i) {
+      if (replaceRawOnlyIndex < 0 && polls[i].id == id && !polls[i].g)
+        replaceRawOnlyIndex = i;
+      if (polls[i].g) {
+        previousValueIndex = i;
+        break;
+      }
+    }
+
+    if (previousValueIndex >= 0) {
+      const int previd = polls[previousValueIndex].id;
       if (previd >= id) {
         LOGGER("GLU: duplicate id: previd=%d id=%d\n", previd, id);
         return false;
       }
-      uint32_t prevt = polls[count].t;
-      uint32_t predict = prevt + (id - previd) * getinfo()->pollinterval;
+      const uint32_t prevt = polls[previousValueIndex].t;
+      const uint32_t predict = prevt + (id - previd) * getinfo()->pollinterval;
       const int verschil = tim - predict;
       if (verschil > 3 * 60) {
         LOGGER("GLU: oldvalue: pollinterval=%f %d prev=%d savepoll %d nu=%lu, "
@@ -1922,11 +1945,23 @@ uint32_t getlastpolltime() const {
                ctime(&tim));
       } else {
         constexpr const double weight = 0.9;
-        double af = (double)(tim - prevt) / (id - previd);
+        const double af = (double)(tim - prevt) / (id - previd);
         getinfo()->pollinterval =
             weight * getinfo()->pollinterval + (1.0 - weight) * af;
       }
     }
+
+    if (replaceRawOnlyIndex >= 0) {
+      const uint16_t preservedRaw = rawpolls[replaceRawOnlyIndex].raw;
+      polls[replaceRawOnlyIndex] = {
+          static_cast<uint32_t>(tim), id, (int32_t)glu, trend, change};
+      rawpolls[replaceRawOnlyIndex] = {
+          raw ? static_cast<uint16_t>(raw) : preservedRaw};
+      LOGGER("GLU: upgraded raw-only poll id=%d at pos=%d\n", id,
+             replaceRawOnlyIndex);
+      return true;
+    }
+
     return saveglucosedata(polls, getinfo()->pollcount, tim, id, glu, trend,
                            change, raw);
   }
