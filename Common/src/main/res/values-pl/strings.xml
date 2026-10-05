@@ -353,9 +353,12 @@
  <string name="hour12">12h</string>
 <string name="complications">Komplikacje</string>
     <string name="colors_style_setting_description">Kolor tarczy zegarka</string>
-   <string name="glucosenumbercomplicationlabel">Wartość glukozy</string>
-   <string name="glucosearrowcomplicationlabel">Strzałka glukozy</string>
-   <string name="glucosearrowvaluecomplicationlabel">Wartość + strzałka</string>
+   <string name="glucosenumbercomplicationlabel">Glukoza</string>
+   <string name="glucosearrowcomplicationlabel">Strzałka trendu</string>
+   <string name="glucosearrowvaluecomplicationlabel">Glukoza + strzałka trendu</string>
+   <string name="glucosevalueiconcomplicationlabel">Glukoza (mała)</string>
+   <string name="glucosearrowiconcomplicationlabel">Strzałka trendu (mała)</string>
+   <string name="glucoseshortcomplicationlabel">Glukoza + trend (mała)</string>
    <string name="text">Tekst</string>
    <string name="arrow">Strzałka</string>
    <string name="notalldata">OSTRZEŻENIE: Opcja &quot;Odbieraj&quot; nie jest włączona bez wysyłania wszystkich danych.</string>

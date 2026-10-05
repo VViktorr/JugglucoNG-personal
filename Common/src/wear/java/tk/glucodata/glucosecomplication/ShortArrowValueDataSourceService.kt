@@ -21,155 +21,82 @@
 
 package tk.glucodata.glucosecomplication
 
-
 import android.content.ComponentName
 import android.graphics.drawable.Icon
 import androidx.wear.watchface.complications.data.ComplicationData
-import androidx.wear.watchface.complications.data.ComplicationText
 import androidx.wear.watchface.complications.data.ComplicationType
-import androidx.wear.watchface.complications.data.ComplicationType.*
-import androidx.wear.watchface.complications.data.MonochromaticImage
-import androidx.wear.watchface.complications.data.MonochromaticImageComplicationData
-import androidx.wear.watchface.complications.data.PhotoImageComplicationData
-import androidx.wear.watchface.complications.data.SmallImage
-import androidx.wear.watchface.complications.data.PlainComplicationText
-import androidx.wear.watchface.complications.data.ShortTextComplicationData
-import androidx.wear.watchface.complications.data.SmallImageComplicationData
-import androidx.wear.watchface.complications.data.SmallImageType
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import tk.glucodata.Applic
-import tk.glucodata.CurrentDisplaySource
 import tk.glucodata.Log
-import tk.glucodata.MainActivity
-import tk.glucodata.Notify
-import tk.glucodata.R
-import java.lang.Math.min
 
-class ShortArrowValueDataSourceService: SuspendingComplicationDataSourceService()  {
-    /**
-     * Arrow plus the reading's time, drawn by ComplicationRenderer so the angle
-     * and colour match the app rather than the legacy geometry.
-     */
-    private fun arrowTimeBitmap(rate: Float, timeMillis: Long): android.graphics.Bitmap =
-        // Arrow over the reading's time. The time is the whole difference
-        // between this complication and the plain Value + arrow.
-        ComplicationRenderer.arrowWithTimeBitmap(
-            ICON_PX, rate, timeMillis, ComplicationRenderer.ICON_TINT,
+class ShortArrowValueDataSourceService : SuspendingComplicationDataSourceService() {
+
+    private fun timeIcon(reading: GlucoseComplicationData.Reading?): Icon? {
+        val at = reading?.timeMillis?.takeIf { it > 0L } ?: return null
+        return Icon.createWithBitmap(
+            ComplicationRenderer.timeBitmap(ICON_PX, at, ComplicationRenderer.ICON_TINT),
         )
-
-    private val ICON_PX = 256
-
-private var glview: WearComplicationValue? =null
-
-    override fun onComplicationActivated( complicationInstanceId: Int, type: ComplicationType) {
-        Log.d(LOG_ID, "onComplicationActivated(): $complicationInstanceId")
     }
-    override fun onComplicationDeactivated(complicationInstanceId: Int) {
-        Log.d(LOG_ID, "onComplicationDeactivated(): $complicationInstanceId")
-    }
-fun getview(type: ComplicationType):WearComplicationValue {
-     if(glview==null) {
-        val width:Int = 150
-        val height:Int = 150
-         glview= WearComplicationValue(width,height)
-         }
-      return glview as WearComplicationValue;
-      }
-    override fun getPreviewData(type: ComplicationType): ComplicationData {
-      val reading = GlucoseComplicationData.previewReading()
-      val tapAction = GlucoseComplicationData.tapAction()
-      val icon=Icon.createWithBitmap( arrowTimeBitmap(reading.rate, reading.timeMillis));
-       Log.i(LOG_ID,"getPreviewData $type")
-         return when (type) {
-             SHORT_TEXT -> GlucoseComplicationData.shortValueData(
-                 reading,
-                 "Small Glucose",
-                 tapAction,
-                 icon,
-              )
-             LONG_TEXT -> GlucoseComplicationData.longTextData(
-                 reading,
-                 "Small Glucose",
-                 tapAction,
-                 icon,
-              )
-             RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                 reading,
-                 "Small Glucose",
-                 tapAction,
-                 icon,
-             )
-             else -> GlucoseComplicationData.shortValueData(null, "Small Glucose", tapAction)
-         }
+
+    private fun build(
+        type: ComplicationType,
+        reading: GlucoseComplicationData.Reading?,
+    ): ComplicationData? {
+        val tap = GlucoseComplicationData.tapAction()
+        val icon = timeIcon(reading)
+        val title = GlucoseComplicationData.readingTimeText(reading)
+        return when (type) {
+            ComplicationType.SHORT_TEXT -> GlucoseComplicationData.shortValueData(
+                reading,
+                "Compact glucose + trend",
+                tap,
+                icon,
+                title = title,
+                withArrow = true,
+            )
+            ComplicationType.LONG_TEXT -> GlucoseComplicationData.longTextData(
+                reading,
+                "Compact glucose + trend",
+                tap,
+                icon,
+                title = title,
+                withArrow = true,
+            )
+            ComplicationType.RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
+                reading,
+                "Compact glucose + trend",
+                tap,
+                icon,
+                withArrow = true,
+            )
+            else -> null
         }
+    }
+
+    override fun getPreviewData(type: ComplicationType): ComplicationData? =
+        build(type, GlucoseComplicationData.previewReading())
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
         Log.d(LOG_ID, "onComplicationRequest() id: ${request.complicationInstanceId}")
-        val complicationPendingIntent = GlucoseComplicationData.tapAction()
-        val type=        request.complicationType
-      val glucose = GlucoseComplicationData.currentReading()
-      if(glucose==null) {
-         Log.i(LOG_ID,"no glucose")
-           return when (type) {
-               RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                   null,
-                   "Small Glucose",
-                   complicationPendingIntent,
-               )
-               LONG_TEXT -> GlucoseComplicationData.longTextData(
-                   null,
-                   "Small Glucose",
-                   complicationPendingIntent,
-               )
-               SHORT_TEXT -> GlucoseComplicationData.shortValueData(
-                   null,
-                   "Small Glucose",
-                   complicationPendingIntent,
-               )
-               else -> {
-                   Log.w(LOG_ID, "Unexpected complication type ${request.complicationType}")
-                   null
-               }
-           }
-         }
-      else {
-
-            val bitmap=arrowTimeBitmap(glucose.rate, glucose.timeMillis);
-            Log.i(LOG_ID," glucose==${glucose.text}")
-                val image=Icon.createWithBitmap(bitmap)
-             return when (type) {
-                 RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                     glucose,
-                     "Small Glucose",
-                     complicationPendingIntent,
-                     image,
-                 )
-                 LONG_TEXT -> GlucoseComplicationData.longTextData(
-                     glucose,
-                     "Small Glucose",
-                     complicationPendingIntent,
-                     image,
-                      )
-                 else -> GlucoseComplicationData.shortValueData(
-                     glucose,
-                     "Small Glucose",
-                     complicationPendingIntent,
-                     image,
-                      )
-             }
-            }
+        return build(request.complicationType, GlucoseComplicationData.currentReading())
     }
 
     companion object {
         private const val LOG_ID = "ShortArrowValueDataSourceService"
-   private val complicationDataSourceUpdateRequester = ComplicationDataSourceUpdateRequester.create( context=tk.glucodata.Applic.app, complicationDataSourceComponent = ComponentName(tk.glucodata.Applic.app,
-    ShortArrowValueDataSourceService::class.java
-   ))
+        private const val ICON_PX = 256
 
-        public fun update() {
-            complicationDataSourceUpdateRequester.requestUpdateAll()
+        private val updateRequester by lazy {
+            ComplicationDataSourceUpdateRequester.create(
+                Applic.app,
+                ComponentName(Applic.app, ShortArrowValueDataSourceService::class.java),
+            )
+        }
+
+        @JvmStatic
+        fun update() {
+            updateRequester.requestUpdateAll()
         }
     }
 }

@@ -198,6 +198,10 @@ internal object ComplicationRenderer {
         offsetX: Float = 0f,
         offsetY: Float = 0f,
     ) {
+        // Unknown rate is not a flat trend. More importantly, letting NaN
+        // through makes every path coordinate NaN and the watch face silently
+        // draws nothing.
+        if (!rateMgdlPerMin.isFinite() || width <= 0f || height <= 0f) return
         val cx = offsetX + width / 2f
         val cy = offsetY + height / 2f
         val span = minOf(width, height)

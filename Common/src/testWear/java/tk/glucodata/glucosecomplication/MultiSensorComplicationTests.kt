@@ -62,6 +62,22 @@ class MultiSensorComplicationTests {
         assertEquals("101.0→", multiSensorText(values, true))
     }
 
+    @Test fun trendTextCoversEveryVisibleDirectionAndNeverInventsUnknownTrend() {
+        assertEquals("↑↑", GlucoseComplicationData.trendArrowText(3f))
+        assertEquals("↑", GlucoseComplicationData.trendArrowText(1.5f))
+        assertEquals("↗", GlucoseComplicationData.trendArrowText(0.8f))
+        assertEquals("→", GlucoseComplicationData.trendArrowText(0.4f))
+        assertEquals("↘", GlucoseComplicationData.trendArrowText(-0.8f))
+        assertEquals("↓", GlucoseComplicationData.trendArrowText(-1.5f))
+        assertEquals("↓↓", GlucoseComplicationData.trendArrowText(-3f))
+        assertEquals("", GlucoseComplicationData.trendArrowText(Float.NaN))
+    }
+
+    @Test fun valuePlusTrendCarriesArrowInTextForFacesThatDropImages() {
+        assertEquals("101.0 ↑", GlucoseComplicationData.valueWithArrowText(reading("first", rate = 1.5f)))
+        assertEquals("101.0", GlucoseComplicationData.valueWithArrowText(reading("first", rate = Float.NaN)))
+    }
+
     @Test fun mmolTextIsNotConvertedAgain() {
         val mmol = GlucoseComplicationData.Reading(5.6f, "5,6", true, now, 0f, 0, "first")
         assertEquals("5,6", multiSensorText(listOf(MultiSensorValue("first", mmol, 0)), false))
