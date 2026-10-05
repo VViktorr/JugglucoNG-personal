@@ -13,6 +13,7 @@ import tk.glucodata.Applic
 import tk.glucodata.BatteryTrace
 import tk.glucodata.CloneSensorRegistry
 import tk.glucodata.GlucoseReadingSource
+import tk.glucodata.GlucoseUpdateBroadcaster
 import tk.glucodata.Natives
 import tk.glucodata.SensorIdentity
 import tk.glucodata.UiRefreshBus
@@ -530,6 +531,9 @@ object HistorySync {
                     doSyncSensor(canonicalSerial, forceFull = true)
                     sensorLastSyncTimeMs[canonicalSerial] = System.currentTimeMillis()
                 }
+                // NFC/history imports update Room asynchronously. Refresh widgets only after
+                // that merge is complete so their chart cannot reload the pre-scan series.
+                GlucoseUpdateBroadcaster.send()
             } finally {
                 sensorSyncInProgress.remove(canonicalSerial)
             }
