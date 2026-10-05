@@ -42,6 +42,7 @@ public class GlucoseWidget extends AppWidgetProvider {
     private static final String ACTION_GLUCOSE_UPDATE = "tk.glucodata.action.GLUCOSE_UPDATE";
     private static final Object widgetLock = new Object();
     private static final long MIN_UPDATE_INTERVAL_MS = 1500L;
+    private static final int LEGACY_WIDGET_DIM_COLOR = Color.argb(128, 0, 0, 0);
     private static long lastUpdateElapsedRealtime = 0L;
     static RemoteGlucose remote = null;
     static int width=0;
@@ -81,6 +82,7 @@ public void onReceive(Context context, Intent intent) {
 static private RemoteViews remoteMessage(String message) {
     RemoteViews remoteViews = new RemoteViews(Applic.app.getPackageName(), R.layout.text);
     remoteViews.setTextColor(R.id.content, getLegacyWidgetForegroundColor());
+    remoteViews.setInt(R.id.content, "setBackgroundColor", LEGACY_WIDGET_DIM_COLOR);
     remoteViews.setTextViewText(R.id.content, message);
     return remoteViews;
     }
