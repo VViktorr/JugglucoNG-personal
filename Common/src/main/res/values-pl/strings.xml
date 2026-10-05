@@ -2947,6 +2947,4 @@
     <string name="libreview_region_value">Region: %1$s</string>
     <string name="libreview_uom_value">Wysyłana jednostka: %1$s</string>
     <string name="libreview_model_value">Model: %1$s</string>
-    <string name="compact_glucose_widget_name">Glukoza — kompaktowy</string>
-    <string name="compact_glucose_widget_description">Glukoza, strzałka trendu i godzina odczytu</string>
 </resources>
