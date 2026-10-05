@@ -100,20 +100,6 @@
         </receiver>
 
         <receiver
-            android:name=".widget.CompactGlucoseWidgetReceiver"
-            android:enabled="true"
-            android:exported="true"
-            android:label="@string/compact_glucose_widget_name">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/compact_glucose_widget_info" />
-        </receiver>
-
-        <receiver
             android:name=".receivers.AapsJournalReceiver"
             android:enabled="true"
             android:exported="true">
