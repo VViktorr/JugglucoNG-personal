@@ -3139,6 +3139,4 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="libreview_region_value">Region: %1$s</string>
     <string name="libreview_uom_value">Upload unit: %1$s</string>
     <string name="libreview_model_value">Model: %1$s</string>
-    <string name="compact_glucose_widget_name">Glucose compact</string>
-    <string name="compact_glucose_widget_description">Glucose, trend arrow and reading time</string>
 </resources>
