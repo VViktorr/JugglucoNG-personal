@@ -6,10 +6,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ComplicationProviderWiringTests {
-    private val moduleRoot = File("").absoluteFile.let { working ->
-        generateSequence(working) { it.parentFile }
-            .firstOrNull { File(it, "src/wear/AndroidManifest.xml").isFile }
-            ?: working
+    private val moduleRoot: File = run {
+        var dir: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
+        while (dir != null) {
+            if (File(dir, "src/wear/AndroidManifest.xml").isFile) break
+            File(dir, "Common/src/wear/AndroidManifest.xml").takeIf { it.isFile }?.let {
+                dir = File(dir, "Common")
+                break
+            }
+            dir = dir.parentFile
+        }
+        dir ?: throw AssertionError("Common module root not found from ${System.getProperty("user.dir")}")
     }
 
     private fun source(relative: String): String = File(moduleRoot, relative).readText()
