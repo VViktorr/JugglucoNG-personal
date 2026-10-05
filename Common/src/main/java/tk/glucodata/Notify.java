@@ -1586,6 +1586,12 @@ public class Notify {
                 freshnessDeadlineService = null;
                 scheduleVisualNotificationRefresh();
             }
+            // The notification has its own freshness deadline, but home-screen
+            // widgets otherwise only refresh when a glucose/data event arrives.
+            // When the last reading expires there is deliberately no new reading,
+            // so explicitly invalidate both legacy and Glance widgets here. Their
+            // shared resolver will then replace the stale number with "no new value".
+            GlucoseUpdateBroadcaster.send(Applic.app);
         }
     };
 
