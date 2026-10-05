@@ -660,7 +660,9 @@ extern "C" JNIEXPORT jboolean  JNICALL   fromjava(setmynetinfo)(JNIEnv *env, jcl
         LOGARTAG("is watch");
     
         if(info->watchsensor) {
-            settings->data()->nobluetooth=false;
+            // /netinfo reports transport state only. Physical sensor BLE on
+            // Wear OS is controlled exclusively by the explicit /bluetooth
+            // Direct-sensor command and SensorOwnershipRuntime.
 //            bool sendnums=false;
             if(!host->isSender()||!getsendto(index).sendstream||getsendto(index).sendnums==info->sendnums) {
 
@@ -687,7 +689,9 @@ extern "C" JNIEXPORT jboolean  JNICALL   fromjava(setmynetinfo)(JNIEnv *env, jcl
                 }
         }
     else {
-        settings->data()->nobluetooth=true;
+        // Do not arm or disarm physical sensor BLE from /netinfo. Companion
+        // mode stays phone-owned unless the user explicitly selects Direct
+        // sensor on watch through /bluetooth.
         const bool sendnums=!info->sendnums;
         if(host->isSender()) {
              const updateone &updat=getsendto(host);
@@ -730,39 +734,19 @@ extern "C" JNIEXPORT jboolean  JNICALL   fromjava(setmynetinfo)(JNIEnv *env, jcl
     else {
         LOGGER("is no watch watchsensor=%d sendstream=%d\n",info->watchsensor,host->isSender()&&getsendto(host).sendstream);
         if(info->watchsensor) {
-            // A /netinfo packet may report that the watch currently has a
-            // local sensor connection, but it is not an ownership command.
-            // JugglucoNG already has an explicit Direct-sensor request and
-            // SensorOwnershipRuntime for the actual handoff. Letting /netinfo
-            // disable phone Bluetooth as well created a second, independent
-            // ownership path, so a stale watch claim could drop a healthy
-            // phone sensor connection.
-            //
-            // Keep the receive direction available for a real Direct handoff,
-            // but never switch off phone Bluetooth or its outgoing stream just
-            // because the peer advertises watchsensor=1.
-            host->receivefrom= host->receivefrom|2;
-            LOGGER("watchsensor=1 reported; keeping phone bluetooth/sendstream unchanged\n");
+            // Status only: a proven watch connection may enable the receive
+            // direction, but it must never switch off the phone's sensor BLE
+            // or outgoing stream. Ownership is decided by the explicit Direct
+            // request in SensorOwnershipRuntime.
+            host->receivefrom = host->receivefrom | 2;
+            LOGGER("watchsensor=1 reported; receive path enabled, ownership unchanged\n");
             }
         else {
-            // Peer explicitly does not own the sensor: restore the phone to
-            // the companion baseline. Without this the poisoned state set in
-            // the branch above (nobluetooth=true, sendstream=false) persisted
-            // forever — the phone never reconnected to its own sensor and
-            // never resumed streaming, even after the watch stopped claiming.
-            // Phone-only: on the watch nobluetooth=true and receivefrom|2 are
-            // the normal companion state, not poison — clearing them here
-            // killed the watch's subscription to the phone's stream.
-            if constexpr(!iswatchapp()) {
-                if(settings->data()->nobluetooth || (host->isSender() && !getsendto(host).sendstream)) {
-                    settings->data()->nobluetooth=false;
-                    if(host->isSender()) {
-                        getsendto(host).sendstream=true;
-                        }
-                    host->receivefrom = host->receivefrom & ~2;
-                    LOGGER("watchsensor cleared: restore bluetooth + sendstream(%d)=true\n",index);
-                    }
-                }
+            // Likewise, watchsensor=0 is not a command to reclaim the sensor.
+            // Clearing the receive direction is transport bookkeeping only;
+            // phone BLE/stream ownership stays under SensorOwnershipRuntime.
+            host->receivefrom = host->receivefrom & ~2;
+            LOGGER("watchsensor=0 reported; receive path cleared, ownership unchanged\n");
             }
         }
     return true;

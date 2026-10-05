@@ -189,8 +189,8 @@ object WatchInterop {
             Natives.getmynetinfo(
                 nodeId,
                 true,
-                // This is only a request. Keep the phone streaming until the
-                // watch later proves local BLE ownership with watchsensor=1.
+                // /netinfo is transport/status only. The explicit Direct
+                // request below is recorded separately for ownership.
                 -1,
                 isGalaxy,
                 if (enterOnWatch) 1 else -1
@@ -204,10 +204,12 @@ object WatchInterop {
             sender.sendnetinfo(nodeId, netInfo)
             sender.sendbluetooth(nodeId, directOnWatch)
             WearRoutingRequest.record(nodeId, directOnWatch, enterOnWatch)
-            // Keep phone BLE alive during handoff. The watch will claim ownership
-            // in its own netinfo only after a connected driver accepts a reading;
-            // that existing protocol response then disables phone BLE. Turning
-            // direct mode off can safely resume phone BLE immediately.
+            // The recorded user choice is the ownership command. Reconcile now
+            // so Direct mode opens/closes its bounded phone yield window without
+            // waiting for the periodic ownership tick. /netinfo never owns BLE.
+            SensorOwnershipRuntime.onRoutingRequestChanged()
+            // Direct mode off may safely re-arm the phone's global sensor BLE;
+            // the runtime above also resumes any per-sensor released driver.
             if (!directOnWatch) {
                 val context = MainActivity.thisone ?: Applic.app ?: return false
                 Applic.setbluetooth(context, true)

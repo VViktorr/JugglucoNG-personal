@@ -419,6 +419,25 @@ object SensorOwnershipRuntime {
         }
     }
 
+    /**
+     * The phone UI changed an explicit Direct-sensor assignment.
+     *
+     * Reconcile immediately instead of waiting for the minute ownership tick:
+     * enabling Direct opens the bounded yield window now, and disabling it
+     * resumes a released phone sensor now. /netinfo is intentionally not part
+     * of this ownership transition.
+     */
+    @JvmStatic
+    fun onRoutingRequestChanged() {
+        if (Applic.isWearable) return
+        executor.execute {
+            runCatching {
+                reconcile()
+                UiRefreshBus.requestStatusRefresh()
+            }.onFailure { Log.stack(LOG_ID, "routing request changed", it) }
+        }
+    }
+
     /** User explicitly revoked a handoff from the sensor card. */
     @JvmStatic
     fun requestPhoneOwnership(serial: String?) {
@@ -686,10 +705,10 @@ object SensorOwnershipRuntime {
     /**
      * What this device should do with a sensor.
      *
-     * With both Wear routing switches off, the phone is the fixed BLE owner and
-     * the watch is a companion only. Automatic switching deliberately opts both
-     * devices into arbitration. Direct sensor mode explicitly assigns ownership
-     * to the watch and makes the phone yield.
+     * With Direct sensor mode off, the phone is the fixed BLE owner and the
+     * watch is a companion only. The legacy automatic-switch preference does
+     * not change that ownership rule. Direct sensor mode explicitly assigns
+     * ownership to the watch and makes the phone yield.
      */
     private fun intentFor(
         serial: String,
