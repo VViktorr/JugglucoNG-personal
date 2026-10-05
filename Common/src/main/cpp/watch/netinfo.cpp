@@ -739,14 +739,14 @@ extern "C" JNIEXPORT jboolean  JNICALL   fromjava(setmynetinfo)(JNIEnv *env, jcl
             // or outgoing stream. Ownership is decided by the explicit Direct
             // request in SensorOwnershipRuntime.
             host->receivefrom = host->receivefrom | 2;
-            LOGGER("watchsensor=1 reported; receive path enabled, ownership unchanged\n");
+            LOGSTRING("watchsensor=1 reported; receive path enabled, ownership unchanged\n");
             }
         else {
             // Likewise, watchsensor=0 is not a command to reclaim the sensor.
             // Clearing the receive direction is transport bookkeeping only;
             // phone BLE/stream ownership stays under SensorOwnershipRuntime.
             host->receivefrom = host->receivefrom & ~2;
-            LOGGER("watchsensor=0 reported; receive path cleared, ownership unchanged\n");
+            LOGSTRING("watchsensor=0 reported; receive path cleared, ownership unchanged\n");
             }
         }
     return true;
