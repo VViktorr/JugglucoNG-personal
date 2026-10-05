@@ -7,16 +7,21 @@ import org.junit.Test
 
 class ComplicationProviderWiringTests {
     private val moduleRoot: File = run {
-        var dir: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
-        while (dir != null) {
-            if (File(dir, "src/wear/AndroidManifest.xml").isFile) break
-            File(dir, "Common/src/wear/AndroidManifest.xml").takeIf { it.isFile }?.let {
-                dir = File(dir, "Common")
+        var cursor: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
+        var found: File? = null
+        while (cursor != null) {
+            if (File(cursor, "src/wear/AndroidManifest.xml").isFile) {
+                found = cursor
                 break
             }
-            dir = dir.parentFile
+            val common = File(cursor, "Common")
+            if (File(common, "src/wear/AndroidManifest.xml").isFile) {
+                found = common
+                break
+            }
+            cursor = cursor.parentFile
         }
-        dir ?: throw AssertionError("Common module root not found from ${System.getProperty("user.dir")}")
+        found ?: throw AssertionError("Common module root not found from ${System.getProperty("user.dir")}")
     }
 
     private fun source(relative: String): String = File(moduleRoot, relative).readText()
