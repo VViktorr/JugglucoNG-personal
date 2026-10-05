@@ -42,12 +42,15 @@ internal fun resolveSensorOwnershipIntent(
     // An explicit "Direct sensor on watch" request makes the phone yield.
     companionEnabled && assignedToWatch -> SensorOwnershipPolicy.Intent.YIELD
 
-    // With automatic switching enabled, the phone participates in the normal
-    // freshness/ownership arbitration.
-    autoSwitchEnabled -> SensorOwnershipPolicy.Intent.TAKE
+    // /sync2/own stays informational in ordinary companion mode. Automatic
+    // switching must never make the phone surrender its live sensor connection;
+    // only an explicit Direct sensor on watch assignment above may do that.
+    // Keep the branch explicit so the persisted preference cannot silently
+    // change ownership semantics again.
+    autoSwitchEnabled -> SensorOwnershipPolicy.Intent.PREFER
 
     // Default companion mode is deliberately phone-owned. PREFER prevents a
-    // transient watch report from making the phone surrender its live BLE link.
+    // transient or stale watch report from making the phone surrender its BLE link.
     else -> SensorOwnershipPolicy.Intent.PREFER
 }
 
