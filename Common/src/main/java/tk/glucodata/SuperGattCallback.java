@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
@@ -102,6 +103,12 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     public BluetoothDevice mActiveBluetoothDevice;
     long foundtime = 0L;
     protected volatile BluetoothGatt mBluetoothGatt;
+    // Upstream Juggluco GATT lifecycle: serialize replacement of the active transport
+    // and reject callbacks from retired BluetoothGatt instances.
+    private final Object gattLock = new Object();
+    private long reconnectGeneration = 0L;
+    private BluetoothGatt reconnectWaitingGatt = null;
+    private static final long DISCONNECT_CALLBACK_TIMEOUT_MS = 2000L;
     private volatile BluetoothGatt locallyConnectedGatt;
     private volatile boolean connectPending = false;
     private volatile ScheduledFuture<?> pendingConnectFuture = null;
@@ -136,18 +143,71 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         connectDevice(0);
     }
 
-    protected final synchronized boolean acceptConnectionAttemptCallback(BluetoothGatt gatt, int state) {
-        if (gatt != mBluetoothGatt) {
-            Log.i(LOG_ID, SerialNumber + " ignore retired connection callback");
-            return false;
-        }
-        if (state == android.bluetooth.BluetoothProfile.STATE_CONNECTED
-                || state == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) {
-            connectDeadline.completed(gatt);
-        }
-        return !stop;
+    protected final boolean acceptConnectionAttemptCallback(BluetoothGatt gatt, int state) {
+        return acceptConnectionStateChange(gatt, state) && !stop;
     }
 
+    /**
+     * Upstream Juggluco stale-callback gate. A DISCONNECTED callback for the
+     * current transport also cancels reconnect()'s missing-callback timeout.
+     */
+    protected final boolean acceptConnectionStateChange(BluetoothGatt gatt,int newState) {
+    final BluetoothGatt current;
+    synchronized(gattLock) {
+        current=mBluetoothGatt;
+        if(gatt==current) {
+            if(newState==android.bluetooth.BluetoothProfile.STATE_CONNECTED
+                    || newState==android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) {
+                connectDeadline.completed(gatt);
+                }
+            if(newState==android.bluetooth.BluetoothProfile.STATE_DISCONNECTED && reconnectWaitingGatt==gatt) {
+                reconnectWaitingGatt=null;
+                ++reconnectGeneration;
+                }
+            return true;
+            }
+        }
+    if(doLog) {Log.i(LOG_ID,SerialNumber+" ignore stale onConnectionStateChange gatt="+gatt+" current="+current);};
+    try { gatt.close(); } catch(Throwable th) { Log.stack(LOG_ID,SerialNumber+" close stale gatt",th); }
+    return false;
+    }
+
+    /** Clear mBluetoothGatt only when the callback still belongs to the current GATT. */
+    protected final boolean clearCurrentGatt(BluetoothGatt gatt) {
+    boolean localDisconnect=false;
+    synchronized(gattLock) {
+        if(gatt!=mBluetoothGatt)
+            return false;
+        if(reconnectWaitingGatt==gatt) {
+            reconnectWaitingGatt=null;
+            ++reconnectGeneration;
+            }
+        mBluetoothGatt=null;
+        connectDeadline.completed(gatt);
+        if(locallyConnectedGatt==gatt) {
+            locallyConnectedGatt=null;
+            localDisconnect=true;
+            }
+        }
+    if(localDisconnect)
+        WearSensorClaim.onLocalGattDisconnected(SerialNumber);
+    return true;
+    }
+
+    /** Detach and close the current GATT. Returns false if this callback is stale. */
+    protected final boolean closeCurrentGatt(BluetoothGatt gatt) {
+    if(!clearCurrentGatt(gatt)) {
+        try { gatt.close(); } catch(Throwable th) { Log.stack(LOG_ID,SerialNumber+" close stale gatt",th); }
+        return false;
+        }
+    try {
+        gatt.close();
+        }
+    catch(Throwable th) {
+        Log.stack(LOG_ID,SerialNumber+" close current gatt",th);
+        }
+    return true;
+    }
     boolean superseded = false;
     public final int sensorgen;
     public int readrssi = 9999;
@@ -218,28 +278,15 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         }
     }
 
-    public synchronized void disconnect() {
-        connectDeadline.cancel();
-        clearPendingConnect();
-        final var thegatt = mBluetoothGatt;
-        if (thegatt != null) {
-            {
-                if (doLog) {
-                    Log.i(LOG_ID, "Disconnect");
-                }
-                ;
-            }
-            ;
-            thegatt.disconnect();
-        } else {
-            {
-                if (doLog) {
-                    Log.i(LOG_ID, "Disconnect mBluetoothGatt==null");
-                }
-                ;
-            }
-            ;
+    public void disconnect() {
+    final var thegatt= mBluetoothGatt;
+    if(thegatt!=null) {
+        {if(doLog) {Log.i(LOG_ID,"Disconnect");};};
+        thegatt.disconnect();
         }
+     else  {
+        {if(doLog) {Log.i(LOG_ID,"Disconnect mBluetoothGatt==null");};};
+      }
     }
 
     public synchronized void setPause(boolean pause) {
@@ -275,39 +322,62 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     }
 
     public boolean reconnect(long now) {
-        final var old = now - showtime + 20;
-        if (charcha[1] < old && connectTime < (now - 60 * 1000)) {
-            try {
-                if (doLog) {
-                    Log.i(LOG_ID, "reconnect " + SerialNumber);
+        return reconnect(now, 0L);
+    }
+
+    public boolean reconnect(long now,long delay) {
+    final var old=now-showtime+20;
+    if(charcha[1]<old&&connectTime<(now-60*1000))  {
+        final BluetoothGatt thegatt;
+        final long generation;
+        try {
+            if(doLog) {Log.i(LOG_ID,"reconnect "+SerialNumber);};
+            constatstatusstr = "Loss of signal";
+            constatchange[1] = now;
+            synchronized(gattLock) {
+                thegatt=mBluetoothGatt;
+                if(thegatt==null)
+                    return connectDevice(delay);
+                reconnectWaitingGatt=thegatt;
+                generation=++reconnectGeneration;
                 }
-                ;
-                noteLossOfSignal(now);
-                final var thegatt = mBluetoothGatt;
-                if (thegatt != null) {
-                    thegatt.disconnect();
-                }
-            } catch (Throwable th) {
-                Log.stack(LOG_ID, "reconnect", th);
-            } finally {
-                return connectDevice(0);
+            thegatt.disconnect();
+            // Some Android Bluetooth stacks occasionally fail to deliver the
+            // DISCONNECTED callback after disconnect().  Normally that callback
+            // starts the replacement connection.  Only if it never arrives do
+            // this timeout path replace the GATT.
+            Applic.scheduler.schedule(() -> reconnectWithoutDisconnectCallback(thegatt,generation),
+                    DISCONNECT_CALLBACK_TIMEOUT_MS+delay, TimeUnit.MILLISECONDS);
+            return true;
+            }
+        catch(Throwable th) {
+            Log.stack(LOG_ID,"reconnect",th);
+            close();
+            return connectDevice(delay);
             }
         }
-        return true;
+     return true;
+    }
+
+    private void reconnectWithoutDisconnectCallback(BluetoothGatt oldGatt,long generation) {
+        synchronized(gattLock) {
+            if(generation!=reconnectGeneration || reconnectWaitingGatt!=oldGatt || mBluetoothGatt!=oldGatt)
+                return;
+            }
+        if(doLog) {Log.i(LOG_ID,SerialNumber+" no DISCONNECTED callback; force reconnect");};
+        if(closeCurrentGatt(oldGatt) && !stop)
+            connectDevice(0);
     }
 
     void setConStatus(int status) {
-        constatstatusstr = "Status=" + status;
-        if (status != BluetoothGatt.GATT_SUCCESS) {
-            BleErrorHistory.record(SerialNumber, constatstatusstr, System.currentTimeMillis());
+        constatstatusstr = "Status="+status;
         }
-    }
 
     void shouldreconnect(long now) {
-        final var old = now - showtime + 20;
-        if (starttime < old && charcha[0] < old && connectTime < (now - 60 * 1000))
-            reconnect(old);
-    }
+    final var old=now-showtime+20;
+    if(starttime<old&&charcha[0]<old&&connectTime<(now-60*1000))
+        reconnect(old,0);
+         }
 
     long[] constatchange = { 0L, 0L };
     public String constatstatusstr = "";
@@ -1243,26 +1313,31 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
 
     /** Close only the current Android GATT transport, without invoking a
      * managed driver's terminal close override. */
-    public final synchronized void closeGattTransport() {
+    public final void closeGattTransport() {
         connectDeadline.cancel();
         clearPendingConnect();
-        {
-            if (doLog) {
-                Log.i(LOG_ID, "close " + SerialNumber);
-            }
-            ;
+        if (doLog) {
+            Log.i(LOG_ID, "close " + SerialNumber);
         }
-        ;
-        var tmpgatt = mBluetoothGatt;
-        mBluetoothGatt = null;
-        if (tmpgatt != null) {
-            if (locallyConnectedGatt == tmpgatt) {
+        final BluetoothGatt tmpgatt;
+        boolean localDisconnect = false;
+        synchronized (gattLock) {
+            tmpgatt = mBluetoothGatt;
+            mBluetoothGatt = null;
+            reconnectWaitingGatt = null;
+            ++reconnectGeneration;
+            if (locallyConnectedGatt == tmpgatt && tmpgatt != null) {
                 locallyConnectedGatt = null;
-                WearSensorClaim.onLocalGattDisconnected(SerialNumber);
+                localDisconnect = true;
             }
+        }
+        if (localDisconnect) {
+            WearSensorClaim.onLocalGattDisconnected(SerialNumber);
+        }
+        if (tmpgatt != null) {
             try {
-                try { tmpgatt.disconnect(); }
-                finally { tmpgatt.close(); }
+                tmpgatt.disconnect();
+                tmpgatt.close();
             } catch (Throwable se) {
                 var mess = se.getMessage();
                 mess = mess == null ? "" : mess;
@@ -1270,18 +1345,11 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
                         ? Applic.getContext().getString(R.string.turn_on_nearby_devices_permission)
                         : mess);
                 Applic.Toaster(uit);
-                Log.stack(LOG_ID, SerialNumber + " " + "BluetoothGatt.close()", se);
+                Log.stack(LOG_ID, SerialNumber + " BluetoothGatt.close()", se);
             }
-        } else {
-            {
-                if (doLog) {
-                    Log.i(LOG_ID, "close mBluetoothGatt==null");
-                }
-                ;
-            }
-            ;
+        } else if (doLog) {
+            Log.i(LOG_ID, "close mBluetoothGatt==null");
         }
-
     }
 
     /**
@@ -1342,130 +1410,73 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
 
     private Runnable getConnectDevice() {
         var cb = this;
-        if (cb.mBluetoothGatt != null) {
-            // FIX: mBluetoothGatt != null does NOT mean "connected" - it means
-            // "we have a GATT object reference". After disconnect(), mBluetoothGatt
-            // stays non-null even though the connection is dead. Force close any
-            // stale reference to allow reconnection (fixes Sibionics 1 CN reconnect bug).
-            if (doLog)
-                Log.d(LOG_ID, SerialNumber + " getConnectDevice: clearing stale mBluetoothGatt");
-            closeGattTransport();
-        }
-        if (cb.mActiveDeviceAddress == null || cb.mActiveBluetoothDevice == null) {
-            {
-                if (doLog) {
-                    Log.i(LOG_ID, SerialNumber + " " + "cb.mActiveBluetoothDevice == null");
-                }
-            }
-            if (blueone != null) {
-                blueone.scanStarter(0);
-            }
+        // Keep the original connectDevice() semantics: a request replaces any
+        // existing GATT.  close() detaches it first, so a late callback is stale
+        // and cannot start an additional connection.
+        close();
+        if(cb.mActiveDeviceAddress ==null|| cb.mActiveBluetoothDevice == null) {
+            {if(doLog) {Log.i(LOG_ID, SerialNumber +" "+"cb.mActiveBluetoothDevice == null");};};
             foundtime = 0L;
             return null;
         }
         return () -> {
-            synchronized (cb) {
-            markConnectRunnableStarted();
-            try {
-            {
-                if (doLog) {
-                    Log.i(LOG_ID, "getConnectDevice Runnable " + SerialNumber);
+            {if(doLog) {Log.i(LOG_ID,"getConnectDevice Runnable "+ SerialNumber);};};
+            var device= cb.mActiveBluetoothDevice;
+            var sensorbluetooth= blueone;
+            if(sensorbluetooth==null) {
+                Log.e(LOG_ID, SerialNumber +" "+"sensorbluetooth==null");
+                return;
                 }
-                ;
-            }
-            ;
-            if (stop || CloneSensorRegistry.isCloneSensor(SerialNumber)
-                    || SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)
-                    || (dataptr == 0L && !allowConnectWithoutDataptr())) {
-                if (doLog) {
-                    Log.i(LOG_ID, SerialNumber + " getConnectDevice: cancelled (stop=" + stop
-                            + ", clone=" + CloneSensorRegistry.isCloneSensor(SerialNumber)
-                            + ", ownershipReleased=" + SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)
-                            + ", dataptr=" + dataptr + ")");
+            if(!sensorbluetooth.bluetoothIsEnabled()) {
+                Log.e(LOG_ID, SerialNumber +" "+"!sensorbluetooth.bluetoothIsEnabled()");
+                return ;
                 }
+            if(device==null) {
+                Log.e(LOG_ID, SerialNumber +" "+"device==null");
                 return;
-            }
-            var device = cb.mActiveBluetoothDevice;
-            var sensorbluetooth = blueone;
-            if (sensorbluetooth == null) {
-                Log.e(LOG_ID, SerialNumber + " " + "sensorbluetooth==null");
-                return;
-            }
-            if (!sensorbluetooth.bluetoothIsEnabled()) {
-                Log.e(LOG_ID, SerialNumber + " " + "!sensorbluetooth.bluetoothIsEnabled()");
-                return;
-            }
-            if (device == null) {
-                Log.e(LOG_ID, SerialNumber + " " + "device==null");
-                return;
-            }
-
-            if (cb.mBluetoothGatt != null) {
-                {
-                    if (doLog) {
-                        Log.d(LOG_ID, SerialNumber + " cb.mBluetoothGatt!=null");
-                    }
-                    ;
                 }
-                ;
-                return;
-            }
-            var devname = device.getName();
-            if (devname != null)
-                mDeviceName = devname;
+        
+            var devname=device.getName();
+            if(devname!=null)
+                mDeviceName=devname;
             if (doLog) {
-                {
-                    if (doLog) {
-                        Log.d(LOG_ID, SerialNumber + " Try connection to " + device.getAddress() + " " + devname
-                                + " autoconnect=" + cb.useAutoConnect());
-                    }
-                    ;
+                {if(doLog) {Log.d(LOG_ID, SerialNumber + " Try connection to " + device.getAddress()+ " "+devname+" autoconnect="+autoconnect);};};
                 }
-                ;
-            }
             try {
-                cb.armConnectCallbackLatency();
-                if (isWearable) {
-                    cb.mBluetoothGatt = device.connectGatt(Applic.app, cb.useAutoConnect(), cb,
-                            BluetoothDevice.TRANSPORT_LE);
-                    cb.setGattOptions(cb.mBluetoothGatt);
-                } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        cb.mBluetoothGatt = device.connectGatt(Applic.app, cb.useAutoConnect(), cb,
-                                BluetoothDevice.TRANSPORT_LE);
-                    } else {
-                        cb.mBluetoothGatt = device.connectGatt(Applic.app, cb.useAutoConnect(), cb);
+                synchronized(gattLock) {
+                    if (cb.mBluetoothGatt != null) {
+                        {if(doLog) {Log.d(LOG_ID, SerialNumber + " cb.mBluetoothGatt!=null");};};
+                        return;
+                        }
+                    final BluetoothGatt newGatt;
+                    if(isWearable)  {
+                        newGatt = device.connectGatt(Applic.app, autoconnect, cb, BluetoothDevice.TRANSPORT_LE);
+                        cb.setGattOptions(newGatt);
+                        }
+                    else {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            newGatt = device.connectGatt(Applic.app, autoconnect, cb, BluetoothDevice.TRANSPORT_LE);
+                        } else {
+                            newGatt = device.connectGatt(Applic.app, autoconnect, cb);
+                            }
+                        }
+                    cb.mBluetoothGatt=newGatt;
+                    reconnectWaitingGatt=null;
+                    setpriority(newGatt);
+                    {if(doLog) {Log.i(LOG_ID,SerialNumber+" after connectGatt ="+newGatt);};};
+                    connectTime= System.currentTimeMillis();
                     }
-                }
+                } catch (SecurityException se) {
+                    var mess = se.getMessage();
+                    mess = mess == null ? "" : mess;
+                    String uit = ((Build.VERSION.SDK_INT > 30) ? Applic.getContext().getString(R.string.turn_on_nearby_devices_permission)  : mess) ;
+                    Applic.Toaster(uit);
 
-                watchConnectionAttempt(cb.mBluetoothGatt);
-                setpriority(cb.mBluetoothGatt);
-                {
-                    if (doLog) {
-                        Log.i(LOG_ID, SerialNumber + " after connectGatt =" + cb.mBluetoothGatt);
+                    Log.stack(LOG_ID, SerialNumber +" "+ "connectGatt", se);
+                } catch (Throwable e) {
+                    Log.stack(LOG_ID, SerialNumber +" "+ "connectGatt", e);
+
                     }
-                    ;
-                }
-                ;
-                // cb.mBluetoothGatt.connect();
-                connectTime = System.currentTimeMillis();
-            } catch (SecurityException se) {
-                var mess = se.getMessage();
-                mess = mess == null ? "" : mess;
-                String uit = ((Build.VERSION.SDK_INT > 30)
-                        ? Applic.getContext().getString(R.string.turn_on_nearby_devices_permission)
-                        : mess);
-                Applic.Toaster(uit);
-
-                Log.stack(LOG_ID, SerialNumber + " " + "connectGatt", se);
-            } catch (Throwable e) {
-                Log.stack(LOG_ID, SerialNumber + " " + "connectGatt", e);
-
-            }
-            } finally {
-                clearPendingConnect();
-            }
-            }
         };
     }
 
@@ -1481,69 +1492,43 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         }
     }
 
-    public synchronized boolean connectDevice(long delayMillis) {
-        if (doLog) {
-            Log.i(LOG_ID, "connectDevice(" + delayMillis + ") " + SerialNumber);
-        }
-        ;
-        if (stop || CloneSensorRegistry.isCloneSensor(SerialNumber)
-                || SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)
-                || (dataptr == 0L && !allowConnectWithoutDataptr())) {
-            return false;
-        }
-        if (connectPending) {
-            if (doLog) {
-                Log.i(LOG_ID, "connectDevice skipped, connect already pending for " + SerialNumber);
-            }
-            return true;
-        }
-        Runnable connect = getConnectDevice();
-        if (connect == null)
-            return false;
-        connectPending = true;
-        pendingConnectFuture = Applic.scheduler.schedule(connect, delayMillis, TimeUnit.MILLISECONDS);
-        /*
-         * if(delayMillis>0)
-         * Applic.app.getHandler().postDelayed(connect, delayMillis);
-         * else
-         * Applic.app.getHandler().post(connect);
-         */
-        return true;
+    public boolean connectDevice(long delayMillis) {
+    if(doLog) {Log.i(LOG_ID,"connectDevice("+delayMillis+") "+ SerialNumber);};
+    Runnable connect=getConnectDevice();
+    if(connect==null) 
+        return false;
+    Applic.scheduler.schedule(connect, delayMillis, TimeUnit.MILLISECONDS);
+    /*
+    if(delayMillis>0)
+        Applic.app.getHandler().postDelayed(connect, delayMillis);
+    else
+        Applic.app.getHandler().post(connect); */
+    return true;
     }
 
     private boolean used_priority = false;
 
     @SuppressLint("MissingPermission")
     void setpriority(BluetoothGatt bluegatt) {
-        if (bluegatt != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                if (Natives.getpriority()) {
-                    bluegatt.requestConnectionPriority(use_priority);
-                    {
-                        if (doLog) {
-                            Log.i(LOG_ID, "requestConnectionPriority HIGH");
-                        }
-                        ;
-                    }
-                    ;
-                    used_priority = true;
-                } else {
-                    if (used_priority) {
-                        bluegatt.requestConnectionPriority(CONNECTION_PRIORITY_BALANCED);
-                        {
-                            if (doLog) {
-                                Log.i(LOG_ID, "requestConnectionPriority LOW");
-                            }
-                            ;
-                        }
-                        ;
-                        used_priority = false;
-                    }
-                }
+        if(bluegatt!=null) {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if(Natives.getpriority()) {
+                   bluegatt.requestConnectionPriority(use_priority);
+                   {if(doLog) {Log.i(LOG_ID,"requestConnectionPriority HIGH");};};
+                   used_priority=true;
+               }
+                else {
+               if(used_priority) {
+                  bluegatt.requestConnectionPriority(CONNECTION_PRIORITY_BALANCED);
+                  {if(doLog) {Log.i(LOG_ID,"requestConnectionPriority LOW");};};
+                  used_priority=false;
+                  }
+               }
             }
-        } else {
-            Log.e(LOG_ID, SerialNumber + " " + "setpriority BluetoothGatt==null");
-        }
+            }
+        else {
+            Log.e(LOG_ID, SerialNumber +" "+"setpriority BluetoothGatt==null");
+            }
     }
 
     /**
@@ -1618,38 +1603,53 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     }
 
     @SuppressLint("MissingPermission")
-    static boolean enableGattDescriptornote(String note, BluetoothGatt bluetoothGatt1,
-            BluetoothGattCharacteristic bluetoothGattCharacteristic, byte[] type) {
-        try {
-            BluetoothGattDescriptor descriptor = bluetoothGattCharacteristic
-                    .getDescriptor(mCharacteristicConfigDescriptor);
-            if (!descriptor.setValue(type)) {
-                Log.e(LOG_ID, note + " " + "descriptor.setValue())  failed");
-                return false;
-            }
-            final int originalWriteType = bluetoothGattCharacteristic.getWriteType();
-            bluetoothGattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-            var success = bluetoothGatt1.writeDescriptor(descriptor);
-            bluetoothGattCharacteristic.setWriteType(originalWriteType);
-            if (!success) {
-                Log.e(LOG_ID, note + " " + "bluetoothGatt1.writeDescriptor(descriptor))  failed");
-                return success;
-            }
-            if (doLog) {
-                showbytes(LOG_ID + " " + note + " " + "enableNotification ", type);
-            }
-            ;
-            if (!bluetoothGatt1.setCharacteristicNotification(bluetoothGattCharacteristic, type[0] != 0)) {
-                Log.e(LOG_ID, note + " " + "setCharacteristicNotification("
-                        + bluetoothGattCharacteristic.getUuid().toString() + ",true) failed");
-                return false;
-            }
-            return success;
-        } catch (Throwable th) {
-            Log.stack(LOG_ID, "enableGattDescriptor", th);
+    static boolean enableGattDescriptornote(String note, BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
+    try {
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(mCharacteristicConfigDescriptor);
+        if(descriptor == null) {
+            Log.e(LOG_ID, note + " CCCD descriptor not found");
             return false;
-        }
+           }
+
+        if(value == null || value.length < 2) {
+            Log.e(LOG_ID, note + " invalid CCCD value");
+            return false;
+           }
+
+        boolean enable = value[0] != 0;
+
+        if(!gatt.setCharacteristicNotification(characteristic, enable)) {
+            Log.e(LOG_ID, note + " setCharacteristicNotification("+ characteristic.getUuid() + "," + enable + ") failed");
+            return false;
+            }
+
+        if(Build.VERSION.SDK_INT >= 33) {
+            int res = gatt.writeDescriptor(descriptor, value);
+            if(res != BluetoothStatusCodes.SUCCESS) {
+                Log.e(LOG_ID, note + " writeDescriptor failed " + res);
+                return false;
+                }
+            } 
+        else {
+            if(!descriptor.setValue(value)) {
+                Log.e(LOG_ID, note + " descriptor.setValue failed");
+                return false;
+                }
+            if (!gatt.writeDescriptor(descriptor)) {
+                Log.e(LOG_ID, note + " writeDescriptor failed");
+                return false;
+               }
+            }
+        if(doLog) {
+            showbytes(LOG_ID + " " + note + " enableNotification ", value);
+            }
+
+        return true;
+    } catch (Throwable th) {
+        Log.stack(LOG_ID, "enableGattDescriptor", th);
+        return false;
     }
+}
 
     protected final boolean asknotification(BluetoothGattCharacteristic charac) {
         return enableNotification(mBluetoothGatt, charac);

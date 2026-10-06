@@ -709,6 +709,9 @@ public class Natives {
 
         public static native byte[] getsensorident(long dataptr);
 
+        // Original Juggluco Libre 2 JNI entry point used by the hybrid protocol path.
+        public static native int getLibre2sensorgen(long dataptr);
+
         public static native int getsensorgen(long dataptr);
 
         public static native int getLibreVersion(long dataptr);

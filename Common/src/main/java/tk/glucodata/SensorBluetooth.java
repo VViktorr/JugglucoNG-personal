@@ -101,11 +101,13 @@ public class SensorBluetooth {
         if (wasblue != null) {
             boolean shouldnotscan = true;
             final var now = System.currentTimeMillis();
+            long delay = 0L;
             for (var cb : wasblue.gattcallbacks) {
                 if (SensorOwnershipRuntime.blocksLocalConnection(cb.SerialNumber)) {
                     continue;
                 }
-                shouldnotscan = (cb.reconnect(now) && shouldnotscan);
+                shouldnotscan = (cb.reconnect(now, delay) && shouldnotscan);
+                delay += 1000L;
             }
             if (!shouldnotscan) {
                 if (wasblue.mBluetoothManager != null) {

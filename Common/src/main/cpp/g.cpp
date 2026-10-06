@@ -226,173 +226,170 @@ void alarmhandler(int sig) {
 // s/setthreadname(\([^);
 extern void setstreaming(SensorGlucoseData *hist);
 extern void wakeaftermin(const int waitmin);
-extern "C" JNIEXPORT jint JNICALL fromjava(nfcdata)(JNIEnv *env, jclass thiz,
-                                                    jbyteArray uid,
-                                                    jbyteArray info,
-                                                    jbyteArray data) {
-  nfcdatatid = syscall(SYS_gettid);
-  LOGGER("nfcdata %d\n", nfcdatatid);
-  setthreadname("NFC");
-  destruct dest([]() {
-    nfcdatatid = 0;
-    asignal(SIGALRM, SIG_IGN);
-    asignal(usesig, SIG_IGN);
-  });
-  asignal(usesig, usr2handler);
-  asignal(SIGALRM, alarmhandler);
-  static const int waitsig = 60;
-  alarm(waitsig);
-  if (setjmp(jumpenv) == nfcdatatid) {
-    LOGSTRING("after jump");
-    return 12 << 16;
-  }
-  jumpenvset = true;
+extern "C" JNIEXPORT jint JNICALL fromjava(nfcdata)(JNIEnv *env, jclass thiz, jbyteArray uid, jbyteArray info,jbyteArray data) {
+    nfcdatatid=syscall(SYS_gettid);
+    LOGGER("nfcdata %d\n", nfcdatatid);
+      setthreadname( "NFC");
+      destruct dest([](){nfcdatatid=0;
+                asignal(SIGALRM,SIG_IGN);
+                asignal(usesig,SIG_IGN);
+              });
+    asignal(usesig,usr2handler);
+    asignal(SIGALRM,alarmhandler);
+static     const int waitsig=60;
+    alarm(waitsig);
+    if(setjmp(jumpenv)==nfcdatatid)  {
+        LOGSTRING("after jump");
+            return 12<<16;
+            }
+         jumpenvset=true;
 
-  if (abbottinit() < 0) {
-    LOGAR("abbottinit failed");
-    return 10 << 16;
-  }
-  LOGSTRING("voor Abbott:Abbott\n");
-  time_t tim = time(nullptr);
-  std::unique_ptr<scandata> unidatptr(new scandata(env, info, data, tim));
-  scandata *datptr = unidatptr.get();
-  Abbott ab(env, sensorbasedir, uid, datptr->info);
-  LOGSTRING("Na Abbott:Abbott\n");
-  if (ab.error()) {
-    LOGSTRING("Error in Abbott::Abbott\n");
-    return 11 << 16;
-  }
+    if(abbottinit()<0) {
+        LOGAR("abbottinit failed");
+        return 10<<16;
+        }
+    LOGSTRING("voor Abbott:Abbott\n");
+    time_t tim=time(nullptr);
+    std::unique_ptr<scandata> unidatptr(new scandata(env,info,data,tim));
+    scandata *datptr=unidatptr.get();
+    Abbott ab(env,sensorbasedir,uid, datptr->info);
+    LOGSTRING("Na Abbott:Abbott\n");
+    if(ab.error()) {
+        LOGSTRING("Error in Abbott::Abbott\n");
+        return 11<<16;
+        }
 
-  /*
-      timevalues times= patchtimevalues(datptr->info) ;
-      if(times.wear>0) {
-          LOGGER("warmup=%d,wear=%d\n",times.warmup,times.wear);
-          } */
-
-  scanlogger logs;
+/*
+    timevalues times= patchtimevalues(datptr->info) ;
+    if(times.wear>0) {
+        LOGGER("warmup=%d,wear=%d\n",times.warmup,times.wear);
+        } */
+        
+    scanlogger    logs;
 #ifdef SCANLOG
-  if (logscan) {
-    logs.firstdata(ab.getsensordir(), datptr);
-  }
+    if(logscan)  {
+        logs.firstdata(ab.getsensordir(),datptr);
+        }
 #endif
-  auto [alg, scanda] = ab.ProcessOne(datptr);
-  // Abbott::scanresult_t
-  //     const AlgorithmResults *alg; const ScanData *scanda;
-  LOGSTRING("after ab.ProcessOne\n");
-  if (logscan) {
-    logs.lastdata();
-  }
-  LOGSTRING("after lastdata()\n");
-  destruct _back([]() { backup->wakebackup(Backup::wakeall); });
-  int ret = 2 << 16;
-  if (alg == Initialized) {
-    LOGSTRING("Initialized\n");
-    const int min = datptr->getSensorAgeInMinutes();
-    const bool enablestreaming =
-        setbluetoothon || (ab.hist && !ab.hist->streamingIsEnabled());
-    if (min < 60)
-      ret = 5 << 16 | (60 - min) << 24;
-    else
-      ret = 7 << 16;
-    if (enablestreaming)
-      ret |= (0x80 << 16);
+    auto [alg,scanda]=ab.ProcessOne(datptr); 
+//Abbott::scanresult_t 
+//    const AlgorithmResults *alg; const ScanData *scanda;
+    LOGSTRING("after ab.ProcessOne\n");
+    if(logscan) {
+        logs.lastdata(); 
+        }
+    LOGSTRING("after lastdata()\n");
+    destruct _back([](){ backup->wakebackup(Backup::wakeall);});
+    int ret=2<<16;
+    if(alg==Initialized) {
+        LOGSTRING("Initialized\n");
+        const int min=datptr->getSensorAgeInMinutes();
+        const bool enablestreaming=setbluetoothon||(ab.hist&&!ab.hist->streamingIsEnabled());
+        if(min<60)
+            ret=5<<16|(60-min)<<24;
+        else
+            ret=7<<16;
+        if(enablestreaming)
+            ret|=(0x80<<16);
 
-    sensor *senso = sensors->getsensor(ab.sensorindex);
-    senso->initialized = true;
-    senso->halfdays = 29;
-  } else {
-    if (alg) {
-      destruct _desalg(
-          [alg = alg] { delete alg; }); //[alg] also works with g++ 13.1.1 , but
-                                        // not with clang++ version 14.0.7
-      LOGAR("alg!=null");
-      if (scanda) {
-        LOGSTRING("scanda\n");
-        logscanresult(alg);
-        int gluval = alg->currentglucose().getValue();
-        if (gluval) {
-          scantoshow = {ab.sensorindex, scanda, static_cast<uint32_t>(tim)};
-          wakeaftermin(0);
-          if (setbluetoothon || !ab.hist->streamingIsEnabled()) {
-            return 8 << 16 | gluval;
-            /*
-        if(!waitstreaming()|| ((tim-ab.hist->beginscans()->gettime())>120)) {
-            return 8<<16|gluval;
-            }
-        else   {
-            if(!ab.hist->resetdevice) {
-                ab.hist->resetdevice=true;
-                return 9<<16|gluval;
+        sensor* senso=sensors->getsensor(ab.sensorindex);
+        senso->initialized=true;
+        senso->halfdays=29;
+        }
+    else {
+    if(alg){
+        destruct _desalg([alg=alg]{delete alg;}); //[alg] also works with g++ 13.1.1 , but not with clang++ version 14.0.7 
+        LOGAR("alg!=null");
+        if(scanda) {
+            LOGSTRING("scanda\n");
+            logscanresult(alg);
+            int gluval=alg->currentglucose().getValue();
+            if(gluval) {
+                scantoshow={ab.sensorindex,scanda,static_cast<uint32_t>(tim)};
+                wakeaftermin(0);
+                if(setbluetoothon||!ab.hist->streamingIsEnabled())  {
+                    return 8<<16|gluval;
+                        /*
+                    if(!waitstreaming()|| ((tim-ab.hist->beginscans()->gettime())>120)) {
+                        return 8<<16|gluval;
+                        }
+                    else   {
+                        if(!ab.hist->resetdevice) {
+                            ab.hist->resetdevice=true;
+                            return 9<<16|gluval;
+                            }
+                        } */
+                    }
+                sensor* senso=sensors->getsensor(ab.sensorindex);
+                if(senso->finished) {
+                    LOGAR("was finished");
+                    setstreaming(ab.hist); //NEEDED/
+                    setusedsensors(); //NEEDED
+                    senso->finished=0;
+                    backup->resensordata(ab.sensorindex);
+                    return 8<<16|gluval;
+                    }
+                return gluval;
                 }
-            } */
-          }
-          sensor *senso = sensors->getsensor(ab.sensorindex);
-          if (senso->finished) {
-            LOGAR("was finished");
-            setstreaming(ab.hist); // NEEDED/
-            setusedsensors();      // NEEDED
-            senso->finished = 0;
-            backup->resensordata(ab.sensorindex);
-            return 8 << 16 | gluval;
-          }
-          return gluval;
-        }
-        const int min = datptr->getSensorAgeInMinutes();
-        if (min < 60) {
-          sensor *senso = sensors->getsensor(ab.sensorindex);
-          if (senso->finished) {
-            LOGSTRING("was finished\n");
-            setbluetoothon = true;
-            senso->finished = 0;
-            backup->resensordata(ab.sensorindex);
-          }
-          senso->initialized = true;
-          const bool enablestreaming =
-              setbluetoothon || (ab.hist && !ab.hist->streamingIsEnabled());
-          ret = 5 << 16 | (60 - min) << 24;
-          if (enablestreaming)
-            ret |= (0x80 << 16);
-          return ret;
-        } else {
-          sensor *senso = sensors->getsensor(ab.sensorindex);
-          jlong ret;
-          if (alg->removed) {
-            LOGGER("%s was %d,set senso->finished=1;\n",
-                   senso->shortsensorname()->data(), senso->finished);
-            if (alg->getlsaDetected()) {
-              ret = SAS_SENSOR_TERMINATED << 16;
-            } else {
-              ab.removestate();
-              if (!senso->finished) {
-                senso->finished = 1;
-                setstreaming(ab.hist);
-                setusedsensors();
-                backup->resensordata(ab.sensorindex);
-              }
-              return SAS_SENSOR_REMOVED << 16;
+            const int min=datptr->getSensorAgeInMinutes();
+            if(min<60) {
+                sensor* senso=sensors->getsensor(ab.sensorindex);
+                if(senso->finished) {
+                    LOGSTRING("was finished\n");
+                    setbluetoothon=true;
+                    senso->finished=0;
+                    backup->resensordata(ab.sensorindex);
+                    }
+                senso->initialized=true;
+                const bool enablestreaming=setbluetoothon||(ab.hist&&!ab.hist->streamingIsEnabled());
+                ret=5<<16|(60-min)<<24;
+                if(enablestreaming)
+                    ret|=(0x80<<16);
+                return ret;
+                }
+            else {
+                sensor* senso=sensors->getsensor(ab.sensorindex);
+                jlong ret;
+                if(alg->removed) {     
+                    LOGGER("%s was %d,set senso->finished=1;\n",senso->shortsensorname()->data(),senso->finished);
+                    if(alg->getlsaDetected()) {
+                        ret=SAS_SENSOR_TERMINATED<<16;
+                        }
+                    else  {
+                        ab.removestate();
+                        if(!senso->finished) {
+                            senso->finished=1;
+                            setstreaming(ab.hist); 
+                            setusedsensors();
+                            backup->resensordata(ab.sensorindex);
+                            }
+                        return SAS_SENSOR_REMOVED<<16;
+                        }
+                
+                    }
+                else {
+                    ret=6<<16;
+                    }
+                if(senso->finished) {
+                    LOGSTRING("was finished\n");
+                    setstreaming(ab.hist); //NEEDED/
+                    setusedsensors(); //NEEDED
+                    senso->finished=0;
+                    backup->resensordata(ab.sensorindex);
+                    }
+                return ret;
+                }
+            
             }
-
-          } else {
-            ret = 6 << 16;
-          }
-          if (senso->finished) {
-            LOGSTRING("was finished\n");
-            setstreaming(ab.hist); // NEEDED/
-            setusedsensors();      // NEEDED
-            senso->finished = 0;
-            backup->resensordata(ab.sensorindex);
-          }
-          return ret;
+        ret=4<<16;
         }
-      }
-      ret = 4 << 16;
-    } else {
-      LOGAR("alg==null");
-      if (datptr->getSensorAgeInMinutes() == 0)
-        ret = 3 << 16;
-    }
-  }
-  return ret;
+    else {
+        LOGAR("alg==null");
+        if(datptr->getSensorAgeInMinutes()==0)
+            ret=3<<16;
+        }
+        }
+    return ret;
 }
 
 // extern SensorGlucoseData  *usedhist;
@@ -1136,6 +1133,16 @@ fromjava(getsensorident)(JNIEnv *envin, jclass cl, jlong dataptr) {
   envin->SetByteArrayRegion(uit, 0, 8, usedhist->getsensorident()->data());
   return uit;
 }
+extern "C" JNIEXPORT jint JNICALL fromjava(getLibre2sensorgen)(JNIEnv *envin, jclass cl,jlong dataptr) {
+    streamdata * const streamptr=reinterpret_cast<streamdata *>(dataptr);
+    if(!dataptr)
+        return -1;
+    const SensorGlucoseData *usedhist=streamptr->hist;
+    if(!usedhist)
+        return -1;
+    return usedhist->getsensorgen();
+    }
+
 extern "C" JNIEXPORT jint JNICALL fromjava(getsensorgen)(JNIEnv *envin,
                                                          jclass cl,
                                                          jlong dataptr) {
@@ -1214,33 +1221,16 @@ static void savestate(libre2stream *sdata) {
   delete[] old;
 }
 
-static jlong getalarmonly(const uint32_t mgL, float drate,
-                          const SensorGlucoseData *hist) {
-  auto res =
-      mgL < glucoselowestmgL
-          ? isLowest
-          : (mgL > (hist->getmaxmgdL() * 10)
-                 ? isHighest
-                 : (settings->veryhighAlarm(mgL)
-                        ? isVeryHigh
-                        : (settings->highAlarm(mgL)
-                               ? isHigh
-                               : (settings->verylowAlarm(mgL)
-                                      ? isVeryLow
-                                      : (settings->lowAlarm(mgL)
-                                             ? isLow
-                                             : (settings->prelowAlarm(mgL,
-                                                                      drate)
-                                                    ? isPreLow
-                                                    : (settings->prehighAlarm(
-                                                           mgL, drate)
-                                                           ? isPreHigh
-                                                           : (settings->availableAlarm() &&
-                                                                      hist->waiting
-                                                                  ? isAgain
-                                                                  : 0))))))));
-  return res;
-}
+static jlong getalarmonly(const uint32_t mgL,float drate,const SensorGlucoseData *hist) {
+    const int glucoselowestmgL=hist->getminmgdL()*10;
+    auto res=mgL<glucoselowestmgL?isLowest:(mgL>(hist->getmaxmgdL()*10)?isHighest:
+ (settings->veryhighAlarm(mgL)?isVeryHigh:(settings->highAlarm(mgL)?isHigh:(settings->verylowAlarm(mgL)?isVeryLow:(settings->lowAlarm(mgL)?isLow:(
+settings->prelowAlarm(mgL,drate)?isPreLow:
+(settings->prehighAlarm(mgL,drate)?isPreHigh:
+(settings->availableAlarm()&&hist->waiting?isAgain:0))))))));
+    LOGGER("mgL=%u, high=%d, low=%d res=%" PRId64 "\n",mgL,settings->highAlarm(mgL),settings->lowAlarm(mgL),res);
+    return res;
+    }
 int getalarmcode(const uint32_t mgL, float drate, SensorGlucoseData *hist) {
   int res = getalarmonly(mgL, drate, hist) >> 48;
   hist->waiting = false;
@@ -2138,81 +2128,68 @@ void wakewithcurrent() {
   }
 #endif
 }
-extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
-    JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray bluetoothdata) {
-  //    setbuffer(mystatus);
-  setthreadname("processTooth");
-  LOGGER("processTooth %ld\n", syscall(SYS_gettid));
-  libre2stream *sdata = reinterpret_cast<libre2stream *>(dataptr);
+extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(JNIEnv *envin, jclass cl,jlong dataptr, jbyteArray bluetoothdata) {
+//    setbuffer(mystatus);
+      setthreadname( "processTooth");
+    LOGGER("processTooth %ld\n",syscall(SYS_gettid));
+    libre2stream *sdata=reinterpret_cast<libre2stream *>(dataptr);
 
-  //    jint index=sdata->index;
-  data_t *bluedata = fromjbyteArray(envin, bluetoothdata);
-  uint32_t nu = time(NULL);
+//    jint index=sdata->index;
+    data_t *bluedata=fromjbyteArray(envin,bluetoothdata);
+    uint32_t nu=time(NULL);
 #ifndef NORAWSTREAM
-  const struct iovec iov[2]{
-      {reinterpret_cast<void *>(&nu), sizeof(nu)},
-      {reinterpret_cast<void *>(bluedata->data()), (size_t)bluedata->size()}};
-  writev(sdata->blueuit, iov, 2);
+    const struct iovec iov[2]{{reinterpret_cast<void *>(&nu),sizeof(nu)},
+        {reinterpret_cast<void *>(bluedata->data()),(size_t)bluedata->size()}};
+    writev(sdata->blueuit,iov,2);
   /*  write(sdata->blueuit,reinterpret_cast<const char *>(&nu),sizeof(nu));
     write(sdata->blueuit,bluedata->data(),bluedata->size()); */
 #endif
-  //    scanstate *newstate=new scanstate(sdata->hist->getsensordir(),nu);
-  scanstate *newstate = new scanstate(defaultscanstate);
-  const AlgorithmResults *algres = sdata->processTooth(bluedata, newstate, nu);
+//    scanstate *newstate=new scanstate(sdata->hist->getsensordir(),nu);
+    scanstate *newstate=new scanstate(defaultscanstate);
+    const AlgorithmResults *algres=sdata->processTooth(bluedata,newstate,nu);
 
-  data_t::deleteex(bluedata);
-  //    delete newstate;
-  if (algres == ALGDUP_VALUE) {
-    /*
-     * The frame itself was valid; only its current glucose was already present
-     * in polls (for example because WearSync2 mirrored the peer's last reading
-     * just before this device took Libre 2 back).
-     *
-     * processBlue() has nevertheless advanced the Abbott stream state in
-     * newstate. Dropping that state leaves the parser one frame behind, so every
-     * following notification can reproduce the same already-stored id forever:
-     * GATT stays healthy and 20/18/8 packets arrive each minute, but Juggluco's
-     * displayed reading never advances.
-     *
-     * Keep the new parser state while still returning the duplicate sentinel so
-     * Java does not publish the same glucose twice. The next physical frame can
-     * then advance to its new id normally.
-     */
-    sdata->setstate(newstate);
-    return 1LL;
-  }
-  if (algres) {
-    destruct _algdes([algres] { delete algres; });
-    constexpr unsigned waittime = 60 * 60;
-    static time_t savetime = nu + waittime;
-    sdata->setstate(newstate);
-    if (nu > savetime) {
-      savestate(sdata);
-      savetime = nu + waittime;
+    data_t::deleteex(bluedata);
+//    delete newstate;
+    if(algres==ALGDUP_VALUE ) {
+        // A duplicate glucose id can arrive after phone/Wear or Clone handoff.
+        // The Abbott frame is still valid, so keep its parser state and only
+        // suppress publishing the duplicate value.
+        sdata->setstate(newstate);
+        return 1LL;
+        }
+    if(algres) {
+        destruct _algdes([algres]{delete algres;});
+        constexpr unsigned waittime=60*60;
+        static time_t savetime=nu+waittime;
+         sdata->setstate(newstate);
+        if(nu>savetime) {
+            savestate(sdata);
+            savetime=nu+waittime;
+            }
+        decltype(auto) gluc=algres->currentglucose();
+        const uint32_t glval= gluc.getValue();
+        const float drate=gluc.rate();
+        if(jlong res=glucoseback(nu,glval,drate,sdata->hist) ) {
+            sensor *senso=sensors->getsensor(sdata->sensorindex);
+            sdata->hist->sensorerror=false;
+            if(senso->finished) {
+                LOGGER("processTooth finished=%d\n", senso->finished);
+                if(senso->reactivateFromData())
+                    backup->resensordata(sdata->sensorindex);
+                }
+
+            backup->wakebackup(Backup::wakestream);
+            wakewithcurrent();
+
+            return res;
+            }
+        }
+    else
+        delete newstate;
+    sdata->hist->sensorerror=true;
+    sdata->hist->sensorErrorTime=nu;
+    return 0LL;
     }
-    decltype(auto) gluc = algres->currentglucose();
-    const uint32_t glval = gluc.getValue();
-    const float drate = gluc.rate();
-    if (jlong res = glucoseback(nu, glval, drate, sdata->hist)) {
-      sensor *senso = sensors->getsensor(sdata->sensorindex);
-      sdata->hist->sensorerror = false;
-      if (senso->finished) {
-        LOGGER("processTooth finished=%d\n", senso->finished);
-        if (senso->reactivateFromData())
-          backup->resensordata(sdata->sensorindex);
-      }
-
-      backup->wakebackup(Backup::wakestream);
-      wakewithcurrent();
-
-      return res;
-    }
-  } else
-    delete newstate;
-  sdata->hist->sensorerror = true;
-  sdata->hist->sensorErrorTime = nu;
-  return 0LL;
-}
 
 /*
 extern "C" JNIEXPORT void JNICALL   fromjava(backupstream)(JNIEnv *envin, jclass

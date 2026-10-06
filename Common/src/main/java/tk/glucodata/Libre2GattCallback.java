@@ -70,78 +70,9 @@ public class Libre2GattCallback extends SuperGattCallback {
 	static private final String LOG_ID = "Libre2GattCallback";
 
 	public Libre2GattCallback(String SerialNumber, long dataptr) {
-		super(SerialNumber,dataptr,Natives.getsensorgen(dataptr));
+		super(SerialNumber,dataptr,Natives.getLibre2sensorgen(dataptr));
 		{if(doLog) {Log.d(LOG_ID, "Libre2GattCallback(..)");};};
 	}
-
-    @Override
-    protected boolean useAutoConnect() {
-        return false;
-    }
-
-    /*
-     * Libre 2 reconnects with a direct GATT connection.  Normally Android sends
-     * STATE_DISCONNECTED after disconnect(); if that callback is lost, retire
-     * the old transport after a short timeout and start a fresh connection.
-     */
-    private long libre2ReconnectGeneration = 0L;
-    private BluetoothGatt libre2ReconnectWaitingGatt = null;
-    private static final long LIBRE2_DISCONNECT_CALLBACK_TIMEOUT_MS = 2000L;
-
-    @Override
-    public boolean reconnect(long now) {
-        final var old = now - showtime + 20;
-        if (charcha[1] < old && connectTime < (now - 60 * 1000)) {
-            final BluetoothGatt oldGatt;
-            final long generation;
-            try {
-                noteLossOfSignal(now);
-                synchronized (this) {
-                    oldGatt = mBluetoothGatt;
-                    if (oldGatt == null) {
-                        return connectDevice(0);
-                    }
-                    libre2ReconnectWaitingGatt = oldGatt;
-                    generation = ++libre2ReconnectGeneration;
-                }
-                oldGatt.disconnect();
-                Applic.scheduler.schedule(
-                        () -> libre2ReconnectWithoutDisconnectCallback(oldGatt, generation),
-                        LIBRE2_DISCONNECT_CALLBACK_TIMEOUT_MS,
-                        TimeUnit.MILLISECONDS);
-                return true;
-            } catch (Throwable ignored) {
-                closeGattTransport();
-                return connectDevice(0);
-            }
-        }
-        return true;
-    }
-
-    private void libre2ReconnectWithoutDisconnectCallback(BluetoothGatt oldGatt, long generation) {
-        synchronized (this) {
-            if (generation != libre2ReconnectGeneration
-                    || libre2ReconnectWaitingGatt != oldGatt
-                    || mBluetoothGatt != oldGatt) {
-                return;
-            }
-            libre2ReconnectWaitingGatt = null;
-            ++libre2ReconnectGeneration;
-            closeGattTransport();
-        }
-        if (!stop) {
-            connectDevice(0);
-        }
-    }
-
-    private void completeLibre2DisconnectWait(BluetoothGatt gatt) {
-        synchronized (this) {
-            if (libre2ReconnectWaitingGatt == gatt) {
-                libre2ReconnectWaitingGatt = null;
-                ++libre2ReconnectGeneration;
-            }
-        }
-    }
 
 
 	boolean pack1 = false, pack2 = false;
@@ -209,19 +140,11 @@ private PendingIntent onalarm=null;
 	@SuppressLint("MissingPermission")
 	@Override
 	public void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
-		noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
-		if (!acceptConnectionAttemptCallback(bluetoothGatt, newState)) {
-			try {
-				bluetoothGatt.close();
-			} catch (Throwable ignored) {
-			}
-			return;
-		}
-		super.onConnectionStateChange(bluetoothGatt, status, newState);
+        noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
+        if(!acceptConnectionStateChange(bluetoothGatt,newState))
+            return;
+        super.onConnectionStateChange(bluetoothGatt, status, newState);
 		endBLEHandler();
-		if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-			completeLibre2DisconnectWait(bluetoothGatt);
-		}
 		if(stop) {
 			{if(doLog) {Log.i(LOG_ID,"onConnectionStateChange stop==true");};};
                         close();
@@ -253,8 +176,9 @@ private PendingIntent onalarm=null;
 							}
 					    }
 					;
-					if(!useAutoConnect()) {
-						closeGattTransport();
+					if(!autoconnect) {
+						if(!closeCurrentGatt(bluetoothGatt))
+						    return;
 						if(!stop) {
 							var sensorbluetooth=SensorBluetooth.blueone;
 							if(sensorbluetooth!=null)  {
@@ -279,7 +203,8 @@ private PendingIntent onalarm=null;
 							bluetoothGatt.connect();
 							}
 						else {
-							closeGattTransport();
+							if(!closeCurrentGatt(bluetoothGatt))
+							    return;
 							}
 						}
 					conphase = 0;
@@ -513,10 +438,8 @@ private	void oldonCharacteristicChanged(byte[] value) {
 			case 8: {
 				if (pack1 && pack2) {
 					final var wakeLock=Natives.hasRootcheck()?getwakelock():null;
-					if(wakeLock!=null) {
-						wakeLock.setReferenceCounted(false);
-						wakeLock.acquire(Applic.GLUCOSE_WAKELOCK_TIMEOUT_MS);
-						}
+					if(wakeLock!=null)
+						wakeLock.acquire();
                         /*
                     if(isWearable) {
                         if(Natives.getDisconnectSensor()) {
@@ -527,30 +450,24 @@ private	void oldonCharacteristicChanged(byte[] value) {
                                    setDescriptor(characteristic,  BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                                     }
                                     }, 30, TimeUnit.SECONDS);
-
+                                    
                             }
                         } */
+					final long timmsec = System.currentTimeMillis();
 
-					try {
-						pack1 = false;
-						pack2 = false;
-						System.arraycopy(value, 0, packet, 38, 8);
-						final long timmsec = System.currentTimeMillis();
-						final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
-						if(newpacket!=null) {
-							long res = processTooth(dataptr, newpacket);
-							if(res!=1L) {
-								handleGlucoseResult(res,timmsec);
-								}
-                            else if(doLog) {
-                                Log.i(LOG_ID, SerialNumber + " duplicate glucose frame; parser state advanced");
-                                }
+					pack1 = false;
+					pack2 = false;
+					System.arraycopy(value, 0, packet, 38, 8);
+					final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
+					if(newpacket!=null) {
+						long res = processTooth(dataptr, newpacket);
+						if(res!=1L) {
+							handleGlucoseResult(res,timmsec);
 							}
-						datatime=timmsec;
 						}
-					finally {
-						Applic.releasewakelock(wakeLock);
-						}
+                    datatime=timmsec;
+					if(wakeLock!=null)
+						wakeLock.release();
                   /*  if(isWearable) {
                         if(Natives.getDisconnectSensor()&&!autoconnect) {
                             disconnect();  
@@ -890,3 +807,4 @@ public void setGattOptions(BluetoothGatt gatt) {
         } */
 
 }
+
