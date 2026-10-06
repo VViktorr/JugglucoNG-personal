@@ -49,7 +49,18 @@ object WidgetDisplaySource {
         val activeSensorSerial = current?.sensorId ?: resolveActiveSensorSerial()
         val startTimeMs = (System.currentTimeMillis() - historyWindowMs).coerceAtLeast(0L)
         val baseHistory = try {
-            NotificationHistorySource.getDisplayHistory(startTimeMs, Applic.unit == 1, activeSensorSerial)
+            // On the phone use the same merged multi-sensor timeline as the
+            // dashboard chart. Falling back to the old per-sensor source keeps
+            // this shared class working on Wear, where the Room bridge is absent.
+            HistoryRepositoryAccess.getMergedDisplayHistoryForWidget(
+                activeSensorSerial,
+                startTimeMs,
+                Applic.unit == 1
+            ) ?: NotificationHistorySource.getDisplayHistory(
+                startTimeMs,
+                Applic.unit == 1,
+                activeSensorSerial
+            )
         } catch (_: Throwable) {
             emptyList()
         }
