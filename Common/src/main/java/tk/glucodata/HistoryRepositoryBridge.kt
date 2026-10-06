@@ -86,5 +86,5 @@ interface HistoryRepositoryBridge {
         preferredSerial: String?,
         startTimeMs: Long,
         isMmol: Boolean,
-    ): List<GlucosePoint>?
+    ): List<GlucosePoint>? = null
 }
