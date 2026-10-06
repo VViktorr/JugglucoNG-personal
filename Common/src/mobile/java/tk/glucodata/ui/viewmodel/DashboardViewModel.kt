@@ -180,6 +180,7 @@ class DashboardViewModel(
         // arrive far faster than the dashboard can usefully redraw. Matches the
         // 1 s gate GlucoseUpdateBroadcaster already applies to the same signal.
         private const val DASHBOARD_DATA_REFRESH_COALESCE_MS = 1_000L
+        private const val SENSOR_STATUS_REFRESH_MS = 30_000L
         const val HISTORY_RECOVERY_TOLERANCE_MS = 5L * 60L * 1000L
         const val HISTORY_RECOVERY_TAIL_TOLERANCE_MS = 2L * 60L * 1000L
         const val DASHBOARD_PEER_HISTORY_WINDOW_MS = 72L * 60L * 60L * 1000L
@@ -592,6 +593,7 @@ class DashboardViewModel(
     private var multiSensorHistoryJob: Job? = null
     private var timelineExtentsJob: Job? = null
     private var uiRefreshJob: Job? = null
+    private var sensorStatusClockJob: Job? = null
     private var journalEntriesJob: Job? = null
     private var journalPresetsJob: Job? = null
     private var journalFoodsJob: Job? = null
@@ -662,6 +664,7 @@ class DashboardViewModel(
         refreshData()
         if (collectionMode != CollectionMode.INACTIVE) {
             ensureUiRefreshCollection()
+            ensureSensorStatusClock()
             ensureCurrentReadingCollection()
             startHistoryCollectionForMode(collectionMode)
             viewModelScope.launch {
@@ -679,6 +682,7 @@ class DashboardViewModel(
             CollectionMode.FULL_HISTORY -> {
                 refreshData()
                 ensureUiRefreshCollection()
+                ensureSensorStatusClock()
                 ensureCurrentReadingCollection()
                 startHistoryCollectionForMode(mode)
                 viewModelScope.launch {
@@ -724,6 +728,16 @@ class DashboardViewModel(
 
         if (shouldPreferHistoryRecovery) {
             requestHistoryRecoverySync(serial, reason = "ui_recovery")
+        }
+    }
+
+    private fun ensureSensorStatusClock() {
+        if (sensorStatusClockJob?.isActive == true) return
+        sensorStatusClockJob = viewModelScope.launch {
+            while (true) {
+                delay(SENSOR_STATUS_REFRESH_MS)
+                refreshSensorSnapshot()
+            }
         }
     }
 
@@ -1568,6 +1582,8 @@ class DashboardViewModel(
         currentSensorTailJob = null
         uiRefreshJob?.cancel()
         uiRefreshJob = null
+        sensorStatusClockJob?.cancel()
+        sensorStatusClockJob = null
         activeHistoryMode = null
         activeHistoryStartTimeMs = null
         // Jobs stop, values stay: the rows keep their last paint while hidden

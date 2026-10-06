@@ -5,11 +5,34 @@ import tk.glucodata.Natives
 import tk.glucodata.R
 import tk.glucodata.ui.libre3WarmupMinutes
 
+private const val LIBRE2_SENSOR_KIND = 2
 private const val DEXCOM_SENSOR_KIND = 0x40
 private const val DEXCOM_WARMUP_DURATION_MS = 30L * 60L * 1000L
 
+internal fun libre2WarmupMinutes(
+    sensorKind: Int,
+    startMs: Long,
+    nowMs: Long,
+    warmupMinutes: Int,
+): Int? {
+    if (sensorKind != LIBRE2_SENSOR_KIND || startMs <= 0L || warmupMinutes <= 0) {
+        return null
+    }
+    val elapsedMs = nowMs - startMs
+    val durationMs = warmupMinutes.toLong() * 60_000L
+    if (elapsedMs < 0L || elapsedMs >= durationMs) {
+        return null
+    }
+    val remainingMs = durationMs - elapsedMs
+    return ((remainingMs + 59_999L) / 60_000L).toInt().coerceAtLeast(1)
+}
+
 fun getLegacyWarmupStatus(context: Context, sensorKind: Int, startMs: Long, nativeStatus: String, warmupMinutes: Int = 60): String? {
-    libre3WarmupMinutes(sensorKind, startMs, System.currentTimeMillis(), warmupMinutes, nativeStatus)?.let {
+    val nowMs = System.currentTimeMillis()
+    libre3WarmupMinutes(sensorKind, startMs, nowMs, warmupMinutes, nativeStatus)?.let {
+        return context.getString(R.string.status_ready_in_minutes, it)
+    }
+    libre2WarmupMinutes(sensorKind, startMs, nowMs, warmupMinutes)?.let {
         return context.getString(R.string.status_ready_in_minutes, it)
     }
     if (sensorKind != DEXCOM_SENSOR_KIND) {

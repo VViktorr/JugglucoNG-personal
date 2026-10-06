@@ -21,6 +21,7 @@
 package tk.glucodata;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
@@ -408,7 +409,12 @@ public class ScanNfcV {
                                     ret = 0;
                                     break;
                                 case 4:
-                                    SensorBluetooth.sensorEnded(Natives.getserial(uid, info));
+                                    SensorBluetooth.sensorEnded(scannedSensorIdent);
+                                    main.runOnUiThread(() -> new AlertDialog.Builder(main)
+                                            .setTitle(R.string.sensor_expired_text)
+                                            .setMessage(R.string.sensor_finished_scan_new)
+                                            .setPositiveButton(R.string.ok, null)
+                                            .show());
                                     ;
                                     break;
                                 case 3: {
