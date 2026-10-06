@@ -46,27 +46,39 @@ public class GlucoseWidget extends AppWidgetProvider {
     private static long lastUpdateElapsedRealtime = 0L;
     static RemoteGlucose remote = null;
     static int width=0;
+    static int height=0;
+    private static final int DEFAULT_WIDGET_WIDTH_DP = 200;
+    private static final int DEFAULT_WIDGET_HEIGHT_DP = 50;
 
-private static void setWidth(int widthdip) {
+private static void setSize(int widthdip, int heightdip) {
     synchronized (widgetLock) {
+        widthdip = Math.max(1, widthdip);
+        heightdip = Math.max(1, heightdip);
         var density = GlucoseCurve.getDensity();
         if (density <= 0.0f) {
             density = 1.0f;
         }
-        var widthpx = widthdip * density;
-//      var fontsize=widthpx*0.22f;
-        var fontsize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
-        remote = new RemoteGlucose(fontsize, widthpx, Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
+        final float widthpx = widthdip * density;
+        final float heightpx = heightdip * density;
+        // Size against both axes. The old widget only followed width, which made
+        // a resized 1x1 widget render a short bitmap inside a much taller host.
+        final float widthDrivenSize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
+        final float heightDrivenSize = heightpx * 0.72f;
+        final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize));
+        remote = new RemoteGlucose(fontsize, widthpx, heightpx,
+                Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
         width = widthdip;
+        height = heightdip;
     }
 }
 @Override
 public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle widgetInfo) {
    var widthdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-   {if(doLog) {Log.i(LOG_ID,"onAppWidgetOptionsChanged widthdip="+widthdip);};};
+   var heightdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+   {if(doLog) {Log.i(LOG_ID,"onAppWidgetOptionsChanged widthdip="+widthdip+" heightdip="+heightdip);};};
    used=true;
-   if(widthdip!=0&&widthdip!=width) {
-       setWidth(widthdip);
+   if(widthdip>0 && heightdip>0 && (widthdip!=width || heightdip!=height)) {
+       setSize(widthdip, heightdip);
        updateAppWidget(context, appWidgetManager, appWidgetId);
        }
    } 
@@ -109,19 +121,19 @@ static private void updateAppWidget(Context context, AppWidgetManager appWidgetM
         {if(doLog) {Log.d(LOG_ID, key + " = " + widgetInfo.get(key));};};
         }
    var widthdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-   if(widthdip==0) {
-      if(remote==null)
-         widthdip=200;
-      else
-         widthdip=width;
-      } if(widthdip!=width) {
-      setWidth(widthdip);
+   var heightdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+   if(widthdip<=0)
+      widthdip=(remote==null || width<=0) ? DEFAULT_WIDGET_WIDTH_DP : width;
+   if(heightdip<=0)
+      heightdip=(remote==null || height<=0) ? DEFAULT_WIDGET_HEIGHT_DP : height;
+   if(widthdip!=width || heightdip!=height) {
+      setSize(widthdip, heightdip);
       }
    RemoteViews  views;
    int id= R.id.arrowandvalue;
    synchronized (widgetLock) {
       if (remote == null) {
-         setWidth(widthdip == 0 ? 200 : widthdip);
+         setSize(widthdip, heightdip);
       }
 	      final var current = WidgetDisplaySource.resolveWidgetSnapshot(glucosetimeout);
       if (current != null) {
@@ -129,14 +141,14 @@ static private void updateAppWidget(Context context, AppWidgetManager appWidgetM
          final var time = current.getTimeMillis();
          if ((now - time) > oldage) {
             final String tformat = timef.format(time);
-            String message = "\n  " + context.getString(R.string.nonewvalue) + tformat;
+            String message = context.getString(R.string.nonewvalue) + tformat;
             views = remoteMessage(message);
             id = R.id.content;
          } else {
             views = remote.widgetRemote(current);
          }
       } else {
-         views = remoteMessage("\n  " + context.getString(R.string.novalue));
+         views = remoteMessage(context.getString(R.string.novalue));
          id = R.id.content;
       }
    }

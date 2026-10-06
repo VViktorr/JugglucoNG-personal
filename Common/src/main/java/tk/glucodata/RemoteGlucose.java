@@ -68,6 +68,10 @@ class RemoteGlucose {
    final private int timesize;
 
    RemoteGlucose(float gl, float notwidth, float xper, int whiteonblack, boolean givetime) {
+      this(gl, notwidth, 0.0f, xper, whiteonblack, givetime);
+   }
+
+   RemoteGlucose(float gl, float notwidth, float requestedHeight, float xper, int whiteonblack, boolean givetime) {
 
       glucosesize = gl;
       glucosePaint = new Paint();
@@ -75,7 +79,6 @@ class RemoteGlucose {
       glucosePaint.setTextAlign(Paint.Align.LEFT);
       float notheight = glucosesize * 0.8f;
       notglucosex = (int) (notwidth * xper);
-      density = notheight / 54.0f;
 
       if (givetime) {
          Rect bounds = new Rect();
@@ -87,12 +90,19 @@ class RemoteGlucose {
       } else {
          timeHeight = timesize = 0;
       }
+      final boolean usesRequestedHeight = requestedHeight > 0.0f;
+      if (usesRequestedHeight)
+         notheight = requestedHeight;
       glucosePaint.setTextSize(glucosesize);
       if (notwidth <= 0.0f)
          notwidth = 1.0f;
       if (notheight <= 0.0f)
          notheight = 1.0f;
-      glucoseBitmap = Bitmap.createBitmap((int) notwidth, (int) notheight, Bitmap.Config.ARGB_8888);
+      density = usesRequestedHeight
+            ? Math.max(0.5f, Math.min(notwidth / 200.0f, notheight / 54.0f))
+            : notheight / 54.0f;
+      glucoseBitmap = Bitmap.createBitmap(Math.max(1, Math.round(notwidth)),
+            Math.max(1, Math.round(notheight)), Bitmap.Config.ARGB_8888);
       canvas = new Canvas(glucoseBitmap);
 
       {
@@ -202,6 +212,71 @@ class RemoteGlucose {
       }
 
       String timestr = minhourstr(snapshot.getTimeMillis());
+
+      // A 1x1 widget is close to square. Give that shape its own composition:
+      // the glucose value uses the center of the whole cell, while trend and age
+      // occupy the corners instead of reserving a permanent right-hand column.
+      final boolean compactSquare = canvasWidth <= canvasHeight * 1.45f;
+      if (compactSquare) {
+         final float compactInset = Math.max(2f, usedensity * 4f);
+         final float compactTimeSize = Math.max(reducedTimeSize,
+               Math.min(canvasWidth, canvasHeight) * 0.12f);
+         final String valueStr = snapshot.getPrimaryStr();
+
+         glucosePaint.setTextAlign(Paint.Align.CENTER);
+         glucosePaint.setTextSize(Math.max(useglsize, canvasHeight * 0.46f));
+         float compactValueSize = glucosePaint.getTextSize();
+         float compactValueWidth = glucosePaint.measureText(valueStr);
+         final float compactMaxWidth = Math.max(1f, canvasWidth - compactInset * 2f);
+         if (compactValueWidth > compactMaxWidth) {
+            compactValueSize *= compactMaxWidth / compactValueWidth;
+            glucosePaint.setTextSize(compactValueSize);
+         }
+         Paint.FontMetrics compactMetrics = glucosePaint.getFontMetrics();
+         final float compactMaxHeight = canvasHeight * 0.58f;
+         final float compactTextHeight = compactMetrics.descent - compactMetrics.ascent;
+         if (compactTextHeight > compactMaxHeight) {
+            compactValueSize *= compactMaxHeight / compactTextHeight;
+            glucosePaint.setTextSize(compactValueSize);
+            compactMetrics = glucosePaint.getFontMetrics();
+         }
+         final float valueCenterY = canvasHeight * 0.50f;
+         final float valueBaseline = valueCenterY
+               - (compactMetrics.ascent + compactMetrics.descent) / 2f;
+         canvas.drawText(valueStr, canvasWidth / 2f, valueBaseline, glucosePaint);
+
+         if (arrowBitmap != null) {
+            final float rawArrowWidth = arrowBitmap.getWidth();
+            final float rawArrowHeight = arrowBitmap.getHeight();
+            final float maxArrowSize = Math.min(canvasWidth, canvasHeight) * 0.28f;
+            final float arrowScaleToFit = Math.min(1f,
+                  maxArrowSize / Math.max(1f, Math.max(rawArrowWidth, rawArrowHeight)));
+            final int drawArrowWidth = Math.max(1, Math.round(rawArrowWidth * arrowScaleToFit));
+            final int drawArrowHeight = Math.max(1, Math.round(rawArrowHeight * arrowScaleToFit));
+            final int arrowRight = Math.round(canvasWidth - compactInset);
+            final int arrowTop = Math.round(compactInset);
+            final Rect dst = new Rect(arrowRight - drawArrowWidth, arrowTop,
+                  arrowRight, arrowTop + drawArrowHeight);
+            canvas.drawBitmap(arrowBitmap, null, dst, null);
+         } else if (!isNaN(rate)) {
+            drawarrow(canvas, glucosePaint, usedensity, rate,
+                  canvasWidth - compactInset * 3f, compactInset * 3f);
+         }
+
+         glucosePaint.setTextSize(compactTimeSize);
+         glucosePaint.setTextAlign(Paint.Align.CENTER);
+         glucosePaint.setAlpha(200);
+         Paint.FontMetrics compactTimeMetrics = glucosePaint.getFontMetrics();
+         final float timeBaseline = canvasHeight - compactInset - compactTimeMetrics.descent;
+         canvas.drawText(timestr, canvasWidth / 2f, timeBaseline, glucosePaint);
+         glucosePaint.setAlpha(255);
+         glucosePaint.setTextAlign(Paint.Align.LEFT);
+
+         canvas.setBitmap(glucoseBitmap);
+         remoteViews.setImageViewBitmap(arrowandvalue, glucoseBitmap);
+         return remoteViews;
+      }
+
       glucosePaint.setTextSize(reducedTimeSize);
       Rect timeBounds = new Rect();
       glucosePaint.getTextBounds(timestr, 0, timestr.length(), timeBounds);
