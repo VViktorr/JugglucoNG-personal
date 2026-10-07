@@ -37,7 +37,6 @@ class WidgetRenderer(private val context: Context) {
             }
         }
         when (kind) {
-            WidgetKind.DIAL -> drawDial(canvas, width.toFloat(), height.toFloat(), config, snapshot)
             WidgetKind.RANGE -> drawRange(canvas, width.toFloat(), height.toFloat(), config, snapshot)
             WidgetKind.CLOCK_WEATHER -> drawClockWeather(canvas, width.toFloat(), height.toFloat(), config, snapshot, weather)
         }
@@ -190,30 +189,6 @@ class WidgetRenderer(private val context: Context) {
                 val p=fitText(label,w*0.18f,h*0.28f,foreground,100,false)
                 canvas.drawText(label,weatherX,baselineCenter(p,h*0.34f),p)
             }
-        }
-    }
-
-    private fun drawDial(canvas:Canvas,w:Float,h:Float,c:WidgetConfig,s:WidgetSnapshot){
-        val side=min(w,h); val cx=w/2f; val cy=h/2f; val r=side*0.38f
-        val track=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.STROKE;strokeWidth=side*0.07f;strokeCap=Paint.Cap.ROUND;color=0x44333333}
-        canvas.drawArc(RectF(cx-r,cy-r,cx+r,cy+r),135f,270f,false,track)
-        s.current?.let { cur ->
-            val minV=if(s.isMmol) 2f else 40f; val maxV=if(s.isMmol) 20f else 360f
-            val frac=((cur.primaryValue-minV)/(maxV-minV)).coerceIn(0f,1f)
-            track.color=contentColor(s,c)
-            canvas.drawArc(RectF(cx-r,cy-r,cx+r,cy+r),135f,270f*frac,false,track)
-            val angle=Math.toRadians((135f+270f*frac).toDouble())
-            canvas.drawCircle(cx+r*cos(angle).toFloat(),cy+r*sin(angle).toFloat(),side*0.055f,Paint(Paint.ANTI_ALIAS_FLAG).apply{color=contentColor(s,c)})
-        }
-        val p=fitText(s.valueText,side*0.58f,side*0.28f,contentColor(s,c),c.textScale,true)
-        canvas.drawText(s.valueText,cx,baselineCenter(p,cy),p)
-        if(c.showUnit){
-            val up=fitText(s.unitText,side*0.55f,side*0.09f,palette(s).second,100,false)
-            canvas.drawText(s.unitText,cx,cy-side*0.15f,up)
-        }
-        if(c.showTime) s.current?.let {
-            val tp=fitText(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)),side*0.5f,side*0.09f,palette(s).second,100,false)
-            canvas.drawText(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)),cx,cy+side*0.23f,tp)
         }
     }
 
