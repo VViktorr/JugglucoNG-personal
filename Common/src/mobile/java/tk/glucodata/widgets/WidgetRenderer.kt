@@ -127,7 +127,7 @@ class WidgetRenderer(private val context: Context) {
     }
 
     private fun configuredTypeface(config: WidgetConfig, bold: Boolean): Typeface {
-        val weight = if (bold) max(config.fontWeight, 500) else config.fontWeight
+        val weight = config.fontWeight
         return try {
             val base = if (config.fontFamily == WidgetFontFamily.IBM_PLEX) {
                 ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
@@ -152,7 +152,7 @@ class WidgetRenderer(private val context: Context) {
         textAlign = Paint.Align.CENTER
         typeface = configuredTypeface(config, bold)
         if (Build.VERSION.SDK_INT >= 26 && config.fontFamily == WidgetFontFamily.IBM_PLEX) {
-            fontVariationSettings = "'wght' ${if (bold) max(config.fontWeight, 500) else config.fontWeight}, 'wdth' 100"
+            fontVariationSettings = "'wght' ${config.fontWeight}, 'wdth' 100"
         }
     }
 
