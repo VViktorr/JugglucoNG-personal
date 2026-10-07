@@ -3150,9 +3150,6 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="widget_expressive">Glucose with chart</string>
     <string name="widget_expressive_description">Current glucose with trend and recent glucose chart.</string>
     <string name="widget_shared_display_settings">Shared font and trend settings</string>
-
-    <string name="widget_dial">Dial</string>
-    <string name="widget_dial_description">Glucose on a circular dial with trend context.</string>
     <string name="widget_range">Time in range</string>
     <string name="widget_range_description">Current glucose with time-in-range statistics.</string>
     <string name="widget_background">Background</string>
