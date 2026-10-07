@@ -3145,17 +3145,12 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="widget_settings_existing">Existing widgets</string>
     <string name="widget_settings_new">Additional widgets</string>
     <string name="widget_settings_data_note">Trend charts use the same app display history. NFC backfill is included after the full history merge and widgets refresh from the shared glucose update signal.</string>
-    <string name="widget_classic">Classic</string>
-    <string name="widget_classic_description">Original JugglucoNG widget. Automatically fills the selected launcher size, including 1×1.</string>
-    <string name="widget_expressive">Expressive</string>
-    <string name="widget_expressive_description">Current Glance widget with glucose and optional app chart.</string>
+    <string name="widget_classic">Basic</string>
+    <string name="widget_classic_description">Simple glucose value, trend arrow and reading age.</string>
+    <string name="widget_expressive">Glucose with chart</string>
+    <string name="widget_expressive_description">Current glucose with trend and recent glucose chart.</string>
     <string name="widget_shared_display_settings">Shared font and trend settings</string>
-    <string name="widget_minimal">Minimal</string>
-    <string name="widget_minimal_description">Large glucose value and trend, optimized for 1×1.</string>
-    <string name="widget_compact">Compact</string>
-    <string name="widget_compact_description">Slim row with trend, glucose, delta and time.</string>
-    <string name="widget_trend">Trend graph</string>
-    <string name="widget_trend_description">Current glucose with the same chart data used by the app.</string>
+
     <string name="widget_dial">Dial</string>
     <string name="widget_dial_description">Glucose on a circular dial with trend context.</string>
     <string name="widget_range">Time in range</string>
