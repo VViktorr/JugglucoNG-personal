@@ -77,7 +77,8 @@
 
         <receiver
             android:name=".GlucoseWidget"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/widget_classic">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
@@ -91,7 +92,8 @@
         <receiver
             android:name=".widget.ExpressiveWidgetReceiver"
             android:enabled="true"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_expressive">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
