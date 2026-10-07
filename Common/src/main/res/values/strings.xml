@@ -3162,6 +3162,10 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="widget_bg_none">Transparent</string>
     <string name="widget_opacity_value">Opacity: %1$d%%</string>
     <string name="widget_text_size_value">Text size: %1$d%%</string>
+    <string name="widget_time_size_value">Time size: %1$d%%</string>
+    <string name="widget_glucose_size_value">Glucose size: %1$d%%</string>
+    <string name="widget_weather_size_value">Weather size: %1$d%%</string>
+    <string name="widget_weather_shift_value">Weather toward clock: %1$d dp</string>
     <string name="widget_show_arrow">Show trend arrow</string>
     <string name="widget_show_delta">Show delta</string>
     <string name="widget_show_time">Show reading time</string>

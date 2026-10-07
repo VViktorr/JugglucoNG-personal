@@ -378,7 +378,12 @@ class HistoryRepository(context: Context = Applic.app) {
         ): List<tk.glucodata.GlucosePoint> {
             return kotlinx.coroutines.runBlocking {
                 HistoryRepository()
-                    .getDisplayHistory(preferredSerial, startTime)
+                    .loadMergedWindow(
+                        preferredSerial = preferredSerial,
+                        startTime = startTime,
+                        endTime = System.currentTimeMillis(),
+                        allowProvisional = false
+                    )
                     .inDisplayUnit(isMmol)
                     .map { p ->
                         tk.glucodata.GlucosePoint(p.timestamp, p.value, p.rawValue).also { out ->

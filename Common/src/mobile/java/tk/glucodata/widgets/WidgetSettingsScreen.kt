@@ -253,6 +253,21 @@ private fun WidgetDetailSettings(
 
         if (kind.hasWeather) {
             HorizontalDivider()
+
+            Text(stringResource(R.string.widget_time_size_value, config.timeScale))
+            Slider(
+                value = config.timeScale.toFloat(),
+                onValueChange = { onChange(config.copy(timeScale = (it / 5f).toInt() * 5)) },
+                valueRange = 70f..160f
+            )
+
+            Text(stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
+            Slider(
+                value = config.glucoseScale.toFloat(),
+                onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
+                valueRange = 70f..160f
+            )
+
             WidgetSwitch(stringResource(R.string.widget_show_date), config.showDate) {
                 onChange(config.copy(showDate = it))
             }
@@ -260,6 +275,20 @@ private fun WidgetDetailSettings(
                 onChange(config.copy(showWeather = it))
             }
             if (config.showWeather) {
+                Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
+                Slider(
+                    value = config.weatherScale.toFloat(),
+                    onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
+                    valueRange = 70f..180f
+                )
+
+                Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
+                Slider(
+                    value = config.weatherShiftDp.toFloat(),
+                    onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },
+                    valueRange = 0f..40f
+                )
+
                 WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
                     onChange(config.copy(showWeatherIcon = it))
                 }

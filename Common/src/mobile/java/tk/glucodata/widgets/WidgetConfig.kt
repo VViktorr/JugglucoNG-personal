@@ -52,6 +52,10 @@ data class WidgetConfig(
     val opacity: Int = 92,
     val shape: WidgetShape = WidgetShape.SYSTEM,
     val textScale: Int = 100,
+    val timeScale: Int = 100,
+    val glucoseScale: Int = 100,
+    val weatherScale: Int = 110,
+    val weatherShiftDp: Int = 12,
     val fontFamily: WidgetFontFamily = WidgetFontFamily.IBM_PLEX,
     val fontWeight: Int = 400,
     val rangeColors: Boolean = true,
@@ -72,6 +76,10 @@ data class WidgetConfig(
         .put("opacity", opacity)
         .put("shape", shape.name)
         .put("textScale", textScale)
+        .put("timeScale", timeScale)
+        .put("glucoseScale", glucoseScale)
+        .put("weatherScale", weatherScale)
+        .put("weatherShiftDp", weatherShiftDp)
         .put("fontFamily", fontFamily.name)
         .put("fontWeight", fontWeight)
         .put("rangeColors", rangeColors)
@@ -100,6 +108,10 @@ data class WidgetConfig(
                     opacity = json.optInt("opacity", fallback.opacity).coerceIn(0, 100),
                     shape = enum(json.optString("shape"), fallback.shape),
                     textScale = json.optInt("textScale", fallback.textScale).coerceIn(70, 140),
+                    timeScale = json.optInt("timeScale", fallback.timeScale).coerceIn(70, 160),
+                    glucoseScale = json.optInt("glucoseScale", fallback.glucoseScale).coerceIn(70, 160),
+                    weatherScale = json.optInt("weatherScale", fallback.weatherScale).coerceIn(70, 180),
+                    weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 40),
                     fontFamily = enum(json.optString("fontFamily"), fallback.fontFamily),
                     fontWeight = json.optInt("fontWeight", fallback.fontWeight).coerceIn(300, 700),
                     rangeColors = json.optBoolean("rangeColors", fallback.rangeColors),

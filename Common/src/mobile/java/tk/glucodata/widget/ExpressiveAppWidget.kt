@@ -187,10 +187,13 @@ class ExpressiveAppWidget : GlanceAppWidget() {
 
         val isMmol = GlucoseFormatter.isMmolApp()
         val fontSize = config.textScale / 100f
+        val glucoseScale = config.glucoseScale / 100f
+        val timeScale = config.timeScale / 100f
+        val weatherScale = config.weatherScale / 100f
         val fontWeight = config.fontWeight
         val useSystemFont = config.fontFamily == WidgetFontFamily.SYSTEM
         val showArrow = config.showArrow
-        val arrowScale = (config.textScale / 100f).coerceIn(0.7f, 1.4f)
+        val arrowScale = (config.textScale / 100f * glucoseScale).coerceIn(0.7f, 1.8f)
 
         val freshDisplay = currentDisplay?.takeIf { dataState.isFresh }
         val displayValue = freshDisplay?.primaryValue ?: 0f
@@ -211,7 +214,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     context,
                     it,
                     glucoseColor,
-                    fontSize,
+                    fontSize * glucoseScale,
                     fontWeight,
                     useSystemFont
                 )
@@ -259,6 +262,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.surface)
+                .cornerRadius(24.dp)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -281,7 +285,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     }
                     val dateText = remember(now, config.showDate) {
                         if (config.showDate) {
-                            java.text.SimpleDateFormat("EEE, d MMM", java.util.Locale.getDefault()).format(now)
+                            java.text.SimpleDateFormat("EEEE, d MMMM", java.util.Locale.getDefault()).format(now)
                         } else ""
                     }
 
@@ -300,7 +304,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         config.textScale,
                         primaryTextColor
                     ) {
-                        textBitmap(context, timeText, 27f, config, primaryTextColor)
+                        textBitmap(context, timeText, 27f * timeScale, config, primaryTextColor)
                     }
                     val dateBitmap = remember(
                         dateText,
@@ -309,7 +313,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         config.textScale,
                         secondaryTextColor
                     ) {
-                        if (dateText.isBlank()) null else textBitmap(context, dateText, 11f, config, secondaryTextColor)
+                        if (dateText.isBlank()) null else textBitmap(context, dateText, 11f * timeScale, config, secondaryTextColor)
                     }
 
                     Column(
@@ -343,14 +347,18 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                             config.fontFamily,
                             config.fontWeight,
                             config.textScale,
+                            config.weatherScale,
                             primaryTextColor
                         ) {
-                            textBitmap(context, weatherText, 17f, config, primaryTextColor)
+                            textBitmap(context, weatherText, 17f * weatherScale, config, primaryTextColor)
                         }
                         Image(
                             provider = ImageProvider(weatherBitmap),
                             contentDescription = "Weather",
-                            modifier = GlanceModifier.padding(horizontal = 8.dp)
+                            modifier = GlanceModifier.padding(
+                                start = 4.dp,
+                                end = (4 + config.weatherShiftDp).dp
+                            )
                         )
                     }
 

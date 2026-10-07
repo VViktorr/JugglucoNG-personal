@@ -103,11 +103,23 @@ class WidgetRenderer(private val context: Context) {
             Color.green(base),
             Color.blue(base)
         )
+        // Widget corner radius must not grow with widget height. Percentage-based
+        // radii created the large cut-outs visible after resizing a widget.
+        val systemRadiusId = context.resources.getIdentifier(
+            "system_app_widget_background_radius",
+            "dimen",
+            "android"
+        )
+        val systemRadius = if (systemRadiusId != 0) {
+            context.resources.getDimension(systemRadiusId)
+        } else {
+            24f * density
+        }
         val radius = when (config.shape) {
             WidgetShape.PILL -> min(w, h) / 2f
-            WidgetShape.ROUND -> min(w, h) * 0.22f
+            WidgetShape.ROUND -> 24f * density
             WidgetShape.SQUARE -> 6f * density
-            WidgetShape.SYSTEM -> min(w, h) * 0.18f
+            WidgetShape.SYSTEM -> systemRadius
         }
         canvas.drawRoundRect(
             0f,
@@ -259,8 +271,11 @@ class WidgetRenderer(private val context: Context) {
             if (dark || c.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
         val compact = w / h >= 3.0f
         val clockX = w * 0.18f
-        val weatherX = w * 0.47f
+        val weatherX = (w * 0.47f - c.weatherShiftDp * density)
+            .coerceIn(w * 0.30f, w * 0.52f)
         val glucoseCenterX = w * 0.79f
+        fun componentScale(component: Int): Int =
+            (c.textScale * component / 100f).roundToInt().coerceIn(55, 220)
 
         val now = java.util.Date()
         val timeText = android.text.format.DateFormat.getTimeFormat(context).format(now)
@@ -269,7 +284,7 @@ class WidgetRenderer(private val context: Context) {
             w * 0.31f,
             if (compact) h * 0.52f else h * 0.44f,
             foreground,
-            c.textScale,
+            componentScale(c.timeScale),
             c,
             true
         )
@@ -282,7 +297,7 @@ class WidgetRenderer(private val context: Context) {
 
         if (c.showDate) {
             val dateText = java.text.SimpleDateFormat(
-                if (compact) "EEE, d MMM" else "EEEE, d MMMM",
+                "EEEE, d MMMM",
                 java.util.Locale.getDefault()
             ).format(now)
             val datePaint = fitText(
@@ -290,7 +305,7 @@ class WidgetRenderer(private val context: Context) {
                 w * 0.33f,
                 h * 0.18f,
                 foreground,
-                90,
+                componentScale((c.timeScale * 90f / 100f).roundToInt()),
                 c,
                 false
             )
@@ -312,7 +327,15 @@ class WidgetRenderer(private val context: Context) {
                 (if (c.showWeatherIcon) "$symbol " else "") +
                     (if (c.showTemperature) "${weather.temperatureC}°" else "")
             if (label.isNotBlank()) {
-                val p = fitText(label, w * 0.18f, h * 0.33f, foreground, 100, c, false)
+                val p = fitText(
+                    label,
+                    w * 0.22f,
+                    h * 0.38f,
+                    foreground,
+                    componentScale(c.weatherScale),
+                    c,
+                    false
+                )
                 canvas.drawText(label, weatherX, baselineCenter(p, h * 0.48f), p)
             }
         }
@@ -325,7 +348,7 @@ class WidgetRenderer(private val context: Context) {
             valueMaxW,
             h * 0.58f,
             glucoseColor,
-            c.textScale,
+            componentScale(c.glucoseScale),
             c,
             true
         )

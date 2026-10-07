@@ -149,6 +149,22 @@ class RemoteGlucose {
       return baseForegroundColor;
    }
 
+   private void drawWidgetBackground() {
+      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      backgroundPaint.setColor(LEGACY_WIDGET_DIM_COLOR);
+      float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
+      float radius = 24.0f * Math.max(1.0f, displayDensity);
+      canvas.drawRoundRect(
+            0.0f,
+            0.0f,
+            canvas.getWidth(),
+            canvas.getHeight(),
+            radius,
+            radius,
+            backgroundPaint);
+   }
+
    private JSONObject basicWidgetConfig() {
       try {
          var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
@@ -231,8 +247,7 @@ class RemoteGlucose {
       final int canvasHeight = canvas.getHeight();
       float rate = snapshot.getRate();
 
-      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-      canvas.drawColor(LEGACY_WIDGET_DIM_COLOR);
+      drawWidgetBackground();
       glucosePaint.setColor(glucoseColor);
       applyWidgetTypeface(glucosePaint);
 
