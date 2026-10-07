@@ -156,7 +156,6 @@ object WidgetConfigStore {
 
     private fun defaults(context: Context, kind: WidgetSettingsKind): WidgetConfig {
         val base = kind.baseDefault()
-        if (kind != WidgetSettingsKind.BASIC && kind != WidgetSettingsKind.CHART) return base
         val legacy = context.applicationContext
             .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
         return base.copy(
