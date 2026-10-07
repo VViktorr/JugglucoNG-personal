@@ -220,6 +220,16 @@ public static void oldvalue(long time) {
       }
 
    }
+ public static void refreshSettings() {
+    synchronized (widgetLock) {
+       remote = null;
+       width = 0;
+       height = 0;
+       lastUpdateElapsedRealtime = 0L;
+    }
+    update();
+    }
+
  public static void update() {
     if (Applic.isWearable) {
       // The watch has no home-screen widget. This class is compiled into both
