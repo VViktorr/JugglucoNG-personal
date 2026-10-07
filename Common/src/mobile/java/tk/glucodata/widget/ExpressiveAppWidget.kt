@@ -30,6 +30,7 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.width
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.FontFamily
@@ -46,11 +47,13 @@ import tk.glucodata.MainActivity
 import tk.glucodata.NotificationChartDrawer
 import tk.glucodata.R
 import tk.glucodata.WidgetDisplaySource
+import tk.glucodata.widgets.WidgetWeather
+import tk.glucodata.widgets.WidgetWeatherSource
 import tk.glucodata.ui.util.GlucoseFormatter
 
 class ExpressiveAppWidget : GlanceAppWidget() {
     private companion object {
-        val HeaderHeight = 78.dp
+        val HeaderHeight = 88.dp
         val CardGap = 10.dp
         val DividerHeight = 3.dp
         val DividerInset = 26.dp
@@ -77,7 +80,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     dataState = state.dataState,
                     activeSensorSerial = state.activeSensorSerial,
                     viewMode = state.viewMode,
-                    hasCalibration = state.hasCalibration
+                    hasCalibration = state.hasCalibration,
+                    weather = state.weather
                 )
             }
         }
@@ -89,7 +93,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val dataState: DisplayDataState.Status,
         val activeSensorSerial: String?,
         val viewMode: Int,
-        val hasCalibration: Boolean
+        val hasCalibration: Boolean,
+        val weather: WidgetWeather?
     )
 
     private fun loadWidgetState(): WidgetState {
@@ -100,13 +105,21 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val viewMode = resolvedDisplay?.viewMode ?: WidgetDisplaySource.resolveViewMode(activeSensorSerial)
         val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
         val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
+        val weather = runCatching {
+            if (WidgetWeatherSource.needsRefresh(tk.glucodata.Applic.app)) {
+                WidgetWeatherSource.load(tk.glucodata.Applic.app)
+            } else {
+                WidgetWeatherSource.cached(tk.glucodata.Applic.app)
+            }
+        }.getOrElse { WidgetWeatherSource.cached(tk.glucodata.Applic.app) }
         return WidgetState(
             currentDisplay = resolvedDisplay,
             history = chartHistory,
             dataState = dataState,
             activeSensorSerial = activeSensorSerial,
             viewMode = viewMode,
-            hasCalibration = hasCalibration
+            hasCalibration = hasCalibration,
+            weather = weather
         )
     }
 
@@ -117,7 +130,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         dataState: DisplayDataState.Status,
         activeSensorSerial: String?,
         viewMode: Int,
-        hasCalibration: Boolean
+        hasCalibration: Boolean,
+        weather: WidgetWeather?
     ) {
         val context = LocalContext.current
         val size = LocalSize.current
@@ -204,39 +218,103 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     .height(HeaderHeight)
                     .background(GlanceTheme.colors.surface)
                     .cornerRadius(24.dp)
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (valueBitmap != null) {
-                    Row(
-                        modifier = GlanceModifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,
+                Row(
+                    modifier = GlanceModifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val now = remember(currentDisplay?.timeMillis, dataState) { java.util.Date() }
+                    val timeText = remember(now) {
+                        android.text.format.DateFormat.getTimeFormat(context).format(now)
+                    }
+                    val dateText = remember(now) {
+                        java.text.SimpleDateFormat("EEE, d MMM", java.util.Locale.getDefault()).format(now)
+                    }
+
+                    Column(
+                        modifier = GlanceModifier.defaultWeight(),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Image(
-                            provider = ImageProvider(valueBitmap),
-                            contentDescription = "Glucose"
+                        Text(
+                            text = timeText,
+                            style = TextStyle(
+                                color = GlanceTheme.colors.onSurface,
+                                fontSize = 27.sp,
+                                fontFamily = FontFamily("sans-serif")
+                            ),
+                            maxLines = 1
                         )
+                        Text(
+                            text = dateText,
+                            style = TextStyle(
+                                color = GlanceTheme.colors.onSurfaceVariant,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily("sans-serif")
+                            ),
+                            maxLines = 1
+                        )
+                    }
 
-                        Spacer(GlanceModifier.defaultWeight())
-
-                        if (arrowBitmap != null) {
-                            Image(
-                                provider = ImageProvider(arrowBitmap),
-                                contentDescription = "Trend"
-                            )
+                    val weatherText = remember(weather) {
+                        weather?.let { w ->
+                            val symbol = when (w.weatherCode) {
+                                0 -> "☀"
+                                1, 2 -> "⛅"
+                                3 -> "☁"
+                                in 45..48 -> "≋"
+                                in 51..67, in 80..82 -> "☂"
+                                in 71..77, in 85..86 -> "❄"
+                                in 95..99 -> "ϟ"
+                                else -> "☁"
+                            }
+                            "$symbol ${w.temperatureC}°"
                         }
                     }
-                } else {
-                    Text(
-                        text = fallbackText,
-                        style = TextStyle(
-                            color = GlanceTheme.colors.onSurfaceVariant,
-                            fontSize = 15.sp,
-                            fontFamily = FontFamily("sans-serif")
-                        ),
-                        maxLines = 1
-                    )
+                    if (!weatherText.isNullOrBlank()) {
+                        Text(
+                            text = weatherText,
+                            modifier = GlanceModifier.padding(horizontal = 8.dp),
+                            style = TextStyle(
+                                color = GlanceTheme.colors.onSurface,
+                                fontSize = 17.sp,
+                                fontFamily = FontFamily("sans-serif")
+                            ),
+                            maxLines = 1
+                        )
+                    }
+
+                    if (valueBitmap != null) {
+                        Row(
+                            modifier = GlanceModifier.defaultWeight(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Image(
+                                provider = ImageProvider(valueBitmap),
+                                contentDescription = "Glucose"
+                            )
+                            if (arrowBitmap != null) {
+                                Spacer(GlanceModifier.width(4.dp))
+                                Image(
+                                    provider = ImageProvider(arrowBitmap),
+                                    contentDescription = "Trend"
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = fallbackText,
+                            modifier = GlanceModifier.defaultWeight(),
+                            style = TextStyle(
+                                color = GlanceTheme.colors.onSurfaceVariant,
+                                fontSize = 13.sp,
+                                fontFamily = FontFamily("sans-serif")
+                            ),
+                            maxLines = 1
+                        )
+                    }
                 }
             }
 
