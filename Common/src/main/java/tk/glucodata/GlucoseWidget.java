@@ -37,6 +37,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.RemoteViews;
+import org.json.JSONObject;
 
 public class GlucoseWidget extends AppWidgetProvider {
     private static final String ACTION_GLUCOSE_UPDATE = "tk.glucodata.action.GLUCOSE_UPDATE";
@@ -64,7 +65,18 @@ private static void setSize(int widthdip, int heightdip) {
         // a resized 1x1 widget render a short bitmap inside a much taller host.
         final float widthDrivenSize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
         final float heightDrivenSize = heightpx * 0.72f;
-        final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize));
+        float textScale = 1.0f;
+        try {
+            var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
+            var raw = prefs.getString("BASIC", null);
+            if (raw != null) {
+                textScale = Math.max(0.70f, Math.min(1.40f, new JSONObject(raw).optInt("textScale", 100) / 100.0f));
+            } else {
+                textScale = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                        .getFloat("notification_font_size", 1.0f);
+            }
+        } catch (Throwable ignored) {}
+        final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize) * textScale);
         remote = new RemoteGlucose(fontsize, widthpx, heightpx,
                 Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
         width = widthdip;
