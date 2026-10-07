@@ -385,7 +385,14 @@ public:
     const int32_t lastpos = infoblockptr()->last;
     pathconcat sdir(inbasedir, name);
     mkdir(sdir.data(), 0700);
-    SensorGlucoseData::initInfoFile(pathconcat(sdir, "info.dat"), 14, 3);
+    // Classic Libre creation calls SensorGlucoseData::mkdatabase() before
+    // addsensor(), so its info.dat already contains the Abbott UID, patch info,
+    // timing and streaming metadata. Do not re-initialize that file here.
+    // initInfoFile() is only for NG drivers that create an empty sensor shell.
+    pathconcat infofile(sdir, "info.dat");
+    if (access(infofile.data(), F_OK) == -1) {
+      SensorGlucoseData::initInfoFile(infofile.data(), 14, 3);
+    }
     SensorGlucoseData *histel =
         minimumPollRecords > 0
             ? new SensorGlucoseData(
