@@ -11,14 +11,11 @@ enum class WidgetKind(
     val defaultWidthDp: Float,
     val defaultHeightDp: Float
 ) {
-    MINIMAL(MinimalGlucoseWidget::class.java, R.string.widget_minimal, R.string.widget_minimal_description, 150f, 80f),
-    COMPACT(CompactGlucoseWidget::class.java, R.string.widget_compact, R.string.widget_compact_description, 200f, 72f),
-    TREND(TrendGlucoseWidget::class.java, R.string.widget_trend, R.string.widget_trend_description, 320f, 160f),
     DIAL(DialGlucoseWidget::class.java, R.string.widget_dial, R.string.widget_dial_description, 160f, 160f),
     RANGE(RangeGlucoseWidget::class.java, R.string.widget_range, R.string.widget_range_description, 320f, 150f),
     CLOCK_WEATHER(ClockWeatherWidget::class.java, R.string.widget_clock_weather, R.string.widget_clock_weather_description, 320f, 104f);
 
-    val hasGraph: Boolean get() = this == TREND
+    val hasGraph: Boolean get() = false
     val hasStats: Boolean get() = this == RANGE
 }
 
@@ -96,9 +93,6 @@ data class WidgetConfig(
 }
 
 fun WidgetKind.defaultConfig(): WidgetConfig = when (this) {
-    WidgetKind.MINIMAL -> WidgetConfig(background = WidgetBackground.TRANSPARENT, showDelta = false, showUnit = false)
-    WidgetKind.COMPACT -> WidgetConfig(shape = WidgetShape.PILL)
-    WidgetKind.TREND -> WidgetConfig(graphHours = 6)
     WidgetKind.DIAL -> WidgetConfig(shape = WidgetShape.ROUND, showTime = true)
     WidgetKind.RANGE -> WidgetConfig(statsPeriod = WidgetStatsPeriod.DAY)
     WidgetKind.CLOCK_WEATHER -> WidgetConfig(background = WidgetBackground.SURFACE, opacity = 65, shape = WidgetShape.ROUND, showTime = false)
