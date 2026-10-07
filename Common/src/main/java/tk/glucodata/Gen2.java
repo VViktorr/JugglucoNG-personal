@@ -156,7 +156,14 @@ static private final int scanner(NfcV nfc, byte[] uid, byte b, byte[] uitar) {
         if(goodnfc(a)) {
 	        {if(doLog) {Log.d(LOG_ID,"scanner goodnfc");};};
         	byte[] result = copyOfRange(a, 1, a.length);
-        	return v1v2addcommand(b, numb,uid, result, uitar);
+        	int scannerRes = v1v2addcommand(b, numb, uid, result, uitar);
+        	// Some Libre2 profiles fail the newer nonce path but still accept
+        	// the legacy command layout (numb=0). Retry only after failure.
+        	if (scannerRes < 0 && newVersion && numb != 0) {
+        	    {if(doLog) {Log.w(LOG_ID, "scanner newVersion failed (" + scannerRes + "), retrying legacy path");};};
+        	    scannerRes = v1v2addcommand(b, 0, uid, result, uitar);
+        	}
+        	return scannerRes;
 	        }
 	    else {
 			if(a==null)
