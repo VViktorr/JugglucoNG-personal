@@ -2958,9 +2958,6 @@
     <string name="widget_expressive">Glukoza z wykresem</string>
     <string name="widget_expressive_description">Aktualna glikemia, trend i wykres ostatnich odczytów.</string>
     <string name="widget_shared_display_settings">Wspólne ustawienia czcionki i trendu</string>
-
-    <string name="widget_dial">Tarcza</string>
-    <string name="widget_dial_description">Glukoza na okrągłej tarczy z kontekstem trendu.</string>
     <string name="widget_range">Czas w zakresie</string>
     <string name="widget_range_description">Aktualna glukoza i statystyka czasu w zakresie.</string>
     <string name="widget_background">Tło</string>
