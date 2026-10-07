@@ -180,8 +180,9 @@ final    private static String LOG_ID="GlucoseWidget";
 
     @Override
     public void onEnabled(Context context) {
-   used=true;
-        // Enter relevant functionality for when the first widget is created
+        used=true;
+        // Do not wait for the next glucose broadcast after the launcher recreates the host.
+        update();
     }
 
     @Override
@@ -214,7 +215,6 @@ public static void oldvalue(long time) {
       return;
     }
     try {
-    if(used) {
       final long now = SystemClock.elapsedRealtime();
       synchronized (widgetLock) {
          if ((now - lastUpdateElapsedRealtime) < MIN_UPDATE_INTERVAL_MS) {
@@ -228,9 +228,6 @@ public static void oldvalue(long time) {
       if(ids.length>0) {
          updateall(Applic.app, manage, ids);
          }
-      else
-         used=false;
-      }
     } catch (Throwable th) {
       Log.stack(LOG_ID, "update()", th);
     }
