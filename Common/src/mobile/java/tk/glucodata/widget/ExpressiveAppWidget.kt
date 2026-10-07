@@ -262,7 +262,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.surface)
-                .cornerRadius(24.dp)
+                .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -271,7 +271,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     .fillMaxWidth()
                     .height(HeaderHeight)
                     .background(GlanceTheme.colors.surface)
-                    .cornerRadius(24.dp)
+                    .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -420,7 +420,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         .fillMaxWidth()
                         .defaultWeight()
                         .background(GlanceTheme.colors.surface)
-                        .cornerRadius(18.dp),
+                        .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(

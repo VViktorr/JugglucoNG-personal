@@ -103,24 +103,9 @@ class WidgetRenderer(private val context: Context) {
             Color.green(base),
             Color.blue(base)
         )
-        // Widget corner radius must not grow with widget height. Percentage-based
-        // radii created the large cut-outs visible after resizing a widget.
-        val systemRadiusId = context.resources.getIdentifier(
-            "system_app_widget_background_radius",
-            "dimen",
-            "android"
-        )
-        val systemRadius = if (systemRadiusId != 0) {
-            context.resources.getDimension(systemRadiusId)
-        } else {
-            24f * density
-        }
-        val radius = when (config.shape) {
-            WidgetShape.PILL -> min(w, h) / 2f
-            WidgetShape.ROUND -> 24f * density
-            WidgetShape.SQUARE -> 6f * density
-            WidgetShape.SYSTEM -> systemRadius
-        }
+        // One explicit radius for every widget. Zero means the app draws a
+        // rectangular surface and leaves any launcher masking entirely to Android.
+        val radius = config.cornerRadiusDp.coerceIn(0, 24) * density
         canvas.drawRoundRect(
             0f,
             0f,

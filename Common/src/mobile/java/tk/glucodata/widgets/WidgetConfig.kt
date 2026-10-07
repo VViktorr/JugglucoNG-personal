@@ -51,6 +51,7 @@ data class WidgetConfig(
     val background: WidgetBackground = WidgetBackground.SURFACE,
     val opacity: Int = 92,
     val shape: WidgetShape = WidgetShape.SYSTEM,
+    val cornerRadiusDp: Int = 0,
     val textScale: Int = 100,
     val timeScale: Int = 100,
     val glucoseScale: Int = 100,
@@ -75,6 +76,7 @@ data class WidgetConfig(
         .put("background", background.name)
         .put("opacity", opacity)
         .put("shape", shape.name)
+        .put("cornerRadiusDp", cornerRadiusDp)
         .put("textScale", textScale)
         .put("timeScale", timeScale)
         .put("glucoseScale", glucoseScale)
@@ -107,6 +109,7 @@ data class WidgetConfig(
                     background = enum(json.optString("background"), fallback.background),
                     opacity = json.optInt("opacity", fallback.opacity).coerceIn(0, 100),
                     shape = enum(json.optString("shape"), fallback.shape),
+                    cornerRadiusDp = json.optInt("cornerRadiusDp", fallback.cornerRadiusDp).coerceIn(0, 24),
                     textScale = json.optInt("textScale", fallback.textScale).coerceIn(70, 140),
                     timeScale = json.optInt("timeScale", fallback.timeScale).coerceIn(70, 160),
                     glucoseScale = json.optInt("glucoseScale", fallback.glucoseScale).coerceIn(70, 160),
@@ -146,7 +149,7 @@ private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
     WidgetSettingsKind.CHART -> WidgetConfig(
         background = WidgetBackground.SURFACE,
         opacity = 100,
-        shape = WidgetShape.SYSTEM,
+        cornerRadiusDp = 0,
         showTime = false,
         graphHours = 6,
         showTargetBand = true
@@ -155,7 +158,7 @@ private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
     WidgetSettingsKind.CLOCK_WEATHER -> WidgetConfig(
         background = WidgetBackground.SURFACE,
         opacity = 65,
-        shape = WidgetShape.ROUND,
+        cornerRadiusDp = 0,
         showTime = false
     )
 }

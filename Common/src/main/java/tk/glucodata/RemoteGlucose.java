@@ -154,7 +154,8 @@ class RemoteGlucose {
       Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
       backgroundPaint.setColor(LEGACY_WIDGET_DIM_COLOR);
       float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
-      float radius = 24.0f * Math.max(1.0f, displayDensity);
+      float radiusDp = Math.max(0, Math.min(24, basicWidgetInt("cornerRadiusDp", 0)));
+      float radius = radiusDp * Math.max(1.0f, displayDensity);
       canvas.drawRoundRect(
             0.0f,
             0.0f,

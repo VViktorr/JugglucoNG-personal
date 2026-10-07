@@ -2970,6 +2970,7 @@
     <string name="widget_bg_none">Przezroczyste</string>
     <string name="widget_opacity_value">Krycie: %1$d%%</string>
     <string name="widget_text_size_value">Rozmiar tekstu: %1$d%%</string>
+    <string name="widget_corner_radius_value">Zaokrąglenie rogów: %1$d dp</string>
     <string name="widget_time_size_value">Rozmiar czasu: %1$d%%</string>
     <string name="widget_glucose_size_value">Rozmiar glukozy: %1$d%%</string>
     <string name="widget_weather_size_value">Rozmiar pogody: %1$d%%</string>

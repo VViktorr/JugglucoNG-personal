@@ -209,6 +209,14 @@ private fun WidgetDetailSettings(
             valueRange = 70f..140f
         )
 
+        Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
+        Slider(
+            value = config.cornerRadiusDp.toFloat(),
+            onValueChange = { onChange(config.copy(cornerRadiusDp = it.toInt().coerceIn(0, 24))) },
+            valueRange = 0f..24f,
+            steps = 23
+        )
+
         HorizontalDivider()
         WidgetSwitch(stringResource(R.string.widget_show_arrow), config.showArrow) {
             onChange(config.copy(showArrow = it))
