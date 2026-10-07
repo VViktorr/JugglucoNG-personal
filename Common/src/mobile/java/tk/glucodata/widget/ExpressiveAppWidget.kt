@@ -2,6 +2,13 @@ package tk.glucodata.widget
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.os.Build
+import androidx.core.content.res.ResourcesCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +55,7 @@ import tk.glucodata.NotificationChartDrawer
 import tk.glucodata.R
 import tk.glucodata.WidgetDisplaySource
 import tk.glucodata.widgets.WidgetWeather
+import tk.glucodata.widgets.WidgetConfig
 import tk.glucodata.widgets.WidgetConfigStore
 import tk.glucodata.widgets.WidgetSettingsKind
 import tk.glucodata.widgets.WidgetFontFamily
@@ -60,7 +68,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val CardGap = 10.dp
         val DividerHeight = 3.dp
         val DividerInset = 26.dp
-        const val ChartReservedHeightDp = 122f
+        const val ChartReservedHeightDp = 92f
     }
 
     override val sizeMode = SizeMode.Exact
@@ -100,15 +108,55 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val weather: WidgetWeather?
     )
 
+    private fun widgetTypeface(context: Context, config: WidgetConfig): Typeface {
+        return try {
+            val base = if (config.fontFamily == WidgetFontFamily.IBM_PLEX) {
+                ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
+                    ?: Typeface.create("sans-serif", Typeface.NORMAL)
+            } else {
+                Typeface.create("sans-serif", Typeface.NORMAL)
+            }
+            if (Build.VERSION.SDK_INT >= 28) Typeface.create(base, config.fontWeight, false) else base
+        } catch (_: Throwable) {
+            Typeface.create("sans-serif", Typeface.NORMAL)
+        }
+    }
+
+    private fun textBitmap(
+        context: Context,
+        text: String,
+        sizeSp: Float,
+        config: WidgetConfig,
+        color: Int
+    ): Bitmap {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = sizeSp * context.resources.displayMetrics.scaledDensity * (config.textScale / 100f)
+            this.color = color
+            typeface = widgetTypeface(context, config)
+            if (Build.VERSION.SDK_INT >= 26 && config.fontFamily == WidgetFontFamily.IBM_PLEX) {
+                fontVariationSettings = "'wght' ${config.fontWeight}, 'wdth' 100"
+            }
+        }
+        val fm = paint.fontMetrics
+        val pad = (3f * context.resources.displayMetrics.density).coerceAtLeast(2f)
+        val width = (paint.measureText(text) + pad * 2f).roundToInt().coerceAtLeast(1)
+        val height = ((fm.descent - fm.ascent) + pad * 2f).roundToInt().coerceAtLeast(1)
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+            Canvas(bitmap).drawText(text, pad, pad - fm.ascent, paint)
+        }
+    }
+
     private fun loadWidgetState(): WidgetState {
+        val widgetConfig = WidgetConfigStore.load(tk.glucodata.Applic.app, WidgetSettingsKind.CHART)
+        val chartWindowMs = widgetConfig.graphHours * 3_600_000L
         val currentDisplay = WidgetDisplaySource.resolveWidgetSnapshot()
-        val chartHistory = WidgetDisplaySource.resolveChartHistory(currentDisplay, WidgetDisplaySource.CHART_WINDOW_MS)
+        val chartHistory = WidgetDisplaySource.resolveChartHistory(currentDisplay, chartWindowMs)
         val activeSensorSerial = currentDisplay?.sensorId ?: WidgetDisplaySource.resolveActiveSensorSerial()
         val resolvedDisplay = WidgetDisplaySource.resolveDisplaySnapshot(currentDisplay, chartHistory, activeSensorSerial)
         val viewMode = resolvedDisplay?.viewMode ?: WidgetDisplaySource.resolveViewMode(activeSensorSerial)
         val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
         val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
-        val weather = runCatching {
+        val weather = if (!widgetConfig.showWeather) null else runCatching {
             if (WidgetWeatherSource.needsRefresh(tk.glucodata.Applic.app)) {
                 WidgetWeatherSource.load(tk.glucodata.Applic.app)
             } else {
@@ -117,8 +165,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         }.getOrElse { WidgetWeatherSource.cached(tk.glucodata.Applic.app) }
         return WidgetState(
             currentDisplay = resolvedDisplay,
-            history = chartHistory,
-            dataState = dataState,
+            history = chartHistory,            dataState = dataState,
             activeSensorSerial = activeSensorSerial,
             viewMode = viewMode,            hasCalibration = hasCalibration,
             weather = weather
@@ -234,27 +281,41 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         } else ""
                     }
 
+                    val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
+                    val primaryTextColor = if (dark) Color.WHITE else 0xFF1D1B20.toInt()
+                    val secondaryTextColor = Color.argb(
+                        200,
+                        Color.red(primaryTextColor),
+                        Color.green(primaryTextColor),
+                        Color.blue(primaryTextColor)
+                    )
+                    val timeBitmap = remember(
+                        timeText,
+                        config.fontFamily,
+                        config.fontWeight,
+                        config.textScale,
+                        primaryTextColor
+                    ) {
+                        textBitmap(context, timeText, 27f, config, primaryTextColor)
+                    }
+                    val dateBitmap = remember(
+                        dateText,
+                        config.fontFamily,
+                        config.fontWeight,
+                        config.textScale,
+                        secondaryTextColor
+                    ) {
+                        if (dateText.isBlank()) null else textBitmap(context, dateText, 11f, config, secondaryTextColor)
+                    }
+
                     Column(
                         modifier = GlanceModifier.defaultWeight(),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Text(                            text = timeText,
-                            style = TextStyle(
-                                color = GlanceTheme.colors.onSurface,
-                                fontSize = 27.sp,
-                                fontFamily = FontFamily("sans-serif")
-                            ),
-                            maxLines = 1
-                        )
-                        if (dateText.isNotBlank()) Text(
-                            text = dateText,
-                            style = TextStyle(
-                                color = GlanceTheme.colors.onSurfaceVariant,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily("sans-serif")
-                            ),
-                            maxLines = 1
-                        )
+                        Image(provider = ImageProvider(timeBitmap), contentDescription = "Time")
+                        if (dateBitmap != null) {
+                            Image(provider = ImageProvider(dateBitmap), contentDescription = "Date")
+                        }
                     }
 
                     val weatherText = remember(weather, config.showWeather, config.showWeatherIcon, config.showTemperature) {
@@ -274,15 +335,19 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         }?.takeIf { it.isNotBlank() }
                     }
                     if (!weatherText.isNullOrBlank()) {
-                        Text(
-                            text = weatherText,
-                            modifier = GlanceModifier.padding(horizontal = 8.dp),
-                            style = TextStyle(
-                                color = GlanceTheme.colors.onSurface,
-                                fontSize = 17.sp,
-                                fontFamily = FontFamily("sans-serif")
-                            ),
-                            maxLines = 1
+                        val weatherBitmap = remember(
+                            weatherText,
+                            config.fontFamily,
+                            config.fontWeight,
+                            config.textScale,
+                            primaryTextColor
+                        ) {
+                            textBitmap(context, weatherText, 17f, config, primaryTextColor)
+                        }
+                        Image(
+                            provider = ImageProvider(weatherBitmap),
+                            contentDescription = "Weather",
+                            modifier = GlanceModifier.padding(horizontal = 8.dp)
                         )
                     }
 
@@ -305,15 +370,19 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                             }
                         }
                     } else {
-                        Text(
-                            text = fallbackText,
-                            modifier = GlanceModifier.defaultWeight(),
-                            style = TextStyle(
-                                color = GlanceTheme.colors.onSurfaceVariant,
-                                fontSize = 13.sp,
-                                fontFamily = FontFamily("sans-serif")
-                            ),
-                            maxLines = 1
+                        val fallbackBitmap = remember(
+                            fallbackText,
+                            config.fontFamily,
+                            config.fontWeight,
+                            config.textScale,
+                            secondaryTextColor
+                        ) {
+                            textBitmap(context, fallbackText, 13f, config, secondaryTextColor)
+                        }
+                        Image(
+                            provider = ImageProvider(fallbackBitmap),
+                            contentDescription = fallbackText,
+                            modifier = GlanceModifier.defaultWeight()
                         )
                     }
                 }
