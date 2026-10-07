@@ -14,6 +14,7 @@ enum class WidgetKind(
     RANGE(RangeGlucoseWidget::class.java, R.string.widget_range, R.string.widget_range_description, 320f, 150f),
     CLOCK_WEATHER(ClockWeatherWidget::class.java, R.string.widget_clock_weather, R.string.widget_clock_weather_description, 320f, 104f);
 
+    val hasGraph: Boolean get() = false
     val hasStats: Boolean get() = this == RANGE
 }
 
