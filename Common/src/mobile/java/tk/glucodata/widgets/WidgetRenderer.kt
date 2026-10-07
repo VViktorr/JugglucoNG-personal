@@ -137,7 +137,8 @@ class WidgetRenderer(private val context: Context) {
             }
             if (Build.VERSION.SDK_INT >= 28) Typeface.create(base, weight, false) else base
         } catch (_: Throwable) {
-            Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
+            val fallback = Typeface.create("sans-serif", Typeface.NORMAL)
+            if (Build.VERSION.SDK_INT >= 28) Typeface.create(fallback, weight, false) else fallback
         }
     }
 
