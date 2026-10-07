@@ -11,7 +11,6 @@ enum class WidgetKind(
     val defaultWidthDp: Float,
     val defaultHeightDp: Float
 ) {
-    DIAL(DialGlucoseWidget::class.java, R.string.widget_dial, R.string.widget_dial_description, 160f, 160f),
     RANGE(RangeGlucoseWidget::class.java, R.string.widget_range, R.string.widget_range_description, 320f, 150f),
     CLOCK_WEATHER(ClockWeatherWidget::class.java, R.string.widget_clock_weather, R.string.widget_clock_weather_description, 320f, 104f);
 
@@ -93,7 +92,6 @@ data class WidgetConfig(
 }
 
 fun WidgetKind.defaultConfig(): WidgetConfig = when (this) {
-    WidgetKind.DIAL -> WidgetConfig(shape = WidgetShape.ROUND, showTime = true)
     WidgetKind.RANGE -> WidgetConfig(statsPeriod = WidgetStatsPeriod.DAY)
     WidgetKind.CLOCK_WEATHER -> WidgetConfig(background = WidgetBackground.SURFACE, opacity = 65, shape = WidgetShape.ROUND, showTime = false)
 }
