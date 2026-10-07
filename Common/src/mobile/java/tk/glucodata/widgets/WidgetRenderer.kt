@@ -181,18 +181,16 @@ class WidgetRenderer(private val context: Context) {
     private fun drawClockWeather(canvas: Canvas, w: Float, h: Float, c: WidgetConfig, s: WidgetSnapshot, weather: WidgetWeather?) {
         val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
         val foreground = if (dark || c.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
-        // Time and date are Android TextClock overlays. Keep the bitmap to the
-        // middle glucose cluster and the right-side weather only.
-
-        // Middle column: match the hierarchy of the basic widget — large glucose,
-        // trend arrow beside it, and the small delta/details underneath.
-        val glucoseCenterX = w * 0.60f
+        // Time and date are Android TextClock overlays on the left.
+        // Weather stays close to the clock, while glucose gets the full right side
+        // and uses the same strong visual hierarchy as the small glucose widget.
+        val glucoseCenterX = w * 0.80f
         val glucoseText = if (s.hasFreshReading) s.valueText else "—"
         val glucoseColor = if (s.hasFreshReading) contentColor(s,c) else foreground
         val glucosePaint = fitText(
             glucoseText,
-            w * 0.20f,
-            h * 0.42f,
+            w * 0.24f,
+            h * 0.62f,
             glucoseColor,
             c.textScale,
             true
@@ -200,7 +198,7 @@ class WidgetRenderer(private val context: Context) {
         canvas.drawText(
             glucoseText,
             glucoseCenterX,
-            baselineCenter(glucosePaint, h * 0.41f),
+            baselineCenter(glucosePaint, h * 0.40f),
             glucosePaint
         )
 
@@ -208,8 +206,8 @@ class WidgetRenderer(private val context: Context) {
             drawArrow(
                 canvas,
                 glucoseCenterX + w * 0.105f,
-                h * 0.40f,
-                h * 0.20f,
+                h * 0.36f,
+                h * 0.25f,
                 s.rate,
                 glucoseColor
             )
@@ -227,12 +225,12 @@ class WidgetRenderer(private val context: Context) {
             }.joinToString("  ")
         }
         if (!detail.isNullOrBlank()) {
-            val p = fitText(detail,w*0.25f,h*0.14f,foreground,90,false)
-            canvas.drawText(detail,glucoseCenterX,h*0.72f,p)
+            val p = fitText(detail,w*0.29f,h*0.14f,foreground,90,false)
+            canvas.drawText(detail,glucoseCenterX,h*0.73f,p)
         }
 
-        // Right column is weather only. Date moved under the clock on the left.
-        val weatherX = w * 0.885f
+        // Weather sits between the clock/date block and glucose, slightly raised.
+        val weatherX = w * 0.42f
         if(c.showWeather && weather != null) {
             val symbol = when(weather.weatherCode) {
                 0 -> "☀"
@@ -247,8 +245,8 @@ class WidgetRenderer(private val context: Context) {
             val label = (if(c.showWeatherIcon) "$symbol " else "") +
                 (if(c.showTemperature) "${weather.temperatureC}°" else "")
             if(label.isNotBlank()){
-                val p=fitText(label,w*0.17f,h*0.30f,foreground,100,false)
-                canvas.drawText(label,weatherX,baselineCenter(p,h*0.46f),p)
+                val p=fitText(label,w*0.18f,h*0.28f,foreground,100,false)
+                canvas.drawText(label,weatherX,baselineCenter(p,h*0.34f),p)
             }
         }
     }
