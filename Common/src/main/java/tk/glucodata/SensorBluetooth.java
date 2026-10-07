@@ -139,7 +139,8 @@ public class SensorBluetooth {
         }
         boolean scan = false;
         for (var cb : gattcallbacks) {
-            if (mirroredOverClone(cb, "connectToAllActiveDevices")) {
+            if (!useUpstreamLibre2Connection(cb)
+                    && mirroredOverClone(cb, "connectToAllActiveDevices")) {
                 continue;
             }
             if (!cb.connectDevice(delayMillis)) {
@@ -157,7 +158,8 @@ public class SensorBluetooth {
             Log.i(LOG_ID, "connectToActiveDevice(" + cb.SerialNumber + "," + delayMillis + ")");
         }
         ;
-        if (mirroredOverClone(cb, "connectToActiveDevice")) {
+        if (!useUpstreamLibre2Connection(cb)
+                && mirroredOverClone(cb, "connectToActiveDevice")) {
             return false;
         }
         if (!cb.connectDevice(delayMillis) && !mScanning) {
@@ -1665,6 +1667,10 @@ public class SensorBluetooth {
      * the periodic check: the restore-all sweep went straight to connectDevice
      * and put a mirrored Sibionics into a Libre scan on the receiving phone.
      */
+    private static boolean useUpstreamLibre2Connection(SuperGattCallback cb) {
+        return !Applic.isWearable && cb instanceof Libre2GattCallback;
+    }
+
     private static boolean mirroredOverClone(SuperGattCallback cb, String where) {
         if (CloneSensorRegistry.isReceptionEnabled()
                 && CloneSensorRegistry.isMirrorDelivering(cb.SerialNumber)) {
@@ -1681,14 +1687,16 @@ public class SensorBluetooth {
             Log.i(LOG_ID, "checkandconnect(" + cb.SerialNumber + "," + delay + ")");
         }
         ;
-        if (SensorOwnershipRuntime.blocksLocalConnection(cb.SerialNumber)) {
-            if (doLog) {
-                Log.i(LOG_ID, "checkandconnect skipped: ownership released " + cb.SerialNumber);
+        if (!useUpstreamLibre2Connection(cb)) {
+            if (SensorOwnershipRuntime.blocksLocalConnection(cb.SerialNumber)) {
+                if (doLog) {
+                    Log.i(LOG_ID, "checkandconnect skipped: ownership released " + cb.SerialNumber);
+                }
+                return false;
             }
-            return false;
-        }
-        if (mirroredOverClone(cb, "checkandconnect")) {
-            return false;
+            if (mirroredOverClone(cb, "checkandconnect")) {
+                return false;
+            }
         }
         BluetoothAdapter adapter = mBluetoothAdapter;
         if (adapter == null && mBluetoothManager != null) {
