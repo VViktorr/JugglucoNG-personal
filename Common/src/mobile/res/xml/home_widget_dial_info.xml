@@ -6,6 +6,7 @@
     android:minHeight="57dp"
     android:minResizeWidth="40dp"
     android:minResizeHeight="40dp"
+    android:previewLayout="@layout/widget_preview_dial"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="1"
     android:targetCellHeight="1"
