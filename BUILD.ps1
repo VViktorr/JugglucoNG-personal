@@ -11,51 +11,6 @@ Write-Host "=== JugglucoNG build ==="
 Write-Host "Katalog projektu: $PSScriptRoot"
 Write-Host ""
 
-# Przygotuj oryginalne biblioteki Juggluco 11.3.0.
-# Folder jest lokalnym magazynem i nie jest czescia repozytorium.
-$OriginalLibRoot = Join-Path $PSScriptRoot "_original-libs-11.3.0"
-$JniLibRoot = Join-Path $PSScriptRoot "Common\src\main\jniLibs"
-$KnownAbis = @("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-
-if (-not (Test-Path $OriginalLibRoot)) {
-    throw "Brak folderu z oryginalnymi bibliotekami Juggluco: $OriginalLibRoot"
-}
-
-$OriginalLibs = @(Get-ChildItem $OriginalLibRoot -Recurse -Filter "*.so" -File -ErrorAction Stop)
-if ($OriginalLibs.Count -eq 0) {
-    throw "Folder $OriginalLibRoot nie zawiera bibliotek .so."
-}
-
-$CopiedLibs = 0
-$SkippedLibs = @()
-
-foreach ($Lib in $OriginalLibs) {
-    $Relative = $Lib.FullName.Substring($OriginalLibRoot.Length).TrimStart('\', '/')
-    $Parts = $Relative -split '[\\/]'
-    $Abi = $Parts | Where-Object { $_ -in $KnownAbis } | Select-Object -Last 1
-
-    if (-not $Abi) {
-        $SkippedLibs += $Relative
-        continue
-    }
-
-    $TargetDir = Join-Path $JniLibRoot $Abi
-    New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
-    Copy-Item $Lib.FullName (Join-Path $TargetDir $Lib.Name) -Force
-    $CopiedLibs++
-}
-
-Write-Host "Oryginalne biblioteki Juggluco: skopiowano $CopiedLibs plikow .so."
-
-if ($SkippedLibs.Count -gt 0) {
-    Write-Warning ("Pominieto {0} bibliotek bez rozpoznanego ABI: {1}" -f $SkippedLibs.Count, ($SkippedLibs -join ", "))
-}
-
-if ($CopiedLibs -eq 0) {
-    throw "Nie skopiowano zadnej biblioteki. Oczekiwany jest katalog ABI, np. lib\arm64-v8a lub arm64-v8a."
-}
-
-
 # Buduj telefon + Wear. Clean usuwa tylko katalogi Gradle, nie katalog Builds.
 & .\gradlew.bat clean `
     :Common:assembleMobileRelease `
