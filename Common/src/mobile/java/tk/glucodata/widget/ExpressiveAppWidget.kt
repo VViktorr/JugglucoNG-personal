@@ -208,7 +208,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val valueText = freshDisplay?.fullFormatted
         val rate = freshDisplay?.rate ?: Float.NaN
 
-        val valueBitmap = remember(valueText, glucoseColor, fontSize, fontWeight, useSystemFont) {
+        val valueBitmap = remember(valueText, glucoseColor, fontSize, glucoseScale, fontWeight, useSystemFont) {
             valueText?.let {
                 NotificationChartDrawer.drawGlucoseText(
                     context,
@@ -302,6 +302,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         config.fontFamily,
                         config.fontWeight,
                         config.textScale,
+                        config.timeScale,
                         primaryTextColor
                     ) {
                         textBitmap(context, timeText, 27f * timeScale, config, primaryTextColor)
@@ -311,6 +312,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         config.fontFamily,
                         config.fontWeight,
                         config.textScale,
+                        config.timeScale,
                         secondaryTextColor
                     ) {
                         if (dateText.isBlank()) null else textBitmap(context, dateText, 11f * timeScale, config, secondaryTextColor)
