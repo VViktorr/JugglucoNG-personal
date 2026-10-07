@@ -1711,9 +1711,7 @@ public class Natives {
                         float high = (type == 1) ? threshold : alarmhigh();
                         boolean lowEnabled = (type == 0) ? enabled : hasalarmlow();
                         boolean highEnabled = (type == 1) ? enabled : hasalarmhigh();
-                        // Legacy "value available" is intentionally disabled in NG Compose.
-                        // Never preserve or re-arm it while syncing other alerts.
-                        boolean availableEnabled = false;
+                        boolean availableEnabled = (type == 2) ? enabled : hasvaluealarm();
                         boolean lossEnabled = (type == 4) ? enabled : hasalarmloss();
 
                         setalarms(low, high, lowEnabled, highEnabled, availableEnabled, lossEnabled);
