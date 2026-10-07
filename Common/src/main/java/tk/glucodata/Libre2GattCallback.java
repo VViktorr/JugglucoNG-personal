@@ -69,9 +69,57 @@ public class Libre2GattCallback extends SuperGattCallback {
        static private final UUID mADCCustomServiceUUID = UUID.fromString("0000fde3-0000-1000-8000-00805f9b34fb");
 	static private final String LOG_ID = "Libre2GattCallback";
 
+	private static final long HARD_RECOVERY_AFTER_MS = 5L * 60L * 1000L;
+	private long reconnectFailureSinceMs = 0L;
+
 	public Libre2GattCallback(String SerialNumber, long dataptr) {
 		super(SerialNumber,dataptr,Natives.getLibre2sensorgen(dataptr));
 		{if(doLog) {Log.d(LOG_ID, "Libre2GattCallback(..)");};};
+	}
+
+	/**
+	 * Android can get stuck cycling Libre 2 through GATT status 19/147 (and
+	 * occasionally 8) while every fresh connectGatt() still uses the same stale
+	 * peripheral state.  A phone reboot clears it, but that is far too expensive
+	 * as a recovery mechanism.
+	 *
+	 * Keep ordinary short dropouts on the upstream reconnect path.  Only after
+	 * five minutes without a valid Libre packet do we forget the in-memory device
+	 * handle/address and force a fresh BLE discovery.  The native sensor record is
+	 * not deleted; setDevice() writes the discovered address back as soon as the
+	 * sensor is found.
+	 */
+	private boolean shouldHardRecover(int status, long now) {
+		if(isWearable)
+			return false;
+		if(status != 8 && status != 19 && status != 147)
+			return false;
+		if(reconnectFailureSinceMs == 0L) {
+			reconnectFailureSinceMs = now;
+			return false;
+		}
+		return now - reconnectFailureSinceMs >= HARD_RECOVERY_AFTER_MS;
+	}
+
+	private void markLibreLinkHealthy() {
+		if(reconnectFailureSinceMs != 0L && doLog)
+			Log.i(LOG_ID, SerialNumber + " Libre2 reconnect window cleared by sensor packet");
+		reconnectFailureSinceMs = 0L;
+	}
+
+	private void hardRecoverLibre2(SensorBluetooth sensorbluetooth, long now) {
+		Log.w(LOG_ID, SerialNumber + " Libre2 hard recovery after 5 minutes of failed reconnects");
+		// Start a new five-minute window if rediscovery itself does not recover the link.
+		reconnectFailureSinceMs = now;
+		try {
+			Natives.resetbluetooth(dataptr);
+		} catch(Throwable th) {
+			Log.stack(LOG_ID, SerialNumber + " resetbluetooth during hard recovery", th);
+		}
+		mActiveBluetoothDevice = null;
+		searchforDeviceAddress(); // in-memory only; do not erase the persisted sensor metadata.
+		sensorbluetooth.stopScan(false);
+		sensorbluetooth.scanStarter(500L);
 	}
 
 
@@ -194,7 +242,10 @@ private PendingIntent onalarm=null;
                                         sensorbluetooth.connectToActiveDevice(this, 0);
                                     }
                                else */
-                                     sensorbluetooth.connectToActiveDevice(this, 0);
+                                    if(shouldHardRecover(status, tim))
+                                        hardRecoverLibre2(sensorbluetooth, tim);
+                                    else
+                                        sensorbluetooth.connectToActiveDevice(this, 0);
                                 }
 							}
 						}
@@ -461,6 +512,7 @@ private	void oldonCharacteristicChanged(byte[] value) {
 					final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
 					if(newpacket!=null) {
 						long res = processTooth(dataptr, newpacket);
+						markLibreLinkHealthy();
 						if(res!=1L) {
 							handleGlucoseResult(res,timmsec);
 							}
