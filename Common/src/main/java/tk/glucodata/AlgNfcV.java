@@ -55,24 +55,12 @@ public class AlgNfcV {
         return nfccmd(tag, new byte[]{38, 1, 0}) != null;
     }
     static boolean enableStreaming(final Tag tag, byte[] info) {
-        final int version = getversion(info);
-        if (version == 2)
-            return gen2enablestreaming(tag);
-
-        final boolean euEnabled = EUenableStreaming(tag, info, version == 0);
-        if (euEnabled)
-            return true;
-
-        // Some regional Libre2 variants report an unknown generation (0) while still
-        // requiring the Gen2 NFC auth path for BLE bootstrap.
-        if (version == 0) {
-            {if(doLog) {Log.i(LOG_ID, "Unknown Libre generation, trying Gen2 BLE enable fallback");};};
-            return gen2enablestreaming(tag);
-        }
-        return false;
+    if(getversion(info)==2) 
+        return gen2enablestreaming(tag);
+    return EUenableStreaming(tag, info);
     }
 
-    static boolean EUenableStreaming(final Tag tag, byte[] info, boolean unknownGeneration) {
+    static boolean EUenableStreaming(final Tag tag, byte[] info) {
         byte[] uid = tag.getId();
         byte[] payload = bluetoothOnKey(uid, info);
         if (payload != null) {
@@ -84,11 +72,7 @@ public class AlgNfcV {
             Natives.bluetoothback(uid, info);
             return false;
         }
-        // "2" means "don't try BLE bootstrap again". Keep that behavior for known
-        // generations, but avoid hard-locking unknown profiles into NFC-only mode.
-        if (!unknownGeneration) {
-            Natives.enabledStreaming(uid, info,2,null); //don't try to enable again
-        }
+        Natives.enabledStreaming(uid, info,2,null); //don't try to enable again
         log("payload==null");
         return false;
     }
@@ -189,29 +173,41 @@ static private byte[] wholenfccmdtimes(final Tag tag, final byte[] cmd,int times
             byte[] infodata = null;
             int it = times;
             do {
-            try {
-                infodata = nfcvTag.transceive(cmd);
-                } 
-            catch(Throwable  error) {
-                String mess=error!=null?error.toString():null;
-                if(mess==null) {
-                    mess="error";
-                    }
-                {if(doLog) {Log.i(LOG_ID,"transceive "+ mess);};};
-                 if ((System.currentTimeMillis() > endReadingTime)) {
-                    {if(doLog) {Log.i(LOG_ID, "tag read timeout " + System.currentTimeMillis());};};
+                try {
+                    infodata = nfcvTag.transceive(cmd);
+                    } 
+                catch(SecurityException e) {
+                    if(doLog) {Log.stack(LOG_ID,"transceive",e);};
                     return null;
                     }
-                }
-            if(goodnfc(infodata))  {
-                return infodata;
-                }
+                catch(android.nfc.TagLostException e) {
+                    if(doLog) {Log.stack(LOG_ID,"transceive",e);};
+                    return null;
+                    }
+                catch(Throwable  error) {
+                    if(doLog) {Log.stack(LOG_ID,"transceive",error);};
+                    if(System.currentTimeMillis() > endReadingTime) {
+                        if(doLog) {Log.i(LOG_ID, "tag read timeout " + System.currentTimeMillis());};
+                        return null;
+                        }
+                    }
+                if(goodnfc(infodata))  {
+                    return infodata;
+                    }
             } while (--it != 0);
-            {if(doLog) {Log.i(LOG_ID, "tried "+times+" times");};};
+            if(doLog) {Log.i(LOG_ID, "tried "+times+" times");};
             return null;
         } 
+        catch(SecurityException e) {
+            if(doLog) {Log.stack(LOG_ID,"connect",e);};
+            return null;
+            }
+        catch(android.nfc.TagLostException e) {
+            if(doLog) {Log.stack(LOG_ID,"connect",e);};
+            return null;
+            }
         catch (Exception e) {
-            {if(doLog) {Log.i(LOG_ID,"connect: "+ e.toString());};};
+            if(doLog) {Log.stack(LOG_ID,"connect",e);};
             } 
         finally {
             try {
@@ -220,7 +216,7 @@ static private byte[] wholenfccmdtimes(final Tag tag, final byte[] cmd,int times
             } catch (Exception e) {
                Log.stack(LOG_ID, "Error closing tag ", e);
             }
-        }
+          }
         }
         return null;
     }
@@ -319,5 +315,6 @@ static    private byte[] readoncedata(NfcV nfc, byte[] uid,int start, int len) {
     }
 
 }
+
 
 
