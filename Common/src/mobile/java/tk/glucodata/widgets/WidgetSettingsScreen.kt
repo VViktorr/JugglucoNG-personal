@@ -152,7 +152,7 @@ private fun WidgetCard(kind: WidgetSettingsKind, onClick: () -> Unit) {
 
 private fun refreshWidget(context: android.content.Context, kind: WidgetSettingsKind) {
     when (kind) {
-        WidgetSettingsKind.BASIC -> GlucoseWidget.update()
+        WidgetSettingsKind.BASIC -> GlucoseWidget.refreshSettings()
         WidgetSettingsKind.CHART -> ExpressiveWidgetReceiver.updateAll(context)
         WidgetSettingsKind.RANGE -> WidgetUpdater.updateAllOfKind(context, WidgetKind.RANGE)
         WidgetSettingsKind.CLOCK_WEATHER -> WidgetUpdater.updateAllOfKind(context, WidgetKind.CLOCK_WEATHER)
