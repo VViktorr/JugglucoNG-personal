@@ -922,6 +922,9 @@ fun MainApp(themeMode: ThemeMode, onThemeChanged: (ThemeMode) -> Unit) {
                     composable("settings/display-colors") {
                         DisplayAndColorSettingsScreen(navController, dashboardViewModel)
                     }
+                    composable("settings/widgets") {
+                        tk.glucodata.widgets.WidgetSettingsScreen(navController)
+                    }
                     composable("settings/data-smoothing") {
                         DataSmoothingSettingsScreen(navController, dashboardViewModel)
                     }
@@ -1076,6 +1079,9 @@ fun MainApp(themeMode: ThemeMode, onThemeChanged: (ThemeMode) -> Unit) {
                 }
                 composable("settings/display-colors") {
                     DisplayAndColorSettingsScreen(navController, dashboardViewModel)
+                }
+                composable("settings/widgets") {
+                    tk.glucodata.widgets.WidgetSettingsScreen(navController)
                 }
                 composable("settings/data-smoothing") {
                     DataSmoothingSettingsScreen(navController, dashboardViewModel)
