@@ -22,13 +22,19 @@ object WidgetUpdater {
     private val executor=Executors.newSingleThreadExecutor { r -> Thread(r,"home-widgets").apply { priority=Thread.NORM_PRIORITY-1 } }
     private val weatherExecutor=Executors.newSingleThreadExecutor { r -> Thread(r,"widget-weather").apply { priority=Thread.NORM_PRIORITY-1 } }
     private val pending=AtomicBoolean(false)
+    private val rerunRequested=AtomicBoolean(false)
     private val weatherPending=AtomicBoolean(false)
     private val pendingCallbacks=java.util.concurrent.ConcurrentLinkedQueue<()->Unit>()
 
     fun requestUpdateAll(context:Context,done:(()->Unit)?=null){
         done?.let(pendingCallbacks::add)
         val app=context.applicationContext
-        if(!pending.compareAndSet(false,true)) return
+        if(!pending.compareAndSet(false,true)) {
+            // A glucose update that arrives while bitmaps are being rendered must not be
+            // dropped. Remember it and run one more pass with the newest snapshot.
+            rerunRequested.set(true)
+            return
+        }
         executor.execute {
             try {
                 val manager=AppWidgetManager.getInstance(app)
@@ -37,11 +43,13 @@ object WidgetUpdater {
                 if(targets.isNotEmpty()) render(app,manager,targets)
             } catch(t:Throwable){ Log.stack(LOG_ID,"requestUpdateAll",t) }
             finally {
+                val rerun=rerunRequested.getAndSet(false)
                 pending.set(false)
                 while(true){
                     val callback=pendingCallbacks.poll() ?: break
                     try { callback() } catch(_:Throwable) {}
                 }
+                if(rerun) requestUpdateAll(app)
             }
         }
     }
@@ -135,7 +143,12 @@ object WidgetUpdater {
         val sizes=widgetSizes(manager.getAppWidgetOptions(id)).ifEmpty{listOf(SizeF(kind.defaultWidthDp,kind.defaultHeightDp))}
         val metrics=context.resources.displayMetrics
         val density=metrics.density
-        val budget=metrics.widthPixels.toFloat()*metrics.heightPixels*0.85f
+        // RemoteViews transports every responsive bitmap to the launcher. Four full-density
+        // variants can become a multi-megabyte update and some launchers intermittently drop
+        // it, leaving the widget blank until a resize/long-press forces another update.
+        // Keep the complete update comfortably small while retaining enough pixels for text.
+        val screenPixels=metrics.widthPixels.toFloat()*metrics.heightPixels
+        val budget=min(screenPixels*0.45f,600_000f)
         val total=sizes.sumOf{(it.width*it.height*density*density).toDouble()}.toFloat()
         val px=if(total>budget) density*sqrt(budget/total) else density
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S && sizes.size>1) return RemoteViews(sizes.associateWith{build(it.width,it.height,px)})
@@ -148,7 +161,13 @@ object WidgetUpdater {
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S){
             @Suppress("DEPRECATION")
             val sizes=options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
-            if(!sizes.isNullOrEmpty()) return sizes.filter{it.width>0&&it.height>0}.distinct().take(4)
+            if(!sizes.isNullOrEmpty()){
+                val valid=sizes.filter{it.width>0&&it.height>0}.distinct().sortedBy{it.width*it.height}
+                if(valid.size<=2) return valid
+                // Smallest and largest cover compact/expanded launcher layouts without
+                // packing four independent bitmaps into every RemoteViews transaction.
+                return listOf(valid.first(),valid.last())
+            }
         }
         val minW=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
         val maxW=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
