@@ -36,7 +36,7 @@
         android:singleLine="true"
         android:textSize="16sp"
         android:textColor="#FFFFFFFF"
-        android:format12Hour="EEE, d MMMM"
-        android:format24Hour="EEE, d MMMM"
+        android:format12Hour="EEEE, d MMMM"
+        android:format24Hour="EEEE, d MMMM"
         android:importantForAccessibility="yes" />
 </FrameLayout>
