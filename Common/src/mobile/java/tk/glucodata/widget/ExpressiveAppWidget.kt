@@ -157,8 +157,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
         val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
         val weather = if (!widgetConfig.showWeather) null else runCatching {
-            if (WidgetWeatherSource.needsRefresh(tk.glucodata.Applic.app)) {
-                WidgetWeatherSource.load(tk.glucodata.Applic.app)
+            if (WidgetWeatherSource.needsRefresh(tk.glucodata.Applic.app)) {                WidgetWeatherSource.load(tk.glucodata.Applic.app)
             } else {
                 WidgetWeatherSource.cached(tk.glucodata.Applic.app)
             }
@@ -195,8 +194,13 @@ class ExpressiveAppWidget : GlanceAppWidget() {
 
         val freshDisplay = currentDisplay?.takeIf { dataState.isFresh }
         val displayValue = freshDisplay?.primaryValue ?: 0f
-        val glucoseColor = remember(displayValue, isMmol) {
-            NotificationChartDrawer.getGlucoseColor(context, displayValue, isMmol)
+        val glucoseColor = remember(displayValue, isMmol, config.rangeColors) {
+            if (config.rangeColors) {
+                NotificationChartDrawer.getGlucoseColor(context, displayValue, isMmol)
+            } else {
+                val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
+                if (dark) Color.WHITE else 0xFF1D1B20.toInt()
+            }
         }
         val valueText = freshDisplay?.fullFormatted
         val rate = freshDisplay?.rate ?: Float.NaN
@@ -271,7 +275,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val now = remember(currentDisplay?.timeMillis, dataState) { java.util.Date() }
+                    val now = java.util.Date()
                     val timeText = remember(now) {
                         android.text.format.DateFormat.getTimeFormat(context).format(now)
                     }
@@ -317,7 +321,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                             Image(provider = ImageProvider(dateBitmap), contentDescription = "Date")
                         }
                     }
-
                     val weatherText = remember(weather, config.showWeather, config.showWeatherIcon, config.showTemperature) {
                         if (!config.showWeather) null else weather?.let { w ->
                             val symbol = when (w.weatherCode) {
