@@ -48,6 +48,9 @@ import tk.glucodata.NotificationChartDrawer
 import tk.glucodata.R
 import tk.glucodata.WidgetDisplaySource
 import tk.glucodata.widgets.WidgetWeather
+import tk.glucodata.widgets.WidgetConfigStore
+import tk.glucodata.widgets.WidgetSettingsKind
+import tk.glucodata.widgets.WidgetFontFamily
 import tk.glucodata.widgets.WidgetWeatherSource
 import tk.glucodata.ui.util.GlucoseFormatter
 
@@ -117,8 +120,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             history = chartHistory,
             dataState = dataState,
             activeSensorSerial = activeSensorSerial,
-            viewMode = viewMode,
-            hasCalibration = hasCalibration,
+            viewMode = viewMode,            hasCalibration = hasCalibration,
             weather = weather
         )
     }
@@ -135,16 +137,14 @@ class ExpressiveAppWidget : GlanceAppWidget() {
     ) {
         val context = LocalContext.current
         val size = LocalSize.current
-        val prefs = remember(context) {
-            context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
-        }
+        val config = WidgetConfigStore.load(context, WidgetSettingsKind.CHART)
 
         val isMmol = GlucoseFormatter.isMmolApp()
-        val fontSize = prefs.getFloat("notification_font_size", 1.0f)
-        val fontWeight = prefs.getInt("notification_font_weight", 400)
-        val useSystemFont = prefs.getInt("notification_font_family", 0) == 1
-        val showArrow = prefs.getBoolean("notification_show_arrow", true)
-        val arrowScale = prefs.getFloat("notification_arrow_size", 1.0f)
+        val fontSize = config.textScale / 100f
+        val fontWeight = config.fontWeight
+        val useSystemFont = config.fontFamily == WidgetFontFamily.SYSTEM
+        val showArrow = config.showArrow
+        val arrowScale = (config.textScale / 100f).coerceIn(0.7f, 1.4f)
 
         val freshDisplay = currentDisplay?.takeIf { dataState.isFresh }
         val displayValue = freshDisplay?.primaryValue ?: 0f
@@ -177,11 +177,11 @@ class ExpressiveAppWidget : GlanceAppWidget() {
 
         val showChart = history.size >= 2 && size.height >= 144.dp
         val density = context.resources.displayMetrics.density
-        val chartBitmap = remember(history, showChart, size, isMmol, viewMode, hasCalibration, activeSensorSerial) {
+        val chartBitmap = remember(history, showChart, size, isMmol, viewMode, hasCalibration, activeSensorSerial, config.graphHours, config.showTargetBand) {
             if (!showChart) {
                 null
             } else {
-                val widthPx = ((size.width.value - 24f).coerceAtLeast(96f) * density).roundToInt()
+                val widthPx = (size.width.value.coerceAtLeast(96f) * density).roundToInt()
                 val heightPx = ((size.height.value - ChartReservedHeightDp).coerceAtLeast(60f) * density).roundToInt()
                 NotificationChartDrawer.drawChart(
                     context,
@@ -190,11 +190,11 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     heightPx,
                     isMmol,
                     viewMode,
-                    true,
+                    config.showTargetBand,
                     hasCalibration,
                     true,
                     activeSensorSerial,
-                    WidgetDisplaySource.CHART_WINDOW_MS
+                    config.graphHours * 3_600_000L
                 )
             }
         }
@@ -207,8 +207,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.widgetBackground)
-                .padding(6.dp)
+                .background(GlanceTheme.colors.surface)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -229,16 +228,17 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     val timeText = remember(now) {
                         android.text.format.DateFormat.getTimeFormat(context).format(now)
                     }
-                    val dateText = remember(now) {
-                        java.text.SimpleDateFormat("EEE, d MMM", java.util.Locale.getDefault()).format(now)
+                    val dateText = remember(now, config.showDate) {
+                        if (config.showDate) {
+                            java.text.SimpleDateFormat("EEE, d MMM", java.util.Locale.getDefault()).format(now)
+                        } else ""
                     }
 
                     Column(
                         modifier = GlanceModifier.defaultWeight(),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Text(
-                            text = timeText,
+                        Text(                            text = timeText,
                             style = TextStyle(
                                 color = GlanceTheme.colors.onSurface,
                                 fontSize = 27.sp,
@@ -246,7 +246,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                             ),
                             maxLines = 1
                         )
-                        Text(
+                        if (dateText.isNotBlank()) Text(
                             text = dateText,
                             style = TextStyle(
                                 color = GlanceTheme.colors.onSurfaceVariant,
@@ -257,8 +257,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         )
                     }
 
-                    val weatherText = remember(weather) {
-                        weather?.let { w ->
+                    val weatherText = remember(weather, config.showWeather, config.showWeatherIcon, config.showTemperature) {
+                        if (!config.showWeather) null else weather?.let { w ->
                             val symbol = when (w.weatherCode) {
                                 0 -> "☀"
                                 1, 2 -> "⛅"
@@ -269,8 +269,9 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                                 in 95..99 -> "ϟ"
                                 else -> "☁"
                             }
-                            "$symbol ${w.temperatureC}°"
-                        }
+                            (if (config.showWeatherIcon) "$symbol " else "") +
+                                (if (config.showTemperature) "${w.temperatureC}°" else "")
+                        }?.takeIf { it.isNotBlank() }
                     }
                     if (!weatherText.isNullOrBlank()) {
                         Text(
@@ -319,7 +320,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             }
 
             if (chartBitmap != null) {
-                Spacer(GlanceModifier.height(8.dp))
+                Spacer(GlanceModifier.height(2.dp))
 
 //                Box(
 //                    modifier = GlanceModifier
@@ -336,10 +337,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .defaultWeight()
-                        .padding(top = 8.dp)
                         .background(GlanceTheme.colors.surface)
-                        .cornerRadius(24.dp)
-                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                        .cornerRadius(18.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
