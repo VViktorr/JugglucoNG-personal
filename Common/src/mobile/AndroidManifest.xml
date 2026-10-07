@@ -57,6 +57,8 @@
          has to be able to ask the platform installer to replace itself. The user still grants
          "install unknown apps" once, and Android still shows its own confirmation every time. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Weather fallback requires an explicitly granted location permission on Android 12+. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:remove="android:maxSdkVersion" />
 
     <application
         android:name=".Applic"
@@ -97,6 +99,68 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/expressive_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.MinimalGlucoseWidget"
+            android:exported="false"
+            android:label="@string/widget_minimal">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/home_widget_minimal_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.CompactGlucoseWidget"
+            android:exported="false"
+            android:label="@string/widget_compact">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/home_widget_compact_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.TrendGlucoseWidget"
+            android:exported="false"
+            android:label="@string/widget_trend">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/home_widget_trend_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.DialGlucoseWidget"
+            android:exported="false"
+            android:label="@string/widget_dial">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/home_widget_dial_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.RangeGlucoseWidget"
+            android:exported="false"
+            android:label="@string/widget_range">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/home_widget_range_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.ClockWeatherWidget"
+            android:exported="false"
+            android:label="@string/widget_clock_weather">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="tk.glucodata.action.GLUCOSE_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/home_widget_clock_weather_info" />
         </receiver>
 
         <receiver
