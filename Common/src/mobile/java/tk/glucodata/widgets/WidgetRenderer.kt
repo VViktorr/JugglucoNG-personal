@@ -37,9 +37,6 @@ class WidgetRenderer(private val context: Context) {
             }
         }
         when (kind) {
-            WidgetKind.MINIMAL -> drawMinimal(canvas, width.toFloat(), height.toFloat(), config, snapshot)
-            WidgetKind.COMPACT -> drawCompact(canvas, width.toFloat(), height.toFloat(), config, snapshot)
-            WidgetKind.TREND -> drawTrend(canvas, width, height, config, snapshot)
             WidgetKind.DIAL -> drawDial(canvas, width.toFloat(), height.toFloat(), config, snapshot)
             WidgetKind.RANGE -> drawRange(canvas, width.toFloat(), height.toFloat(), config, snapshot)
             WidgetKind.CLOCK_WEATHER -> drawClockWeather(canvas, width.toFloat(), height.toFloat(), config, snapshot, weather)
@@ -122,61 +119,6 @@ class WidgetRenderer(private val context: Context) {
         val mid=words.size/2
         return listOf(words.take(mid).joinToString(" "), words.drop(mid).joinToString(" "))
     }
-
-    private fun drawMinimal(canvas:Canvas,w:Float,h:Float,c:WidgetConfig,s:WidgetSnapshot){
-        val color=contentColor(s,c)
-        val valuePaint=fitText(s.valueText,w*0.78f,h*0.66f,color,c.textScale,true)
-        canvas.drawText(s.valueText,w/2f,baselineCenter(valuePaint,h*0.48f),valuePaint)
-        if(c.showArrow && s.rate.isFinite()) drawArrow(canvas,w*0.86f,h*0.26f,min(w,h)*0.22f,s.rate,color)
-        val details=mutableListOf<String>()
-        if(c.showDelta) s.delta?.let { details+=deltaText(it,s.isMmol) }
-        if(c.showTime) s.current?.let { details+=android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)) }
-        if(c.showUnit) details+=s.unitText
-        if(details.isNotEmpty()){
-            val p=fitText(details.joinToString("  "),w*0.9f,h*0.18f,palette(s).second,90,false)
-            canvas.drawText(details.joinToString("  "),w/2f,h-p.textSize*0.35f,p)
-        }
-    }
-
-    private fun drawCompact(canvas:Canvas,w:Float,h:Float,c:WidgetConfig,s:WidgetSnapshot){
-        val color=contentColor(s,c)
-        val left=h*0.55f
-        if(c.showArrow && s.rate.isFinite()) drawArrow(canvas,left*0.55f,h/2f,h*0.36f,s.rate,color)
-        val xStart=if(c.showArrow) left else h*0.15f
-        val valuePaint=fitText(s.valueText,w*0.48f,h*0.68f,color,c.textScale,true).apply { textAlign=Paint.Align.LEFT }
-        canvas.drawText(s.valueText,xStart,baselineCenter(valuePaint,h/2f),valuePaint)
-        val detail=buildList {
-            if(c.showDelta) s.delta?.let { add(deltaText(it,s.isMmol)) }
-            if(c.showTime) s.current?.let { add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis))) }
-        }
-        if(detail.isNotEmpty()){
-            val p=fitText(detail.joinToString("\n"),w*0.28f,h*0.22f,palette(s).second,100,false).apply{textAlign=Paint.Align.RIGHT}
-            val x=w-h*0.18f
-            val lines=detail.take(2)
-            val gap=h*0.24f
-            val start=h/2f-(lines.size-1)*gap/2f
-            lines.forEachIndexed { i,t -> canvas.drawText(t,x,baselineCenter(p,start+i*gap),p) }
-        }
-    }
-
-    private fun drawTrend(canvas:Canvas,w:Int,h:Int,c:WidgetConfig,s:WidgetSnapshot){
-        val header=(h*0.34f).roundToInt().coerceAtLeast((42*density).roundToInt())
-        val valuePaint=fitText(s.valueText,w*0.44f,header*0.7f,contentColor(s,c),c.textScale,true).apply{textAlign=Paint.Align.LEFT}
-        canvas.drawText(s.valueText,14*density,baselineCenter(valuePaint,header/2f),valuePaint)
-        if(c.showArrow && s.rate.isFinite()) drawArrow(canvas,w*0.52f,header/2f,header*0.42f,s.rate,contentColor(s,c))
-        val history=s.history.filter { it.timestamp >= s.now-c.graphHours*3_600_000L }
-        if(history.size>=2){
-            val chartW=(w-16*density).roundToInt().coerceAtLeast(1)
-            val chartH=(h-header-10*density).roundToInt().coerceAtLeast(1)
-            val bmp=NotificationChartDrawer.drawChart(
-                context, history, chartW, chartH, s.isMmol, s.viewMode,
-                c.showTargetBand, s.hasCalibration, true, s.sensorSerial,
-                c.graphHours*3_600_000L
-            )
-            canvas.drawBitmap(bmp,null,Rect((8*density).roundToInt(),header,(8*density).roundToInt()+chartW,header+chartH),null)
-        }
-    }
-
 
     private fun drawClockWeather(canvas: Canvas, w: Float, h: Float, c: WidgetConfig, s: WidgetSnapshot, weather: WidgetWeather?) {
         val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
