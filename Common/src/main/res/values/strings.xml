@@ -3149,7 +3149,11 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="widget_classic_description">Simple glucose value, trend arrow and reading age.</string>
     <string name="widget_expressive">Glucose with chart</string>
     <string name="widget_expressive_description">Current glucose with trend and recent glucose chart.</string>
-    <string name="widget_shared_display_settings">Shared font and trend settings</string>
+    <string name="widget_shared_display_settings">Widget settings</string>
+    <string name="widget_font">Font</string>
+    <string name="widget_font_ibm_plex">IBM Plex Sans</string>
+    <string name="widget_font_system">System</string>
+    <string name="widget_font_weight">Font weight</string>
     <string name="widget_range">Time in range</string>
     <string name="widget_range_description">Current glucose with time-in-range statistics.</string>
     <string name="widget_background">Background</string>
