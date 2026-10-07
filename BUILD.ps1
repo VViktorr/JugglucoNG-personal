@@ -16,8 +16,8 @@ $LibreLibraries = @(
     "liblibre_receiver_skb.so"
 )
 
-$InjectedLibreFiles = @()
-$BackedUpLibreFiles = @()
+$script:InjectedLibreFiles = @()
+$script:BackedUpLibreFiles = @()
 $LibreBackupRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("JugglucoNG-libre-libs-" + $PID)
 
 function Add-LibreLibraries {
@@ -56,25 +56,25 @@ function Add-LibreLibraries {
                 New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
                 $BackupFile = Join-Path $BackupDir $Library
                 Copy-Item $Target $BackupFile -Force
-                $BackedUpLibreFiles += [PSCustomObject]@{
+                $script:BackedUpLibreFiles += [PSCustomObject]@{
                     Target = $Target
                     Backup = $BackupFile
                 }
             }
 
             Copy-Item $Source $Target -Force
-            $InjectedLibreFiles += $Target
+            $script:InjectedLibreFiles += $Target
             Write-Host "Libre [$Abi]: $Library"
         }
     }
 }
 
 function Remove-LibreLibraries {
-    foreach ($Target in $InjectedLibreFiles) {
+    foreach ($Target in @($script:InjectedLibreFiles)) {
         Remove-Item $Target -Force -ErrorAction SilentlyContinue
     }
 
-    foreach ($Entry in $BackedUpLibreFiles) {
+    foreach ($Entry in @($script:BackedUpLibreFiles)) {
         New-Item -ItemType Directory -Path (Split-Path $Entry.Target -Parent) -Force | Out-Null
         Copy-Item $Entry.Backup $Entry.Target -Force
     }
