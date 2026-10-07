@@ -185,12 +185,9 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             }
         }
 
-        val fallbackText = remember(dataState) {
-            when {
-                dataState.isStale -> context.getString(R.string.nonewvalue)
-                dataState.isAwaitingData || !dataState.sensorPresent -> context.getString(R.string.novalue)
-                else -> context.getString(R.string.novalue)
-            }
+        val fallbackText = remember(dataState, activeSensorSerial) {
+            tk.glucodata.widgets.WidgetDataSource.statusText(context, activeSensorSerial, dataState)
+                ?: context.getString(R.string.novalue)
         }
 
         Column(
