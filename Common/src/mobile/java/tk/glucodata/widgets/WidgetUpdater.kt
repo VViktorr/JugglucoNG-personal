@@ -18,6 +18,13 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 object WidgetUpdater {
+    private fun weightStyle(weight: Int): Int = when {
+        weight <= 300 -> R.style.WidgetTextWeight300
+        weight <= 400 -> R.style.WidgetTextWeight400
+        weight <= 500 -> R.style.WidgetTextWeight500
+        weight <= 600 -> R.style.WidgetTextWeight600
+        else -> R.style.WidgetTextWeight700
+    }
     private const val LOG_ID="WidgetUpdater"
     private val executor=Executors.newSingleThreadExecutor { r -> Thread(r,"home-widgets").apply { priority=Thread.NORM_PRIORITY-1 } }
     private val weatherExecutor=Executors.newSingleThreadExecutor { r -> Thread(r,"widget-weather").apply { priority=Thread.NORM_PRIORITY-1 } }
@@ -110,8 +117,10 @@ object WidgetUpdater {
                                 val clockSize=min(w*0.145f,h*0.52f)*baseScale*timeScale
                                 val dateSize=min(w*0.042f,h*0.15f)*baseScale*detailScale
                                 val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
+                                setInt(R.id.home_widget_clock, "setTextAppearance", weightStyle(config.primaryFontWeight))
                                 setTextViewTextSize(R.id.home_widget_clock,android.util.TypedValue.COMPLEX_UNIT_SP,clockSize)
                                 setTextColor(R.id.home_widget_clock,textColor)
+                                setInt(R.id.home_widget_date, "setTextAppearance", weightStyle(config.secondaryFontWeight))
                                 setTextViewTextSize(R.id.home_widget_date,android.util.TypedValue.COMPLEX_UNIT_SP,dateSize)
                                 setTextColor(R.id.home_widget_date,textColor)
                                 setViewVisibility(R.id.home_widget_date,if(config.showDate) android.view.View.VISIBLE else android.view.View.GONE)
