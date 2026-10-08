@@ -37,6 +37,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.RemoteViews;
+import org.json.JSONObject;
 
 public class GlucoseWidget extends AppWidgetProvider {
     private static final String ACTION_GLUCOSE_UPDATE = "tk.glucodata.action.GLUCOSE_UPDATE";
@@ -64,7 +65,18 @@ private static void setSize(int widthdip, int heightdip) {
         // a resized 1x1 widget render a short bitmap inside a much taller host.
         final float widthDrivenSize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
         final float heightDrivenSize = heightpx * 0.72f;
-        final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize));
+        float textScale = 1.0f;
+        try {
+            var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
+            var raw = prefs.getString("BASIC", null);
+            if (raw != null) {
+                textScale = Math.max(0.70f, Math.min(1.40f, new JSONObject(raw).optInt("textScale", 100) / 100.0f));
+            } else {
+                textScale = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                        .getFloat("notification_font_size", 1.0f);
+            }
+        } catch (Throwable ignored) {}
+        final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize) * textScale);
         remote = new RemoteGlucose(fontsize, widthpx, heightpx,
                 Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
         width = widthdip;
@@ -180,8 +192,9 @@ final    private static String LOG_ID="GlucoseWidget";
 
     @Override
     public void onEnabled(Context context) {
-   used=true;
-        // Enter relevant functionality for when the first widget is created
+        used=true;
+        // Do not wait for the next glucose broadcast after the launcher recreates the host.
+        update();
     }
 
     @Override
@@ -207,6 +220,16 @@ public static void oldvalue(long time) {
       }
 
    }
+ public static void refreshSettings() {
+    synchronized (widgetLock) {
+       remote = null;
+       width = 0;
+       height = 0;
+       lastUpdateElapsedRealtime = 0L;
+    }
+    update();
+    }
+
  public static void update() {
     if (Applic.isWearable) {
       // The watch has no home-screen widget. This class is compiled into both
@@ -214,7 +237,6 @@ public static void oldvalue(long time) {
       return;
     }
     try {
-    if(used) {
       final long now = SystemClock.elapsedRealtime();
       synchronized (widgetLock) {
          if ((now - lastUpdateElapsedRealtime) < MIN_UPDATE_INTERVAL_MS) {
@@ -228,9 +250,6 @@ public static void oldvalue(long time) {
       if(ids.length>0) {
          updateall(Applic.app, manage, ids);
          }
-      else
-         used=false;
-      }
     } catch (Throwable th) {
       Log.stack(LOG_ID, "update()", th);
     }
