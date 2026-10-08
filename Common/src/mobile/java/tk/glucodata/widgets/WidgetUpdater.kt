@@ -92,7 +92,19 @@ object WidgetUpdater {
             ids.forEach { id ->
                 try {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
-                        RemoteViews(context.packageName,R.layout.home_widget).apply{
+                        RemoteViews(context.packageName,if(kind==WidgetKind.CLOCK_WEATHER) R.layout.home_widget_clock_weather else R.layout.home_widget).apply{
+                            if(kind==WidgetKind.CLOCK_WEATHER){
+                                val scale=config.textScale/100f
+                                val timeScale=config.timeScale/100f
+                                val clockSize=min(w*0.145f,h*0.52f)*scale*timeScale
+                                val dateSize=min(w*0.042f,h*0.15f)*scale*timeScale
+                                val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
+                                setTextViewTextSize(R.id.home_widget_clock,android.util.TypedValue.COMPLEX_UNIT_SP,clockSize)
+                                setTextColor(R.id.home_widget_clock,textColor)
+                                setTextViewTextSize(R.id.home_widget_date,android.util.TypedValue.COMPLEX_UNIT_SP,dateSize)
+                                setTextColor(R.id.home_widget_date,textColor)
+                                setViewVisibility(R.id.home_widget_date,if(config.showDate) android.view.View.VISIBLE else android.view.View.GONE)
+                            }
                             setImageViewBitmap(R.id.home_widget_image,renderer.render(kind,config,snapshot,w,h,px,weather))
                             setContentDescription(R.id.home_widget_image,description)
                             setOnClickPendingIntent(R.id.home_widget_root,openAppIntent(context,id))
