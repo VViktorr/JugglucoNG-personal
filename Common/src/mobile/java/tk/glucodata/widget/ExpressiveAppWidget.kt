@@ -67,6 +67,14 @@ import tk.glucodata.ui.util.GlucoseFormatter
 
 class ExpressiveAppWidget : GlanceAppWidget() {
     private companion object {
+        fun weightStyle(weight: Int): Int = when {
+            weight <= 300 -> R.style.WidgetTextWeight300
+            weight <= 400 -> R.style.WidgetTextWeight400
+            weight <= 500 -> R.style.WidgetTextWeight500
+            weight <= 600 -> R.style.WidgetTextWeight600
+            else -> R.style.WidgetTextWeight700
+        }
+
         val HeaderHeight = 88.dp
         val CardGap = 10.dp
         val DividerHeight = 3.dp
@@ -314,12 +322,22 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         else
                             R.layout.expressive_widget_system_clock
                         RemoteViews(context.packageName, clockLayout).apply {
+                            setInt(
+                                R.id.expressive_widget_clock,
+                                "setTextAppearance",
+                                weightStyle(config.primaryFontWeight)
+                            )
                             setTextViewTextSize(
                                 R.id.expressive_widget_clock,
                                 android.util.TypedValue.COMPLEX_UNIT_SP,
                                 27f * clockScale
                             )
                             setTextColor(R.id.expressive_widget_clock, primaryTextColor)
+                            setInt(
+                                R.id.expressive_widget_date,
+                                "setTextAppearance",
+                                weightStyle(config.secondaryFontWeight)
+                            )
                             setTextViewTextSize(
                                 R.id.expressive_widget_date,
                                 android.util.TypedValue.COMPLEX_UNIT_SP,
