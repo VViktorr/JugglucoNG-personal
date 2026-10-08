@@ -130,7 +130,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 			cancelGattWatchdog();
 		}
 		Log.w(LOG_ID, SerialNumber + " Libre2 hard GATT recovery: " + reason
-				+ "; disconnect+close, wait 6000ms, fresh connectGatt");
+				+ "; emulate manual stop/start, wait 6000ms, resume with connectDevice(200)");
 		endBLEHandler();
 		conphase = 0;
 		connected = false;
@@ -140,6 +140,17 @@ public class Libre2GattCallback extends SuperGattCallback {
 		failedbefore = false;
 		BLELogincharacteristic = null;
 		CompositeRawDatacharacteristic = null;
+
+		// The manual sensor restart that recovered the real device twice was:
+		// setPause(true) -> Disconnect -> resetbluetooth -> setPause(false)
+		// -> connectDevice(200). Pause first so ordinary disconnect callbacks and
+		// already queued reconnects cannot race the recovery transport.
+		setPause(true);
+		try {
+			disconnect();
+		} catch(Throwable th) {
+			Log.stack(LOG_ID, SerialNumber + " disconnect during manual-style GATT recovery", th);
+		}
 		try {
 			Natives.resetbluetooth(dataptr);
 		} catch(Throwable th) {
@@ -161,13 +172,14 @@ public class Libre2GattCallback extends SuperGattCallback {
 
 		Applic.scheduler.schedule(() -> {
 			synchronized(Libre2GattCallback.this) {
-				if(stop || dataptr == 0L) {
+				if(dataptr == 0L) {
 					hardRecoveryInProgress = false;
 					return;
 				}
 			}
 			if(SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)) {
-				Log.i(LOG_ID, SerialNumber + " hard GATT recovery reconnect skipped: ownership blocks local connection");
+				Log.i(LOG_ID, SerialNumber + " manual-style recovery reconnect skipped: ownership blocks local connection");
+				setPause(false);
 				synchronized(Libre2GattCallback.this) {
 					hardRecoveryInProgress = false;
 				}
@@ -175,17 +187,19 @@ public class Libre2GattCallback extends SuperGattCallback {
 			}
 			final SensorBluetooth sensorbluetooth = SensorBluetooth.blueone;
 			if(sensorbluetooth == null) {
-				Log.w(LOG_ID, SerialNumber + " hard GATT recovery reconnect skipped: SensorBluetooth unavailable");
+				Log.w(LOG_ID, SerialNumber + " manual-style recovery reconnect skipped: SensorBluetooth unavailable");
+				setPause(false);
 				synchronized(Libre2GattCallback.this) {
 					hardRecoveryInProgress = false;
 				}
 				return;
 			}
-			Log.i(LOG_ID, SerialNumber + " Libre2 hard GATT recovery: Restart Gatt");
+			Log.i(LOG_ID, SerialNumber + " Libre2 hard GATT recovery: automatic sensor restart resume");
+			setPause(false);
 			synchronized(Libre2GattCallback.this) {
 				hardRecoveryInProgress = false;
 			}
-			sensorbluetooth.connectToActiveDevice(Libre2GattCallback.this, 0);
+			sensorbluetooth.connectToActiveDevice(Libre2GattCallback.this, 200);
 		}, HARD_RECOVERY_DELAY_MS, TimeUnit.MILLISECONDS);
 	}
 
