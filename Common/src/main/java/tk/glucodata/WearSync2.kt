@@ -493,18 +493,37 @@ object WearSync2 {
                     written++
                 }
                 if (written > 0) {
-                    // One JNI call for the chunk. Per reading, the native side
-                    // re-seeded direct-stream state (stat + read + alloc), logged a
-                    // line and rewound the stream cursor every time; a large chunk
-                    // was enough to GC-stall the app. Same reason the Sibionics and
-                    // Anytime history mirrors are batched.
-                    Natives.addGlucoseStreamBatchWithRawTemp(
-                        nativeSecs.copyOf(written),
-                        nativeValues.copyOf(written),
-                        raws.copyOf(written),
-                        FloatArray(written),
-                        serial,
-                    )
+                    // Libre 2 native polls are keyed by Abbott's stream id, not by
+                    // minutes since sensor start. The generic direct-stream mirror
+                    // below derives id=(timestamp-starttime)/60; feeding a phone-side
+                    // Libre 2 chunk through it can therefore advance polls.dat into
+                    // the future (for example 19 -> 2926) and make real BLE ids look
+                    // like duplicates until the sensor catches up. The phone already
+                    // persists mirrored readings to Room immediately below, so skip
+                    // only this native mirror for Libre 2 on the phone. Wear still
+                    // keeps the native path because it has no Room-backed history.
+                    val skipPhoneLibre2NativeMirror = !Applic.isWearable && isLibre2NativeSensor(serial)
+                    if (skipPhoneLibre2NativeMirror) {
+                        if (doLog) {
+                            Log.i(
+                                LOG_ID,
+                                "skipping native mirror for Libre2 on phone: serial=$serial written=$written",
+                            )
+                        }
+                    } else {
+                        // One JNI call for the chunk. Per reading, the native side
+                        // re-seeded direct-stream state (stat + read + alloc), logged a
+                        // line and rewound the stream cursor every time; a large chunk
+                        // was enough to GC-stall the app. Same reason the Sibionics and
+                        // Anytime history mirrors are batched.
+                        Natives.addGlucoseStreamBatchWithRawTemp(
+                            nativeSecs.copyOf(written),
+                            nativeValues.copyOf(written),
+                            raws.copyOf(written),
+                            FloatArray(written),
+                            serial,
+                        )
+                    }
                 }
                 // The phone reads its history from Room and never looks at native,
                 // so readings taken over by the watch landed somewhere the phone
@@ -618,6 +637,12 @@ object WearSync2 {
             )
         }
     }
+
+    private fun isLibre2NativeSensor(serial: String): Boolean =
+        runCatching {
+            val dataptr = Natives.getdataptr(serial)
+            dataptr != 0L && Natives.getLibreVersion(dataptr) == 2
+        }.getOrDefault(false)
 
     private fun removalKey(serial: String): String = serial.trim().uppercase()
 
