@@ -16,11 +16,9 @@ class ExpressiveWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == GlucoseUpdateBroadcaster.ACTION_GLUCOSE_UPDATE) {
-            if (intent.getBooleanExtra(GlucoseUpdateBroadcaster.EXTRA_TICK_DELIVERED, false) &&
-                GlucoseUpdateBroadcaster.hasActiveTickObservers()
-            ) {
-                return
-            }
+            // Do not rely on an in-process Flow observer to keep the launcher copy alive.
+            // The host may have discarded the previous RemoteViews/Glance tree while the
+            // process still reports an observer. Always push an explicit widget update.
             val pendingResult = goAsync()
             scope.launch {
                 try {
