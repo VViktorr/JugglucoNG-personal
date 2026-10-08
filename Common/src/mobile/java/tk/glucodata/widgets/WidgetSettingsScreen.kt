@@ -191,12 +191,23 @@ private fun WidgetDetailSettings(
             )
         }
 
-        Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.widget_primary_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
                 FilterChip(
-                    selected = config.fontWeight == weight,
-                    onClick = { onChange(config.copy(fontWeight = weight)) },
+                    selected = config.primaryFontWeight == weight,
+                    onClick = { onChange(config.copy(primaryFontWeight = weight)) },
+                    label = { Text(weight.toString()) }
+                )
+            }
+        }
+
+        Text(stringResource(R.string.widget_secondary_font_weight), style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(300, 400, 500, 600, 700).forEach { weight ->
+                FilterChip(
+                    selected = config.secondaryFontWeight == weight,
+                    onClick = { onChange(config.copy(secondaryFontWeight = weight)) },
                     label = { Text(weight.toString()) }
                 )
             }
@@ -206,7 +217,14 @@ private fun WidgetDetailSettings(
         Slider(
             value = config.textScale.toFloat(),
             onValueChange = { onChange(config.copy(textScale = (it / 5f).toInt() * 5)) },
-            valueRange = 70f..140f
+            valueRange = 70f..160f
+        )
+
+        Text(stringResource(R.string.widget_detail_size_value, config.detailScale))
+        Slider(
+            value = config.detailScale.toFloat(),
+            onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
+            valueRange = 70f..180f
         )
 
         Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
@@ -266,14 +284,14 @@ private fun WidgetDetailSettings(
             Slider(
                 value = config.timeScale.toFloat(),
                 onValueChange = { onChange(config.copy(timeScale = (it / 5f).toInt() * 5)) },
-                valueRange = 70f..160f
+                valueRange = 70f..180f
             )
 
             Text(stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
             Slider(
                 value = config.glucoseScale.toFloat(),
                 onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
-                valueRange = 70f..160f
+                valueRange = 70f..180f
             )
 
             WidgetSwitch(stringResource(R.string.widget_show_date), config.showDate) {
@@ -287,7 +305,21 @@ private fun WidgetDetailSettings(
                 Slider(
                     value = config.weatherScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
-                    valueRange = 70f..180f
+                    valueRange = 70f..200f
+                )
+
+                Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
+                Slider(
+                    value = config.weatherIconScale.toFloat(),
+                    onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
+                    valueRange = 70f..220f
+                )
+
+                Text(stringResource(R.string.widget_temperature_size_value, config.temperatureScale))
+                Slider(
+                    value = config.temperatureScale.toFloat(),
+                    onValueChange = { onChange(config.copy(temperatureScale = (it / 5f).toInt() * 5)) },
+                    valueRange = 70f..200f
                 )
 
                 Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
