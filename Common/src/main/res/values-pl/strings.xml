@@ -2958,6 +2958,9 @@
     <string name="widget_expressive">Glukoza z wykresem</string>
     <string name="widget_expressive_description">Aktualna glikemia, trend i wykres ostatnich odczytów.</string>
     <string name="widget_shared_display_settings">Ustawienia widżetu</string>
+    <string name="widget_section_appearance">Wygląd</string>
+    <string name="widget_section_components">Elementy</string>
+    <string name="widget_section_visibility">Widoczność</string>
     <string name="widget_font">Czcionka</string>
     <string name="widget_font_ibm_plex">IBM Plex Sans</string>
     <string name="widget_font_system">Systemowa</string>
