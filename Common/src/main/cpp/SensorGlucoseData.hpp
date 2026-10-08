@@ -1907,23 +1907,30 @@ uint32_t getlastpolltime() const {
     if(getinfo()->pollcount) {
         int count=getinfo()->pollcount-1;
         int previd=polls[count].id;
-        if(previd>=id)  {
-            LOGGER("GLU: duplicate id: previd=%d id=%d\n",previd,id);
+        if(previd>=id) {
+            const uint32_t prevt=polls[count].t;
+            LOGGER(
+                "GLU_CURSOR duplicate incoming{id=%d time=%lu glu=%d} "
+                "previous{pos=%d id=%d time=%u} pollcount=%u "
+                "pollinterval=%.3f\n",
+                id, static_cast<unsigned long>(tim), glu, count, previd, prevt,
+                getinfo()->pollcount, getinfo()->pollinterval);
             return false;
             }
         uint32_t prevt=polls[count].t;
-        uint32_t predict =prevt+(id-previd)*getinfo()->pollinterval;
+        uint32_t predict=prevt+(id-previd)*getinfo()->pollinterval;
         const int verschil=tim-predict;
-        if(verschil>3*60)   {
-            LOGGER("GLU: oldvalue: pollinterval=%f %d prev=%d savepoll %d nu=%lu, %d  versch=%d %s",getinfo()->pollinterval,previd,prevt,id,tim,glu,verschil,ctime(&tim));
+        if(verschil>3*60) {
+            LOGGER("GLU: oldvalue: pollinterval=%f %d prev=%d savepoll %d nu=%lu, %d  versch=%d %s",
+                   getinfo()->pollinterval,previd,prevt,id,tim,glu,verschil,ctime(&tim));
             }
         else {
             constexpr const double weight=0.9;
             double af=(double)(tim-prevt)/(id-previd);
-            getinfo()->pollinterval= weight*getinfo()->pollinterval+(1.0-weight)*af;
+            getinfo()->pollinterval=weight*getinfo()->pollinterval+(1.0-weight)*af;
             }
         }
-    saveglucosedata(polls,getinfo()->pollcount,tim, id, glu, trend, change);
+    saveglucosedata(polls,getinfo()->pollcount,tim,id,glu,trend,change);
     return true;
     }
 
