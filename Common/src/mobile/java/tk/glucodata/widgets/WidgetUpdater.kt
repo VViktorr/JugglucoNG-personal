@@ -22,13 +22,19 @@ object WidgetUpdater {
     private val executor=Executors.newSingleThreadExecutor { r -> Thread(r,"home-widgets").apply { priority=Thread.NORM_PRIORITY-1 } }
     private val weatherExecutor=Executors.newSingleThreadExecutor { r -> Thread(r,"widget-weather").apply { priority=Thread.NORM_PRIORITY-1 } }
     private val pending=AtomicBoolean(false)
+    private val rerunRequested=AtomicBoolean(false)
     private val weatherPending=AtomicBoolean(false)
     private val pendingCallbacks=java.util.concurrent.ConcurrentLinkedQueue<()->Unit>()
 
     fun requestUpdateAll(context:Context,done:(()->Unit)?=null){
         done?.let(pendingCallbacks::add)
         val app=context.applicationContext
-        if(!pending.compareAndSet(false,true)) return
+        if(!pending.compareAndSet(false,true)) {
+            // A glucose update that arrives while bitmaps are being rendered must not be
+            // dropped. Remember it and run one more pass with the newest snapshot.
+            rerunRequested.set(true)
+            return
+        }
         executor.execute {
             try {
                 val manager=AppWidgetManager.getInstance(app)
@@ -37,11 +43,13 @@ object WidgetUpdater {
                 if(targets.isNotEmpty()) render(app,manager,targets)
             } catch(t:Throwable){ Log.stack(LOG_ID,"requestUpdateAll",t) }
             finally {
+                val rerun=rerunRequested.getAndSet(false)
                 pending.set(false)
                 while(true){
                     val callback=pendingCallbacks.poll() ?: break
                     try { callback() } catch(_:Throwable) {}
                 }
+                if(rerun) requestUpdateAll(app)
             }
         }
     }
@@ -86,20 +94,16 @@ object WidgetUpdater {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
                         RemoteViews(context.packageName,if(kind==WidgetKind.CLOCK_WEATHER) R.layout.home_widget_clock_weather else R.layout.home_widget).apply{
                             if(kind==WidgetKind.CLOCK_WEATHER){
-                                val scale = config.textScale / 100f
-                                val clockSize = min(w * 0.145f, h * 0.52f) * scale
-                                val dateSize = min(w * 0.042f, h * 0.15f) * scale
-                                val textColor =
-                                    if ((context.resources.configuration.uiMode and 0x30)==0x20 || config.background == WidgetBackground.RANGE)
-                                        android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
+                                val scale=config.textScale/100f
+                                val timeScale=config.timeScale/100f
+                                val clockSize=min(w*0.145f,h*0.52f)*scale*timeScale
+                                val dateSize=min(w*0.042f,h*0.15f)*scale*timeScale
+                                val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
                                 setTextViewTextSize(R.id.home_widget_clock,android.util.TypedValue.COMPLEX_UNIT_SP,clockSize)
                                 setTextColor(R.id.home_widget_clock,textColor)
                                 setTextViewTextSize(R.id.home_widget_date,android.util.TypedValue.COMPLEX_UNIT_SP,dateSize)
                                 setTextColor(R.id.home_widget_date,textColor)
-                                setViewVisibility(
-                                    R.id.home_widget_date,
-                                    if(config.showDate) android.view.View.VISIBLE else android.view.View.GONE
-                                )
+                                setViewVisibility(R.id.home_widget_date,if(config.showDate) android.view.View.VISIBLE else android.view.View.GONE)
                             }
                             setImageViewBitmap(R.id.home_widget_image,renderer.render(kind,config,snapshot,w,h,px,weather))
                             setContentDescription(R.id.home_widget_image,description)
@@ -135,7 +139,12 @@ object WidgetUpdater {
         val sizes=widgetSizes(manager.getAppWidgetOptions(id)).ifEmpty{listOf(SizeF(kind.defaultWidthDp,kind.defaultHeightDp))}
         val metrics=context.resources.displayMetrics
         val density=metrics.density
-        val budget=metrics.widthPixels.toFloat()*metrics.heightPixels*0.85f
+        // RemoteViews transports every responsive bitmap to the launcher. Four full-density
+        // variants can become a multi-megabyte update and some launchers intermittently drop
+        // it, leaving the widget blank until a resize/long-press forces another update.
+        // Keep the complete update comfortably small while retaining enough pixels for text.
+        val screenPixels=metrics.widthPixels.toFloat()*metrics.heightPixels
+        val budget=min(screenPixels*0.45f,600_000f)
         val total=sizes.sumOf{(it.width*it.height*density*density).toDouble()}.toFloat()
         val px=if(total>budget) density*sqrt(budget/total) else density
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S && sizes.size>1) return RemoteViews(sizes.associateWith{build(it.width,it.height,px)})
@@ -148,7 +157,13 @@ object WidgetUpdater {
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S){
             @Suppress("DEPRECATION")
             val sizes=options.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
-            if(!sizes.isNullOrEmpty()) return sizes.filter{it.width>0&&it.height>0}.distinct().take(4)
+            if(!sizes.isNullOrEmpty()){
+                val valid=sizes.filter{it.width>0&&it.height>0}.distinct().sortedBy{it.width*it.height}
+                if(valid.size<=2) return valid
+                // Smallest and largest cover compact/expanded launcher layouts without
+                // packing four independent bitmaps into every RemoteViews transaction.
+                return listOf(valid.first(),valid.last())
+            }
         }
         val minW=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
         val maxW=options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
