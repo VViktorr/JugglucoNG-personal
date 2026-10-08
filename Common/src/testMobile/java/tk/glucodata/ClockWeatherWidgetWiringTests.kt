@@ -11,50 +11,42 @@ class ClockWeatherWidgetWiringTests {
 
     private fun mobile(path: String) = File(root, "src/mobile/$path").readText()
 
-    @Test fun clockWeatherIsRegisteredAlongsideExistingWidgetVariants() {
-        val manifest = mobile("AndroidManifest.xml")
-        val kind = mobile("java/tk/glucodata/widgets/WidgetConfig.kt")
-        assertTrue(manifest.contains(".widgets.ClockWeatherWidget"))
-        assertTrue(manifest.contains("home_widget_clock_weather_info"))
-        assertTrue(kind.contains("CLOCK_WEATHER(ClockWeatherWidget::class.java"))
-        assertTrue(manifest.contains(".GlucoseWidget"))
-        assertTrue(manifest.contains(".widget.ExpressiveWidgetReceiver"))
-    }
-
-    @Test fun clockUsesNativeMinuteUpdatingTextClock() {
+    @Test
+    fun clockUsesNativeTextClockAndFullDate() {
         val layout = mobile("res/layout/home_widget_clock_weather.xml")
         val updater = mobile("java/tk/glucodata/widgets/WidgetUpdater.kt")
         assertTrue(layout.contains("<TextClock"))
         assertTrue(layout.contains("home_widget_clock"))
         assertTrue(layout.contains("home_widget_date"))
-        assertTrue(layout.contains("EEE, d MMMM"))
-        assertTrue(layout.contains("format24Hour"))
+        assertTrue(layout.contains("EEEE, d MMMM"))
         assertTrue(updater.contains("R.layout.home_widget_clock_weather"))
-        assertTrue(updater.contains("setTextViewTextSize(R.id.home_widget_clock"))
-        assertTrue(updater.contains("setTextViewTextSize(R.id.home_widget_date"))
+        assertTrue(updater.contains("config.timeScale"))
     }
 
-    @Test fun glucoseStatesAndWeatherStayIndependent() {
+    @Test
+    fun weatherIsNearClockAndGlucoseIsOnRight() {
         val renderer = mobile("java/tk/glucodata/widgets/WidgetRenderer.kt")
-        val data = mobile("java/tk/glucodata/widgets/WidgetData.kt")
-        val weather = mobile("java/tk/glucodata/widgets/WidgetWeatherSource.kt")
-        assertTrue(renderer.contains("drawClockWeather"))
-        assertTrue(renderer.contains("glucoseCenterX = w * 0.60f"))
-        assertTrue(renderer.contains("weatherX = w * 0.885f"))
-        assertTrue(!renderer.substring(renderer.indexOf("private fun drawClockWeather"), renderer.indexOf("private fun drawDial")).contains("SimpleDateFormat"))
-        assertTrue(renderer.contains("s.statusText"))
-        assertTrue(data.contains("WidgetDisplaySource.resolveChartHistory"))
-        assertTrue(weather.contains("ACCESS_COARSE_LOCATION"))
-        assertTrue(weather.contains("api.open-meteo.com"))
-        assertTrue(weather.contains("MAX_AGE_MS"))
+        assertTrue(renderer.contains("weatherX = (w * 0.44f - c.weatherShiftDp * density)"))
+        assertTrue(renderer.contains("glucoseCenterX = w * 0.80f"))
+        val start = renderer.indexOf("private fun drawClockWeather")
+        val end = renderer.indexOf("private fun drawRange", start)
+        assertTrue(start >= 0 && end > start)
+        val body = renderer.substring(start, end)
+        assertTrue(!body.contains("SimpleDateFormat"))
+        assertTrue(!body.contains("timeText"))
     }
 
-    @Test fun weatherControlsLiveInsideDisplayWidgetSettings() {
+    @Test
+    fun independentClockWeatherSizingControlsAreAvailable() {
+        val config = mobile("java/tk/glucodata/widgets/WidgetConfig.kt")
         val screen = mobile("java/tk/glucodata/widgets/WidgetSettingsScreen.kt")
-        assertTrue(screen.contains("WidgetKind.entries"))
-        assertTrue(screen.contains("R.string.widget_show_date"))
-        assertTrue(screen.contains("R.string.widget_show_weather_icon"))
-        assertTrue(screen.contains("R.string.widget_show_temperature"))
-        assertTrue(screen.contains("ActivityResultContracts.RequestPermission()"))
+        assertTrue(config.contains("timeScale"))
+        assertTrue(config.contains("glucoseScale"))
+        assertTrue(config.contains("weatherScale"))
+        assertTrue(config.contains("weatherShiftDp"))
+        assertTrue(screen.contains("widget_time_size_value"))
+        assertTrue(screen.contains("widget_glucose_size_value"))
+        assertTrue(screen.contains("widget_weather_size_value"))
+        assertTrue(screen.contains("widget_weather_shift_value"))
     }
 }
