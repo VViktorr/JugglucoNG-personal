@@ -1,67 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_preview_bg"
-    android:padding="10dp">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp">
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_weight="1.25"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="vertical">
+            android:orientation="horizontal">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="16:28"
+                android:text="18:06"
                 android:textColor="#FFFFFFFF"
-                android:textSize="34sp"
+                android:textSize="31sp"
                 android:includeFontPadding="false" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="środa, 7 października"
-                android:textColor="#CCFFFFFF"
-                android:textSize="11sp"
-                android:singleLine="true" />
+                android:layout_marginStart="8dp"
+                android:text="☁ 18°"
+                android:textColor="#FFFFFFFF"
+                android:textSize="18sp"
+                android:includeFontPadding="false" />
         </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
-            android:text="☁ 17°"
+            android:layout_marginTop="2dp"
+            android:text="czwartek, 8 października"
             android:textColor="#FFFFFFFF"
-            android:textSize="18sp"
+            android:textSize="11sp"
+            android:singleLine="true"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.75"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="136 →"
+            android:textColor="#FFFFFFFF"
+            android:textSize="32sp"
             android:includeFontPadding="false" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.85"
-            android:gravity="center"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="128 ↑"
-                android:textColor="#FFFFFFFF"
-                android:textSize="30sp"
-                android:includeFontPadding="false" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="+7 mg/dL · 16:27"
-                android:textColor="#CCFFFFFF"
-                android:textSize="10sp"
-                android:singleLine="true" />
-        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-1 mg/dL 18:05"
+            android:textColor="#CCFFFFFF"
+            android:textSize="10sp"
+            android:singleLine="true"
+            android:includeFontPadding="false" />
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>
