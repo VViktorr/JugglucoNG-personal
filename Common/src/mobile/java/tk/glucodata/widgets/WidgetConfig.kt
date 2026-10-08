@@ -55,10 +55,14 @@ data class WidgetConfig(
     val textScale: Int = 100,
     val timeScale: Int = 100,
     val glucoseScale: Int = 100,
+    val detailScale: Int = 100,
     val weatherScale: Int = 110,
+    val weatherIconScale: Int = 100,
+    val temperatureScale: Int = 100,
     val weatherShiftDp: Int = 12,
     val fontFamily: WidgetFontFamily = WidgetFontFamily.IBM_PLEX,
-    val fontWeight: Int = 400,
+    val primaryFontWeight: Int = 400,
+    val secondaryFontWeight: Int = 400,
     val rangeColors: Boolean = true,
     val showArrow: Boolean = true,
     val showDelta: Boolean = true,
@@ -80,10 +84,14 @@ data class WidgetConfig(
         .put("textScale", textScale)
         .put("timeScale", timeScale)
         .put("glucoseScale", glucoseScale)
+        .put("detailScale", detailScale)
         .put("weatherScale", weatherScale)
+        .put("weatherIconScale", weatherIconScale)
+        .put("temperatureScale", temperatureScale)
         .put("weatherShiftDp", weatherShiftDp)
         .put("fontFamily", fontFamily.name)
-        .put("fontWeight", fontWeight)
+        .put("primaryFontWeight", primaryFontWeight)
+        .put("secondaryFontWeight", secondaryFontWeight)
         .put("rangeColors", rangeColors)
         .put("showArrow", showArrow)
         .put("showDelta", showDelta)
@@ -112,11 +120,21 @@ data class WidgetConfig(
                     cornerRadiusDp = json.optInt("cornerRadiusDp", fallback.cornerRadiusDp).coerceIn(0, 24),
                     textScale = json.optInt("textScale", fallback.textScale).coerceIn(70, 140),
                     timeScale = json.optInt("timeScale", fallback.timeScale).coerceIn(70, 160),
-                    glucoseScale = json.optInt("glucoseScale", fallback.glucoseScale).coerceIn(70, 160),
-                    weatherScale = json.optInt("weatherScale", fallback.weatherScale).coerceIn(70, 180),
+                    glucoseScale = json.optInt("glucoseScale", fallback.glucoseScale).coerceIn(70, 180),
+                    detailScale = json.optInt("detailScale", fallback.detailScale).coerceIn(70, 180),
+                    weatherScale = json.optInt("weatherScale", fallback.weatherScale).coerceIn(70, 200),
+                    weatherIconScale = json.optInt("weatherIconScale", fallback.weatherIconScale).coerceIn(70, 220),
+                    temperatureScale = json.optInt("temperatureScale", fallback.temperatureScale).coerceIn(70, 200),
                     weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 40),
                     fontFamily = enum(json.optString("fontFamily"), fallback.fontFamily),
-                    fontWeight = json.optInt("fontWeight", fallback.fontWeight).coerceIn(300, 700),
+                    primaryFontWeight = json.optInt(
+                        "primaryFontWeight",
+                        json.optInt("fontWeight", fallback.primaryFontWeight)
+                    ).coerceIn(300, 700),
+                    secondaryFontWeight = json.optInt(
+                        "secondaryFontWeight",
+                        json.optInt("fontWeight", fallback.secondaryFontWeight)
+                    ).coerceIn(300, 700),
                     rangeColors = json.optBoolean("rangeColors", fallback.rangeColors),
                     showArrow = json.optBoolean("showArrow", fallback.showArrow),
                     showDelta = json.optBoolean("showDelta", fallback.showDelta),
@@ -177,7 +195,8 @@ object WidgetConfigStore {
             textScale = (legacy.getFloat("notification_font_size", 1.0f) * 100f).toInt().coerceIn(70, 140),
             fontFamily = if (legacy.getInt("notification_font_family", 0) == 1)
                 WidgetFontFamily.SYSTEM else WidgetFontFamily.IBM_PLEX,
-            fontWeight = legacy.getInt("notification_font_weight", 400).coerceIn(300, 700),
+            primaryFontWeight = legacy.getInt("notification_font_weight", 400).coerceIn(300, 700),
+            secondaryFontWeight = legacy.getInt("notification_font_weight", 400).coerceIn(300, 700),
             showArrow = legacy.getBoolean("notification_show_arrow", true)
         )
     }
