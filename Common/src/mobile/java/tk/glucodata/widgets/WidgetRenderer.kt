@@ -254,49 +254,14 @@ class WidgetRenderer(private val context: Context) {
         val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
         val foreground =
             if (dark || c.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
-        val compact = w / h >= 3.0f
-        val clockX = w * 0.18f
-        val weatherX = (w * 0.47f - c.weatherShiftDp * density)
-            .coerceIn(w * 0.30f, w * 0.52f)
-        val glucoseCenterX = w * 0.79f
+
+        // Clock and full date are native TextClock overlays from the layout.
+        // The bitmap renders only weather and the glucose cluster.
         fun componentScale(component: Int): Int =
             (c.textScale * component / 100f).roundToInt().coerceIn(55, 220)
 
-        val now = java.util.Date()
-        val timeText = android.text.format.DateFormat.getTimeFormat(context).format(now)
-        val clockPaint = fitText(
-            timeText,
-            w * 0.31f,
-            if (compact) h * 0.52f else h * 0.44f,
-            foreground,
-            componentScale(c.timeScale),
-            c,
-            true
-        )
-        canvas.drawText(
-            timeText,
-            clockX,
-            baselineCenter(clockPaint, if (c.showDate) h * 0.40f else h * 0.50f),
-            clockPaint
-        )
-
-        if (c.showDate) {
-            val dateText = java.text.SimpleDateFormat(
-                "EEEE, d MMMM",
-                java.util.Locale.getDefault()
-            ).format(now)
-            val datePaint = fitText(
-                dateText,
-                w * 0.33f,
-                h * 0.18f,
-                foreground,
-                componentScale((c.timeScale * 90f / 100f).roundToInt()),
-                c,
-                false
-            )
-            canvas.drawText(dateText, clockX, baselineCenter(datePaint, h * 0.76f), datePaint)
-        }
-
+        val weatherX = (w * 0.44f - c.weatherShiftDp * density)
+            .coerceIn(w * 0.30f, w * 0.50f)
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -314,24 +279,24 @@ class WidgetRenderer(private val context: Context) {
             if (label.isNotBlank()) {
                 val p = fitText(
                     label,
-                    w * 0.22f,
-                    h * 0.38f,
+                    w * 0.20f,
+                    h * 0.30f,
                     foreground,
                     componentScale(c.weatherScale),
                     c,
                     false
                 )
-                canvas.drawText(label, weatherX, baselineCenter(p, h * 0.48f), p)
+                canvas.drawText(label, weatherX, baselineCenter(p, h * 0.34f), p)
             }
         }
 
+        val glucoseCenterX = w * 0.80f
         val glucoseText = if (s.hasFreshReading) s.valueText else "—"
         val glucoseColor = if (s.hasFreshReading) contentColor(s, c) else foreground
-        val valueMaxW = w * 0.23f
         val glucosePaint = fitText(
             glucoseText,
-            valueMaxW,
-            h * 0.58f,
+            w * 0.24f,
+            h * 0.62f,
             glucoseColor,
             componentScale(c.glucoseScale),
             c,
@@ -339,7 +304,7 @@ class WidgetRenderer(private val context: Context) {
         )
         canvas.drawText(
             glucoseText,
-            glucoseCenterX - w * 0.025f,
+            glucoseCenterX,
             baselineCenter(glucosePaint, h * 0.40f),
             glucosePaint
         )
@@ -348,8 +313,8 @@ class WidgetRenderer(private val context: Context) {
             drawTrendArrow(
                 canvas,
                 w * 0.93f,
-                h * 0.38f,
-                min(w * 0.085f, h * 0.32f),
+                h * 0.36f,
+                min(w * 0.085f, h * 0.30f),
                 s.rate,
                 glucoseColor,
                 s.isMmol
@@ -368,8 +333,8 @@ class WidgetRenderer(private val context: Context) {
             }.joinToString("  ")
         }
         if (!detail.isNullOrBlank()) {
-            val p = fitText(detail, w * 0.34f, h * 0.17f, foreground, 90, c, false)
-            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.76f), p)
+            val p = fitText(detail, w * 0.30f, h * 0.15f, foreground, 90, c, false)
+            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.73f), p)
         }
     }
 
