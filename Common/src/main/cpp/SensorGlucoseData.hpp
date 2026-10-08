@@ -1931,11 +1931,20 @@ uint32_t getlastpolltime() const {
 
     if (previousValueIndex >= 0) {
       const int previd = polls[previousValueIndex].id;
+      const uint32_t prevt = polls[previousValueIndex].t;
       if (previd >= id) {
-        LOGGER("GLU: duplicate id: previd=%d id=%d\n", previd, id);
+        const int tailIndex = count > 0 ? count - 1 : -1;
+        const int tailId = tailIndex >= 0 ? polls[tailIndex].id : -1;
+        const uint32_t tailTime = tailIndex >= 0 ? polls[tailIndex].t : 0;
+        LOGGER(
+            "GLU_CURSOR duplicate incoming{id=%d time=%lu glu=%d} "
+            "previous{pos=%d id=%d time=%u} tail{pos=%d id=%d time=%u} "
+            "pollcount=%d rawOnlyMatch=%d pollinterval=%.3f\n",
+            id, static_cast<unsigned long>(tim), glu, previousValueIndex, previd,
+            prevt, tailIndex, tailId, tailTime, count, replaceRawOnlyIndex,
+            getinfo()->pollinterval);
         return false;
       }
-      const uint32_t prevt = polls[previousValueIndex].t;
       const uint32_t predict = prevt + (id - previd) * getinfo()->pollinterval;
       const int verschil = tim - predict;
       if (verschil > 3 * 60) {
@@ -2015,6 +2024,10 @@ uint32_t getlastpolltime() const {
              id, index, capacity);
       return true;
     }
+    LOGGER(
+        "GLU_CURSOR reset-write pos=%d id=%d time=%lu glu=%d raw=%d "
+        "oldCount=%zu\n",
+        index, id, static_cast<unsigned long>(tim), glu, raw, count);
     polls[index] = {static_cast<uint32_t>(tim), id, (int32_t)glu, trend,
                     change};
     rawpolls[index] = {(uint16_t)raw};
@@ -2039,6 +2052,11 @@ uint32_t getlastpolltime() const {
     streamscans[count] = {static_cast<uint32_t>(tim), id, (int32_t)glu, trend,
                           change};
     if (&streamscans == &polls) {
+      LOGGER(
+          "GLU_CURSOR append pos=%u id=%d time=%lu glu=%d raw=%d "
+          "pollinterval=%.3f\n",
+          count, id, static_cast<unsigned long>(tim), glu, raw,
+          getinfo()->pollinterval);
       rawpolls[count] = {(uint16_t)raw};
       temppolls[count] = temp;
     }
@@ -2086,6 +2104,10 @@ uint32_t getlastpolltime() const {
     }
     LOGGER("count=%d savepollallIDsonly(%lu,%d,%.1f,%d,%.1f) %s", count, tim,
            id, glu / convfactordL, trend, change, ctime(&tim));
+    LOGGER(
+        "GLU_CURSOR indexed-write pos=%d id=%d time=%lu glu=%d raw=%d "
+        "pollcount=%d\n",
+        id, id, static_cast<unsigned long>(tim), glu, raw, count);
     polls[id] = {static_cast<uint32_t>(tim), id, (int32_t)glu, trend, change};
     rawpolls[id] = {(uint16_t)raw};
     temppolls[id] = temp;
