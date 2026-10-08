@@ -91,10 +91,13 @@ LOGGER("saveSputnik_PG2 uselen=%d prevend=%d firstpos=%d\n",uselen,prevend,pos);
 			time_t tim=item->gettime();
 			LOGGER("already streamed %d %.1f %s",item->getid(),(float)item->getmgdL()/convfactordL,ctime(&tim));
 #endif
+			++skippedStreamedCount;
 			continue;
 			}
-		if(topos<prevend)  /*Already written by an earlier scan.*/
+		if(topos<prevend) { /*Already written by an earlier scan.*/
+			++skippedExistingCount;
 			continue;
+			}
 		}
 	const uint16_t gv=10*value;//Same unit as raw
 	const uint32_t was=nutime-(nuid-id)*60;
@@ -104,12 +107,16 @@ LOGGER("saveSputnik_PG2 uselen=%d prevend=%d firstpos=%d\n",uselen,prevend,pos);
 	item->glu[2]&=~0x4000;	/*Scan-sourced: keep the streamed flag truthful.*/
 	if(firstchanged<0||topos<firstchanged)
 		firstchanged=topos;
+	++writtenCount;
 #ifndef NOLOG
 	time_t tim=item->gettime();
 	LOGGER("add %d %.1f %s",item->getid(),(float) item->getmgdL()/convfactordL,ctime(&tim));
 #endif
     	}
 save.setendScanhistory(lastgood+1);
+LOGGER("NFC_DIAG history-end valid=%d written=%d skipQuality=%d skipStreamed=%d skipExisting=%d skipRange=%d firstChanged=%d lastGood=%d endScanHistory=%d\n",
+    validCount, writtenCount, skippedQualityCount, skippedStreamedCount,
+    skippedExistingCount, skippedRangeCount, firstchanged, lastgood, lastgood+1);
 if(save.getStreamendhistory()) {
 	if(firstchanged!=-1) {
 		int maxint=backup->getupdatedata()->sendnr;
