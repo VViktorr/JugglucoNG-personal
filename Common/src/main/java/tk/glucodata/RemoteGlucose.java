@@ -203,13 +203,15 @@ class RemoteGlucose {
       }
    }
 
-   private void applyWidgetTypeface(Paint paint) {
+   private void applyWidgetTypeface(Paint paint, boolean primary) {
       try {
          var legacy = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
          boolean legacySystem = legacy.getInt("notification_font_family", 0) == 1;
          int legacyWeight = legacy.getInt("notification_font_weight", 400);
          String family = basicWidgetString("fontFamily", legacySystem ? "SYSTEM" : "IBM_PLEX");
-         int fontWeight = Math.max(300, Math.min(700, basicWidgetInt("fontWeight", legacyWeight)));
+         int legacyConfiguredWeight = basicWidgetInt("fontWeight", legacyWeight);
+         int fontWeight = Math.max(300, Math.min(700,
+               basicWidgetInt(primary ? "primaryFontWeight" : "secondaryFontWeight", legacyConfiguredWeight)));
          boolean useSystemFont = "SYSTEM".equals(family);
 
          android.graphics.Typeface tf;
@@ -242,7 +244,8 @@ class RemoteGlucose {
       // Keep the legacy widget on its fixed legacy foreground instead of
       // following notification/system light-dark theme flips.
       final int glucoseColor = baseForegroundColor;
-      final float useglsize = glucosesize;
+      final float useglsize = glucosesize * basicWidgetInt("glucoseScale", 100) / 100.0f;
+      final float detailScale = basicWidgetInt("detailScale", 100) / 100.0f;
       final float usedensity = density;
       final int canvasWidth = canvas.getWidth();
       final int canvasHeight = canvas.getHeight();
@@ -250,14 +253,14 @@ class RemoteGlucose {
 
       drawWidgetBackground();
       glucosePaint.setColor(glucoseColor);
-      applyWidgetTypeface(glucosePaint);
+      applyWidgetTypeface(glucosePaint, true);
 
       // Render the right-side cluster (arrow above small time) so we know its
       // width before placing the value. The cluster is intentionally compact —
       // small arrow paired with a small time label, both right-aligned with a
       // generous offset from the canvas edge.
       final float rightInset = usedensity * 18f;
-      final float reducedTimeSize = timesize * 0.95f;
+      final float reducedTimeSize = timesize * 0.95f * detailScale;
       final boolean showArrow = basicWidgetBoolean("showArrow", true);
       final boolean showTime = basicWidgetBoolean("showTime", true);
       Bitmap arrowBitmap = null;
@@ -325,6 +328,7 @@ class RemoteGlucose {
 
          if (showTime) {
          glucosePaint.setTextSize(compactTimeSize);
+         applyWidgetTypeface(glucosePaint, false);
          glucosePaint.setTextAlign(Paint.Align.CENTER);
          glucosePaint.setAlpha(200);
          Paint.FontMetrics compactTimeMetrics = glucosePaint.getFontMetrics();
@@ -340,6 +344,7 @@ class RemoteGlucose {
       }
 
       glucosePaint.setTextSize(reducedTimeSize);
+      applyWidgetTypeface(glucosePaint, false);
       Rect timeBounds = new Rect();
       glucosePaint.getTextBounds(timestr, 0, timestr.length(), timeBounds);
       float timeWidth = showTime ? timeBounds.width() : 0f;
@@ -358,6 +363,7 @@ class RemoteGlucose {
       final float valueClusterGap = useglsize * 0.18f;
       final float maxValueWidth = (canvasWidth - rightInset - clusterWidth - valueClusterGap) - leftInset;
       glucosePaint.setTextSize(useglsize);
+      applyWidgetTypeface(glucosePaint, true);
       float effectiveSize = useglsize;
       float valueWidth = glucosePaint.measureText(valueStr);
       if (maxValueWidth > 0 && valueWidth > maxValueWidth) {
@@ -388,6 +394,7 @@ class RemoteGlucose {
 
       if (showTime) {
       glucosePaint.setTextSize(reducedTimeSize);
+      applyWidgetTypeface(glucosePaint, false);
       glucosePaint.setTextAlign(Paint.Align.CENTER);
       glucosePaint.setAlpha(200);
       float timeBaseline = clusterTop + arrowHeight + clusterGap + reducedTimeSize * 0.65f;
