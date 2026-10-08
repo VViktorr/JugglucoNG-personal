@@ -92,12 +92,23 @@ object WidgetUpdater {
             ids.forEach { id ->
                 try {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
-                        RemoteViews(context.packageName,if(kind==WidgetKind.CLOCK_WEATHER) R.layout.home_widget_clock_weather else R.layout.home_widget).apply{
+                        RemoteViews(
+                            context.packageName,
+                            if (kind == WidgetKind.CLOCK_WEATHER) {
+                                if (config.fontFamily == WidgetFontFamily.IBM_PLEX)
+                                    R.layout.home_widget_clock_weather_ibm
+                                else
+                                    R.layout.home_widget_clock_weather
+                            } else {
+                                R.layout.home_widget
+                            }
+                        ).apply{
                             if(kind==WidgetKind.CLOCK_WEATHER){
-                                val scale=config.textScale/100f
+                                val baseScale=config.textScale/100f
                                 val timeScale=config.timeScale/100f
-                                val clockSize=min(w*0.145f,h*0.52f)*scale*timeScale
-                                val dateSize=min(w*0.042f,h*0.15f)*scale*timeScale
+                                val detailScale=config.detailScale/100f
+                                val clockSize=min(w*0.145f,h*0.52f)*baseScale*timeScale
+                                val dateSize=min(w*0.042f,h*0.15f)*baseScale*detailScale
                                 val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
                                 setTextViewTextSize(R.id.home_widget_clock,android.util.TypedValue.COMPLEX_UNIT_SP,clockSize)
                                 setTextColor(R.id.home_widget_clock,textColor)
