@@ -1903,41 +1903,29 @@ uint32_t getlastpolltime() const {
       setlastscantime(tim);
   }
 
-  bool savepoll(time_t tim, int id, int glu, int trend, float change,
-                int raw = 0) {
-    if (pollcount()) {
-      const int count = pollcount() - 1;
-      const int previd = polls[count].id;
-      if (previd >= id) {
-        const uint32_t prevt = polls[count].t;
-        LOGGER(
-            "GLU_CURSOR duplicate incoming{id=%d time=%lu glu=%d raw=%d} "
-            "previous{pos=%d id=%d time=%u} pollcount=%d "
-            "pollinterval=%.3f\n",
-            id, static_cast<unsigned long>(tim), glu, raw, count, previd, prevt,
-            pollcount(), getinfo()->pollinterval);
-        return false;
-      }
-      const uint32_t prevt = polls[count].t;
-      const uint32_t predict =
-          prevt + (id - previd) * getinfo()->pollinterval;
-      const int verschil = tim - predict;
-      if (verschil > 3 * 60) {
-        LOGGER(
-            "GLU: oldvalue: pollinterval=%f %d prev=%d savepoll %d nu=%lu, "
-            "%d  versch=%d %s",
-            getinfo()->pollinterval, previd, prevt, id, tim, glu, verschil,
-            ctime(&tim));
-      } else {
-        constexpr const double weight = 0.9;
-        const double af = (double)(tim - prevt) / (id - previd);
-        getinfo()->pollinterval =
-            weight * getinfo()->pollinterval + (1.0 - weight) * af;
-      }
+  bool savepoll(time_t tim,int id,int glu,int trend,float change) {
+    if(getinfo()->pollcount) {
+        int count=getinfo()->pollcount-1;
+        int previd=polls[count].id;
+        if(previd>=id)  {
+            LOGGER("GLU: duplicate id: previd=%d id=%d\n",previd,id);
+            return false;
+            }
+        uint32_t prevt=polls[count].t;
+        uint32_t predict =prevt+(id-previd)*getinfo()->pollinterval;
+        const int verschil=tim-predict;
+        if(verschil>3*60)   {
+            LOGGER("GLU: oldvalue: pollinterval=%f %d prev=%d savepoll %d nu=%lu, %d  versch=%d %s",getinfo()->pollinterval,previd,prevt,id,tim,glu,verschil,ctime(&tim));
+            }
+        else {
+            constexpr const double weight=0.9;
+            double af=(double)(tim-prevt)/(id-previd);
+            getinfo()->pollinterval= weight*getinfo()->pollinterval+(1.0-weight)*af;
+            }
+        }
+    saveglucosedata(polls,getinfo()->pollcount,tim, id, glu, trend, change);
+    return true;
     }
-    return saveglucosedata(polls, getinfo()->pollcount, tim, id, glu, trend,
-                           change, raw);
-  }
 
   bool savestreamonly(time_t tim, int id, int glu, int trend, float change,
                       int raw = 0, uint16_t temp = 0) {
