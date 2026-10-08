@@ -301,6 +301,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         config.showDate,
                         config.textScale,
                         config.timeScale,
+                        config.detailScale,
+                        config.fontFamily,
                         primaryTextColor,
                         secondaryTextColor
                     ) {
