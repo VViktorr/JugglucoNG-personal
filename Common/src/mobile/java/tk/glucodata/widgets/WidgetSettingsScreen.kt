@@ -227,6 +227,13 @@ private fun WidgetDetailSettings(
             valueRange = 70f..180f
         )
 
+        Text(stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
+        Slider(
+            value = config.glucoseScale.toFloat(),
+            onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
+            valueRange = 70f..180f
+        )
+
         Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
         Slider(
             value = config.cornerRadiusDp.toFloat(),
@@ -284,13 +291,6 @@ private fun WidgetDetailSettings(
             Slider(
                 value = config.timeScale.toFloat(),
                 onValueChange = { onChange(config.copy(timeScale = (it / 5f).toInt() * 5)) },
-                valueRange = 70f..180f
-            )
-
-            Text(stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
-            Slider(
-                value = config.glucoseScale.toFloat(),
-                onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
                 valueRange = 70f..180f
             )
 
