@@ -311,6 +311,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         config.timeScale,
                         config.detailScale,
                         config.fontFamily,
+                        config.primaryFontWeight,
+                        config.secondaryFontWeight,
                         primaryTextColor,
                         secondaryTextColor
                     ) {
@@ -417,6 +419,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                             config.fontFamily,
                             config.secondaryFontWeight,
                             config.textScale,
+                            config.detailScale,
                             secondaryTextColor
                         ) {
                             textBitmap(context, fallbackText, 13f * detailScale, config, secondaryTextColor, secondaryFontWeight)
