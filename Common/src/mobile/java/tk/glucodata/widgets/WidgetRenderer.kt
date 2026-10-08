@@ -124,7 +124,7 @@ class WidgetRenderer(private val context: Context) {
     }
 
     private fun configuredTypeface(config: WidgetConfig, bold: Boolean): Typeface {
-        val weight = config.fontWeight
+        val weight = if (bold) config.primaryFontWeight else config.secondaryFontWeight
         return try {
             val base = if (config.fontFamily == WidgetFontFamily.IBM_PLEX) {
                 ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
@@ -150,7 +150,7 @@ class WidgetRenderer(private val context: Context) {
         textAlign = Paint.Align.CENTER
         typeface = configuredTypeface(config, bold)
         if (Build.VERSION.SDK_INT >= 26 && config.fontFamily == WidgetFontFamily.IBM_PLEX) {
-            fontVariationSettings = "'wght' ${config.fontWeight}, 'wdth' 100"
+            fontVariationSettings = "'wght' ${if (bold) config.primaryFontWeight else config.secondaryFontWeight}, 'wdth' 100"
         }
     }
 
@@ -255,13 +255,11 @@ class WidgetRenderer(private val context: Context) {
         val foreground =
             if (dark || c.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
 
-        // Clock and full date are native TextClock overlays from the layout.
-        // The bitmap renders only weather and the glucose cluster.
         fun componentScale(component: Int): Int =
-            (c.textScale * component / 100f).roundToInt().coerceIn(55, 220)
+            (c.textScale * component / 100f).roundToInt().coerceIn(50, 260)
 
-        val weatherX = (w * 0.44f - c.weatherShiftDp * density)
-            .coerceIn(w * 0.30f, w * 0.50f)
+        val weatherCenterX = (w * 0.44f - c.weatherShiftDp * density)
+            .coerceIn(w * 0.27f, w * 0.54f)
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -273,20 +271,27 @@ class WidgetRenderer(private val context: Context) {
                 in 95..99 -> "ϟ"
                 else -> "☁"
             }
-            val label =
-                (if (c.showWeatherIcon) "$symbol " else "") +
-                    (if (c.showTemperature) "${weather.temperatureC}°" else "")
-            if (label.isNotBlank()) {
-                val p = fitText(
-                    label,
-                    w * 0.20f,
-                    h * 0.30f,
-                    foreground,
-                    componentScale(c.weatherScale),
-                    c,
-                    false
-                )
-                canvas.drawText(label, weatherX, baselineCenter(p, h * 0.34f), p)
+
+            val weatherBase = componentScale(c.weatherScale)
+            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt().coerceIn(45, 300)
+            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt().coerceIn(45, 300)
+            val iconMaxW = w * 0.11f
+            val tempMaxW = w * 0.14f
+            val gap = 5f * density
+
+            var iconW = 0f
+            if (c.showWeatherIcon) {
+                val iconPaint = fitText(symbol, iconMaxW, h * 0.44f, foreground, iconScale, c, false)
+                iconW = iconPaint.measureText(symbol)
+                val iconX = weatherCenterX - if (c.showTemperature) w * 0.045f else 0f
+                canvas.drawText(symbol, iconX, baselineCenter(iconPaint, h * 0.34f), iconPaint)
+            }
+
+            if (c.showTemperature) {
+                val temperature = "${weather.temperatureC}°"
+                val tempPaint = fitText(temperature, tempMaxW, h * 0.42f, foreground, tempScale, c, false)
+                val tempX = weatherCenterX + if (c.showWeatherIcon) max(iconW * 0.55f, gap) else 0f
+                canvas.drawText(temperature, tempX, baselineCenter(tempPaint, h * 0.34f), tempPaint)
             }
         }
 
@@ -294,30 +299,16 @@ class WidgetRenderer(private val context: Context) {
         val glucoseText = if (s.hasFreshReading) s.valueText else "—"
         val glucoseColor = if (s.hasFreshReading) contentColor(s, c) else foreground
         val glucosePaint = fitText(
-            glucoseText,
-            w * 0.24f,
-            h * 0.62f,
-            glucoseColor,
-            componentScale(c.glucoseScale),
-            c,
-            true
+            glucoseText, w * 0.25f, h * 0.64f, glucoseColor,
+            componentScale(c.glucoseScale), c, true
         )
-        canvas.drawText(
-            glucoseText,
-            glucoseCenterX,
-            baselineCenter(glucosePaint, h * 0.40f),
-            glucosePaint
-        )
+        canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.40f), glucosePaint)
 
         if (c.showArrow && s.hasFreshReading && s.rate.isFinite()) {
             drawTrendArrow(
-                canvas,
-                w * 0.93f,
-                h * 0.36f,
-                min(w * 0.085f, h * 0.30f),
-                s.rate,
-                glucoseColor,
-                s.isMmol
+                canvas, w * 0.93f, h * 0.36f,
+                min(w * 0.09f, h * 0.32f) * c.textScale / 100f * c.glucoseScale / 100f,
+                s.rate, glucoseColor, s.isMmol
             )
         }
 
@@ -333,11 +324,13 @@ class WidgetRenderer(private val context: Context) {
             }.joinToString("  ")
         }
         if (!detail.isNullOrBlank()) {
-            val p = fitText(detail, w * 0.30f, h * 0.15f, foreground, 90, c, false)
-            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.73f), p)
+            val p = fitText(
+                detail, w * 0.34f, h * 0.19f, foreground,
+                componentScale(c.detailScale), c, false
+            )
+            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.75f), p)
         }
     }
-
     private fun drawRange(
         canvas: Canvas,
         w: Float,
@@ -353,7 +346,7 @@ class WidgetRenderer(private val context: Context) {
             split * 0.62f,
             h * 0.50f,
             glucoseColor,
-            c.textScale,
+            (c.textScale * c.glucoseScale / 100f).roundToInt().coerceIn(50, 260),
             c,
             true
         )
@@ -389,7 +382,7 @@ class WidgetRenderer(private val context: Context) {
                 split * 0.86f,
                 h * 0.15f,
                 palette(s).second,
-                90,
+                (c.textScale * c.detailScale / 100f).roundToInt().coerceIn(50, 260),
                 c,
                 false
             )
@@ -412,7 +405,7 @@ class WidgetRenderer(private val context: Context) {
             w - split - 14 * density,
             h * 0.16f,
             palette(s).second,
-            100,
+            (c.textScale * c.detailScale / 100f).roundToInt().coerceIn(50, 260),
             c,
             false
         )
@@ -425,7 +418,7 @@ class WidgetRenderer(private val context: Context) {
             (w - split) * 0.82f,
             h * 0.46f,
             0xFF2E7D32.toInt(),
-            c.textScale,
+            (c.textScale * c.glucoseScale / 100f).roundToInt().coerceIn(50, 260),
             c,
             true
         )
@@ -440,7 +433,7 @@ class WidgetRenderer(private val context: Context) {
                 w - split - 14 * density,
                 h * 0.15f,
                 palette(s).second,
-                100,
+                (c.textScale * c.detailScale / 100f).roundToInt().coerceIn(50, 260),
                 c,
                 false
             )
