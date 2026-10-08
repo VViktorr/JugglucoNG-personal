@@ -52,6 +52,7 @@ import static tk.glucodata.NumberView.minhourstr;
 import static tk.glucodata.R.id.arrowandvalue;
 
 import java.text.DateFormat;
+import org.json.JSONObject;
 import java.util.Date;
 
 class RemoteGlucose {
@@ -148,26 +149,84 @@ class RemoteGlucose {
       return baseForegroundColor;
    }
 
+   private void drawWidgetBackground() {
+      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      backgroundPaint.setColor(LEGACY_WIDGET_DIM_COLOR);
+      float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
+      float radiusDp = Math.max(0, Math.min(24, basicWidgetInt("cornerRadiusDp", 0)));
+      float radius = radiusDp * Math.max(1.0f, displayDensity);
+      canvas.drawRoundRect(
+            0.0f,
+            0.0f,
+            canvas.getWidth(),
+            canvas.getHeight(),
+            radius,
+            radius,
+            backgroundPaint);
+   }
+
+   private JSONObject basicWidgetConfig() {
+      try {
+         var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
+         var raw = prefs.getString("BASIC", null);
+         return raw == null ? null : new JSONObject(raw);
+      } catch (Throwable t) {
+         return null;
+      }
+   }
+
+   private int basicWidgetInt(String key, int fallback) {
+      try {
+         var json = basicWidgetConfig();
+         return json == null ? fallback : json.optInt(key, fallback);
+      } catch (Throwable t) {
+         return fallback;
+      }
+   }
+
+   private boolean basicWidgetBoolean(String key, boolean fallback) {
+      try {
+         var json = basicWidgetConfig();
+         return json == null ? fallback : json.optBoolean(key, fallback);
+      } catch (Throwable t) {
+         return fallback;
+      }
+   }
+
+   private String basicWidgetString(String key, String fallback) {
+      try {
+         var json = basicWidgetConfig();
+         return json == null ? fallback : json.optString(key, fallback);
+      } catch (Throwable t) {
+         return fallback;
+      }
+   }
+
    private void applyWidgetTypeface(Paint paint) {
       try {
-         var prefs = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
-         boolean useSystemFont = prefs.getInt("notification_font_family", 0) == 1;
-         int fontWeight = prefs.getInt("notification_font_weight", 400);
+         var legacy = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
+         boolean legacySystem = legacy.getInt("notification_font_family", 0) == 1;
+         int legacyWeight = legacy.getInt("notification_font_weight", 400);
+         String family = basicWidgetString("fontFamily", legacySystem ? "SYSTEM" : "IBM_PLEX");
+         int fontWeight = Math.max(300, Math.min(700, basicWidgetInt("fontWeight", legacyWeight)));
+         boolean useSystemFont = "SYSTEM".equals(family);
 
+         android.graphics.Typeface tf;
          if (useSystemFont) {
-            String familyName = fontWeight >= 500 ? "google-sans-medium" : "google-sans";
-            android.graphics.Typeface tf = android.graphics.Typeface.create(familyName, android.graphics.Typeface.NORMAL);
-            if (android.os.Build.VERSION.SDK_INT >= 28) {
-               tf = android.graphics.Typeface.create(tf, fontWeight, false);
-            }
-            paint.setTypeface(tf);
+            tf = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL);
          } else {
-            android.graphics.Typeface tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app,
-                  R.font.ibm_plex_sans_var);
-            paint.setTypeface(tf);
-            if (android.os.Build.VERSION.SDK_INT >= 26) {
-               paint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
+            tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app, R.font.ibm_plex_sans_var);
+            if (tf == null) {
+               tf = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL);
             }
+         }
+         if (android.os.Build.VERSION.SDK_INT >= 28) {
+            tf = android.graphics.Typeface.create(tf, fontWeight, false);
+         }
+         paint.setTypeface(tf);
+         if (!useSystemFont && android.os.Build.VERSION.SDK_INT >= 26) {
+            paint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
          }
       } catch (Throwable t) {
       }
@@ -189,8 +248,7 @@ class RemoteGlucose {
       final int canvasHeight = canvas.getHeight();
       float rate = snapshot.getRate();
 
-      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-      canvas.drawColor(LEGACY_WIDGET_DIM_COLOR);
+      drawWidgetBackground();
       glucosePaint.setColor(glucoseColor);
       applyWidgetTypeface(glucosePaint);
 
@@ -200,8 +258,10 @@ class RemoteGlucose {
       // generous offset from the canvas edge.
       final float rightInset = usedensity * 18f;
       final float reducedTimeSize = timesize * 0.95f;
+      final boolean showArrow = basicWidgetBoolean("showArrow", true);
+      final boolean showTime = basicWidgetBoolean("showTime", true);
       Bitmap arrowBitmap = null;
-      if (!isNaN(rate)) {
+      if (showArrow && !isNaN(rate)) {
          try {
             float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
             float arrowScale = Math.max(0.85f, Math.min(2.05f, useglsize / (30f * displayDensity)));
@@ -258,11 +318,12 @@ class RemoteGlucose {
             final Rect dst = new Rect(arrowRight - drawArrowWidth, arrowTop,
                   arrowRight, arrowTop + drawArrowHeight);
             canvas.drawBitmap(arrowBitmap, null, dst, null);
-         } else if (!isNaN(rate)) {
+         } else if (showArrow && !isNaN(rate)) {
             drawarrow(canvas, glucosePaint, usedensity, rate,
                   canvasWidth - compactInset * 3f, compactInset * 3f);
          }
 
+         if (showTime) {
          glucosePaint.setTextSize(compactTimeSize);
          glucosePaint.setTextAlign(Paint.Align.CENTER);
          glucosePaint.setAlpha(200);
@@ -271,6 +332,7 @@ class RemoteGlucose {
          canvas.drawText(timestr, canvasWidth / 2f, timeBaseline, glucosePaint);
          glucosePaint.setAlpha(255);
          glucosePaint.setTextAlign(Paint.Align.LEFT);
+         }
 
          canvas.setBitmap(glucoseBitmap);
          remoteViews.setImageViewBitmap(arrowandvalue, glucoseBitmap);
@@ -280,7 +342,7 @@ class RemoteGlucose {
       glucosePaint.setTextSize(reducedTimeSize);
       Rect timeBounds = new Rect();
       glucosePaint.getTextBounds(timestr, 0, timestr.length(), timeBounds);
-      float timeWidth = timeBounds.width();
+      float timeWidth = showTime ? timeBounds.width() : 0f;
 
       float arrowWidth = arrowBitmap != null ? arrowBitmap.getWidth() : 0f;
       float arrowHeight = arrowBitmap != null ? arrowBitmap.getHeight() : 0f;
@@ -320,10 +382,11 @@ class RemoteGlucose {
       if (arrowBitmap != null) {
          float arrowLeft = clusterCenterX - arrowWidth / 2f;
          canvas.drawBitmap(arrowBitmap, arrowLeft, clusterTop, null);
-      } else if (!isNaN(rate)) {
+      } else if (showArrow && !isNaN(rate)) {
          drawarrow(canvas, glucosePaint, usedensity, rate, clusterCenterX, clusterTop + arrowHeight / 2f);
       }
 
+      if (showTime) {
       glucosePaint.setTextSize(reducedTimeSize);
       glucosePaint.setTextAlign(Paint.Align.CENTER);
       glucosePaint.setAlpha(200);
@@ -331,6 +394,7 @@ class RemoteGlucose {
       canvas.drawText(timestr, clusterCenterX, timeBaseline, glucosePaint);
       glucosePaint.setAlpha(255);
       glucosePaint.setTextAlign(Paint.Align.LEFT);
+      }
 
       canvas.setBitmap(glucoseBitmap);
       remoteViews.setImageViewBitmap(arrowandvalue, glucoseBitmap);
