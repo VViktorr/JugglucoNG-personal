@@ -177,6 +177,7 @@ private fun WidgetDetailSettings(
     ) {
         Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
+        Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(
@@ -243,6 +244,7 @@ private fun WidgetDetailSettings(
         )
 
         HorizontalDivider()
+        Text(stringResource(R.string.widget_section_visibility), style = MaterialTheme.typography.titleMedium)
         WidgetSwitch(stringResource(R.string.widget_show_arrow), config.showArrow) {
             onChange(config.copy(showArrow = it))
         }
@@ -286,6 +288,7 @@ private fun WidgetDetailSettings(
 
         if (kind.hasWeather) {
             HorizontalDivider()
+            Text(stringResource(R.string.widget_section_components), style = MaterialTheme.typography.titleMedium)
 
             Text(stringResource(R.string.widget_time_size_value, config.timeScale))
             Slider(
