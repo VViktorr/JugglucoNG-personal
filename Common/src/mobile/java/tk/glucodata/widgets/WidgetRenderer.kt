@@ -362,7 +362,7 @@ class WidgetRenderer(private val context: Context) {
                 canvas,
                 split * 0.82f,
                 h * 0.38f,
-                min(split * 0.24f, h * 0.30f),
+                min(split * 0.24f, h * 0.30f) * c.textScale / 100f * c.glucoseScale / 100f,
                 s.rate,
                 glucoseColor,
                 s.isMmol
