@@ -3150,6 +3150,9 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="widget_expressive">Glucose with chart</string>
     <string name="widget_expressive_description">Current glucose with trend and recent glucose chart.</string>
     <string name="widget_shared_display_settings">Widget settings</string>
+    <string name="widget_section_appearance">Appearance</string>
+    <string name="widget_section_components">Components</string>
+    <string name="widget_section_visibility">Visibility</string>
     <string name="widget_font">Font</string>
     <string name="widget_font_ibm_plex">IBM Plex Sans</string>
     <string name="widget_font_system">System</string>
