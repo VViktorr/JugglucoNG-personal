@@ -69,6 +69,11 @@ public class Libre2GattCallback extends SuperGattCallback {
        static private final UUID mADCCustomServiceUUID = UUID.fromString("0000fde3-0000-1000-8000-00805f9b34fb");
 	static private final String LOG_ID = "Libre2GattCallback";
 
+	public Libre2GattCallback(String SerialNumber, long dataptr) {
+		super(SerialNumber,dataptr,Natives.getLibre2sensorgen(dataptr));
+		{if(doLog) {Log.d(LOG_ID, "Libre2GattCallback(..)");};};
+	}
+
 	boolean pack1 = false, pack2 = false;
 	final byte[] packet = new byte[46];
 
