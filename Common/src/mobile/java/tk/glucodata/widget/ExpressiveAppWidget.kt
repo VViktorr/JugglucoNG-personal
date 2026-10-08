@@ -111,7 +111,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val weather: WidgetWeather?
     )
 
-    private fun widgetTypeface(context: Context, config: WidgetConfig): Typeface {
+    private fun widgetTypeface(context: Context, config: WidgetConfig, weight: Int): Typeface {
         return try {
             val base = if (config.fontFamily == WidgetFontFamily.IBM_PLEX) {
                 ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
@@ -119,7 +119,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             } else {
                 Typeface.create("sans-serif", Typeface.NORMAL)
             }
-            if (Build.VERSION.SDK_INT >= 28) Typeface.create(base, config.fontWeight, false) else base
+            if (Build.VERSION.SDK_INT >= 28) Typeface.create(base, weight, false) else base
         } catch (_: Throwable) {
             Typeface.create("sans-serif", Typeface.NORMAL)
         }
@@ -130,14 +130,15 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         text: String,
         sizeSp: Float,
         config: WidgetConfig,
-        color: Int
+        color: Int,
+        weight: Int = config.secondaryFontWeight
     ): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = sizeSp * context.resources.displayMetrics.scaledDensity * (config.textScale / 100f)
             this.color = color
-            typeface = widgetTypeface(context, config)
+            typeface = widgetTypeface(context, config, weight)
             if (Build.VERSION.SDK_INT >= 26 && config.fontFamily == WidgetFontFamily.IBM_PLEX) {
-                fontVariationSettings = "'wght' ${config.fontWeight}, 'wdth' 100"
+                fontVariationSettings = "'wght' $weight, 'wdth' 100"
             }
         }
         val fm = paint.fontMetrics
@@ -193,7 +194,9 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val glucoseScale = config.glucoseScale / 100f
         val timeScale = config.timeScale / 100f
         val weatherScale = config.weatherScale / 100f
-        val fontWeight = config.fontWeight
+        val detailScale = config.detailScale / 100f
+        val primaryFontWeight = config.primaryFontWeight
+        val secondaryFontWeight = config.secondaryFontWeight
         val useSystemFont = config.fontFamily == WidgetFontFamily.SYSTEM
         val showArrow = config.showArrow
         val arrowScale = (config.textScale / 100f * glucoseScale).coerceIn(0.7f, 1.8f)
@@ -211,14 +214,14 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val valueText = freshDisplay?.fullFormatted
         val rate = freshDisplay?.rate ?: Float.NaN
 
-        val valueBitmap = remember(valueText, glucoseColor, fontSize, glucoseScale, fontWeight, useSystemFont) {
+        val valueBitmap = remember(valueText, glucoseColor, fontSize, glucoseScale, primaryFontWeight, useSystemFont) {
             valueText?.let {
                 NotificationChartDrawer.drawGlucoseText(
                     context,
                     it,
                     glucoseColor,
                     fontSize * glucoseScale,
-                    fontWeight,
+                    primaryFontWeight,
                     useSystemFont
                 )
             }
@@ -301,18 +304,24 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         primaryTextColor,
                         secondaryTextColor
                     ) {
-                        val scale = config.textScale / 100f * timeScale
-                        RemoteViews(context.packageName, R.layout.expressive_widget_system_clock).apply {
+                        val baseScale = config.textScale / 100f
+                        val clockScale = baseScale * timeScale
+                        val dateScale = baseScale * detailScale
+                        val clockLayout = if (config.fontFamily == WidgetFontFamily.IBM_PLEX)
+                            R.layout.expressive_widget_system_clock_ibm
+                        else
+                            R.layout.expressive_widget_system_clock
+                        RemoteViews(context.packageName, clockLayout).apply {
                             setTextViewTextSize(
                                 R.id.expressive_widget_clock,
                                 android.util.TypedValue.COMPLEX_UNIT_SP,
-                                27f * scale
+                                27f * clockScale
                             )
                             setTextColor(R.id.expressive_widget_clock, primaryTextColor)
                             setTextViewTextSize(
                                 R.id.expressive_widget_date,
                                 android.util.TypedValue.COMPLEX_UNIT_SP,
-                                11f * scale
+                                11f * dateScale
                             )
                             setTextColor(R.id.expressive_widget_date, secondaryTextColor)
                             setViewVisibility(
@@ -325,9 +334,9 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         remoteViews = systemClockViews,
                         modifier = GlanceModifier.defaultWeight()
                     )
-                    val weatherText = remember(weather, config.showWeather, config.showWeatherIcon, config.showTemperature) {
-                        if (!config.showWeather) null else weather?.let { w ->
-                            val symbol = when (w.weatherCode) {
+                    val weatherSymbol = remember(weather, config.showWeather, config.showWeatherIcon) {
+                        if (!config.showWeather || !config.showWeatherIcon) null else weather?.let { w ->
+                            when (w.weatherCode) {
                                 0 -> "☀"
                                 1, 2 -> "⛅"
                                 3 -> "☁"
@@ -337,29 +346,31 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                                 in 95..99 -> "ϟ"
                                 else -> "☁"
                             }
-                            (if (config.showWeatherIcon) "$symbol " else "") +
-                                (if (config.showTemperature) "${w.temperatureC}°" else "")
-                        }?.takeIf { it.isNotBlank() }
-                    }
-                    if (!weatherText.isNullOrBlank()) {
-                        val weatherBitmap = remember(
-                            weatherText,
-                            config.fontFamily,
-                            config.fontWeight,
-                            config.textScale,
-                            config.weatherScale,
-                            primaryTextColor
-                        ) {
-                            textBitmap(context, weatherText, 17f * weatherScale, config, primaryTextColor)
                         }
-                        Image(
-                            provider = ImageProvider(weatherBitmap),
-                            contentDescription = "Weather",
-                            modifier = GlanceModifier.padding(
-                                start = 4.dp,
-                                end = (4 + config.weatherShiftDp).dp
-                            )
-                        )
+                    }
+                    val temperatureText = remember(weather, config.showWeather, config.showTemperature) {
+                        if (!config.showWeather || !config.showTemperature) null
+                        else weather?.let { "${it.temperatureC}°" }
+                    }
+                    if (weatherSymbol != null || temperatureText != null) {
+                        Row(
+                            modifier = GlanceModifier.padding(start = 4.dp, end = (4 + config.weatherShiftDp).dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (weatherSymbol != null) {
+                                val iconBitmap = remember(weatherSymbol, config.fontFamily, config.secondaryFontWeight, config.textScale, config.weatherScale, config.weatherIconScale, primaryTextColor) {
+                                    textBitmap(context, weatherSymbol, 19f * weatherScale * (config.weatherIconScale / 100f), config, primaryTextColor, secondaryFontWeight)
+                                }
+                                Image(provider = ImageProvider(iconBitmap), contentDescription = "Weather")
+                            }
+                            if (weatherSymbol != null && temperatureText != null) Spacer(GlanceModifier.width(3.dp))
+                            if (temperatureText != null) {
+                                val temperatureBitmap = remember(temperatureText, config.fontFamily, config.secondaryFontWeight, config.textScale, config.weatherScale, config.temperatureScale, primaryTextColor) {
+                                    textBitmap(context, temperatureText, 17f * weatherScale * (config.temperatureScale / 100f), config, primaryTextColor, secondaryFontWeight)
+                                }
+                                Image(provider = ImageProvider(temperatureBitmap), contentDescription = "Temperature")
+                            }
+                        }
                     }
 
                     if (valueBitmap != null) {
@@ -384,11 +395,11 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         val fallbackBitmap = remember(
                             fallbackText,
                             config.fontFamily,
-                            config.fontWeight,
+                            config.secondaryFontWeight,
                             config.textScale,
                             secondaryTextColor
                         ) {
-                            textBitmap(context, fallbackText, 13f, config, secondaryTextColor)
+                            textBitmap(context, fallbackText, 13f * detailScale, config, secondaryTextColor, secondaryFontWeight)
                         }
                         Image(
                             provider = ImageProvider(fallbackBitmap),
