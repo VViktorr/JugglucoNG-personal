@@ -190,8 +190,13 @@ public class SensorBluetooth {
             ;
             String address = device.getAddress();
             for (var cb : gattcallbacks) {
-                if (cb.mActiveDeviceAddress != null && address.equals(cb.mActiveDeviceAddress))
+                if (cb.mActiveDeviceAddress != null && address.equals(cb.mActiveDeviceAddress)) {
+                    if (doLog && cb instanceof Libre2GattCallback) {
+                        Log.i(LOG_ID, "LIBRE2_SCAN serial=" + cb.SerialNumber + " address=" + address
+                                + " name=" + deviceName + " accepted=true reason=remembered-address");
+                    }
                     return cb;
+                }
             }
 
             if (deviceName != null) {
@@ -215,7 +220,19 @@ public class SensorBluetooth {
             if (scanResult != null) {
                 for (var cb : gattcallbacks) {
                     if (cb.matchScanResult(scanResult)) {
+                        if (doLog && cb instanceof Libre2GattCallback) {
+                            Log.i(LOG_ID, "LIBRE2_SCAN serial=" + cb.SerialNumber + " address=" + address
+                                    + " name=" + deviceName + " accepted=true reason=scan-metadata");
+                        }
                         return cb;
+                    }
+                }
+            }
+            if (doLog) {
+                for (var cb : gattcallbacks) {
+                    if (cb instanceof Libre2GattCallback) {
+                        Log.i(LOG_ID, "LIBRE2_SCAN serial=" + cb.SerialNumber + " address=" + address
+                                + " name=" + deviceName + " accepted=false reason=no-matcher");
                     }
                 }
             }
