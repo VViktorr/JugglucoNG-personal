@@ -34,9 +34,5 @@ abstract class BaseGlucoseWidget(private val kind: WidgetKind) : AppWidgetProvid
     }
 }
 
-class MinimalGlucoseWidget : BaseGlucoseWidget(WidgetKind.MINIMAL)
-class CompactGlucoseWidget : BaseGlucoseWidget(WidgetKind.COMPACT)
-class TrendGlucoseWidget : BaseGlucoseWidget(WidgetKind.TREND)
-class DialGlucoseWidget : BaseGlucoseWidget(WidgetKind.DIAL)
 class RangeGlucoseWidget : BaseGlucoseWidget(WidgetKind.RANGE)
 class ClockWeatherWidget : BaseGlucoseWidget(WidgetKind.CLOCK_WEATHER)
