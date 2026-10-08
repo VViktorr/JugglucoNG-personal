@@ -4,23 +4,22 @@ package tk.glucodata.widgets
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,101 +45,202 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import tk.glucodata.GlucoseWidget
 import tk.glucodata.R
+import tk.glucodata.widget.ExpressiveWidgetReceiver
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WidgetSettingsScreen(navController: NavController) {
     val context = LocalContext.current
+    var selected by remember { mutableStateOf<WidgetSettingsKind?>(null) }
     var weatherPermissionGranted by remember {
-        mutableStateOf(context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        mutableStateOf(
+            context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
     }
     val locationRequest = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         weatherPermissionGranted = granted
-        if (granted) WidgetUpdater.requestUpdateAll(context)
+        if (granted) {
+            WidgetUpdater.requestUpdateAll(context)
+            ExpressiveWidgetReceiver.updateAll(context)
+        }
     }
+
+    BackHandler(enabled = selected != null) { selected = null }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.widget_settings_title)) },
+                title = {
+                    Text(
+                        selected?.let { stringResource(it.labelRes) }
+                            ?: stringResource(R.string.widget_settings_title)
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (selected != null) selected = null else navController.popBackStack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.navigate_back))
                     }
                 }
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(stringResource(R.string.widget_settings_existing), style = MaterialTheme.typography.titleMedium)
-            ExistingWidgetCard(
-                title = stringResource(R.string.widget_classic),
-                description = stringResource(R.string.widget_classic_description),
-                onSharedSettings = { navController.navigate("settings/notification-display") }
-            )
-            ExistingWidgetCard(
-                title = stringResource(R.string.widget_expressive),
-                description = stringResource(R.string.widget_expressive_description),
-                onSharedSettings = { navController.navigate("settings/notification-display") }
-            )
-
-            Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.widget_settings_new), style = MaterialTheme.typography.titleMedium)
-            WidgetKind.entries.forEach { kind ->
-                var config by remember(kind) { mutableStateOf(WidgetConfigStore.load(context, kind)) }
-                WidgetKindSettings(
-                    kind = kind,
-                    config = config,
-                    onLocationPermission = { locationRequest.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
-                    hasLocationPermission = weatherPermissionGranted,
-                    onChange = {
-                        config = it
-                        WidgetConfigStore.save(context, kind, it)
-                        WidgetUpdater.requestUpdateAll(context)
-                    }
+        if (selected == null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                WidgetSettingsKind.entries.forEach { kind ->
+                    WidgetCard(kind = kind, onClick = { selected = kind })
+                }
+                Text(
+                    stringResource(R.string.widget_settings_data_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-
-            Text(
-                stringResource(R.string.widget_settings_data_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 8.dp)
+        } else {
+            val kind = selected!!
+            var config by remember(kind) { mutableStateOf(WidgetConfigStore.load(context, kind)) }
+            WidgetDetailSettings(
+                modifier = Modifier.padding(padding),
+                kind = kind,
+                config = config,
+                hasLocationPermission = weatherPermissionGranted,
+                onLocationPermission = { locationRequest.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
+                onChange = {
+                    config = it
+                    WidgetConfigStore.save(context, kind, it)
+                    refreshWidget(context, kind)
+                }
             )
         }
     }
 }
 
 @Composable
-private fun ExistingWidgetCard(title: String, description: String, onSharedSettings: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = onSharedSettings, contentPadding = PaddingValues(0.dp)) {
-                Icon(Icons.Default.Tune, contentDescription = null)
-                Text("  " + stringResource(R.string.widget_shared_display_settings))
+private fun WidgetCard(kind: WidgetSettingsKind, onClick: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(kind.labelRes), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(kind.descriptionRes),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+            Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
 }
 
+private fun refreshWidget(context: android.content.Context, kind: WidgetSettingsKind) {
+    when (kind) {
+        WidgetSettingsKind.BASIC -> GlucoseWidget.refreshSettings()
+        WidgetSettingsKind.CHART -> ExpressiveWidgetReceiver.updateAll(context)
+        WidgetSettingsKind.RANGE -> WidgetUpdater.updateAllOfKind(context, WidgetKind.RANGE)
+        WidgetSettingsKind.CLOCK_WEATHER -> WidgetUpdater.updateAllOfKind(context, WidgetKind.CLOCK_WEATHER)
+    }
+}
+
 @Composable
-private fun WidgetKindSettings(
-    kind: WidgetKind,
+private fun WidgetDetailSettings(
+    modifier: Modifier,
+    kind: WidgetSettingsKind,
     config: WidgetConfig,
     onChange: (WidgetConfig) -> Unit,
     hasLocationPermission: Boolean,
     onLocationPermission: () -> Unit
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(kind.labelRes), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(kind.descriptionRes), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FilterChip(
+                selected = config.fontFamily == WidgetFontFamily.IBM_PLEX,
+                onClick = { onChange(config.copy(fontFamily = WidgetFontFamily.IBM_PLEX)) },
+                label = { Text(stringResource(R.string.widget_font_ibm_plex)) }
+            )
+            FilterChip(
+                selected = config.fontFamily == WidgetFontFamily.SYSTEM,
+                onClick = { onChange(config.copy(fontFamily = WidgetFontFamily.SYSTEM)) },
+                label = { Text(stringResource(R.string.widget_font_system)) }
+            )
+        }
+
+        Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(300, 400, 500, 600, 700).forEach { weight ->
+                FilterChip(
+                    selected = config.fontWeight == weight,
+                    onClick = { onChange(config.copy(fontWeight = weight)) },
+                    label = { Text(weight.toString()) }
+                )
+            }
+        }
+
+        Text(stringResource(R.string.widget_text_size_value, config.textScale))
+        Slider(
+            value = config.textScale.toFloat(),
+            onValueChange = { onChange(config.copy(textScale = (it / 5f).toInt() * 5)) },
+            valueRange = 70f..140f
+        )
+
+        Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
+        Slider(
+            value = config.cornerRadiusDp.toFloat(),
+            onValueChange = { onChange(config.copy(cornerRadiusDp = it.toInt().coerceIn(0, 24))) },
+            valueRange = 0f..24f,
+            steps = 23
+        )
+
+        HorizontalDivider()
+        WidgetSwitch(stringResource(R.string.widget_show_arrow), config.showArrow) {
+            onChange(config.copy(showArrow = it))
+        }
+
+        if (kind != WidgetSettingsKind.BASIC) {
+            WidgetSwitch(stringResource(R.string.widget_range_colors), config.rangeColors) {
+                onChange(config.copy(rangeColors = it))
+            }
+        }
+
+        if (kind == WidgetSettingsKind.BASIC || kind == WidgetSettingsKind.RANGE || kind == WidgetSettingsKind.CLOCK_WEATHER) {
+            WidgetSwitch(stringResource(R.string.widget_show_time), config.showTime) {
+                onChange(config.copy(showTime = it))
+            }
+        }
+
+        if (kind == WidgetSettingsKind.RANGE || kind == WidgetSettingsKind.CLOCK_WEATHER) {
+            WidgetSwitch(stringResource(R.string.widget_show_delta), config.showDelta) {
+                onChange(config.copy(showDelta = it))
+            }
+            WidgetSwitch(stringResource(R.string.widget_show_unit), config.showUnit) {
+                onChange(config.copy(showUnit = it))
+            }
 
             Text(stringResource(R.string.widget_background), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -157,75 +257,96 @@ private fun WidgetKindSettings(
                     valueRange = 20f..100f
                 )
             }
+        }
 
-            Text(stringResource(R.string.widget_text_size_value, config.textScale))
+        if (kind.hasWeather) {
+            HorizontalDivider()
+
+            Text(stringResource(R.string.widget_time_size_value, config.timeScale))
             Slider(
-                value = config.textScale.toFloat(),
-                onValueChange = { onChange(config.copy(textScale = (it / 5f).toInt() * 5)) },
-                valueRange = 70f..140f
+                value = config.timeScale.toFloat(),
+                onValueChange = { onChange(config.copy(timeScale = (it / 5f).toInt() * 5)) },
+                valueRange = 70f..160f
             )
 
+            Text(stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
+            Slider(
+                value = config.glucoseScale.toFloat(),
+                onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
+                valueRange = 70f..160f
+            )
+
+            WidgetSwitch(stringResource(R.string.widget_show_date), config.showDate) {
+                onChange(config.copy(showDate = it))
+            }
+            WidgetSwitch(stringResource(R.string.widget_show_weather), config.showWeather) {
+                onChange(config.copy(showWeather = it))
+            }
+            if (config.showWeather) {
+                Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
+                Slider(
+                    value = config.weatherScale.toFloat(),
+                    onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
+                    valueRange = 70f..180f
+                )
+
+                Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
+                Slider(
+                    value = config.weatherShiftDp.toFloat(),
+                    onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },
+                    valueRange = 0f..40f
+                )
+
+                WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
+                    onChange(config.copy(showWeatherIcon = it))
+                }
+                WidgetSwitch(stringResource(R.string.widget_show_temperature), config.showTemperature) {
+                    onChange(config.copy(showTemperature = it))
+                }
+                if (!hasLocationPermission) {
+                    TextButton(onClick = onLocationPermission) {
+                        Text(stringResource(R.string.widget_weather_permission))
+                    }
+                }
+                Text(
+                    stringResource(R.string.widget_weather_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if (kind.hasGraph) {
             HorizontalDivider()
-            WidgetSwitch(stringResource(R.string.widget_show_arrow), config.showArrow) { onChange(config.copy(showArrow = it)) }
-            WidgetSwitch(stringResource(R.string.widget_show_delta), config.showDelta) { onChange(config.copy(showDelta = it)) }
-            WidgetSwitch(stringResource(R.string.widget_show_time), config.showTime) { onChange(config.copy(showTime = it)) }
-            WidgetSwitch(stringResource(R.string.widget_show_unit), config.showUnit) { onChange(config.copy(showUnit = it)) }
-            WidgetSwitch(stringResource(R.string.widget_range_colors), config.rangeColors) { onChange(config.copy(rangeColors = it)) }
-
-            if (kind == WidgetKind.CLOCK_WEATHER) {
-                HorizontalDivider()
-                WidgetSwitch(stringResource(R.string.widget_show_date), config.showDate) {
-                    onChange(config.copy(showDate = it))
-                }
-                WidgetSwitch(stringResource(R.string.widget_show_weather), config.showWeather) {
-                    onChange(config.copy(showWeather = it))
-                }
-                if (config.showWeather) {
-                    WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
-                        onChange(config.copy(showWeatherIcon = it))
-                    }
-                    WidgetSwitch(stringResource(R.string.widget_show_temperature), config.showTemperature) {
-                        onChange(config.copy(showTemperature = it))
-                    }
-                    if (!hasLocationPermission) {
-                        TextButton(onClick = onLocationPermission) { Text(stringResource(R.string.widget_weather_permission)) }
-                    }
-                    Text(stringResource(R.string.widget_weather_note),
-                         style = MaterialTheme.typography.bodySmall,
-                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.widget_graph_hours), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(1, 3, 6, 12, 24).forEach { hours ->
+                    FilterChip(
+                        selected = config.graphHours == hours,
+                        onClick = { onChange(config.copy(graphHours = hours)) },
+                        label = { Text(stringResource(R.string.widget_hours_short, hours)) }
+                    )
                 }
             }
-
-            if (kind.hasGraph) {
-                Text(stringResource(R.string.widget_graph_hours), style = MaterialTheme.typography.labelLarge)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(1,3,6,12,24).forEach { hours ->
-                        FilterChip(
-                            selected = config.graphHours == hours,
-                            onClick = { onChange(config.copy(graphHours = hours)) },
-                            label = { Text(stringResource(R.string.widget_hours_short, hours)) }
-                        )
-                    }
-                }
-                WidgetSwitch(stringResource(R.string.widget_target_band), config.showTargetBand) {
-                    onChange(config.copy(showTargetBand = it))
-                }
+            WidgetSwitch(stringResource(R.string.widget_target_band), config.showTargetBand) {
+                onChange(config.copy(showTargetBand = it))
             }
+        }
 
-            if (kind.hasStats) {
-                Text(stringResource(R.string.widget_period), style = MaterialTheme.typography.labelLarge)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(
-                        WidgetStatsPeriod.TODAY to R.string.widget_period_today,
-                        WidgetStatsPeriod.DAY to R.string.widget_period_24h,
-                        WidgetStatsPeriod.WEEK to R.string.widget_period_7d
-                    ).forEach { (period, label) ->
-                        FilterChip(
-                            selected = config.statsPeriod == period,
-                            onClick = { onChange(config.copy(statsPeriod = period)) },
-                            label = { Text(stringResource(label)) }
-                        )
-                    }
+        if (kind.hasStats) {
+            HorizontalDivider()
+            Text(stringResource(R.string.widget_period), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(
+                    WidgetStatsPeriod.TODAY to R.string.widget_period_today,
+                    WidgetStatsPeriod.DAY to R.string.widget_period_24h,
+                    WidgetStatsPeriod.WEEK to R.string.widget_period_7d
+                ).forEach { (period, label) ->
+                    FilterChip(
+                        selected = config.statsPeriod == period,
+                        onClick = { onChange(config.copy(statsPeriod = period)) },
+                        label = { Text(stringResource(label)) }
+                    )
                 }
             }
         }
