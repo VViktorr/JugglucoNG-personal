@@ -8,6 +8,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Build
+import android.view.View
+import android.widget.RemoteViews
 import androidx.core.content.res.ResourcesCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,6 +26,7 @@ import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
@@ -279,16 +282,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val now = java.util.Date()
-                    val timeText = remember(now) {
-                        android.text.format.DateFormat.getTimeFormat(context).format(now)
-                    }
-                    val dateText = remember(now, config.showDate) {
-                        if (config.showDate) {
-                            java.text.SimpleDateFormat("EEEE, d MMMM", java.util.Locale.getDefault()).format(now)
-                        } else ""
-                    }
-
                     val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
                     val primaryTextColor = if (dark) Color.WHITE else 0xFF1D1B20.toInt()
                     val secondaryTextColor = Color.argb(
@@ -297,36 +290,41 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         Color.green(primaryTextColor),
                         Color.blue(primaryTextColor)
                     )
-                    val timeBitmap = remember(
-                        timeText,
-                        config.fontFamily,
-                        config.fontWeight,
+
+                    // Use Android's native TextClock instead of painting the current time into
+                    // a bitmap. The launcher/system then keeps time and date current even when
+                    // Juggluco is not running or no glucose update arrives.
+                    val systemClockViews = remember(
+                        config.showDate,
                         config.textScale,
                         config.timeScale,
-                        primaryTextColor
-                    ) {
-                        textBitmap(context, timeText, 27f * timeScale, config, primaryTextColor)
-                    }
-                    val dateBitmap = remember(
-                        dateText,
-                        config.fontFamily,
-                        config.fontWeight,
-                        config.textScale,
-                        config.timeScale,
+                        primaryTextColor,
                         secondaryTextColor
                     ) {
-                        if (dateText.isBlank()) null else textBitmap(context, dateText, 11f * timeScale, config, secondaryTextColor)
-                    }
-
-                    Column(
-                        modifier = GlanceModifier.defaultWeight(),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Image(provider = ImageProvider(timeBitmap), contentDescription = "Time")
-                        if (dateBitmap != null) {
-                            Image(provider = ImageProvider(dateBitmap), contentDescription = "Date")
+                        val scale = config.textScale / 100f * timeScale
+                        RemoteViews(context.packageName, R.layout.expressive_widget_system_clock).apply {
+                            setTextViewTextSize(
+                                R.id.expressive_widget_clock,
+                                android.util.TypedValue.COMPLEX_UNIT_SP,
+                                27f * scale
+                            )
+                            setTextColor(R.id.expressive_widget_clock, primaryTextColor)
+                            setTextViewTextSize(
+                                R.id.expressive_widget_date,
+                                android.util.TypedValue.COMPLEX_UNIT_SP,
+                                11f * scale
+                            )
+                            setTextColor(R.id.expressive_widget_date, secondaryTextColor)
+                            setViewVisibility(
+                                R.id.expressive_widget_date,
+                                if (config.showDate) View.VISIBLE else View.GONE
+                            )
                         }
                     }
+                    AndroidRemoteViews(
+                        remoteViews = systemClockViews,
+                        modifier = GlanceModifier.defaultWeight()
+                    )
                     val weatherText = remember(weather, config.showWeather, config.showWeatherIcon, config.showTemperature) {
                         if (!config.showWeather) null else weather?.let { w ->
                             val symbol = when (w.weatherCode) {
