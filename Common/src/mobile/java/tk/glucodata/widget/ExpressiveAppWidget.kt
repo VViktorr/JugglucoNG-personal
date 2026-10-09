@@ -50,6 +50,10 @@ import androidx.glance.text.TextStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import tk.glucodata.CurrentDisplaySource
 import tk.glucodata.DisplayDataState
 import tk.glucodata.GlucosePoint
@@ -68,6 +72,8 @@ import tk.glucodata.ui.util.GlucoseFormatter
 
 class ExpressiveAppWidget : GlanceAppWidget() {
     private companion object {
+        private val weatherRefreshPending = AtomicBoolean(false)
+        private val weatherScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         fun weightStyle(weight: Int): Int = when {
             weight <= 300 -> R.style.WidgetTextWeight300
             weight <= 400 -> R.style.WidgetTextWeight400
@@ -169,12 +175,24 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val viewMode = resolvedDisplay?.viewMode ?: WidgetDisplaySource.resolveViewMode(activeSensorSerial)
         val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
         val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
-        val weather = if (!widgetConfig.showWeather) null else runCatching {
-            if (WidgetWeatherSource.needsRefresh(tk.glucodata.Applic.app)) {                WidgetWeatherSource.load(tk.glucodata.Applic.app)
-            } else {
-                WidgetWeatherSource.cached(tk.glucodata.Applic.app)
+        val app = tk.glucodata.Applic.app
+        val weather = if (widgetConfig.showWeather) WidgetWeatherSource.cached(app) else null
+        if (widgetConfig.showWeather && WidgetWeatherSource.needsRefresh(app) &&
+            weatherRefreshPending.compareAndSet(false, true)) {
+            weatherScope.launch {
+                try {
+                    val previous = WidgetWeatherSource.cached(app)?.observedAt ?: 0L
+                    val refreshed = WidgetWeatherSource.load(app)
+                    if (refreshed != null && refreshed.observedAt > previous) {
+                        ExpressiveWidgetReceiver.updateAll(app)
+                    }
+                } catch (t: Throwable) {
+                    tk.glucodata.Log.stack("ExpressiveWidget", "weather refresh", t)
+                } finally {
+                    weatherRefreshPending.set(false)
+                }
             }
-        }.getOrElse { WidgetWeatherSource.cached(tk.glucodata.Applic.app) }
+        }
         return WidgetState(
             currentDisplay = resolvedDisplay,
             history = chartHistory,            dataState = dataState,
