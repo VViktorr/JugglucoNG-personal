@@ -102,10 +102,15 @@ object WidgetUpdater {
                         RemoteViews(
                             context.packageName,
                             if (kind == WidgetKind.CLOCK_WEATHER) {
-                                if (config.fontFamily == WidgetFontFamily.IBM_PLEX)
-                                    R.layout.home_widget_clock_weather_ibm
-                                else
-                                    R.layout.home_widget_clock_weather
+                                when {
+                                    config.mainFontFamily == WidgetFontFamily.IBM_PLEX && config.detailFontFamily == WidgetFontFamily.IBM_PLEX ->
+                                        R.layout.home_widget_clock_weather_ibm
+                                    config.mainFontFamily == WidgetFontFamily.SYSTEM && config.detailFontFamily == WidgetFontFamily.IBM_PLEX ->
+                                        R.layout.home_widget_clock_weather_system_main_ibm_detail
+                                    config.mainFontFamily == WidgetFontFamily.IBM_PLEX && config.detailFontFamily == WidgetFontFamily.SYSTEM ->
+                                        R.layout.home_widget_clock_weather_ibm_main_system_detail
+                                    else -> R.layout.home_widget_clock_weather
+                                }
                             } else {
                                 R.layout.home_widget
                             }
