@@ -119,11 +119,21 @@ object WidgetUpdater {
                                 val clockSize=min(w*0.145f,h*0.46f)*config.glucoseScale/100f
                                 val dateSize=min(w*0.042f,h*0.19f)*config.detailScale/100f
                                 val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
-                                setTextViewTextSize(R.id.home_widget_clock,android.util.TypedValue.COMPLEX_UNIT_SP,clockSize)
-                                setTextColor(R.id.home_widget_clock,textColor)
-                                setTextViewTextSize(R.id.home_widget_date,android.util.TypedValue.COMPLEX_UNIT_SP,dateSize)
-                                setTextColor(R.id.home_widget_date,textColor)
-                                setViewVisibility(R.id.home_widget_date,if(config.showDate) android.view.View.VISIBLE else android.view.View.GONE)
+                                // Predefined TextClock variants retain system time updates.
+                                // RemoteViews visibility, size and color are supported operations.
+                                val weights = intArrayOf(300, 400, 500, 600, 700)
+                                val clockIds = intArrayOf(R.id.home_widget_clock_300, R.id.home_widget_clock_400, R.id.home_widget_clock_500, R.id.home_widget_clock_600, R.id.home_widget_clock_700)
+                                val dateIds = intArrayOf(R.id.home_widget_date_300, R.id.home_widget_date_400, R.id.home_widget_date_500, R.id.home_widget_date_600, R.id.home_widget_date_700)
+                                weights.indices.forEach { index ->
+                                    val clockId = clockIds[index]
+                                    val dateId = dateIds[index]
+                                    setViewVisibility(clockId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                                    setViewVisibility(dateId, if (config.showDate && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                                    setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
+                                    setTextColor(clockId, textColor)
+                                    setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                                    setTextColor(dateId, textColor)
+                                }
                             }
                             setImageViewBitmap(R.id.home_widget_image,renderer.render(kind,config,snapshot,w,h,px,weather))
                             setContentDescription(R.id.home_widget_image,description)
