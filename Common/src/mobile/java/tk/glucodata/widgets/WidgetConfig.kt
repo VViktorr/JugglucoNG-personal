@@ -164,7 +164,8 @@ data class WidgetConfig(
 
 private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
     WidgetSettingsKind.BASIC -> WidgetConfig(
-        background = WidgetBackground.TRANSPARENT,
+        background = WidgetBackground.SURFACE,
+        opacity = 65,
         rangeColors = false,
         showDelta = false,
         showTime = true,
@@ -172,13 +173,17 @@ private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
     )
     WidgetSettingsKind.CHART -> WidgetConfig(
         background = WidgetBackground.SURFACE,
-        opacity = 100,
+        opacity = 65,
         cornerRadiusDp = 0,
         showTime = false,
         graphHours = 6,
         showTargetBand = true
     )
-    WidgetSettingsKind.RANGE -> WidgetConfig(statsPeriod = WidgetStatsPeriod.DAY)
+    WidgetSettingsKind.RANGE -> WidgetConfig(
+        background = WidgetBackground.SURFACE,
+        opacity = 65,
+        statsPeriod = WidgetStatsPeriod.DAY
+    )
     WidgetSettingsKind.CLOCK_WEATHER -> WidgetConfig(
         background = WidgetBackground.SURFACE,
         opacity = 65,
