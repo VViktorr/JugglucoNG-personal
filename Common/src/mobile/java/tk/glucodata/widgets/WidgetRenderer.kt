@@ -300,14 +300,14 @@ class WidgetRenderer(private val context: Context) {
         val glucoseColor = if (s.hasFreshReading) contentColor(s, c) else foreground
         val glucosePaint = fitText(
             glucoseText, w * 0.25f, h * 0.64f, glucoseColor,
-            componentScale(c.glucoseScale), c, true
+            c.glucoseScale, c, true
         )
-        canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.40f), glucosePaint)
+        canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.30f), glucosePaint)
 
         if (c.showArrow && s.hasFreshReading && s.rate.isFinite()) {
             drawTrendArrow(
                 canvas, w * 0.93f, h * 0.36f,
-                min(w * 0.09f, h * 0.32f) * c.textScale / 100f * c.glucoseScale / 100f,
+                min(w * 0.09f, h * 0.32f) * c.glucoseScale / 100f,
                 s.rate, glucoseColor, s.isMmol
             )
         }
@@ -326,9 +326,9 @@ class WidgetRenderer(private val context: Context) {
         if (!detail.isNullOrBlank()) {
             val p = fitText(
                 detail, w * 0.34f, h * 0.19f, foreground,
-                componentScale(c.detailScale), c, false
+                c.detailScale, c, false
             )
-            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.75f), p)
+            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.76f), p)
         }
     }
     private fun drawRange(
