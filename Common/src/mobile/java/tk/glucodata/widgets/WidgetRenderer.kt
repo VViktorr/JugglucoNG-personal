@@ -302,7 +302,7 @@ class WidgetRenderer(private val context: Context) {
             glucoseText, w * 0.25f, h * 0.64f, glucoseColor,
             c.glucoseScale, c, true
         )
-        canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.30f), glucosePaint)
+        canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.25f), glucosePaint)
 
         if (c.showArrow && s.hasFreshReading && s.rate.isFinite()) {
             drawTrendArrow(
