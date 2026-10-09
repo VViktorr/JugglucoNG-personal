@@ -391,6 +391,9 @@ class DashboardViewModel(
     private val _viewMode = MutableStateFlow(0)
     val viewMode = _viewMode.asStateFlow()
 
+    private val _sensorEndTimeMs = MutableStateFlow(0L)
+    val sensorEndTimeMs = _sensorEndTimeMs.asStateFlow()
+
     private val _sensorHoursRemaining = MutableStateFlow(999L)
     val sensorHoursRemaining = _sensorHoursRemaining.asStateFlow()
 
@@ -1034,6 +1037,7 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
+                _sensorEndTimeMs.value = lifecycleOfficialEndMs.takeIf { it > 0L } ?: lifecycleExpectedEndMs.takeIf { it > 0L } ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1053,6 +1057,7 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
+                _sensorEndTimeMs.value = managedSnapshot?.officialEndMs?.takeIf { it > 0L } ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L } ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1062,6 +1067,7 @@ class DashboardViewModel(
             _sensorName.value = ""
             _sensorStatus.value = ""
             _viewMode.value = 0
+            _sensorEndTimeMs.value = 0L
             _sensorProgress.value = 0f
             _sensorHoursRemaining.value = 999L
             _daysRemaining.value = ""
