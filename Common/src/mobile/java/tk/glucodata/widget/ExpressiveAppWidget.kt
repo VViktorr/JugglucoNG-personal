@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -142,7 +143,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         weight: Int = config.secondaryFontWeight
     ): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = sizeSp * context.resources.displayMetrics.scaledDensity * (config.textScale / 100f)
+            textSize = sizeSp * context.resources.displayMetrics.scaledDensity
             this.color = color
             typeface = widgetTypeface(context, config, weight)
             if (Build.VERSION.SDK_INT >= 26 && config.fontFamily == WidgetFontFamily.IBM_PLEX) {
@@ -198,7 +199,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val config = WidgetConfigStore.load(context, WidgetSettingsKind.CHART)
 
         val isMmol = GlucoseFormatter.isMmolApp()
-        val fontSize = config.textScale / 100f
+        val fontSize = 1f
         val glucoseScale = config.glucoseScale / 100f
         val timeScale = config.timeScale / 100f
         val weatherScale = config.weatherScale / 100f
@@ -207,7 +208,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val secondaryFontWeight = config.secondaryFontWeight
         val useSystemFont = config.fontFamily == WidgetFontFamily.SYSTEM
         val showArrow = config.showArrow
-        val arrowScale = (config.textScale / 100f * glucoseScale).coerceIn(0.7f, 1.8f)
+        val arrowScale = glucoseScale.coerceIn(0.7f, 1.8f)
 
         val freshDisplay = currentDisplay?.takeIf { dataState.isFresh }
         val displayValue = freshDisplay?.primaryValue ?: 0f
@@ -272,10 +273,24 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 ?: context.getString(R.string.novalue)
         }
 
+        val darkSurface = (context.resources.configuration.uiMode and 0x30) == 0x20
+        val bgRgb = when (config.background) {
+            tk.glucodata.widgets.WidgetBackground.TRANSPARENT -> null
+            tk.glucodata.widgets.WidgetBackground.SURFACE ->
+                if (darkSurface) 0xFF1C1B1F.toInt() else 0xFFF7F2FA.toInt()
+            tk.glucodata.widgets.WidgetBackground.RANGE ->
+                NotificationChartDrawer.getGlucoseColor(context, displayValue, isMmol)
+        }
+        val backgroundModifier = if (bgRgb == null || config.opacity == 0) GlanceModifier
+        else GlanceModifier.background(ComposeColor(Color.argb(
+            (config.opacity * 255f / 100f).roundToInt().coerceIn(0, 255),
+            Color.red(bgRgb), Color.green(bgRgb), Color.blue(bgRgb)
+        )))
+
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.surface)
+                .then(backgroundModifier)
                 .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -284,7 +299,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 modifier = GlanceModifier
                     .fillMaxWidth()
                     .height(HeaderHeight)
-                    .background(GlanceTheme.colors.surface)
+                    
                     .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
@@ -316,7 +331,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         primaryTextColor,
                         secondaryTextColor
                     ) {
-                        val baseScale = config.textScale / 100f
+                        val baseScale = 1f
                         val clockScale = baseScale * glucoseScale
                         val dateScale = baseScale * detailScale
                         val clockLayout = when (config.fontFamily) {
