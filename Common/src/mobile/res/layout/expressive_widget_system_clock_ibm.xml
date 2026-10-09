@@ -9,9 +9,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:singleLine="true"
+        android:textFontWeight="400"
         android:textSize="27sp"
         android:textColor="#FFFFFFFF"
         android:fontFamily="@font/ibm_plex_sans_var"
+        android:fontVariationSettings="'wght' 400"
         android:format12Hour="h:mm"
         android:format24Hour="HH:mm"
         android:importantForAccessibility="yes" />
@@ -20,9 +22,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:singleLine="true"
+        android:textFontWeight="400"
         android:textSize="11sp"
         android:textColor="#CCFFFFFF"
         android:fontFamily="@font/ibm_plex_sans_var"
+        android:fontVariationSettings="'wght' 400"
         android:format12Hour="EEEE, d MMMM"
         android:format24Hour="EEEE, d MMMM"
         android:importantForAccessibility="yes" />
