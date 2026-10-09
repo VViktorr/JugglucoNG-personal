@@ -837,7 +837,7 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = modifier.height(104.dp)
+        val stabilizedModifier = modifier.height(88.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
@@ -862,7 +862,7 @@ fun DashboardCombinedHeader(
         var sensorContentWidthPx by remember { mutableStateOf(0) }
         val sensorDensity = LocalDensity.current
         Card(
-            modifier = modifier.height(104.dp),
+            modifier = modifier.height(88.dp),
              colors = CardDefaults.cardColors(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
@@ -913,7 +913,7 @@ fun DashboardCombinedHeader(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp), // Compact stacked sensor card
+                        .padding(horizontal = 16.dp, vertical = 4.dp), // Compact stacked sensor card
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
