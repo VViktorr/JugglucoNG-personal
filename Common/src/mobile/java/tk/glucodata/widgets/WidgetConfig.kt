@@ -209,8 +209,14 @@ object WidgetConfigStore {
         )
     }
 
-    fun load(context: Context, kind: WidgetSettingsKind): WidgetConfig =
-        WidgetConfig.fromJson(prefs(context).getString(kind.name, null), defaults(context, kind))
+    fun load(context: Context, kind: WidgetSettingsKind): WidgetConfig {
+        val saved = WidgetConfig.fromJson(prefs(context).getString(kind.name, null), defaults(context, kind))
+        return saved.copy(
+            mainFontFamily = saved.fontFamily,
+            detailFontFamily = saved.fontFamily,
+            secondaryFontWeight = saved.primaryFontWeight
+        )
+    }
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {
         prefs(context).edit().putString(kind.name, config.toJson().toString()).apply()
