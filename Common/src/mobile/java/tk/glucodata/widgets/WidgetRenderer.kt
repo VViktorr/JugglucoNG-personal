@@ -117,6 +117,8 @@ class WidgetRenderer(private val context: Context) {
         )
     }
 
+    fun glucoseTextColor(snapshot: WidgetSnapshot, config: WidgetConfig): Int = contentColor(snapshot, config)
+
     private fun contentColor(snapshot: WidgetSnapshot, config: WidgetConfig): Int {
         val (_, fg) = palette(snapshot)
         val value = snapshot.current?.primaryValue ?: return fg
