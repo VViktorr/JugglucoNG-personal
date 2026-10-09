@@ -214,21 +214,23 @@ private fun WidgetDetailSettings(
             }
         }
 
-        Text(stringResource(R.string.widget_text_size_value, config.textScale))
-        Slider(
-            value = config.textScale.toFloat(),
-            onValueChange = { onChange(config.copy(textScale = (it / 5f).toInt() * 5)) },
-            valueRange = 70f..160f
-        )
+        if (kind != WidgetSettingsKind.CLOCK_WEATHER) {
+            Text(stringResource(R.string.widget_text_size_value, config.textScale))
+            Slider(
+                value = config.textScale.toFloat(),
+                onValueChange = { onChange(config.copy(textScale = (it / 5f).toInt() * 5)) },
+                valueRange = 70f..160f
+            )
+        }
 
-        Text(stringResource(R.string.widget_detail_size_value, config.detailScale))
+        Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) "Data i opis pod glukozą — wielkość: ${config.detailScale}%" else stringResource(R.string.widget_detail_size_value, config.detailScale))
         Slider(
             value = config.detailScale.toFloat(),
             onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
 
-        Text(stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
+        Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) "Zegar i glukoza — wielkość: ${config.glucoseScale}%" else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
         Slider(
             value = config.glucoseScale.toFloat(),
             onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
@@ -289,13 +291,6 @@ private fun WidgetDetailSettings(
         if (kind.hasWeather) {
             HorizontalDivider()
             Text(stringResource(R.string.widget_section_components), style = MaterialTheme.typography.titleMedium)
-
-            Text(stringResource(R.string.widget_time_size_value, config.timeScale))
-            Slider(
-                value = config.timeScale.toFloat(),
-                onValueChange = { onChange(config.copy(timeScale = (it / 5f).toInt() * 5)) },
-                valueRange = 70f..180f
-            )
 
             WidgetSwitch(stringResource(R.string.widget_show_date), config.showDate) {
                 onChange(config.copy(showDate = it))
