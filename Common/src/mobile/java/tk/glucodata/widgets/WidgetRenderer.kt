@@ -426,7 +426,7 @@ class WidgetRenderer(private val context: Context) {
         }
     }
 
-    private fun deltaText(delta: Float, isMmol: Boolean): String {
+    fun deltaText(delta: Float, isMmol: Boolean): String {
         val sign = if (delta > 0) "+" else if (abs(delta) < 0.05f) "±" else ""
         return if (isMmol) sign + String.format("%.1f", delta) else sign + delta.roundToInt()
     }
