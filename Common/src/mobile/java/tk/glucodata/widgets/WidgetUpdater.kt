@@ -132,14 +132,7 @@ object WidgetUpdater {
                                 val dateIds = intArrayOf(R.id.home_widget_date_300, R.id.home_widget_date_400, R.id.home_widget_date_500, R.id.home_widget_date_600, R.id.home_widget_date_700)
                                 val glucoseIds = intArrayOf(R.id.home_widget_glucose_300, R.id.home_widget_glucose_400, R.id.home_widget_glucose_500, R.id.home_widget_glucose_600, R.id.home_widget_glucose_700)
                                 val glucoseText = if (snapshot.hasFreshReading) snapshot.valueText else "—"
-                                val glucoseColor = if (snapshot.hasFreshReading && config.rangeColors) {
-                                    val glucose = snapshot.current?.primaryValue
-                                    if (glucose != null) {
-                                        val low = if (snapshot.isMmol) 3.9f else 70f
-                                        val high = if (snapshot.isMmol) 10f else 180f
-                                        when { glucose < low -> android.graphics.Color.RED; glucose > high -> 0xFFFFA000.toInt(); else -> 0xFF2E7D32.toInt() }
-                                    } else textColor
-                                } else textColor
+                                val glucoseColor = if (snapshot.hasFreshReading) renderer.glucoseTextColor(snapshot, config) else textColor
                                 weights.indices.forEach { index ->
                                     val clockId = clockIds[index]
                                     val dateId = dateIds[index]
