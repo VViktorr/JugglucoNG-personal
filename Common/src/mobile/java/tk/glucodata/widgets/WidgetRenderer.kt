@@ -302,7 +302,7 @@ class WidgetRenderer(private val context: Context) {
             glucoseText, w * 0.25f, h * 0.56f, glucoseColor,
             c.glucoseScale, c.copy(fontFamily = c.mainFontFamily), true
         )
-        canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.25f), glucosePaint)
+        // Glucose value is a native TextView beside TextClock, sharing its exact font and row.
 
         if (c.showArrow && s.hasFreshReading && s.rate.isFinite()) {
             drawTrendArrow(
