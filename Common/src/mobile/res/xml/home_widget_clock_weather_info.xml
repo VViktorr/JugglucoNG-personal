@@ -9,7 +9,7 @@
     android:previewImage="@drawable/widget_preview_clock_weather_static"
     android:previewLayout="@layout/widget_preview_clock_weather"
     android:resizeMode="horizontal|vertical"
-    android:targetCellWidth="4"
+    android:targetCellWidth="5"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />
