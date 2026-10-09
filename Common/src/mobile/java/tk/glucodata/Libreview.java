@@ -58,7 +58,6 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 import androidx.annotation.Keep;
@@ -677,6 +676,7 @@ static boolean postmeasurements(boolean libre3,byte[] measurementdata) {
       }
    }
    return false;
+}
 
  /*TODO: where:
         try {
