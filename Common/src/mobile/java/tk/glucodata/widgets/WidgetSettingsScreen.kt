@@ -178,63 +178,20 @@ private fun WidgetDetailSettings(
         Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
-        if (kind != WidgetSettingsKind.CLOCK_WEATHER) {
-        Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FilterChip(
-                selected = config.fontFamily == WidgetFontFamily.IBM_PLEX,
-                onClick = { onChange(config.copy(fontFamily = WidgetFontFamily.IBM_PLEX)) },
-                label = { Text(stringResource(R.string.widget_font_ibm_plex)) }
-            )
-            FilterChip(
-                selected = config.fontFamily == WidgetFontFamily.SYSTEM,
-                onClick = { onChange(config.copy(fontFamily = WidgetFontFamily.SYSTEM)) },
-                label = { Text(stringResource(R.string.widget_font_system)) }
-            )
+        Text("Czcionka całego widżetu", style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            WidgetFontFamily.entries.forEach { family ->
+                FilterChip(selected = config.fontFamily == family,
+                    onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
+                    label = { Text(if (family == WidgetFontFamily.IBM_PLEX) "IBM Plex" else "System") })
+            }
         }
-
-        Text(stringResource(R.string.widget_primary_font_weight), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Grubość czcionki całego widżetu", style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
-                FilterChip(
-                    selected = config.primaryFontWeight == weight,
-                    onClick = { onChange(config.copy(primaryFontWeight = weight)) },
-                    label = { Text(weight.toString()) }
-                )
-            }
-        }
-
-        Text(stringResource(R.string.widget_secondary_font_weight), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf(300, 400, 500, 600, 700).forEach { weight ->
-                FilterChip(
-                    selected = config.secondaryFontWeight == weight,
-                    onClick = { onChange(config.copy(secondaryFontWeight = weight)) },
-                    label = { Text(weight.toString()) }
-                )
-            }
-        }
-
-        } else {
-            Text("Czcionka całego widżetu", style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                WidgetFontFamily.entries.forEach { family ->
-                    FilterChip(
-                        selected = config.fontFamily == family,
-                        onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
-                        label = { Text(if (family == WidgetFontFamily.IBM_PLEX) "IBM Plex" else "System") }
-                    )
-                }
-            }
-            Text("Grubość czcionki całego widżetu", style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(300, 400, 500, 600, 700).forEach { weight ->
-                    FilterChip(
-                        selected = config.primaryFontWeight == weight,
-                        onClick = { onChange(config.copy(primaryFontWeight = weight, secondaryFontWeight = weight)) },
-                        label = { Text(weight.toString()) }
-                    )
-                }
+                FilterChip(selected = config.primaryFontWeight == weight,
+                    onClick = { onChange(config.copy(primaryFontWeight = weight, secondaryFontWeight = weight)) },
+                    label = { Text(weight.toString()) })
             }
         }
 
