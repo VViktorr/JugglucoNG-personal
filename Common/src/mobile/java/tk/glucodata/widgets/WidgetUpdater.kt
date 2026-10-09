@@ -111,11 +111,8 @@ object WidgetUpdater {
                             }
                         ).apply{
                             if(kind==WidgetKind.CLOCK_WEATHER){
-                                val baseScale=config.textScale/100f
-                                val timeScale=config.timeScale/100f
-                                val detailScale=config.detailScale/100f
-                                val clockSize=min(w*0.145f,h*0.52f)*baseScale*timeScale
-                                val dateSize=min(w*0.042f,h*0.15f)*baseScale*detailScale
+                                val clockSize=min(w*0.145f,h*0.46f)*config.glucoseScale/100f
+                                val dateSize=min(w*0.042f,h*0.19f)*config.detailScale/100f
                                 val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
                                 setTextViewTextSize(R.id.home_widget_clock,android.util.TypedValue.COMPLEX_UNIT_SP,clockSize)
                                 setTextColor(R.id.home_widget_clock,textColor)
