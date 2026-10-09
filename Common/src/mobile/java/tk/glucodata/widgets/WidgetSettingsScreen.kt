@@ -195,14 +195,6 @@ private fun WidgetDetailSettings(
             }
         }
 
-        if (kind != WidgetSettingsKind.CLOCK_WEATHER) {
-            Text(stringResource(R.string.widget_text_size_value, config.textScale))
-            Slider(
-                value = config.textScale.toFloat(),
-                onValueChange = { onChange(config.copy(textScale = (it / 5f).toInt() * 5)) },
-                valueRange = 70f..160f
-            )
-        }
 
         Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) "Data i opis pod glukozą — wielkość: ${config.detailScale}%" else stringResource(R.string.widget_detail_size_value, config.detailScale))
         Slider(
@@ -225,6 +217,22 @@ private fun WidgetDetailSettings(
             valueRange = 0f..24f,
             steps = 23
         )
+
+        Text(stringResource(R.string.widget_background), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                BackgroundChip(WidgetBackground.SURFACE, R.string.widget_bg_surface, config, onChange)
+                BackgroundChip(WidgetBackground.RANGE, R.string.widget_bg_range, config, onChange)
+                BackgroundChip(WidgetBackground.TRANSPARENT, R.string.widget_bg_none, config, onChange)
+            }
+
+            if (config.background != WidgetBackground.TRANSPARENT) {
+                Text(stringResource(R.string.widget_opacity_value, config.opacity))
+                Slider(
+                    value = config.opacity.toFloat(),
+                    onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
+                    valueRange = 20f..100f
+                )
+            }
 
         HorizontalDivider()
         Text(stringResource(R.string.widget_section_visibility), style = MaterialTheme.typography.titleMedium)
@@ -252,21 +260,7 @@ private fun WidgetDetailSettings(
                 onChange(config.copy(showUnit = it))
             }
 
-            Text(stringResource(R.string.widget_background), style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                BackgroundChip(WidgetBackground.SURFACE, R.string.widget_bg_surface, config, onChange)
-                BackgroundChip(WidgetBackground.RANGE, R.string.widget_bg_range, config, onChange)
-                BackgroundChip(WidgetBackground.TRANSPARENT, R.string.widget_bg_none, config, onChange)
-            }
 
-            if (config.background != WidgetBackground.TRANSPARENT) {
-                Text(stringResource(R.string.widget_opacity_value, config.opacity))
-                Slider(
-                    value = config.opacity.toFloat(),
-                    onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
-                    valueRange = 20f..100f
-                )
-            }
         }
 
         if (kind.hasWeather) {
