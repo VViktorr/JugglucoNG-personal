@@ -314,24 +314,7 @@ class WidgetRenderer(private val context: Context) {
             )
         }
 
-        val detail = if (!s.hasFreshReading) {
-            s.statusText
-        } else {
-            buildList {
-                if (c.showDelta) s.delta?.let { add(deltaText(it, s.isMmol)) }
-                if (c.showUnit) add(s.unitText)
-                if (c.showTime) s.current?.let {
-                    add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)))
-                }
-            }.joinToString("  ")
-        }
-        if (!detail.isNullOrBlank()) {
-            val p = fitText(
-                detail, w * 0.36f, h * 0.30f, foreground,
-                (c.detailScale * 0.52f).roundToInt(), c.copy(fontFamily = c.detailFontFamily), false
-            )
-            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.75f), p)
-        }
+
     }
     private fun drawRange(
         canvas: Canvas,
