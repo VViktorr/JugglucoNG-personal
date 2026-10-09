@@ -95,7 +95,13 @@ object WidgetUpdater {
         val renderer=WidgetRenderer(context)
         val description=renderer.describe(snapshot)
         targets.forEach { (kind,ids) ->
-            val config=configs.getValue(kind)
+            val savedConfig = configs.getValue(kind)
+            // Clock/weather has one shared font family and weight for all text.
+            val config = if (kind == WidgetKind.CLOCK_WEATHER) savedConfig.copy(
+                mainFontFamily = savedConfig.fontFamily,
+                detailFontFamily = savedConfig.fontFamily,
+                secondaryFontWeight = savedConfig.primaryFontWeight
+            ) else savedConfig
             ids.forEach { id ->
                 try {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
