@@ -300,7 +300,7 @@ class WidgetRenderer(private val context: Context) {
         val glucoseColor = if (s.hasFreshReading) contentColor(s, c) else foreground
         val glucosePaint = fitText(
             glucoseText, w * 0.25f, h * 0.64f, glucoseColor,
-            c.glucoseScale, c, true
+            c.glucoseScale, c.copy(fontFamily = c.mainFontFamily), true
         )
         canvas.drawText(glucoseText, glucoseCenterX, baselineCenter(glucosePaint, h * 0.25f), glucosePaint)
 
@@ -326,7 +326,7 @@ class WidgetRenderer(private val context: Context) {
         if (!detail.isNullOrBlank()) {
             val p = fitText(
                 detail, w * 0.34f, h * 0.19f, foreground,
-                c.detailScale, c, false
+                c.detailScale, c.copy(fontFamily = c.detailFontFamily), false
             )
             canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.76f), p)
         }
