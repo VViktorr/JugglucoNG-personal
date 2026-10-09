@@ -308,7 +308,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     val systemClockViews = remember(
                         config.showDate,
                         config.textScale,
-                        config.timeScale,
+                        config.glucoseScale,
                         config.detailScale,
                         config.fontFamily,
                         config.primaryFontWeight,
@@ -317,12 +317,24 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         secondaryTextColor
                     ) {
                         val baseScale = config.textScale / 100f
-                        val clockScale = baseScale * timeScale
+                        val clockScale = baseScale * glucoseScale
                         val dateScale = baseScale * detailScale
-                        val clockLayout = if (config.fontFamily == WidgetFontFamily.IBM_PLEX)
-                            R.layout.expressive_widget_system_clock_ibm
-                        else
-                            R.layout.expressive_widget_system_clock
+                        val clockLayout = when (config.fontFamily) {
+                            WidgetFontFamily.IBM_PLEX -> when (config.primaryFontWeight) {
+                                300 -> R.layout.expressive_clock_ibm_300
+                                500 -> R.layout.expressive_clock_ibm_500
+                                600 -> R.layout.expressive_clock_ibm_600
+                                700 -> R.layout.expressive_clock_ibm_700
+                                else -> R.layout.expressive_widget_system_clock_ibm
+                            }
+                            WidgetFontFamily.SYSTEM -> when (config.primaryFontWeight) {
+                                300 -> R.layout.expressive_clock_system_300
+                                500 -> R.layout.expressive_clock_system_500
+                                600 -> R.layout.expressive_clock_system_600
+                                700 -> R.layout.expressive_clock_system_700
+                                else -> R.layout.expressive_widget_system_clock
+                            }
+                        }
                         RemoteViews(context.packageName, clockLayout).apply {
                             setTextViewTextSize(
                                 R.id.expressive_widget_clock,
