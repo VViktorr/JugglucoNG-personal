@@ -324,22 +324,12 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         else
                             R.layout.expressive_widget_system_clock
                         RemoteViews(context.packageName, clockLayout).apply {
-                            setInt(
-                                R.id.expressive_widget_clock,
-                                "setTextAppearance",
-                                weightStyle(config.primaryFontWeight)
-                            )
                             setTextViewTextSize(
                                 R.id.expressive_widget_clock,
                                 android.util.TypedValue.COMPLEX_UNIT_SP,
                                 27f * clockScale
                             )
                             setTextColor(R.id.expressive_widget_clock, primaryTextColor)
-                            setInt(
-                                R.id.expressive_widget_date,
-                                "setTextAppearance",
-                                weightStyle(config.secondaryFontWeight)
-                            )
                             setTextViewTextSize(
                                 R.id.expressive_widget_date,
                                 android.util.TypedValue.COMPLEX_UNIT_SP,
