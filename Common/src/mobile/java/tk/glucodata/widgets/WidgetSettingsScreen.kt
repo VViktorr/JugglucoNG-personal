@@ -216,40 +216,24 @@ private fun WidgetDetailSettings(
         }
 
         } else {
-            Text("Zegar i glukoza — czcionka", style = MaterialTheme.typography.labelLarge)
+            Text("Czcionka całego widżetu", style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 WidgetFontFamily.entries.forEach { family ->
                     FilterChip(
-                        selected = config.mainFontFamily == family,
-                        onClick = { onChange(config.copy(mainFontFamily = family)) },
+                        selected = config.fontFamily == family,
+                        onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
                         label = { Text(if (family == WidgetFontFamily.IBM_PLEX) "IBM Plex" else "System") }
                     )
                 }
             }
-            Text("Zegar i glukoza — grubość", style = MaterialTheme.typography.labelLarge)
+            Text("Grubość czcionki całego widżetu", style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(300, 400, 500, 600, 700).forEach { weight ->
-                    FilterChip(selected = config.primaryFontWeight == weight,
-                        onClick = { onChange(config.copy(primaryFontWeight = weight)) },
-                        label = { Text(weight.toString()) })
-                }
-            }
-            Text("Data i opis — czcionka", style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                WidgetFontFamily.entries.forEach { family ->
                     FilterChip(
-                        selected = config.detailFontFamily == family,
-                        onClick = { onChange(config.copy(detailFontFamily = family)) },
-                        label = { Text(if (family == WidgetFontFamily.IBM_PLEX) "IBM Plex" else "System") }
+                        selected = config.primaryFontWeight == weight,
+                        onClick = { onChange(config.copy(primaryFontWeight = weight, secondaryFontWeight = weight)) },
+                        label = { Text(weight.toString()) }
                     )
-                }
-            }
-            Text("Data i opis — grubość", style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(300, 400, 500, 600, 700).forEach { weight ->
-                    FilterChip(selected = config.secondaryFontWeight == weight,
-                        onClick = { onChange(config.copy(secondaryFontWeight = weight)) },
-                        label = { Text(weight.toString()) })
                 }
             }
         }
