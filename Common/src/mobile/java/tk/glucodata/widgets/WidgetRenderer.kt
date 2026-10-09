@@ -325,10 +325,10 @@ class WidgetRenderer(private val context: Context) {
         }
         if (!detail.isNullOrBlank()) {
             val p = fitText(
-                detail, w * 0.34f, h * 0.19f, foreground,
-                c.detailScale, c.copy(fontFamily = c.detailFontFamily), false
+                detail, w * 0.36f, h * 0.30f, foreground,
+                (c.detailScale * 0.52f).roundToInt(), c.copy(fontFamily = c.detailFontFamily), false
             )
-            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.76f), p)
+            canvas.drawText(detail, glucoseCenterX, baselineCenter(p, h * 0.75f), p)
         }
     }
     private fun drawRange(
