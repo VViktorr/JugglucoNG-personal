@@ -9,14 +9,18 @@
         android:layout_height="match_parent"
         android:scaleType="fitXY"
         android:contentDescription="@string/widget_clock_weather" />
-    <!-- System clocks keep time and date current even if the app process is stopped. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
     <TextClock
         android:id="@+id/home_widget_clock"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="start|top"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="start|center_vertical"
         android:paddingStart="12dp"
-        android:paddingTop="4dp"
+        android:paddingTop="0dp"
         android:paddingEnd="0dp"
         android:singleLine="true"
         android:textSize="48sp"
@@ -28,15 +32,17 @@
     <TextClock
         android:id="@+id/home_widget_date"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="start|bottom"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="start|center_vertical"
         android:paddingStart="14dp"
         android:paddingEnd="0dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="0dp"
         android:singleLine="true"
         android:textSize="16sp"
         android:textColor="#FFFFFFFF"
         android:format12Hour="EEEE, d MMMM"
         android:format24Hour="EEEE, d MMMM"
         android:importantForAccessibility="yes" />
+    </LinearLayout>
 </FrameLayout>
