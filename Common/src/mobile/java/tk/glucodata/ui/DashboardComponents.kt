@@ -241,6 +241,7 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    sensorEndTimeMs: Long = 0L,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -272,11 +273,11 @@ fun DashboardCombinedHeader(
     // Sensor: Surface Variant (Tonal) vs Tertiary Container (Expiring)
     // FIX: Replaced fragile string matching (failed in Dutch, false positive in English for "1 days in use")
     // with robust progress-based logic. >90% progress (approx <1.4 days left) triggers Expiring state.
-    val isExpiring = sensorProgress > 0.90f
     // FIX: User reported "Silly" contrast in Dark Mode with surfaceVariant (too bright/green).
     // Switched to primaryContainer to match the Glucose Card (Left) for a cohesive dark look.
-    val sensorContainerColor = if (isExpiring) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) // Darker variant
-    val sensorContentColor = if (isExpiring) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+    val sensorContainerColor = glucoseBaseContainerColor
+    val sensorContentColor = glucoseContentColor
+    val sensorAgedColor = MaterialTheme.colorScheme.surfaceVariant
 
     // Advanced Trend
     val trendResult = remember(history, latestPoint, currentSnapshot) {
@@ -836,11 +837,7 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = if (statusCopy != null) {
-            modifier.heightIn(min = 88.dp)
-        } else {
-            modifier
-        }
+        val stabilizedModifier = modifier.height(104.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
@@ -865,7 +862,7 @@ fun DashboardCombinedHeader(
         var sensorContentWidthPx by remember { mutableStateOf(0) }
         val sensorDensity = LocalDensity.current
         Card(
-            modifier = modifier,
+            modifier = modifier.height(104.dp),
              colors = CardDefaults.cardColors(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
@@ -897,21 +894,18 @@ fun DashboardCombinedHeader(
                 // whole screen, not the real space inside this card.
                 val showLifecycleCalendar = sensorContentWidthPx == 0 ||
                     lifecycleTextWidthPx + lifecycleCalendarChromePx <= sensorContentWidthPx
-                // Dynamic Fill Layer
+                // At activation the entire bar matches the glucose card. As the sensor
+                // ages, neutral grey advances from the right edge toward the left.
                 if (sensorProgress > 0f) {
-                    val fillColor = when {
-                        sensorProgress > 0.95f -> MaterialTheme.colorScheme.error
-                        sensorProgress > 0.80f -> MaterialTheme.colorScheme.tertiary
-                        else -> androidx.compose.ui.graphics.Color(0xFF66BB6A) // Muted Green (400) - "Make it Green"
-                    }
                     Box(
-                        modifier = Modifier.matchParentSize()
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = Alignment.CenterEnd
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxHeight()
-                                .fillMaxWidth(sensorProgress)
-                                .background(fillColor.copy(alpha = 0.25f)) // Slightly increased opacity for visibility
+                                .fillMaxWidth(sensorProgress.coerceIn(0f, 1f))
+                                .background(sensorAgedColor)
                         )
                     }
                 }
@@ -1051,6 +1045,20 @@ fun DashboardCombinedHeader(
                              }
                          }
                      }
+                    if (sensorEndTimeMs > 0L) {
+                        val expiryText = remember(sensorEndTimeMs) {
+                            java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(sensorEndTimeMs))
+                        }
+                        Text(
+                            text = "Koniec: $expiryText",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = sensorContentColor.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
                 }
             }
         }
