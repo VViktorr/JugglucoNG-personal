@@ -133,10 +133,7 @@ object WidgetUpdater {
                                 val glucoseIds = intArrayOf(R.id.home_widget_glucose_300, R.id.home_widget_glucose_400, R.id.home_widget_glucose_500, R.id.home_widget_glucose_600, R.id.home_widget_glucose_700)
                                 val detailIds = intArrayOf(R.id.home_widget_detail_300, R.id.home_widget_detail_400, R.id.home_widget_detail_500, R.id.home_widget_detail_600, R.id.home_widget_detail_700)
                                 val detailText = if (!snapshot.hasFreshReading) snapshot.statusText.orEmpty() else buildList {
-                                    if (config.showDelta) snapshot.delta?.let { delta ->
-                                        val sign = if (delta > 0f) "+" else ""
-                                        add(sign + if (snapshot.isMmol) String.format(java.util.Locale.getDefault(), "%.1f", delta) else delta.toInt().toString())
-                                    }
+                                    if (config.showDelta) snapshot.delta?.let { add(renderer.deltaText(it, snapshot.isMmol)) }
                                     if (config.showUnit) add(snapshot.unitText)
                                     if (config.showTime) snapshot.current?.let { add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis))) }
                                 }.joinToString("  ")
