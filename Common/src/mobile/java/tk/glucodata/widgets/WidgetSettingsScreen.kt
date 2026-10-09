@@ -178,6 +178,7 @@ private fun WidgetDetailSettings(
         Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
+        if (kind != WidgetSettingsKind.CLOCK_WEATHER) {
         Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             FilterChip(
@@ -211,6 +212,45 @@ private fun WidgetDetailSettings(
                     onClick = { onChange(config.copy(secondaryFontWeight = weight)) },
                     label = { Text(weight.toString()) }
                 )
+            }
+        }
+
+        } else {
+            Text("Zegar i glukoza — czcionka", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                WidgetFontFamily.entries.forEach { family ->
+                    FilterChip(
+                        selected = config.mainFontFamily == family,
+                        onClick = { onChange(config.copy(mainFontFamily = family)) },
+                        label = { Text(if (family == WidgetFontFamily.IBM_PLEX) "IBM Plex" else "System") }
+                    )
+                }
+            }
+            Text("Zegar i glukoza — grubość", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(300, 400, 500, 600, 700).forEach { weight ->
+                    FilterChip(selected = config.primaryFontWeight == weight,
+                        onClick = { onChange(config.copy(primaryFontWeight = weight)) },
+                        label = { Text(weight.toString()) })
+                }
+            }
+            Text("Data i opis — czcionka", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                WidgetFontFamily.entries.forEach { family ->
+                    FilterChip(
+                        selected = config.detailFontFamily == family,
+                        onClick = { onChange(config.copy(detailFontFamily = family)) },
+                        label = { Text(if (family == WidgetFontFamily.IBM_PLEX) "IBM Plex" else "System") }
+                    )
+                }
+            }
+            Text("Data i opis — grubość", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(300, 400, 500, 600, 700).forEach { weight ->
+                    FilterChip(selected = config.secondaryFontWeight == weight,
+                        onClick = { onChange(config.copy(secondaryFontWeight = weight)) },
+                        label = { Text(weight.toString()) })
+                }
             }
         }
 
