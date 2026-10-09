@@ -194,7 +194,7 @@ class WidgetRenderer(private val context: Context) {
     ) {
         val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
         val fg = if (dark) Color.WHITE else 0xFF1D1B20.toInt()
-        val p = fitText(text, w * 0.9f, h * 0.5f, fg, config.textScale, config, false)
+        val p = fitText(text, w * 0.9f, h * 0.5f, fg, config.detailScale, config, false)
         val lines = if (p.measureText(text) <= w * 0.9f) listOf(text) else splitStatus(text)
         val lineH = p.textSize * 1.15f
         var y = h / 2f - (lines.size - 1) * lineH / 2f
@@ -258,7 +258,7 @@ class WidgetRenderer(private val context: Context) {
             if (dark || c.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
 
         fun componentScale(component: Int): Int =
-            (c.textScale * component / 100f).roundToInt().coerceIn(50, 260)
+            component.coerceIn(50, 260)
 
         val weatherCenterX = (w * 0.44f - c.weatherShiftDp * density)
             .coerceIn(w * 0.27f, w * 0.54f)
@@ -331,7 +331,7 @@ class WidgetRenderer(private val context: Context) {
             split * 0.62f,
             h * 0.50f,
             glucoseColor,
-            (c.textScale * c.glucoseScale / 100f).roundToInt().coerceIn(50, 260),
+            c.glucoseScale.coerceIn(50, 260),
             c,
             true
         )
@@ -347,7 +347,7 @@ class WidgetRenderer(private val context: Context) {
                 canvas,
                 split * 0.82f,
                 h * 0.38f,
-                min(split * 0.24f, h * 0.30f) * c.textScale / 100f * c.glucoseScale / 100f,
+                min(split * 0.24f, h * 0.30f) * c.glucoseScale / 100f,
                 s.rate,
                 glucoseColor,
                 s.isMmol
@@ -367,7 +367,7 @@ class WidgetRenderer(private val context: Context) {
                 split * 0.86f,
                 h * 0.15f,
                 palette(s).second,
-                (c.textScale * c.detailScale / 100f).roundToInt().coerceIn(50, 260),
+                c.detailScale.coerceIn(50, 260),
                 c,
                 false
             )
@@ -390,7 +390,7 @@ class WidgetRenderer(private val context: Context) {
             w - split - 14 * density,
             h * 0.16f,
             palette(s).second,
-            (c.textScale * c.detailScale / 100f).roundToInt().coerceIn(50, 260),
+            c.detailScale.coerceIn(50, 260),
             c,
             false
         )
@@ -403,7 +403,7 @@ class WidgetRenderer(private val context: Context) {
             (w - split) * 0.82f,
             h * 0.46f,
             0xFF2E7D32.toInt(),
-            (c.textScale * c.glucoseScale / 100f).roundToInt().coerceIn(50, 260),
+            c.glucoseScale.coerceIn(50, 260),
             c,
             true
         )
@@ -418,7 +418,7 @@ class WidgetRenderer(private val context: Context) {
                 w - split - 14 * density,
                 h * 0.15f,
                 palette(s).second,
-                (c.textScale * c.detailScale / 100f).roundToInt().coerceIn(50, 260),
+                c.detailScale.coerceIn(50, 260),
                 c,
                 false
             )
