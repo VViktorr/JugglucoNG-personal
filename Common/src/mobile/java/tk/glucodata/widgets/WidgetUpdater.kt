@@ -27,6 +27,7 @@ object WidgetUpdater {
     }
     private const val LOG_ID="WidgetUpdater"
     private val executor=Executors.newSingleThreadExecutor { r -> Thread(r,"home-widgets").apply { priority=Thread.NORM_PRIORITY-1 } }
+    private val immediateExecutor=Executors.newSingleThreadExecutor { r -> Thread(r,"widget-immediate").apply { priority=Thread.NORM_PRIORITY } }
     private val weatherExecutor=Executors.newSingleThreadExecutor { r -> Thread(r,"widget-weather").apply { priority=Thread.NORM_PRIORITY-1 } }
     private val pending=AtomicBoolean(false)
     private val rerunRequested=AtomicBoolean(false)
@@ -69,7 +70,7 @@ object WidgetUpdater {
 
     fun update(context:Context,kind:WidgetKind,ids:IntArray,done:(()->Unit)?=null){
         val app=context.applicationContext
-        executor.execute {
+        immediateExecutor.execute {
             try { if(ids.isNotEmpty()) render(app,AppWidgetManager.getInstance(app),mapOf(kind to ids)) }
             catch(t:Throwable){ Log.stack(LOG_ID,"update $kind",t) }
             finally{ done?.invoke() }
