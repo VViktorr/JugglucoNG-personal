@@ -219,20 +219,20 @@ private fun WidgetDetailSettings(
         )
 
         Text(stringResource(R.string.widget_background), style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                BackgroundChip(WidgetBackground.SURFACE, R.string.widget_bg_surface, config, onChange)
-                BackgroundChip(WidgetBackground.RANGE, R.string.widget_bg_range, config, onChange)
-                BackgroundChip(WidgetBackground.TRANSPARENT, R.string.widget_bg_none, config, onChange)
-            }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            BackgroundChip(WidgetBackground.SURFACE, R.string.widget_bg_surface, config, onChange)
+            BackgroundChip(WidgetBackground.RANGE, R.string.widget_bg_range, config, onChange)
+            BackgroundChip(WidgetBackground.TRANSPARENT, R.string.widget_bg_none, config, onChange)
+        }
 
-            if (config.background != WidgetBackground.TRANSPARENT) {
-                Text(stringResource(R.string.widget_opacity_value, config.opacity))
-                Slider(
-                    value = config.opacity.toFloat(),
-                    onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
-                    valueRange = 20f..100f
-                )
-            }
+        if (config.background != WidgetBackground.TRANSPARENT) {
+            Text(stringResource(R.string.widget_opacity_value, config.opacity))
+            Slider(
+                value = config.opacity.toFloat(),
+                onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
+                valueRange = 20f..100f
+            )
+        }
 
         HorizontalDivider()
         Text(stringResource(R.string.widget_section_visibility), style = MaterialTheme.typography.titleMedium)
