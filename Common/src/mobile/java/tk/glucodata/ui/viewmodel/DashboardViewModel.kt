@@ -1003,6 +1003,12 @@ class DashboardViewModel(
             } else {
                 null
             }
+            // Use the same post-extension end timestamp as the first NFC scan's
+            // calendar action (ScanNfcV.newsensor / Natives.getSensorEndData).
+            val calendarEndMs = if (hasNativeBacking) runCatching {
+                val seconds = Natives.getSensorEndData(sName) and 0xFFFFFFFFL
+                (seconds * 1000L).takeIf { it > 946684800000L }
+            }.getOrNull() else null
             val fallbackDurationDays =
                 if (managedSnapshot?.uiFamily == ManagedSensorUiFamily.AIDEX ||
                     sName.startsWith("X-", ignoreCase = true)
@@ -1037,7 +1043,7 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
-                _sensorEndTimeMs.value = lifecycleOfficialEndMs.takeIf { it > 0L } ?: lifecycleExpectedEndMs.takeIf { it > 0L } ?: 0L
+                _sensorEndTimeMs.value = calendarEndMs ?: lifecycleOfficialEndMs.takeIf { it > 0L } ?: lifecycleExpectedEndMs.takeIf { it > 0L } ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1057,7 +1063,7 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
-                _sensorEndTimeMs.value = managedSnapshot?.officialEndMs?.takeIf { it > 0L } ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L } ?: 0L
+                _sensorEndTimeMs.value = calendarEndMs ?: managedSnapshot?.officialEndMs?.takeIf { it > 0L } ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L } ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
