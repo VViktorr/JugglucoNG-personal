@@ -406,6 +406,7 @@ fun DashboardScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val activeSensorList by viewModel.activeSensorList.collectAsStateWithLifecycle()
     val sensorHoursRemaining by viewModel.sensorHoursRemaining.collectAsStateWithLifecycle()
+    val sensorEndTimeMs by viewModel.sensorEndTimeMs.collectAsStateWithLifecycle()
     val currentDay by viewModel.currentDay.collectAsStateWithLifecycle()
     val predictionCalibrationRefresh by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsStateWithLifecycle()
@@ -1456,6 +1457,7 @@ fun DashboardScreen(
                             sensorStatus = sensorStatus,
                             sensorProgress = sensorProgress,
                             sensorHoursRemaining = sensorHoursRemaining,
+                            sensorEndTimeMs = sensorEndTimeMs,
                             currentDay = currentDay,
                             history = glucoseHistory, // Trend must see measured data: visual smoothing
                             // reshapes the recent slope, and the notification/broadcast
@@ -1764,6 +1766,7 @@ fun DashboardScreen(
                             sensorStatus = sensorStatus,
                             sensorProgress = sensorProgress,
                             sensorHoursRemaining = sensorHoursRemaining,
+                            sensorEndTimeMs = sensorEndTimeMs,
                             currentDay = currentDay,
                             history = glucoseHistory, // Trend must see measured data: visual smoothing
                             // reshapes the recent slope, and the notification/broadcast
