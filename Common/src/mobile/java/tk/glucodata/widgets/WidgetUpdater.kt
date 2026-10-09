@@ -131,11 +131,21 @@ object WidgetUpdater {
                                 val clockIds = intArrayOf(R.id.home_widget_clock_300, R.id.home_widget_clock_400, R.id.home_widget_clock_500, R.id.home_widget_clock_600, R.id.home_widget_clock_700)
                                 val dateIds = intArrayOf(R.id.home_widget_date_300, R.id.home_widget_date_400, R.id.home_widget_date_500, R.id.home_widget_date_600, R.id.home_widget_date_700)
                                 val glucoseIds = intArrayOf(R.id.home_widget_glucose_300, R.id.home_widget_glucose_400, R.id.home_widget_glucose_500, R.id.home_widget_glucose_600, R.id.home_widget_glucose_700)
+                                val detailIds = intArrayOf(R.id.home_widget_detail_300, R.id.home_widget_detail_400, R.id.home_widget_detail_500, R.id.home_widget_detail_600, R.id.home_widget_detail_700)
+                                val detailText = if (!snapshot.hasFreshReading) snapshot.statusText.orEmpty() else buildList {
+                                    if (config.showDelta) snapshot.delta?.let { delta ->
+                                        val sign = if (delta > 0f) "+" else ""
+                                        add(sign + if (snapshot.isMmol) String.format(java.util.Locale.getDefault(), "%.1f", delta) else delta.toInt().toString())
+                                    }
+                                    if (config.showUnit) add(snapshot.unitText)
+                                    if (config.showTime) snapshot.current?.let { add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis))) }
+                                }.joinToString("  ")
                                 val glucoseText = if (snapshot.hasFreshReading) snapshot.valueText else "—"
                                 val glucoseColor = if (snapshot.hasFreshReading) renderer.glucoseTextColor(snapshot, config) else textColor
                                 weights.indices.forEach { index ->
                                     val clockId = clockIds[index]
                                     val dateId = dateIds[index]
+                                    val detailId = detailIds[index]
                                     val glucoseId = glucoseIds[index]
                                     setViewVisibility(clockId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                                     setViewVisibility(glucoseId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
@@ -145,6 +155,10 @@ object WidgetUpdater {
                                     setViewVisibility(dateId, if (config.showDate && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                                     setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                                     setTextColor(clockId, textColor)
+                                    setViewVisibility(detailId, if (detailText.isNotBlank() && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                                    setTextViewText(detailId, detailText)
+                                    setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                                    setTextColor(detailId, textColor)
                                     setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
                                     setTextColor(dateId, textColor)
                                 }
