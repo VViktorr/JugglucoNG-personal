@@ -563,7 +563,7 @@ fun DashboardCombinedHeader(
                 // Single-sensor padding defines the target card height. Multi mode
                 // uses a smaller inner padding so the scaled value + chip cluster
                 // fills the SAME pinned height (heroContentMinHeight) below.
-                val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 10.dp
+                val singleVerticalPadding = 2.dp
                 val resolvedVerticalPadding = if (isMultiHero) 4.dp else singleVerticalPadding
                 // Full (single-sensor) value style. The card height is pinned to
                 // the MEASURED height of this style (incl. font padding) + padding,
@@ -779,7 +779,6 @@ fun DashboardCombinedHeader(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .heightIn(min = heroContentMinHeight)
                             .padding(
                                 start = resolvedStartPadding,
                                 end = resolvedEndPadding,
@@ -837,7 +836,7 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = modifier.height(88.dp)
+        val stabilizedModifier = modifier.height(80.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
@@ -862,7 +861,7 @@ fun DashboardCombinedHeader(
         var sensorContentWidthPx by remember { mutableStateOf(0) }
         val sensorDensity = LocalDensity.current
         Card(
-            modifier = modifier.height(88.dp),
+            modifier = modifier.height(80.dp),
              colors = CardDefaults.cardColors(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
@@ -913,7 +912,7 @@ fun DashboardCombinedHeader(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 4.dp), // Compact stacked sensor card
+                        .padding(horizontal = 16.dp, vertical = 2.dp), // Tighter frame; text and icons retain their sizes
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -938,7 +937,7 @@ fun DashboardCombinedHeader(
                             contentColor = sensorContentColor,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = 2.dp)
                         )
                     }
                     
