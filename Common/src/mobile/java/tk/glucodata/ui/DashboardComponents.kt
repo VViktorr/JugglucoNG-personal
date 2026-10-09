@@ -1043,21 +1043,25 @@ fun DashboardCombinedHeader(
                                       )
                                  }
                              }
+                             // Keep the post-extension end date on the SAME row
+                             // as the lifecycle counter and calendar icon.
+                             if (sensorEndTimeMs > 0L) {
+                                 val expiryText = remember(sensorEndTimeMs) {
+                                     java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                         .format(java.util.Date(sensorEndTimeMs))
+                                 }
+                                 Spacer(modifier = Modifier.width(12.dp))
+                                 Text(
+                                     text = expiryText,
+                                     style = MaterialTheme.typography.labelMedium,
+                                     color = sensorContentColor.copy(alpha = 0.85f),
+                                     maxLines = 1,
+                                     softWrap = false,
+                                     overflow = TextOverflow.Ellipsis
+                                 )
+                             }
                          }
                      }
-                    if (sensorEndTimeMs > 0L) {
-                        val expiryText = remember(sensorEndTimeMs) {
-                            java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
-                                .format(java.util.Date(sensorEndTimeMs))
-                        }
-                        Text(
-                            text = "Koniec: $expiryText",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = sensorContentColor.copy(alpha = 0.85f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
 
                 }
             }
