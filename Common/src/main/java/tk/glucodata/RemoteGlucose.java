@@ -151,19 +151,28 @@ class RemoteGlucose {
 
    private void drawWidgetBackground() {
       canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      String mode = basicWidgetString("background", "TRANSPARENT");
+      if ("TRANSPARENT".equals(mode)) return;
+      int opacity = Math.max(0, Math.min(100, basicWidgetInt("opacity", 92)));
+      if (opacity == 0) return;
+      int baseColor = LEGACY_WIDGET_DIM_COLOR;
+      if ("SURFACE".equals(mode)) {
+         boolean night = (Applic.app.getResources().getConfiguration().uiMode
+               & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+               == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+         baseColor = night ? 0xFF1C1B1F : 0xFFF7F2FA;
+      } else if ("RANGE".equals(mode)) {
+         baseColor = baseForegroundColor;
+      }
       Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-      backgroundPaint.setColor(LEGACY_WIDGET_DIM_COLOR);
+      backgroundPaint.setColor(Color.argb(
+            Math.round(opacity * 255f / 100f),
+            Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor)));
       float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
       float radiusDp = Math.max(0, Math.min(24, basicWidgetInt("cornerRadiusDp", 0)));
       float radius = radiusDp * Math.max(1.0f, displayDensity);
-      canvas.drawRoundRect(
-            0.0f,
-            0.0f,
-            canvas.getWidth(),
-            canvas.getHeight(),
-            radius,
-            radius,
-            backgroundPaint);
+      canvas.drawRoundRect(0.0f, 0.0f, canvas.getWidth(), canvas.getHeight(),
+            radius, radius, backgroundPaint);
    }
 
    private JSONObject basicWidgetConfig() {
