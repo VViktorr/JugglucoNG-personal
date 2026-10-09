@@ -61,6 +61,8 @@ data class WidgetConfig(
     val temperatureScale: Int = 100,
     val weatherShiftDp: Int = 12,
     val fontFamily: WidgetFontFamily = WidgetFontFamily.IBM_PLEX,
+    val mainFontFamily: WidgetFontFamily = WidgetFontFamily.IBM_PLEX,
+    val detailFontFamily: WidgetFontFamily = WidgetFontFamily.IBM_PLEX,
     val primaryFontWeight: Int = 400,
     val secondaryFontWeight: Int = 400,
     val rangeColors: Boolean = true,
@@ -90,6 +92,8 @@ data class WidgetConfig(
         .put("temperatureScale", temperatureScale)
         .put("weatherShiftDp", weatherShiftDp)
         .put("fontFamily", fontFamily.name)
+        .put("mainFontFamily", mainFontFamily.name)
+        .put("detailFontFamily", detailFontFamily.name)
         .put("primaryFontWeight", primaryFontWeight)
         .put("secondaryFontWeight", secondaryFontWeight)
         .put("rangeColors", rangeColors)
@@ -127,6 +131,8 @@ data class WidgetConfig(
                     temperatureScale = json.optInt("temperatureScale", fallback.temperatureScale).coerceIn(70, 200),
                     weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 40),
                     fontFamily = enum(json.optString("fontFamily"), fallback.fontFamily),
+                    mainFontFamily = enum(json.optString("mainFontFamily"), enum(json.optString("fontFamily"), fallback.mainFontFamily)),
+                    detailFontFamily = enum(json.optString("detailFontFamily"), enum(json.optString("fontFamily"), fallback.detailFontFamily)),
                     primaryFontWeight = json.optInt(
                         "primaryFontWeight",
                         json.optInt("fontWeight", fallback.primaryFontWeight)
@@ -195,6 +201,8 @@ object WidgetConfigStore {
             textScale = (legacy.getFloat("notification_font_size", 1.0f) * 100f).toInt().coerceIn(70, 140),
             fontFamily = if (legacy.getInt("notification_font_family", 0) == 1)
                 WidgetFontFamily.SYSTEM else WidgetFontFamily.IBM_PLEX,
+            mainFontFamily = if (legacy.getInt("notification_font_family", 0) == 1) WidgetFontFamily.SYSTEM else WidgetFontFamily.IBM_PLEX,
+            detailFontFamily = if (legacy.getInt("notification_font_family", 0) == 1) WidgetFontFamily.SYSTEM else WidgetFontFamily.IBM_PLEX,
             primaryFontWeight = legacy.getInt("notification_font_weight", 400).coerceIn(300, 700),
             secondaryFontWeight = legacy.getInt("notification_font_weight", 400).coerceIn(300, 700),
             showArrow = legacy.getBoolean("notification_show_arrow", true)
