@@ -1,0 +1,22 @@
+name: Import upstream to NowyJG
+on:
+  push:
+    branches: [NowyJG]
+    paths: [.github/workflows/import-nowyjg.yml]
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.repository == 'VViktorr/JugglucoNG-personal'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Import exact upstream main history
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add upstream https://github.com/ctqvva/JugglucoNG.git
+          git fetch --no-tags upstream main
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin FETCH_HEAD:refs/heads/NowyJG
