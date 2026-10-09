@@ -214,7 +214,27 @@ object WidgetConfigStore {
         )
     }
 
+    // One-time migration: align even existing widget configurations to 65% opacity.
+    // Afterwards the opacity sliders stay independent and fully editable.
+    private fun migrateOpacityTo65(context: Context) {
+        val preferences = prefs(context)
+        if (preferences.getBoolean("opacity65_migrated", false)) return
+        synchronized(this) {
+            if (preferences.getBoolean("opacity65_migrated", false)) return
+            val editor = preferences.edit()
+            WidgetSettingsKind.entries.forEach { kind ->
+                val raw = preferences.getString(kind.name, null)
+                if (raw != null) {
+                    val config = WidgetConfig.fromJson(raw, defaults(context, kind))
+                    editor.putString(kind.name, config.copy(opacity = 65).toJson().toString())
+                }
+            }
+            editor.putBoolean("opacity65_migrated", true).commit()
+        }
+    }
+
     fun load(context: Context, kind: WidgetSettingsKind): WidgetConfig {
+        migrateOpacityTo65(context)
         val saved = WidgetConfig.fromJson(prefs(context).getString(kind.name, null), defaults(context, kind))
         return saved.copy(
             mainFontFamily = saved.fontFamily,
