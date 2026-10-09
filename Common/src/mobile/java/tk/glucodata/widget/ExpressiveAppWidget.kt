@@ -486,7 +486,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .defaultWeight()
-                        .background(GlanceTheme.colors.surface)
                         .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp),
                     contentAlignment = Alignment.Center
                 ) {
