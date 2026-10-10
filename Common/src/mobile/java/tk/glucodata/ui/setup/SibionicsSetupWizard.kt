@@ -15,7 +15,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BluetoothSearching
 import androidx.compose.material.icons.filled.Check
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -278,6 +278,7 @@ fun ManualTransmitterEntryDialog(
                     value = code,
                     onValueChange = { code = it.uppercase().filter { c -> c.isLetterOrDigit() } },
                     label = { Text(stringResource(R.string.transmitter_id_label)) },
+                    // ui-guardrails: allow text_literal - an example transmitter ID
                     placeholder = { Text("TW6CCWHS9L7D", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     supportingText = { Text(stringResource(R.string.transmitter_id_supporting)) },
                     singleLine = true,
@@ -440,15 +441,11 @@ fun SibionicsSetupWizard(
     Scaffold(
         modifier = scaffoldModifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.sibionics_setup_title)) },
-                windowInsets = TopAppBarDefaults.windowInsets, // Ensure status bar padding
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.cancel))
-                    }
-                },
-                scrollBehavior = scrollBehavior
+            AppTopBar(
+                title = stringResource(R.string.sibionics_setup_title),
+                onNavigateBack = handleBack,
+                navigationContentDescription = stringResource(R.string.cancel),
+                scrollBehavior = scrollBehavior,
             )
         }
     ) { padding ->
@@ -842,8 +839,7 @@ fun SelectTypeStep(
         Spacer(modifier = Modifier.height(if (compact) 12.dp else 16.dp))
         Text(
             text = stringResource(R.string.select_sibionics_type),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.headlineSmallEmphasized,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -945,7 +941,6 @@ fun SelectTypeStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(buttonHeight),
-            shape = MaterialTheme.shapes.large
         ) {
             Text(
                 text = stringResource(R.string.continue_action),
@@ -1209,3 +1204,4 @@ private fun finishSetup(sensorPtr: Long, reset: Boolean) {
     tk.glucodata.MainActivity.onSensorScanResult = null
     tk.glucodata.MainActivity.onTransmitterScanResult = null
 }
+

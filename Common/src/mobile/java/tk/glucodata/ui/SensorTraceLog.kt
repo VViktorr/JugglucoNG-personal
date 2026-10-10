@@ -113,6 +113,7 @@ internal fun sensorTraceDriverTags(vendor: SensorVendor?): List<String> = when (
     SensorVendor.GLUTEC -> listOf("MQ")
     SensorVendor.SINOCARE -> listOf("ICan")
     SensorVendor.NIGHTSCOUT -> listOf("Nightscout")
+    SensorVendor.ISENS -> listOf("AirGattCallback")
     else -> emptyList()
 }
 
@@ -420,3 +421,4 @@ private fun TraceLogAction(icon: ImageVector, label: Int, onClick: () -> Unit) {
         }
     }
 }
+

@@ -819,7 +819,7 @@ fun JournalEntrySheet(
                         imageVector = journalTypeIcon(draft.type),
                         contentDescription = null
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(text = stringResource(R.string.save))
                 }
             }
@@ -2064,8 +2064,7 @@ internal fun JournalFoodCompositionDetails(
                     )
                     Text(
                         text = formatFoodComponentValue(component.rawValue),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.labelSmallEmphasized,
                         textAlign = TextAlign.End,
                         modifier = Modifier.widthIn(min = 46.dp)
                     )
@@ -2113,7 +2112,7 @@ internal fun JournalFoodCompositionDetails(
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 6.dp),
+                        .padding(horizontal = 8.dp),
                     decorationBox = { innerTextField ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -2156,7 +2155,7 @@ internal fun JournalFoodCompositionDetails(
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(text = stringResource(R.string.journal_food_save_to_library))
                 }
             }
@@ -2253,10 +2252,10 @@ private fun JournalFoodPill(
     Surface(
         onClick = onClick,
         color = if (selected) color.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -2299,7 +2298,7 @@ private fun JournalMacroFields(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         JournalStepperField(
             value = proteinText,
@@ -2328,7 +2327,7 @@ private fun JournalDoseMetric(label: String) {
             text = label,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
     }
 }
@@ -2632,6 +2631,7 @@ fun JournalInlineChip(
             Dp.Unspecified
         }
     ) {
+        // ui-guardrails: allow-begin offgrid_spacing, offscale_radius - journal chip metrics as tuned in #572; the chart's chip layout measures them
         Surface(
             modifier = modifier.widthIn(max = if (expanded) 320.dp else 180.dp),
             onClick = onClick,
@@ -2712,6 +2712,7 @@ fun JournalInlineChip(
                             .padding(top = if (expanded) 3.dp else 0.dp)
                             .size(if (expanded) 14.dp else 12.dp)
                     )
+                // ui-guardrails: allow-end
                 }
             }
         }
@@ -2798,6 +2799,7 @@ private fun JournalEntryChip(
     onClick: () -> Unit
 ) {
     val tint = insulinPreset?.let { Color(it.accentColor) } ?: journalTypeColor(entry.type)
+    // ui-guardrails: allow-begin offgrid_spacing, offscale_radius - journal chip metrics as tuned in #572; the chart's chip layout measures them
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -2825,6 +2827,7 @@ private fun JournalEntryChip(
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
+                // ui-guardrails: allow-end
                 Text(
                     text = if (entry.type == JournalEntryType.INSULIN) {
                         insulinPreset?.displayName ?: entry.title
@@ -3212,22 +3215,22 @@ private fun JournalStepperField(
         } else {
             MaterialTheme.colorScheme.surfaceContainerLow
         },
-        shape = RoundedCornerShape(if (prominent) 28.dp else 22.dp)
+        shape = RoundedCornerShape(if (prominent) 28.dp else 20.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = if (prominent) 10.dp else 12.dp,
-                    vertical = if (prominent) 9.dp else 12.dp
+                    horizontal = if (prominent) 12.dp else 12.dp,
+                    vertical = if (prominent) 8.dp else 12.dp
                 ),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilledTonalIconButton(
                 onClick = { stepWithFeedback(-1) },
                 modifier = if (prominent) Modifier.size(56.dp) else Modifier,
-                shape = RoundedCornerShape(if (prominent) 18.dp else 14.dp)
+                shape = RoundedCornerShape(if (prominent) 16.dp else 12.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Remove,
@@ -3257,7 +3260,7 @@ private fun JournalStepperField(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(horizontal = 6.dp),
+                                    .padding(horizontal = 8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (value.isEmpty()) {
@@ -3275,8 +3278,7 @@ private fun JournalStepperField(
                             suffix?.let {
                                 Text(
                                     text = it,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.titleLargeEmphasized,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -3328,9 +3330,8 @@ private fun JournalStepperField(
                                         if (value.isBlank()) {
                                             Text(
                                                 text = "0",
-                                                style = MaterialTheme.typography.titleLarge.copy(
+                                                style = MaterialTheme.typography.titleLargeEmphasized.copy(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f),
-                                                    fontWeight = FontWeight.SemiBold,
                                                     textAlign = TextAlign.Center
                                                 )
                                             )
@@ -3354,7 +3355,7 @@ private fun JournalStepperField(
             FilledTonalIconButton(
                 onClick = { stepWithFeedback(1) },
                 modifier = if (prominent) Modifier.size(56.dp) else Modifier,
-                shape = RoundedCornerShape(if (prominent) 18.dp else 14.dp)
+                shape = RoundedCornerShape(if (prominent) 16.dp else 12.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -3435,14 +3436,8 @@ private fun journalMarkerDetail(
     unit: String
 ): String {
     return when (entry.type) {
-        JournalEntryType.INSULIN -> {
-            val amount = entry.amount?.let(::formatFloatForEditor).orEmpty()
-            amount.takeIf { it.isNotBlank() }?.let { Applic.app.getString(R.string.unit_insulin_value, it) }.orEmpty()
-        }
-
-        JournalEntryType.CARBS -> {
-            val amount = entry.amount?.let(::formatFloatForEditor).orEmpty()
-            amount.takeIf { it.isNotBlank() }?.let { Applic.app.getString(R.string.unit_carbs_value, it) }.orEmpty()
+        JournalEntryType.INSULIN, JournalEntryType.CARBS -> {
+            entry.amount?.let { journalMarkerAmountText(entry.type, it) }.orEmpty()
         }
 
         JournalEntryType.FINGERSTICK -> {
@@ -3561,3 +3556,4 @@ private fun mergeJournalTime(currentTimestamp: Long, selectedTime: Pair<Int, Int
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 }
+

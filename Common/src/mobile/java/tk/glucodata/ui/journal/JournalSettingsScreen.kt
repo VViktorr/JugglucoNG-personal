@@ -39,7 +39,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
@@ -72,8 +71,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -111,6 +108,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import tk.glucodata.ui.components.IconTile
+import tk.glucodata.ui.components.IconTileDefaults
 import tk.glucodata.R
 import tk.glucodata.data.journal.JournalBuiltInCurveProfile
 import tk.glucodata.data.journal.JournalCurvePoint
@@ -125,8 +124,6 @@ import tk.glucodata.data.journal.builtInJournalCurve
 import tk.glucodata.data.journal.normalizeJournalCurvePoints
 import tk.glucodata.data.journal.serializeJournalCurve
 import tk.glucodata.ui.alerts.AddCustomAlertButton
-import tk.glucodata.ui.components.IconTile
-import tk.glucodata.ui.components.IconTileDefaults
 import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.ColorSwatchButton
@@ -2907,3 +2904,4 @@ private val DEFAULT_FOOD_COLOR = 0xFF5F7D4B.toInt()
 private fun String.trimTrailingLabel(): String {
     return trim().trimEnd(':').trim()
 }
+

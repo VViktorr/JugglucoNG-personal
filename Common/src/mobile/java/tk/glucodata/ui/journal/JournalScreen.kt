@@ -46,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -335,8 +334,7 @@ fun JournalScreen(
                                 top = if (sectionIndex == 0) 12.dp else 16.dp,
                                 bottom = 8.dp
                             ),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleSmallEmphasized,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -726,8 +724,7 @@ private fun JournalMetricCard(
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMediumEmphasized.copy(fontFeatureSettings = "tnum"),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -859,3 +856,4 @@ private class JournalDateSectionBuilder(
     val items: MutableList<JournalLedgerItem> = mutableListOf(),
     val keys: MutableList<String> = mutableListOf()
 )
+

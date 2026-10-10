@@ -43,10 +43,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
@@ -138,17 +138,19 @@ fun ReadingRow(
     val staleColor = MaterialTheme.colorScheme.surfaceContainerHighest // Slightly darker/different
     val dividerColor = MaterialTheme.colorScheme.outlineVariant
 
+    // The newest row eases from the accent colour to the stock row colour over its first minute
+    // and darkens once the reading is overdue. The age ticks once a second, so it is read only
+    // in the draw phase below: a tick redraws this row's background and divider, and never
+    // recomposes the row.
     val ageState = remember(point.timestamp) { mutableLongStateOf(System.currentTimeMillis() - point.timestamp) }
-    // Timer to update age for the active item
     if (isActive) {
         LaunchedEffect(point.timestamp) {
             while (true) {
                 ageState.longValue = System.currentTimeMillis() - point.timestamp
-                delay(1000) // Update every second
+                delay(1000)
             }
         }
     }
-
 
     // Shape:
     // Active (Hero): "4dp bottom radius" to imply continuity. Top matches parent (16dp).
@@ -161,7 +163,6 @@ fun ReadingRow(
         isGroupEnd -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
         else -> RectangleShape
     }
-
 
     // --- ADVANCED TREND ENGINE ---
     // Calculate on the fly using the passed history subset. The engine reads
@@ -187,12 +188,16 @@ fun ReadingRow(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (isActive) Modifier.drawBehind {
-                    drawOutline(
-                        outline = shape.createOutline(size, layoutDirection, this),
-                        color = activeRowColor(ageState.longValue, activeColor, stockColor, staleColor)
-                    )
-                } else Modifier
+                if (isActive) {
+                    Modifier.drawBehind {
+                        drawOutline(
+                            outline = shape.createOutline(size, layoutDirection, this),
+                            color = activeRowColor(ageState.longValue, activeColor, stockColor, staleColor)
+                        )
+                    }
+                } else {
+                    Modifier
+                }
             )
             .then(
                 when {
@@ -636,6 +641,7 @@ fun ReadingRow(
             }
 
             if (index < totalCount - 1) {
+                val dividerColor = MaterialTheme.colorScheme.outlineVariant
                 Spacer(
                     modifier = Modifier
                         .padding(horizontal = dividerHorizontalInset)
@@ -861,7 +867,6 @@ internal fun rowTrendResult(
     return regressed.copy(state = tk.glucodata.logic.TrendEngine.stateFor(rate), velocity = rate)
 }
 
-
 private const val ROW_DIVIDER_ALPHA = 0.1f
 private const val ACTIVE_ROW_SETTLE_MS = 60_000L
 private const val ACTIVE_ROW_STALE_AFTER_MS = 90_000L
@@ -880,3 +885,4 @@ internal fun activeRowDividerAlpha(ageMs: Long): Float = when {
     ageMs < ACTIVE_ROW_STALE_AFTER_MS -> ROW_DIVIDER_ALPHA
     else -> ROW_DIVIDER_ALPHA * (1f - ((ageMs - ACTIVE_ROW_STALE_AFTER_MS) / ACTIVE_ROW_STALE_SPAN_MS.toFloat()).coerceIn(0f, 1f))
 }
+

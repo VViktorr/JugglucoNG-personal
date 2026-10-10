@@ -19,7 +19,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,6 +30,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.Slider
+import tk.glucodata.ui.components.TabScreenDefaults
+import tk.glucodata.ui.components.TabScreenHeader
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
@@ -87,7 +88,6 @@ import tk.glucodata.ui.util.AdaptiveLayoutDensity
 import tk.glucodata.ui.util.findActivity
 import tk.glucodata.ui.util.hardRestart
 import tk.glucodata.ui.util.rememberAdaptiveWindowMetrics
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -118,11 +118,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.alpha
 import androidx.compose.animation.togetherWith
 
-import androidx.compose.ui.draw.alpha
 
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
@@ -170,13 +168,11 @@ import androidx.compose.ui.res.stringResource
 import java.util.Locale
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalUriHandler
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.File
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.outlined.ShowChart
@@ -195,8 +191,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
-import tk.glucodata.ui.components.TabScreenDefaults
-import tk.glucodata.ui.components.TabScreenHeader
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
@@ -205,9 +199,6 @@ import tk.glucodata.ui.components.SettingsSwitchItem
 import kotlin.math.abs
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.text.withStyle
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import kotlin.math.max
@@ -225,15 +216,11 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.animation.Crossfade
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -503,12 +490,14 @@ fun SensorScreen(
                     )
                 }
                 items(sensors, key = { it.serial }) { sensor ->
-                    SensorCard(
-                        sensor,
-                        viewModel,
-                        sensorCount = sensors.size,
-                        onNavigateToMqAccount = onNavigateToMqAccount,
-                    )
+                    FontScaleCap {
+                        SensorCard(
+                            sensor,
+                            viewModel,
+                            sensorCount = sensors.size,
+                            onNavigateToMqAccount = onNavigateToMqAccount,
+                        )
+                    }
                 }
             }
         }
@@ -533,3 +522,4 @@ fun SensorScreen(
         }
     }
 }
+

@@ -238,8 +238,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 if (dark) Color.WHITE else 0xFF1D1B20.toInt()
             }
         }
-        val valueText = freshDisplay?.fullFormatted
-        val rate = freshDisplay?.rate ?: Float.NaN
+        val valueText = currentDisplay?.fullFormatted
+        val rate = currentDisplay?.rate ?: Float.NaN
 
         val valueBitmap = remember(valueText, glucoseColor, fontSize, glucoseScale, primaryFontWeight, useSystemFont) {
             valueText?.let {

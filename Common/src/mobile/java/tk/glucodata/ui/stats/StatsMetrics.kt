@@ -521,7 +521,6 @@ internal fun metricSpec(
     val noneWord = stringResource(R.string.stats_metric_none)
     val rangeWord = stringResource(R.string.range)
     val targetWord = stringResource(R.string.gmi_target)
-    val targetValue = stringResource(R.string.gmi_target_value)
     val tirWord = stringResource(R.string.tir)
     val stabilityWord = stringResource(R.string.stability)
     val trendWord = stringResource(R.string.stats_trend)
@@ -1726,3 +1725,4 @@ private fun PinnedWindowPill(
         )
     }
 }
+

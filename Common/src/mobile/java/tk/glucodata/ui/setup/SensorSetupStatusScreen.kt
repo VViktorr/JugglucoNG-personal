@@ -36,7 +36,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import tk.glucodata.R
@@ -150,6 +149,7 @@ private fun SensorSetupStatusScreen(
         SensorSetupStatusTone.Connecting -> MaterialTheme.colorScheme.primary
         SensorSetupStatusTone.Success -> MaterialTheme.colorScheme.tertiary
     }
+    // ui-guardrails: allow offscale_radius - a deliberately uneven organic shape, not a corner radius
     val heroShape = RoundedCornerShape(
         topStart = if (ui.compact) 30.dp else 36.dp,
         topEnd = if (ui.compact) 22.dp else 28.dp,
@@ -288,3 +288,4 @@ private fun SensorSetupStatusScreen(
         }
     }
 }
+

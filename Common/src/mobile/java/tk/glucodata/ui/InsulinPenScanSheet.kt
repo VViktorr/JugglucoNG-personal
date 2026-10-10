@@ -279,7 +279,7 @@ private fun DoseRow(
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp),
                     )
-                    Spacer(Modifier.width(3.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         at,
                         style = MaterialTheme.typography.labelMedium,
@@ -294,3 +294,4 @@ private fun DoseRow(
 
 internal fun formatUnits(units: Float): String =
     if (units % 1f == 0f) units.toInt().toString() else String.format("%.1f", units)
+

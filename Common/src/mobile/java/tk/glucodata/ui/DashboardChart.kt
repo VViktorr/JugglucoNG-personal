@@ -6,6 +6,7 @@ import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.os.Vibrator
 import android.os.VibrationEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
@@ -13,6 +14,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -33,6 +35,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateCentroidSize
@@ -43,7 +48,6 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -88,12 +92,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.Badge
 import androidx.compose.material3.rememberDatePickerState
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -132,8 +137,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -163,6 +172,7 @@ import tk.glucodata.data.prediction.GlucosePredictionSeriesKind
 import tk.glucodata.data.prediction.StateDoseHint
 import tk.glucodata.data.prediction.StateDoseHintKind
 import tk.glucodata.ui.getDisplayValues
+import tk.glucodata.ui.journal.journalMarkerAmountText
 import tk.glucodata.ui.util.ExpressiveMotion
 import tk.glucodata.ui.util.GlucoseFormatter
 import tk.glucodata.ui.viewmodel.SensorColors
@@ -483,7 +493,7 @@ private fun PreviewWindowNavigator(
 
     Surface(
         modifier = modifier.zIndex(2f),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = surfaceColor,
         tonalElevation = 2.dp,
         shadowElevation = 0.dp
@@ -496,7 +506,7 @@ private fun PreviewWindowNavigator(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 if (renderData.isEmpty()) return@Canvas
 
@@ -906,7 +916,11 @@ fun InteractiveGlucoseChart(
 //    val targetBandColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
     val hoverLineColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
     val minMaxLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    // Axis labels were android.graphics.Color.GRAY and the min/max labels DKGRAY, which is
+    // near-invisible on a dark surface. Theme roles instead: quiet for the axis, full
+    // contrast for the min/max values that are actually being called out.
     val axisTextColorArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val indicatorTextColorArgb = MaterialTheme.colorScheme.onSurface.toArgb()
     val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
     val chartUnderlayBottomDp = expandedUnderlayBottom * safeExpandedProgress
     val chartUnderlayBottomPx = with(LocalDensity.current) { chartUnderlayBottomDp.toPx() }
@@ -1005,6 +1019,8 @@ fun InteractiveGlucoseChart(
     }
 
     // Paints
+    // In sp, so the axis follows the system font size like every other label (it was a fixed
+    // 10dp); 11sp is the smallest step of the M3 type scale.
     val axisLabelTextPx = with(LocalDensity.current) { 11.sp.toPx() }
     val axisTextPaint = remember(graphFont, axisLabelTextPx) {
         android.graphics.Paint().apply {
@@ -1045,7 +1061,9 @@ fun InteractiveGlucoseChart(
     val hasCalibration = remember(calibrationRevision, isRawModeChart, primarySerial) {
         tk.glucodata.data.calibration.CalibrationManager.hasActiveCalibration(isRawModeChart, primarySerial)
     }
-    val hideInitialWhenCalibrated = hasCalibration &&
+    // The preference applies to every calibrated series, including peers when
+    // the current primary has no calibration of its own.
+    val hideInitialWhenCalibrated =
         tk.glucodata.data.calibration.CalibrationManager.shouldHideInitialWhenCalibrated()
 
     // The resolved chart. Every decision — the value each point draws, who is
@@ -1702,6 +1720,23 @@ fun InteractiveGlucoseChart(
         suppressDoubleTapUntil = now + 450L
     }
 
+    // Zooms in on a stretch of time, for a pile of journal chips too crowded to spread apart at
+    // the current zoom: closer in, its chips have room.
+    fun zoomChartOnto(startMillis: Long, endMillis: Long) {
+        val duration = ((endMillis - startMillis) * 3L)
+            .coerceIn(minDuration, (visibleDuration / 2L).coerceAtLeast(minDuration))
+        val center = ((startMillis + endMillis) / 2L).coerceAtMost(maxAllowedCenterTime(duration))
+        preZoomDuration = 0L
+        visibleDuration = duration
+        centerTime = center
+        previewCenterTime = previewCenterTimeContainingViewport(
+            previewCenterTime = previewCenterTime,
+            viewportCenterTime = center,
+            visibleDuration = duration
+        )
+        markProgrammaticViewportChange()
+    }
+
     // --- DATA CAPTURE FOR GESTURES ---
     // Use rememberUpdatedState to ensure the running gesture coroutine always sees the latest data
     val currentSafeData by rememberUpdatedState(safeData)
@@ -1809,6 +1844,8 @@ fun InteractiveGlucoseChart(
     }
 
     val activeJournalMarkerPointers = remember { mutableSetOf<PointerId>() }
+    // A chip in the overlap group spread open by a tap; any touch on the chart outside the
+    // chips settles it back.
     var expandedJournalChipId by remember { mutableStateOf<Long?>(null) }
 
 
@@ -2572,6 +2609,39 @@ fun InteractiveGlucoseChart(
                     return (normalized * cYRange) + cYMin
                 }
 
+                // Min/max of the visible series, found before the axis is drawn: the min/max
+                // labels sit in the axis label column, and an axis label at nearly the same
+                // height ("3,8" over "4") has to step aside rather than print underneath.
+                var minPoint: GlucosePoint? = null
+                var maxPoint: GlucosePoint? = null
+                var minVal = Float.MAX_VALUE
+                var maxVal = Float.MIN_VALUE
+                if (endIdx > startIdx) {
+                    // Single fast pass for min/max
+                    for (i in startIdx until endIdx) {
+                        val p = renderData[i]
+                        // Determine value based on mode commonality
+                        // If showing Raw (Mode 1) or Raw-Primary (Mode 3), prioritize Raw
+                        val useRaw = viewMode == 1 || viewMode == 3
+                        val v = if (hasCalibration && hideInitialWhenCalibrated) {
+                            chartModel.primary?.valueAt(p.timestamp) ?: Float.NaN
+                        } else {
+                            if (useRaw) p.rawValue else p.value
+                        }
+
+                        if (v.isNaN() || v < 0.1f) continue
+
+                        if (v < minVal) { minVal = v; minPoint = p }
+                        if (v > maxVal) { maxVal = v; maxPoint = p }
+                    }
+                }
+                val hasMaxIndicator = maxPoint != null
+                val hasMinIndicator = minPoint != null && minVal != maxVal
+                val indicatorLabelYs = buildList {
+                    if (hasMaxIndicator) add(valToY(maxVal))
+                    if (hasMinIndicator) add(valToY(minVal))
+                }
+
                 // --- 1. DRAW Y-AXIS GRID ---
                 val yStep = if (cYRange < 25) 2f else 50f
                 var yVal = (kotlin.math.ceil(cYMin / yStep) * yStep).toInt() // integer steps
@@ -2584,6 +2654,11 @@ fun InteractiveGlucoseChart(
                         val labelText = yVal.toString()
                         axisTextPaint.color = axisTextColorArgb
                         axisTextPaint.getTextBounds(labelText, 0, labelText.length, axisLabelBounds)
+                        val labelClearance = axisLabelBounds.height() + 8f * density
+                        if (indicatorLabelYs.any { abs(it - y) < labelClearance }) {
+                            yVal += yStep.toInt()
+                            continue
+                        }
                         val centeredY = y + (axisLabelBounds.height() / 2f)
                         val labelPadding = 16f * density
                         val textWidth = axisTextPaint.measureText(labelText)
@@ -2659,6 +2734,8 @@ fun InteractiveGlucoseChart(
                                     val mm = if (m < 10) "0$m" else m.toString()
                                     "$hh:$mm"
                                 }
+                                // A label centred on a line near either edge would be cut in half
+                                // (":15", "19:"); keep the line, drop the half-label.
                                 val halfLabel = xTextPaint.measureText(timeLabel) / 2f
                                 if (x - halfLabel >= 0f && x + halfLabel <= width) {
                                     drawContext.canvas.nativeCanvas.drawText(timeLabel, x, contentHeight - labelsLiftPx - 28f, xTextPaint)
@@ -3080,29 +3157,6 @@ fun InteractiveGlucoseChart(
 
                 // --- 4. MIN/MAX INDICATORS (Restored & Optimized) ---
                 if (endIdx > startIdx) {
-                    var minPoint = renderData[startIdx]
-                    var maxPoint = renderData[startIdx]
-                    var minVal = Float.MAX_VALUE
-                    var maxVal = Float.MIN_VALUE
-
-                    // Single fast pass for min/max
-                    for (i in startIdx until endIdx) {
-                        val p = renderData[i]
-                        // Determine value based on mode commonality
-                        // If showing Raw (Mode 1) or Raw-Primary (Mode 3), prioritize Raw
-                        val useRaw = viewMode == 1 || viewMode == 3
-                        val v = if (hideInitialWhenCalibrated) {
-                            chartModel.primary?.valueAt(p.timestamp) ?: Float.NaN
-                        } else {
-                            if (useRaw) p.rawValue else p.value
-                        }
-
-                        if (v.isNaN() || v < 0.1f) continue
-
-                        if (v < minVal) { minVal = v; minPoint = p }
-                        if (v > maxVal) { maxVal = v; maxPoint = p }
-                    }
-
                     // Helper to draw
                     fun drawIndicator(point: GlucosePoint, valToDraw: Float) {
                         val y = valToY(valToDraw)
@@ -3119,7 +3173,7 @@ fun InteractiveGlucoseChart(
 
                             drawContext.canvas.nativeCanvas.drawText(
                                 label, indicatorPadding, centeredY,
-                                axisTextPaint.apply { color = android.graphics.Color.DKGRAY } // Dark Gray for visibility
+                                axisTextPaint.apply { color = indicatorTextColorArgb }
                             )
                             // Guide line - starts after text
                             val lineStartX = indicatorPadding + textWidth + 8f * density
@@ -3131,12 +3185,12 @@ fun InteractiveGlucoseChart(
                                 pathEffect = dashEffect
                             )
                             // Restore paint color (axisTextPaint is shared)
-                            axisTextPaint.color = android.graphics.Color.GRAY
+                            axisTextPaint.color = axisTextColorArgb
                         }
                     }
 
-                    if (maxVal > Float.MIN_VALUE) drawIndicator(maxPoint, maxVal)
-                    if (minVal < Float.MAX_VALUE && minVal != maxVal) drawIndicator(minPoint, minVal)
+                    maxPoint?.let { drawIndicator(it, maxVal) }
+                    if (hasMinIndicator) minPoint?.let { drawIndicator(it, minVal) }
                 }
 
                 // --- 5. TARGET RANGE ---
@@ -3442,13 +3496,6 @@ fun InteractiveGlucoseChart(
                         ?.takeIf { it.isFinite() }
                         ?.coerceIn(0f, chartHeightPx)
             }
-            val visibleOverlayMarkers = journalMarkers.filter { marker ->
-                marker.timestamp in overlayViewportStart..overlayViewportEnd
-            }
-            val markerXById = visibleOverlayMarkers.associate { marker ->
-                val xFraction = (marker.timestamp - overlayViewportStart).toFloat() / overlayDuration
-                marker.entryId to (overlayDataWidthPx * xFraction).coerceIn(0f, overlayDataWidthPx)
-            }
             val fingerstickLiftPx = with(LocalDensity.current) { 48.dp.toPx() }
             val journalChipSideOffsetPx = with(LocalDensity.current) { 10.dp.toPx() }
             val eventBaseTopPx = (chartHeightPx - with(LocalDensity.current) { 44.dp.toPx() }).coerceAtLeast(journalChipMinTopPx)
@@ -3470,290 +3517,332 @@ fun InteractiveGlucoseChart(
                 return insulinBaseCurveHeightPx + (insulinExtraCurveHeightPx * amountFactor)
             }
             val connectorStrokePx = with(LocalDensity.current) { 0.85.dp.toPx() }
+            val connectorUnderlapPx = with(LocalDensity.current) { 8.dp.toPx() }
             val insulinConnectorY = chartHeightPx - with(LocalDensity.current) { 1.dp.toPx() }
 
-            // Place journal labels with the shared collision-aware algorithm, keeping
-            // all glucose rendering and marker click handlers unchanged.
-            // Match the pill's actual text style, icon, spacer and horizontal padding.
-            // Widths are measured per label rather than reserving the same space for all entries.
-            val chipTextStyle = MaterialTheme.typography.labelMedium
-            val chipTextMeasurer = rememberTextMeasurer()
-            val chipDensity = LocalDensity.current
-            val chipTextMaxWidthPx = with(chipDensity) { 88.dp.toPx() }
-            val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
-            // A repeated-entry pile shares a type AND its displayed label.
-            // Count by the same key used by JournalChipLayout, rather than reserving
-            // the width of every event of that type for every individual chip.
-            fun chipStackKey(marker: JournalChartMarker) =
-                marker.type to marker.detailText.ifBlank { marker.title.take(10) }
-            val chipStackCounts = visibleOverlayMarkers.groupingBy(::chipStackKey).eachCount()
-            val chipCounterWidthsByStack = chipStackCounts.mapValues { (_, count) ->
-                if (count <= 1) 0f else with(chipDensity) { 4.dp.toPx() } +
-                    chipTextMeasurer.measure(
-                        "+${count - 1}",
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1
-                    ).size.width + 1f
+            // Chip geometry, measured rather than assumed: the label pill, and the touch-sized
+            // box it is centred in.
+            val journalChipTextStyle = MaterialTheme.typography.labelMedium
+            val journalChipTextMeasurer = rememberTextMeasurer()
+            val journalChipDensity = LocalDensity.current
+            val journalChipWidthCache = remember(journalChipTextStyle, journalChipDensity) { HashMap<String, Float>() }
+            fun journalChipTextWidth(text: String): Float = journalChipWidthCache.getOrPut(text) {
+                if (journalChipWidthCache.size > 256) journalChipWidthCache.clear()
+                journalChipTextMeasurer.measure(text, style = journalChipTextStyle, maxLines = 1).size.width.toFloat()
             }
-            // The counter uses labelSmall and can have a different font height at
-            // accessibility font scales. Reserve room for both texts and the icon.
-            val chipHeightPx = maxOf(
-                chipTextMeasurer.measure("0", style = chipTextStyle, maxLines = 1).size.height.toFloat(),
-                chipTextMeasurer.measure(
-                    "+0", style = MaterialTheme.typography.labelSmall, maxLines = 1
-                ).size.height.toFloat(),
-                with(chipDensity) { 14.dp.toPx() }
-            ).let { measuredPillHeight ->
-                // journalMarkerInput reserves a 48dp interactive surface around the pill.
-                // Collision boxes must account for that actual Compose layout footprint.
-                maxOf(measuredPillHeight + with(chipDensity) { 10.dp.toPx() },
-                    with(chipDensity) { 48.dp.toPx() })
+            val journalChipPillHeightPx = remember(journalChipTextStyle, journalChipDensity) {
+                journalChipTextMeasurer.measure("0", style = journalChipTextStyle, maxLines = 1).size.height +
+                    with(journalChipDensity) { 10.dp.toPx() }
             }
-            val journalChipMaxTopPx = (chartHeightPx - chipHeightPx).coerceAtLeast(journalChipMinTopPx)
-            val chipTextWidthCache = remember(chipTextStyle, chipDensity) { HashMap<String, Float>() }
-            fun measuredChipTextWidth(label: String): Float = chipTextWidthCache.getOrPut(label) {
-                if (chipTextWidthCache.size >= 256) chipTextWidthCache.clear()
-                chipTextMeasurer.measure(label, style = chipTextStyle, maxLines = 1)
-                    .size.width.toFloat().coerceAtMost(chipTextMaxWidthPx)
-            }
-            val chipWidthsById = visibleOverlayMarkers.associate { marker ->
-                val label = marker.detailText.ifBlank { marker.title.take(10) }
-                marker.entryId to maxOf(
-                    chipChromeWidthPx +
-                        measuredChipTextWidth(label) + (chipCounterWidthsByStack[chipStackKey(marker)] ?: 0f) + 1f,
-                    with(chipDensity) { 48.dp.toPx() }
-                )
-            }
-            val chipLayoutSpec = JournalChipLayout.Spec(
-                chipHeight = chipHeightPx,
+            val journalChipTouchPx = with(LocalDensity.current) { 48.dp.toPx() }
+            val journalChipPillInsetYPx = ((journalChipTouchPx - journalChipPillHeightPx) / 2f).coerceAtLeast(0f)
+            val journalChipChromePx = with(LocalDensity.current) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
+            val journalChipMaxTextPx = with(LocalDensity.current) { 88.dp.toPx() }
+            val journalChipGapPx = with(LocalDensity.current) { 4.dp.toPx() }
+            val journalChipNudgePx = with(LocalDensity.current) { 12.dp.toPx() }
+            val journalChipDotClearPx = with(LocalDensity.current) { 5.dp.toPx() }
+            val journalChipLayoutSpec = JournalChipLayout.Spec(
+                chipHeight = journalChipPillHeightPx,
                 sideOffset = journalChipSideOffsetPx,
-                rowStep = chipHeightPx + with(LocalDensity.current) { 4.dp.toPx() },
-                nudgeStep = with(LocalDensity.current) { 12.dp.toPx() },
-                gap = with(LocalDensity.current) { 4.dp.toPx() },
+                rowStep = journalChipPillHeightPx + journalChipGapPx,
+                nudgeStep = journalChipNudgePx,
+                gap = journalChipGapPx,
                 minX = 0f,
                 maxX = overlayDataWidthPx,
-                minTop = journalChipMinTopPx,
-                maxTop = journalChipMaxTopPx,
-                // Without repeatReach the layout defaults to zero: identical doses
-                // cannot form a stable pile unless their anchors coincide exactly.
-                repeatReach = with(chipDensity) { 96.dp.toPx() },
-                maxStack = 4
+                minTop = journalChipMinTopPx + journalChipPillInsetYPx,
+                maxTop = journalChipMaxTopPx + journalChipPillInsetYPx,
+                peek = with(LocalDensity.current) { 12.dp.toPx() },
+                repeatReach = journalChipChromePx + journalChipMaxTextPx
             )
-            fun chipBaseTop(marker: JournalChartMarker): Float = when (marker.type) {
+
+            // Entries just past either edge keep their chips, so a chip glides off the screen
+            // with the chart instead of vanishing the moment its entry's time leaves the view.
+            val journalChipReachPx = journalChipSideOffsetPx + journalChipChromePx + journalChipMaxTextPx +
+                journalChipLayoutSpec.maxNudge * journalChipNudgePx
+            val journalChipReachMillis = (journalChipReachPx * overlayDuration / overlayDataWidthPx).toLong()
+            val chipMarkers = journalMarkers
+                .filter { marker ->
+                    marker.timestamp in (overlayViewportStart - journalChipReachMillis)..(overlayViewportEnd + journalChipReachMillis)
+                }
+                .sortedWith(compareBy({ it.timestamp }, { it.entryId }))
+            val chipAnchorXs = chipMarkers.map { marker ->
+                overlayDataWidthPx * ((marker.timestamp - overlayViewportStart).toFloat() / overlayDuration)
+            }
+            fun journalChipBaseTop(marker: JournalChartMarker): Float = when (marker.type) {
                 JournalEntryType.FINGERSTICK ->
                     ((marker.chartGlucoseValue?.let(overlayValueToY) ?: eventBaseTopPx) - fingerstickLiftPx)
                         .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
                 JournalEntryType.INSULIN ->
                     (chartHeightPx - insulinCurveHeightFor(marker.amount) - insulinLabelGapPx)
-                        .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
+                        .coerceAtLeast(journalChipMinTopPx)
                 else ->
                     ((markerOverlayY(marker) ?: eventBaseTopPx) - fingerstickLiftPx)
                         .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
             }
-            val orderedChipMarkers = visibleOverlayMarkers.sortedWith(compareBy({ it.timestamp }, { it.entryId }))
-            // Keep chip positions steady throughout a zoom gesture. Once the zoom settles,
-            // forget previous slots so the collision layout can tidy up at the new scale.
-            var chipLayoutZoom by remember { mutableLongStateOf(visibleDuration) }
+
+            // Each chip takes the cheapest free spot near its entry: its own height to the right
+            // first, then the other side, a row up or down, or nudged further out. A chip keeps
+            // last frame's spot while it stays free, so panning never reshuffles them. Those
+            // spots are forgotten once a zoom settles, so the layout then tidies up for the
+            // new scale in one animated step.
+            var journalChipLayoutZoom by remember { mutableLongStateOf(visibleDuration) }
             LaunchedEffect(visibleDuration) {
                 kotlinx.coroutines.delay(350L)
-                chipLayoutZoom = visibleDuration
+                journalChipLayoutZoom = visibleDuration
             }
-            // A font-scale or density change alters the measured chip boxes; old
-            // slots and tucks must not constrain the new layout.
-            val chipPreviousSlots = remember(
-                chipLayoutZoom, chipHeightPx, chipDensity.density, chipDensity.fontScale,
-                chipTextStyle, overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
-            ) { HashMap<Long, JournalChipSlot>() }
-            val chipPreviousTucks = remember(
-                chipLayoutZoom, chipHeightPx, chipDensity.density, chipDensity.fontScale,
-                chipTextStyle, overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
-            ) { HashMap<Long, Long>() }
-            val chipIndexById = orderedChipMarkers.mapIndexed { index, marker ->
-                marker.entryId to index
-            }.toMap()
+            val journalChipLastSlots = remember(journalChipLayoutZoom) { HashMap<Long, JournalChipSlot>() }
+            // Which chip's pile each chip joined, so fronts and layers hold still from frame to frame.
+            val journalChipLastTucks = remember(journalChipLayoutZoom) { HashMap<Long, Long>() }
+            // How wide each pile front's total was last frame, so it is laid out with room for it.
+            val journalChipLastTotalWidths = remember(journalChipLayoutZoom) { HashMap<Long, Float>() }
+            val chipLabels = chipMarkers.map { marker -> marker.detailText.ifBlank { marker.title.take(10) } }
+            val chipWidths = chipLabels.map { label ->
+                // A pixel of slack so a chip laid out at its measured width never ellipsizes.
+                journalChipChromePx + journalChipTextWidth(label).coerceAtMost(journalChipMaxTextPx) + 1f
+            }
+            // Entries showing the same thing closer together than a few dp can't be told apart on
+            // screen, as with a loop's equal doses on a wide zoom; the later ones fold behind the
+            // first instead of each claiming a spot. A different value never folds, so every
+            // dose stays readable. The steps are fixed in time, so panning never regroups them,
+            // except that an entry still on screen never folds into one that has left it.
+            val journalChipFoldMillis = (with(LocalDensity.current) { 4.dp.toPx() } * journalChipLayoutZoom / overlayDataWidthPx.coerceAtLeast(1f))
+                .toLong()
+                .coerceAtLeast(1L)
+            val chipFoldInto = arrayOfNulls<Int>(chipMarkers.size)
+            run {
+                val firstInStep = HashMap<Triple<JournalEntryType, String, Long>, Int>()
+                chipMarkers.forEachIndexed { index, marker ->
+                    val step = Triple(marker.type, chipLabels[index], Math.floorDiv(marker.timestamp, journalChipFoldMillis))
+                    val first = firstInStep[step]
+                    if (first == null || (chipAnchorXs[first] < 0f && chipAnchorXs[index] >= 0f)) {
+                        firstInStep[step] = index
+                    } else {
+                        chipFoldInto[index] = first
+                    }
+                }
+            }
+            val chipIndexOfEntry = HashMap<Long, Int>(chipMarkers.size * 2)
+            chipMarkers.forEachIndexed { index, marker -> chipIndexOfEntry[marker.entryId] = index }
             val chipPlacements = JournalChipLayout.place(
-                orderedChipMarkers.map { marker ->
+                chipMarkers.mapIndexed { index, marker ->
                     JournalChipRequest(
-                        anchorX = markerXById.getValue(marker.entryId),
-                        baseTop = chipBaseTop(marker),
-                        width = chipWidthsById.getValue(marker.entryId),
-                        previous = chipPreviousSlots[marker.entryId],
-                        previousTuck = chipPreviousTucks[marker.entryId]
-                            ?.let(chipIndexById::get)
+                        anchorX = chipAnchorXs[index],
+                        baseTop = journalChipBaseTop(marker) + journalChipPillInsetYPx,
+                        width = maxOf(chipWidths[index], journalChipLastTotalWidths[marker.entryId] ?: 0f),
+                        previous = journalChipLastSlots[marker.entryId],
+                        // Chips showing the same thing may tuck behind one another.
+                        stackKey = marker.type to chipLabels[index],
+                        foldInto = chipFoldInto[index],
+                        previousTuck = journalChipLastTucks[marker.entryId]
+                            ?.let(chipIndexOfEntry::get)
                             ?.let(::JournalChipTuck),
-                        // Repeated amounts of the same kind can share a pile rather than
-                        // occupying separate lanes over the glucose trace.
-                        stackKey = chipStackKey(marker),
+                        // Insulin never piles with carbs or a note, so a pile always reads as one thing.
                         kind = marker.type
                     )
                 },
-                chipLayoutSpec,
-                // Keep labels clear of the associated non-insulin event dots.
-                obstacles = orderedChipMarkers.mapNotNull { marker ->
+                journalChipLayoutSpec,
+                // Chips keep off the entries' own dots, so none hides a marker.
+                obstacles = chipMarkers.indices.mapNotNull { index ->
+                    val marker = chipMarkers[index]
                     if (marker.type == JournalEntryType.INSULIN) return@mapNotNull null
-                    val x = markerXById[marker.entryId] ?: return@mapNotNull null
-                    val y = markerOverlayY(marker) ?: eventRailOverlayY
-                    val clear = with(chipDensity) { 5.dp.toPx() }
-                    JournalChipBox(x - clear, y - clear, x + clear, y + clear)
+                    val dotY = markerOverlayY(marker) ?: eventRailOverlayY
+                    val x = chipAnchorXs[index]
+                    JournalChipBox(x - journalChipDotClearPx, dotY - journalChipDotClearPx, x + journalChipDotClearPx, dotY + journalChipDotClearPx)
                 }
             )
-            if (chipPreviousSlots.size + chipPreviousTucks.size > orderedChipMarkers.size * 2 + 64) {
-                val visibleIds = orderedChipMarkers.mapTo(HashSet()) { it.entryId }
-                chipPreviousSlots.keys.retainAll(visibleIds)
-                chipPreviousTucks.keys.retainAll(visibleIds)
+            if (journalChipLastSlots.size + journalChipLastTucks.size > chipMarkers.size * 2 + 64) {
+                journalChipLastSlots.clear()
+                journalChipLastTucks.clear()
             }
-            orderedChipMarkers.forEachIndexed { index, marker ->
+            chipMarkers.forEachIndexed { index, marker ->
                 val placement = chipPlacements[index]
+                val tuck = placement.tuck
                 when {
-                    placement.folded -> {
-                        chipPreviousSlots.remove(marker.entryId)
-                        chipPreviousTucks.remove(marker.entryId)
-                    }
-                    placement.tuck != null -> {
-                        chipPreviousTucks[marker.entryId] =
-                            orderedChipMarkers[placement.tuck.front].entryId
-                        chipPreviousSlots.remove(marker.entryId)
+                    placement.folded -> Unit
+                    tuck != null -> {
+                        journalChipLastTucks[marker.entryId] = chipMarkers[tuck.front].entryId
+                        journalChipLastSlots.remove(marker.entryId)
                     }
                     else -> {
-                        chipPreviousSlots[marker.entryId] = placement.slot
-                        chipPreviousTucks.remove(marker.entryId)
+                        journalChipLastSlots[marker.entryId] = placement.slot
+                        journalChipLastTucks.remove(marker.entryId)
                     }
                 }
             }
-            val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
-                marker.entryId to chipPlacements[index].box
-            }.toMap()
-            val chipPlacementBoxes = chipPlacements.map { it.box }
+            val chipBoxes = chipPlacements.map { it.box }
+
+            // Where chips pile up, a repeat behind its twin or a chip with no free spot, the
+            // pile's front shows how many chips it holds. The pile spreads apart while tapped or
+            // hovered, each chip the way it already peeks out.
             val chipGroups = JournalChipLayout.piles(
                 chipPlacements,
-                minOverlapX = with(chipDensity) { 12.dp.toPx() },
-                minOverlapY = with(chipDensity) { 8.dp.toPx() }
+                minOverlapX = with(LocalDensity.current) { 12.dp.toPx() },
+                minOverlapY = with(LocalDensity.current) { 8.dp.toPx() }
             )
-            val chipGroupById = HashMap<Long, IntArray>()
-            chipGroups.forEach { group ->
-                group.forEach { index -> chipGroupById[orderedChipMarkers[index].entryId] = group }
-            }
-            val expandedGroup = expandedJournalChipId?.let(chipGroupById::get)
-            // Panning, filtering or zooming can remove the front of an open pile.
-            // Close it instead of retaining a stale expansion across later frames.
-            LaunchedEffect(expandedJournalChipId, expandedGroup != null) {
-                if (expandedJournalChipId != null && expandedGroup == null) {
-                    expandedJournalChipId = null
+            val chipGroupOf = HashMap<Long, IntArray>()
+            chipGroups.forEach { group -> group.forEach { chipGroupOf[chipMarkers[it].entryId] = group } }
+
+            // Hover opens a group like a tap does; a short grace keeps it open while the
+            // pointer crosses from one chip to the next.
+            var hoveredJournalChipId by remember { mutableStateOf<Long?>(null) }
+            var hoverOpenJournalChipId by remember { mutableStateOf<Long?>(null) }
+            LaunchedEffect(hoveredJournalChipId) {
+                val hovered = hoveredJournalChipId
+                if (hovered != null) {
+                    hoverOpenJournalChipId = hovered
+                } else {
+                    kotlinx.coroutines.delay(160L)
+                    hoverOpenJournalChipId = null
                 }
             }
-            val chipHiddenCounts = chipGroups.associate { group ->
-                orderedChipMarkers[group[0]].entryId to (group.size - 1)
-            }
-            // Shifts from one expanded pile must not bias the layout of another.
-            val chipSpreadShifts = remember(
-                chipLayoutZoom, expandedJournalChipId, chipHeightPx, chipDensity.density,
-                chipDensity.fontScale, chipTextStyle, overlayDataWidthPx,
-                journalChipMinTopPx, journalChipMaxTopPx
-            ) { HashMap<Long, FloatArray>() }
-            // Keep every member reachable on expansion, even in unusually dense
-            // viewports; limiting this group without paging would hide entries.
-            val spreadGroup = expandedGroup
-            val spread = spreadGroup?.let { group ->
-                JournalChipLayout.spread(
-                    boxes = chipPlacementBoxes,
-                    members = group,
-                    minX = 0f,
-                    maxX = overlayDataWidthPx,
-                    minTop = journalChipMinTopPx,
-                    maxTop = chipLayoutSpec.maxTop,
-                    gapPx = with(chipDensity) { 4.dp.toPx() },
-                    ringStepPx = with(chipDensity) { 8.dp.toPx() },
-                    maxRadiusPx = with(chipDensity) { 160.dp.toPx() },
-                    preferred = Array(group.size) { slot ->
-                        chipSpreadShifts[orderedChipMarkers[group[slot]].entryId]
+            // A hovered pile opens even while another is open from a tap; leaving it falls back
+            // to the tapped one.
+            val openChipPile = (hoverOpenJournalChipId?.let(chipGroupOf::get) ?: expandedJournalChipId?.let(chipGroupOf::get))
+            // Only the top of a huge pile spreads; the rest stay counted on its front.
+            val journalChipMaxSpread = 24
+            fun spreadablePart(group: IntArray) = if (group.size > journalChipMaxSpread) group.copyOf(journalChipMaxSpread) else group
+            val openChipGroup = openChipPile?.let(::spreadablePart)
+            val journalChipSpreadRadiusPx = with(LocalDensity.current) { 160.dp.toPx() }
+            // A peek only shows the way a chip will go, so it looks for room close by and more
+            // coarsely: it is worked out for every pile on every frame, and a full chart has
+            // none to find.
+            val journalChipPeekRadiusPx = with(LocalDensity.current) { 96.dp.toPx() }
+            val journalChipPeekStepPx = with(LocalDensity.current) { 8.dp.toPx() }
+            // Where each chip went the last time its pile spread, peeking or open, so a pile
+            // spreads the same way from frame to frame while that room stays clear.
+            val journalChipLastShifts = remember(journalChipLayoutZoom) { HashMap<Long, FloatArray>() }
+            if (journalChipLastShifts.size > chipMarkers.size * 2 + 64) journalChipLastShifts.clear()
+            fun spreadOf(group: IntArray, keep: Boolean = false, peeking: Boolean = false): JournalChipSpread {
+                val members = spreadablePart(group)
+                // A pile whose entries have all left the screen keeps peeking as it rides off.
+                val offScreen = peeking && members.all { chipAnchorXs[it] !in 0f..overlayDataWidthPx }
+                val spread = JournalChipLayout.spread(
+                    boxes = chipBoxes,
+                    members = members,
+                    minX = if (offScreen) -overlayDataWidthPx else 0f,
+                    maxX = if (offScreen) overlayDataWidthPx * 2f else overlayDataWidthPx,
+                    minTop = journalChipLayoutSpec.minTop,
+                    maxTop = journalChipLayoutSpec.maxTop,
+                    gapPx = journalChipGapPx,
+                    ringStepPx = if (peeking) journalChipPeekStepPx else journalChipGapPx,
+                    maxRadiusPx = if (peeking) journalChipPeekRadiusPx else journalChipSpreadRadiusPx,
+                    preferred = Array(members.size) { journalChipLastShifts[chipMarkers[members[it]].entryId] }
+                )
+                if (keep) {
+                    members.forEachIndexed { slot, index ->
+                        val id = chipMarkers[index].entryId
+                        if (spread.stuck[slot]) journalChipLastShifts.remove(id) else journalChipLastShifts[id] = spread.shifts[slot]
                     }
+                }
+                return spread
+            }
+            // A pile too crowded to spread out here zooms in on its entries instead, while the
+            // chart can still zoom; there they have room.
+            val canZoomOntoChips = visibleDuration > minDuration
+            fun zoomOntoPile(group: IntArray) {
+                zoomChartOnto(
+                    group.minOf { chipMarkers[it].timestamp },
+                    group.maxOf { chipMarkers[it].timestamp }
                 )
             }
-            if (spreadGroup != null && spread != null) {
-                spreadGroup.forEachIndexed { position, index ->
-                    val id = orderedChipMarkers[index].entryId
-                    if (spread.stuck[position]) chipSpreadShifts.remove(id)
-                    else chipSpreadShifts[id] = spread.shifts[position]
+            val chipSpreads = Array(chipMarkers.size) { Offset.Zero }
+            // How many chips of the open pile found no clear spot, or were past the top of it,
+            // so its front still counts them.
+            var openChipGroupStuck = 0
+            if (openChipPile != null && openChipGroup != null) {
+                val spread = spreadOf(openChipPile, keep = true)
+                openChipGroupStuck = spread.stuckCount + (openChipPile.size - openChipGroup.size)
+                openChipGroup.forEachIndexed { slot, index ->
+                    chipSpreads[index] = Offset(spread.shifts[slot][0], spread.shifts[slot][1])
                 }
             }
-            if (chipSpreadShifts.size > orderedChipMarkers.size * 2 + 64) chipSpreadShifts.clear()
-            // In closed piles, let one chip peek out in the direction it will
-            // move on expansion. Keep the front on top and the rest hidden.
-            val chipPeekOffsets = JournalChipLayout.peeks(
-                boxes = chipPlacementBoxes,
-                piles = chipGroups.filter { it !== expandedGroup },
-                visibleLayers = 1,
-                peek = with(chipDensity) { 8.dp.toPx() },
-                spreadOf = { members ->
-                    JournalChipLayout.spread(
-                        boxes = chipPlacementBoxes,
-                        members = members,
-                        minX = 0f,
-                        maxX = overlayDataWidthPx,
-                        minTop = journalChipMinTopPx,
-                        maxTop = chipLayoutSpec.maxTop,
-                        gapPx = with(chipDensity) { 4.dp.toPx() },
-                        ringStepPx = with(chipDensity) { 8.dp.toPx() },
-                        maxRadiusPx = with(chipDensity) { 80.dp.toPx() }
-                    )
-                }
-            )
-            val chipDisplayBoxes = HashMap(chipBoxById)
-            chipPeekOffsets.forEachIndexed { index, shift ->
-                if (shift != null) {
-                    val id = orderedChipMarkers[index].entryId
-                    val box = chipPlacements[index].box
-                    chipDisplayBoxes[id] = JournalChipBox(
-                        box.left + shift[0], box.top + shift[1],
-                        box.right + shift[0], box.bottom + shift[1]
-                    )
-                }
-            }
-            if (spreadGroup != null && spread != null) {
-                spreadGroup.forEachIndexed { position, index ->
-                    if (!spread.stuck[position]) {
-                        val markerId = orderedChipMarkers[index].entryId
-                        val box = chipPlacements[index].box
-                        val shift = spread.shifts[position]
-                        chipDisplayBoxes[markerId] = JournalChipBox(
-                            box.left + shift[0], box.top + shift[1],
-                            box.right + shift[0], box.bottom + shift[1]
-                        )
-                    }
-                }
-            }
-            // Do not give fully folded chips invisible touch targets. Keep tucked chips
-            // behind their front, so the front remains the primary interactive surface.
-            val chipPlacementById = orderedChipMarkers.mapIndexed { index, marker ->
-                marker.entryId to chipPlacements[index]
-            }.toMap()
 
-            val unplacedExpandedIds = if (expandedGroup != null && spread != null) {
-                expandedGroup.mapIndexedNotNull { position, index ->
-                    orderedChipMarkers[index].entryId.takeIf {
-                        position > 0 && spread.stuck[position]
-                    }
+            // While a pile is closed, the chips behind its front peek out dimmed, part of the way
+            // toward where they go when it opens, so the pile shows which way it will spread.
+            // A folded chip can't be told apart from its front, so it stays wholly behind.
+            val chipPeeks = JournalChipLayout.peeks(
+                chipBoxes,
+                chipGroups.filter { openChipGroup == null || it[0] != openChipGroup[0] },
+                journalChipLayoutSpec.visibleLayers,
+                journalChipLayoutSpec.peek,
+                mayPeek = { !chipPlacements[it].folded }
+            ) { spreadOf(it, keep = true, peeking = true) }
+            val chipPilePosition = IntArray(chipMarkers.size)
+            chipGroups.forEach { group -> group.forEachIndexed { position, index -> chipPilePosition[index] = position } }
+
+            // A closed pile of one insulin's doses, or of carbs, shows their total on its front
+            // beside the count, so 2 U and 2 U read "4 U ×2". The front is laid out at last
+            // frame's total width; a total wider than that, new this frame, grows away from the
+            // entry, staying on the chart, until the next frame makes room for it.
+            fun pileTotal(group: IntArray): String? {
+                val lead = chipMarkers[group[0]]
+                if (lead.type != JournalEntryType.INSULIN && lead.type != JournalEntryType.CARBS) return null
+                var total = 0.0
+                for (index in group) {
+                    val marker = chipMarkers[index]
+                    if (marker.type != lead.type) return null
+                    if (lead.type == JournalEntryType.INSULIN && (marker.title != lead.title || marker.accentColor != lead.accentColor)) return null
+                    total += marker.amount ?: return null
                 }
-            } else emptyList()
-            // Keep overflow selection tied to the current members, not the number of
-            // taps on an older pile: panning may replace all of its hidden entries.
-            val overflowSelectionKey = unplacedExpandedIds.toList()
-            var nextUnplacedChipIndex by remember(expandedJournalChipId, overflowSelectionKey) {
-                mutableStateOf(0)
+                return journalMarkerAmountText(lead.type, total.toFloat())
             }
-            // An item can enter or leave the unplaced set as the chart is panned.
-            // Keep the selection index within the current set before opening an entry.
-            val unplacedCount = unplacedExpandedIds.size
-            fun isChipVisible(markerId: Long): Boolean {
-                val placement = chipPlacementById[markerId] ?: return false
-                val group = chipGroupById[markerId]
-                if (group == null) return !placement.folded
-                if (group !== expandedGroup) {
-                    return markerId == orderedChipMarkers[group[0]].entryId ||
-                        (chipIndexById[markerId]?.let { chipPeekOffsets[it] } != null)
-                }
-                val position = group.indexOfFirst { orderedChipMarkers[it].entryId == markerId }
-                return position >= 0 && (spread?.stuck?.getOrNull(position) == false || position == 0)
+            val chipShownLabels = chipLabels.toTypedArray()
+            val chipShownWidths = FloatArray(chipMarkers.size) { chipBoxes[it].right - chipBoxes[it].left }
+            val chipShownLefts = FloatArray(chipMarkers.size) { chipBoxes[it].left }
+            val chipTotalWidths = HashMap<Long, Float>()
+            chipGroups.forEach { group ->
+                val front = group[0]
+                val total = pileTotal(group) ?: return@forEach
+                val width = journalChipChromePx + journalChipTextWidth(total).coerceAtMost(journalChipMaxTextPx) + 1f
+                chipTotalWidths[chipMarkers[front].entryId] = width
+                // Open, the front shows its own value again, in the room kept for the total.
+                if (openChipGroup?.contains(front) == true) return@forEach
+                val laidOut = chipShownWidths[front]
+                var left = chipShownLefts[front]
+                if (width > laidOut && chipPlacements[front].slot.side < 0) left -= width - laidOut
+                val shown = maxOf(width, laidOut)
+                if (chipAnchorXs[front] in 0f..overlayDataWidthPx) left = left.coerceIn(0f, (overlayDataWidthPx - shown).coerceAtLeast(0f))
+                chipShownLabels[front] = total
+                chipShownWidths[front] = shown
+                chipShownLefts[front] = left
+            }
+            journalChipLastTotalWidths.clear()
+            journalChipLastTotalWidths.putAll(chipTotalWidths)
+
+            // Every chip rests in the chart's own frame: x relative to its entry, so panning
+            // moves it with the chart at once.
+            val chipTargets = chipMarkers.indices.map { index ->
+                val peek = chipPeeks[index]?.takeIf { openChipGroup?.contains(index) != true }
+                Offset(chipShownLefts[index] - chipAnchorXs[index], chipBoxes[index].top) + chipSpreads[index] +
+                    (peek?.let { Offset(it[0], it[1]) } ?: Offset.Zero)
+            }
+            // A chip springs only when it is given a new spot: another slot or layer, or another
+            // way to peek or spread. The chart rescaling under it, or a pan's rounding, moves
+            // the spot itself, and the chip follows that exactly instead of chasing it.
+            val chipSpots = chipMarkers.indices.map { index ->
+                val placement = chipPlacements[index]
+                val shift = chipTargets[index] - Offset(chipShownLefts[index] - chipAnchorXs[index], chipBoxes[index].top)
+                JournalChipSpot(placement.slot, chipMarkers[placement.front].entryId, placement.depth, shift.x.roundToInt(), shift.y.roundToInt())
+            }
+            // A chip that was not on the chart last frame starts at its resting spot rather than
+            // flying in from wherever it was when it left.
+            val chipMotion = remember { HashMap<Long, JournalChipMotion>() }
+            val chipShownLastFrame = remember { HashSet<Long>() }
+            val chipMotions = chipMarkers.mapIndexed { index, marker ->
+                if (marker.entryId !in chipShownLastFrame) chipMotion.remove(marker.entryId)
+                chipMotion.getOrPut(marker.entryId) { JournalChipMotion(chipSpots[index], chipTargets[index]) }
+                    .also { it.moveTo(chipSpots[index], chipTargets[index]) }
+            }
+            chipShownLastFrame.clear()
+            chipMarkers.mapTo(chipShownLastFrame) { it.entryId }
+            chipMotion.keys.retainAll(chipShownLastFrame)
+            // A chip wholly hidden behind its pile's front shows only as the front's
+            // count, so it is left out until its pile opens; one still springing back after its
+            // pile closes stays until it lands. Any chip that still shows is always there.
+            val chipComposed = BooleanArray(chipMarkers.size) { index ->
+                chipPilePosition[index] == 0 || chipPeeks[index] != null ||
+                    openChipGroup?.contains(index) == true ||
+                    !chipMotions[index].isSettled
             }
 
             Canvas(
@@ -3761,16 +3850,12 @@ fun InteractiveGlucoseChart(
                     .fillMaxSize()
                     .zIndex(1.35f)
             ) {
-                visibleOverlayMarkers.forEach { marker ->
-                    val markerX = markerXById[marker.entryId] ?: return@forEach
-                    val chipBox = chipDisplayBoxes[marker.entryId] ?: return@forEach
-                    if (!isChipVisible(marker.entryId)) return@forEach
-                    // The peeking layer is only a visual hint: its connector belongs
-                    // to the expanded state and would clutter the closed pile.
-                    val pile = chipGroupById[marker.entryId]
-                    if (pile != null && pile !== expandedGroup &&
-                        marker.entryId != orderedChipMarkers[pile[0]].entryId
-                    ) return@forEach
+                chipMarkers.forEachIndexed { index, marker ->
+                    if (!chipComposed[index]) return@forEachIndexed
+                    val anchorX = chipAnchorXs[index]
+                    val position = chipMotions[index].position
+                    val chipLeft = anchorX + position.x
+                    val chipRight = chipLeft + chipShownWidths[index]
                     val sourceY = when (marker.type) {
                         JournalEntryType.FINGERSTICK -> marker.chartGlucoseValue
                             ?.let(overlayValueToY)
@@ -3779,72 +3864,99 @@ fun InteractiveGlucoseChart(
                         JournalEntryType.INSULIN -> insulinConnectorY
                         else -> markerOverlayY(marker) ?: eventRailOverlayY
                     }
-                    // Connect to the edge closest to the source, including when a
-                    // crowded pile has been expanded to the opposite side.
-                    val labelEdgeX = if (markerX <= chipBox.left) {
-                        chipBox.left
-                    } else if (markerX >= chipBox.right) {
-                        chipBox.right
+                    // The line tucks under the chip's near edge, whichever side of its entry
+                    // the chip is on right now.
+                    val edgeX = if (chipLeft + chipShownWidths[index] / 2f >= anchorX) {
+                        chipLeft + connectorUnderlapPx
                     } else {
-                        markerX
+                        chipRight - connectorUnderlapPx
                     }
-                    val labelCenterY = (chipBox.top + chipHeightPx / 2f).coerceIn(0f, chartHeightPx)
                     drawLine(
                         color = Color(marker.accentColor).copy(alpha = 0.22f),
-                        start = Offset(markerX, sourceY.coerceIn(0f, chartHeightPx)),
-                        end = Offset(labelEdgeX, labelCenterY),
+                        start = Offset(anchorX, sourceY.coerceIn(0f, chartHeightPx)),
+                        end = Offset(edgeX, (position.y + journalChipPillHeightPx / 2f).coerceIn(0f, chartHeightPx)),
                         strokeWidth = connectorStrokePx,
                         cap = StrokeCap.Round
                     )
                 }
             }
 
-            visibleOverlayMarkers.forEach { marker ->
-                val chipBox = chipDisplayBoxes[marker.entryId] ?: return@forEach
-                val placement = chipPlacementById[marker.entryId] ?: return@forEach
-                if (!isChipVisible(marker.entryId)) return@forEach
-                JournalMarkerChip(
-                    marker = marker,
-                    activePointerIds = activeJournalMarkerPointers,
-                    hiddenCount = if (expandedGroup != null && chipGroupById[marker.entryId] === expandedGroup) {
-                        if (marker.entryId == orderedChipMarkers[expandedGroup[0]].entryId) unplacedExpandedIds.size else 0
-                    } else chipHiddenCounts[marker.entryId] ?: 0,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .zIndex(
-                            if (expandedGroup != null && chipGroupById[marker.entryId] === expandedGroup) {
-                                1.6f + (expandedGroup.size - placement.depth) * 0.001f
-                            } else if (placement.tuck == null) {
-                                1.5f
-                            } else {
-                                1.4f - placement.depth * 0.001f
-                            }
-                        )
-                        .offset {
-                            androidx.compose.ui.unit.IntOffset(
-                                x = chipBox.left.toInt(),
-                                y = chipBox.top.toInt()
+            chipMarkers.forEachIndexed { index, marker ->
+                if (!chipComposed[index]) return@forEachIndexed
+                val anchorX = chipAnchorXs[index]
+                val motion = chipMotions[index]
+                val spot = chipSpots[index]
+                val inOpenGroup = openChipGroup?.contains(index) == true
+                val group = chipGroupOf[marker.entryId]
+                val placement = chipPlacements[index]
+                // The front of a closed pile counts the chips it hides, itself included; those
+                // it hides are left to it for screen readers until the pile opens. Open, it
+                // still counts any that found no room to spread into.
+                val isPileFront = group != null && group[0] == index
+                val stackCount = when {
+                    !isPileFront -> 0
+                    !inOpenGroup -> group!!.size
+                    openChipGroupStuck > 0 -> openChipGroupStuck + 1
+                    else -> 0
+                }
+                val hiddenInPile = group != null && group[0] != index && !inOpenGroup
+                val widthPx = chipShownWidths[index]
+                val touchInsetX = ((journalChipTouchPx - widthPx) / 2f).coerceAtLeast(0f)
+                key(marker.entryId) {
+                    LaunchedEffect(spot) { motion.settle() }
+                    JournalMarkerChip(
+                        marker = marker,
+                        label = chipShownLabels[index],
+                        activePointerIds = activeJournalMarkerPointers,
+                        widthPx = widthPx,
+                        stackCount = stackCount,
+                        dimmed = hiddenInPile,
+                        hiddenFromAccessibility = hiddenInPile,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            // Each layer of a pile sits under the one above it, and a front with
+                            // a count over its neighbours so the count stays clear. An open
+                            // group, and any chip on its way to a new spot of its own, rides
+                            // above the rest; a chip springing back into its pile stays under.
+                            .zIndex(
+                                if (inOpenGroup || (!hiddenInPile && !motion.isSettled)) {
+                                    1.7f
+                                } else {
+                                    1.6f - placement.depth.coerceAtMost(50) * 0.001f + if (stackCount > 0) 0.0005f else 0f
+                                }
                             )
+                            .offset {
+                                val position = motion.position
+                                androidx.compose.ui.unit.IntOffset(
+                                    x = (anchorX + position.x - touchInsetX).roundToInt(),
+                                    y = (position.y - journalChipPillInsetYPx).roundToInt()
+                                )
+                            },
+                        onHoverChange = { hovering ->
+                            if (hovering) {
+                                hoveredJournalChipId = marker.entryId
+                            } else if (hoveredJournalChipId == marker.entryId) {
+                                hoveredJournalChipId = null
+                            }
                         },
-                    onClick = {
-                        val group = chipGroupById[marker.entryId]
-                        if (group != null && group !== expandedGroup) {
-                            expandedJournalChipId = orderedChipMarkers[group[0]].entryId
-                        } else if (group != null && group === expandedGroup &&
-                            marker.entryId == orderedChipMarkers[group[0]].entryId &&
-                            unplacedExpandedIds.isNotEmpty()
-                        ) {
-                            // The front cycles through entries that could not find a clear
-                            // spot, so a crowded pile never makes those entries unreachable.
-                            val id = unplacedExpandedIds[nextUnplacedChipIndex % unplacedCount]
-                            nextUnplacedChipIndex = (nextUnplacedChipIndex + 1) % unplacedCount
-                            onJournalMarkerClick?.invoke(id)
-                        } else {
-                            expandedJournalChipId = null
-                            onJournalMarkerClick?.invoke(marker.entryId)
+                        onClick = {
+                            val stuck = when {
+                                group == null -> 0
+                                inOpenGroup -> openChipGroupStuck
+                                else -> spreadOf(group).stuckCount + (group.size - spreadablePart(group).size)
+                            }
+                            if (group != null && stuck > 0 && canZoomOntoChips && (!inOpenGroup || isPileFront)) {
+                                expandedJournalChipId = marker.entryId
+                                zoomOntoPile(group)
+                            } else if (group != null && !inOpenGroup) {
+                                expandedJournalChipId = marker.entryId
+                            } else {
+                                expandedJournalChipId = null
+                                onJournalMarkerClick?.invoke(marker.entryId)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
 
             journalActionTimestamp
@@ -3868,11 +3980,13 @@ fun InteractiveGlucoseChart(
                         tonalElevation = 0.dp,
                         shadowElevation = 0.dp
                     ) {
+                        // ui-guardrails: allow-begin offgrid_spacing - the journal time pill, sized with the journal chips beside it
                         Row(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            // ui-guardrails: allow-end
                             Icon(
                                 imageVector = Icons.Default.AccessTime,
                                 contentDescription = null,
@@ -4332,7 +4446,7 @@ fun InteractiveGlucoseChart(
                             )
                             val peerDvs = getDisplayValues(peer.point, peer.viewMode, unit, peer.calibratedValue)
                             Text(
-                                modifier = Modifier.padding(top = 3.dp),
+                                modifier = Modifier.padding(top = 4.dp),
                                 text = buildGlucoseString(
                                     peerDvs,
                                     peerTextColor,
@@ -4538,9 +4652,9 @@ fun InteractiveGlucoseChart(
                         .height(24.dp)
                         .background(
                             MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
-                            RoundedCornerShape(6.dp)
+                            RoundedCornerShape(4.dp)
                         )
-                        .padding(horizontal = 6.dp),
+                        .padding(horizontal = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -4775,7 +4889,7 @@ fun InteractiveGlucoseChart(
                     .graphicsLayer { alpha = chartBoostProgress }
                     .background(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        shape = RoundedCornerShape(2.dp)
+                        shape = CircleShape
                     )
             )
 
@@ -4846,7 +4960,7 @@ fun InteractiveGlucoseChart(
                 ) {
                     Icon(
                         imageVector = androidx.compose.material.icons.Icons.Filled.DateRange,
-                        contentDescription = "Jump to Date",
+                        contentDescription = stringResource(R.string.chart_jump_to_date),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.requiredSize(scaled(baseOuterIconSize))
                     )
@@ -5003,7 +5117,7 @@ fun InteractiveGlucoseChart(
                         ) {
                             Icon(
                                 imageVector = if (isScrolledRight) Icons.Filled.FirstPage else Icons.AutoMirrored.Filled.LastPage,
-                                contentDescription = "Back to Now",
+                                contentDescription = stringResource(R.string.chart_back_to_now),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.requiredSize(scaled(baseBackIconSize))
                             )
@@ -5046,60 +5160,136 @@ fun InteractiveGlucoseChart(
     }
 }
 
+/** Which spot a journal chip rests in: its slot or pile layer, and how far it peeks or spreads from it. */
+private data class JournalChipSpot(val slot: JournalChipSlot, val front: Long, val depth: Int, val shiftX: Int, val shiftY: Int)
+
+/**
+ * One journal chip's motion. The chip follows its resting spot exactly as the chart pans and
+ * rescales under it; only when given a new [JournalChipSpot] does it spring there, from wherever
+ * it was.
+ */
+private class JournalChipMotion(private var spot: JournalChipSpot, private var target: Offset) {
+    // How far the chip still is from its spot, springing to nothing.
+    private val lag = Animatable(Offset.Zero, Offset.VectorConverter)
+    // The jump a new spot made, until [settle] hands it to [lag].
+    private var jump = Offset.Zero
+
+    val position: Offset get() = target + lag.value + jump
+
+    val isSettled: Boolean get() = jump == Offset.Zero && !lag.isRunning
+
+    fun moveTo(spot: JournalChipSpot, target: Offset) {
+        if (spot != this.spot) {
+            jump += this.target - target
+            this.spot = spot
+        }
+        this.target = target
+    }
+
+    suspend fun settle() {
+        if (jump != Offset.Zero) {
+            val from = lag.value + jump
+            jump = Offset.Zero
+            lag.snapTo(from)
+        }
+        if (lag.value != Offset.Zero) lag.animateTo(Offset.Zero, ExpressiveMotion.defaultSpatial())
+    }
+}
+
 @Composable
 private fun JournalMarkerChip(
     marker: JournalChartMarker,
+    label: String,
     activePointerIds: MutableSet<PointerId>,
-    hiddenCount: Int = 0,
+    widthPx: Float,
     modifier: Modifier = Modifier,
+    stackCount: Int = 0,
+    dimmed: Boolean = false,
+    hiddenFromAccessibility: Boolean = false,
+    onHoverChange: (Boolean) -> Unit = {},
     onClick: () -> Unit
 ) {
     val tint = Color(marker.accentColor)
-    // Keep the pointer gesture alive while the chart recomposes during a pan or zoom.
-    // A new inline onClick lambda should not cancel an in-flight touch gesture.
+    // The input handler is keyed on this callback; a stable one keeps it from restarting
+    // whenever the chip recomposes while a group moves.
     val currentOnClick by rememberUpdatedState(onClick)
     val activate = remember { { currentOnClick() } }
-    Surface(
-        modifier = modifier.journalMarkerInput(activePointerIds, activate),
-        shape = RoundedCornerShape(14.dp),
-        // Opaque backgrounds prevent labels in a stacked pile from bleeding through.
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, tint.copy(alpha = 0.18f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    val hoverSource = remember { MutableInteractionSource() }
+    val hovered by hoverSource.collectIsHoveredAsState()
+    val currentOnHoverChange by rememberUpdatedState(onHoverChange)
+    LaunchedEffect(hovered) { currentOnHoverChange(hovered) }
+    DisposableEffect(Unit) { onDispose { currentOnHoverChange(false) } }
+    // The chart lays chips out at their measured width, so the chip takes exactly that width.
+    val widthDp = with(LocalDensity.current) { widthPx.toDp() }
+    val countDescription = if (stackCount > 1) {
+        pluralStringResource(R.plurals.journal_chart_marker_count_description, stackCount, stackCount)
+    } else {
+        null
+    }
+    // A chip peeking out from behind its pile's front is toned down, so the front reads first.
+    val dim by animateFloatAsState(if (dimmed) 1f else 0f, ExpressiveMotion.defaultEffects(), label = "JournalChipDim")
+    Box(
+        modifier = modifier
+            .journalMarkerInput(activePointerIds, activate)
+            .hoverable(hoverSource)
+            .then(if (hiddenFromAccessibility) Modifier.semantics { hideFromAccessibility() } else Modifier)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // ui-guardrails: allow-begin offgrid_spacing, offscale_radius - journal chip metrics as tuned in #572; the chart's chip layout measures them
+        Surface(
+            modifier = Modifier.width(widthDp),
+            shape = RoundedCornerShape(14.dp),
+            // Opaque, so where chips overlap the one behind shows as a clean edge rather than
+            // bleeding its label through.
+            color = androidx.compose.ui.graphics.lerp(
+                MaterialTheme.colorScheme.surfaceContainerHigh,
+                MaterialTheme.colorScheme.surfaceContainerLow,
+                dim
+            ),
+            border = BorderStroke(1.dp, tint.copy(alpha = 0.18f * (1f - dim * 0.7f))),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
-            Icon(
-                imageVector = when (marker.type) {
-                    JournalEntryType.INSULIN -> Icons.Default.Vaccines
-                    JournalEntryType.CARBS -> Icons.Default.Restaurant
-                    JournalEntryType.FINGERSTICK -> Icons.Default.Bloodtype
-                    JournalEntryType.ACTIVITY -> Icons.Default.DirectionsRun
-                    JournalEntryType.NOTE -> Icons.AutoMirrored.Filled.Label
-                },
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = marker.detailText.ifBlank { marker.title.take(10) },
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 88.dp)
-            )
-            if (hiddenCount > 0) {
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "+$hiddenCount",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = tint,
-                    maxLines = 1
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                    .graphicsLayer { alpha = 1f - dim * 0.6f },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = when (marker.type) {
+                        JournalEntryType.INSULIN -> Icons.Default.Vaccines
+                        JournalEntryType.CARBS -> Icons.Default.Restaurant
+                        JournalEntryType.FINGERSTICK -> Icons.Default.Bloodtype
+                        JournalEntryType.ACTIVITY -> Icons.Default.DirectionsRun
+                        JournalEntryType.NOTE -> Icons.AutoMirrored.Filled.Label
+                    },
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(14.dp)
                 )
+                Spacer(modifier = Modifier.width(6.dp))
+                // ui-guardrails: allow-end
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 88.dp)
+                )
+            }
+        }
+        // Sits on the pill's corner rather than inside it, so a count coming and going never
+        // changes the chip's width or moves its neighbours.
+        if (countDescription != null) {
+            Badge(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 6.dp, y = (-6).dp)
+                    .clearAndSetSemantics { contentDescription = countDescription },
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
+                Text(text = stringResource(R.string.journal_chart_marker_count, stackCount))
             }
         }
     }
@@ -5197,3 +5387,4 @@ private fun resolveGraphRangeDefaults(
         fallbackLow to fallbackHigh
     }
 }
+
