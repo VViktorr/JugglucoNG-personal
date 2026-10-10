@@ -1470,6 +1470,7 @@ fun InteractiveGlucoseChart(
         fallbackHigh = fallbackMax
     )
     val minYAxisSpan = if (isMmol) 6f else 108f
+    val scaleLimits = rememberChartScaleLimits(isMmol)
 
     val visibleValueRange = remember(
         renderData,
@@ -1560,9 +1561,10 @@ fun InteractiveGlucoseChart(
     var baselineYMax by rememberSaveable { mutableFloatStateOf(graphRangeDefaults.second) }
     var isYAxisAdjusting by remember { mutableStateOf(false) }
 
-    LaunchedEffect(graphRangeDefaults) {
-        baselineYMin = graphRangeDefaults.first
-        baselineYMax = graphRangeDefaults.second
+    LaunchedEffect(graphRangeDefaults, scaleLimits) {
+        val bounded = scaleLimits.constrain(graphRangeDefaults.first, graphRangeDefaults.second)
+        baselineYMin = bounded.first
+        baselineYMax = bounded.second
     }
 
     val automaticYRange = remember(
@@ -1602,8 +1604,12 @@ fun InteractiveGlucoseChart(
         animationSpec = yRangeAnimationSpec,
         label = "ChartYMaxAutoRange"
     )
-    val renderedYMin = if (isYAxisAdjusting) baselineYMin else displayYMin
-    val renderedYMax = if (isYAxisAdjusting) baselineYMax else displayYMax
+    val boundedRenderedRange = scaleLimits.constrain(
+        if (isYAxisAdjusting) baselineYMin else displayYMin,
+        if (isYAxisAdjusting) baselineYMax else displayYMax
+    )
+    val renderedYMin = boundedRenderedRange.first
+    val renderedYMax = boundedRenderedRange.second
 
     // --- INTERACTION STATE ---
     var selectedPoint by remember { mutableStateOf<GlucosePoint?>(null) }
@@ -1745,6 +1751,7 @@ fun InteractiveGlucoseChart(
     val currentChartModel by rememberUpdatedState(chartModel)
     val currentRenderedYMin by rememberUpdatedState(renderedYMin)
     val currentRenderedYMax by rememberUpdatedState(renderedYMax)
+    val currentScaleLimits by rememberUpdatedState(scaleLimits)
     // The pointerInput lambda below is keyed on previewWindowReservedIntPx and otherwise
     // long-lived, so it would otherwise capture these as stale snapshots — when the
     // prediction horizon, zoom level, or expansion progress change, gesture clamping
@@ -2032,6 +2039,13 @@ fun InteractiveGlucoseChart(
                                 (contentHeight - 32.dp.toPx() - chartPlotBottomGapPx).coerceAtLeast(
                                     1f
                                 )
+                            // Match the left label column, including its background padding.
+                            // Eligibility is fixed at touch-down; entering the axis later never scales.
+                            val axisTouchWidth = 24.dp.toPx() + axisTextPaint.measureText(
+                                currentScaleLimits.high.toInt().toString()
+                            )
+                            val startedOnYAxis = down.position.x in 0f..axisTouchWidth &&
+                                down.position.y in 0f..chartHeight && !startedOnJournalMarker
                             val downDuration = visibleDuration
                             val downCenterTime = centerTime
                             val viewportStart = downCenterTime - downDuration / 2
@@ -2220,7 +2234,11 @@ fun InteractiveGlucoseChart(
                                             longPressJob?.cancel()
                                             dismissJournalActionIfNeeded()
                                             if (lockedPanAxis == 0) {
-                                                lockedPanAxis = if (abs(accumulatedPanX) > abs(accumulatedPanY)) 1 else 2
+                                                lockedPanAxis = when {
+                                                    abs(accumulatedPanX) > abs(accumulatedPanY) -> 1
+                                                    startedOnYAxis -> 2
+                                                    else -> 3 // Vertical drag outside the axis never changes scale.
+                                                }
                                                 if (lockedPanAxis == 2) {
                                                     yGestureStartMin = currentRenderedYMin
                                                     yGestureStartMax = currentRenderedYMax
@@ -2245,11 +2263,14 @@ fun InteractiveGlucoseChart(
                                                 adjustsMax = yGestureAdjustsMax,
                                                 minimumSpan = minYAxisSpan
                                             )
-                                            baselineYMin = manualRange.min
-                                            baselineYMax = manualRange.max
+                                            val bounded = currentScaleLimits.constrain(manualRange.min, manualRange.max)
+                                            baselineYMin = bounded.first
+                                            baselineYMax = bounded.second
                                         }
                                     }
-                                    newChange.consume()
+                                    if (isScrubbing || lockedPanAxis == 1 || lockedPanAxis == 2) {
+                                        newChange.consume()
+                                    }
                                 }
                                 change = newChange
                                 lastPointerCount = pointerCount

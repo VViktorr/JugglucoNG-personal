@@ -310,54 +310,6 @@ fun DashboardCombinedHeader(
     }
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val isLandscape = adaptiveMetrics.isLandscape
-    val cornerWeights = remember(trendResult.velocity) { trendCornerWeightsFromVelocity(trendResult.velocity) }
-    val cornerAnimSpec = spring<Dp>(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = Spring.StiffnessLow
-    )
-
-    val heroTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 22.dp, 52.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroTopStartRadius"
-    )
-    val heroTopEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topEnd, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroTopEndRadius"
-    )
-    val heroBottomEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomEnd, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroBottomEndRadius"
-    )
-    val heroBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 22.dp, 46.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroBottomStartRadius"
-    )
-
-    val sensorTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorTopStartRadius"
-    )
-    val sensorTopEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topEnd, 20.dp, 46.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorTopEndRadius"
-    )
-    val sensorBottomEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomEnd, 22.dp, 52.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorBottomEndRadius"
-    )
-    val sensorBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorBottomStartRadius"
-    )
-
     // 1. Resolve Values using shared logic (with calibration if active)
     val refreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val resolvedCurrentSnapshot = currentSnapshot ?: remember(refreshRevision, sensorName, currentGlucose, currentRate, latestPoint?.timestamp, viewMode) {
@@ -830,12 +782,7 @@ fun DashboardCombinedHeader(
     }
 
     val heroCard: @Composable (Modifier) -> Unit = { modifier ->
-        val heroShape = RoundedCornerShape(
-            topStart = heroTopStart,
-            topEnd = heroTopEnd,
-            bottomEnd = heroBottomEnd,
-            bottomStart = heroBottomStart
-        )
+        val heroShape = RoundedCornerShape(20.dp)
         val heroColors = CardDefaults.cardColors(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
@@ -870,12 +817,7 @@ fun DashboardCombinedHeader(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
             ),
-            shape = RoundedCornerShape(
-                topStart = sensorTopStart,
-                topEnd = sensorTopEnd,
-                bottomEnd = sensorBottomEnd,
-                bottomStart = sensorBottomStart
-            )
+            shape = RoundedCornerShape(20.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -1076,32 +1018,12 @@ fun DashboardCombinedHeader(
         }
     }
 
-    if (isLandscape) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            heroCard(Modifier.fillMaxWidth())
-            sensorCard(Modifier.fillMaxWidth())
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            heroCard(
-                Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight()
-            )
-            sensorCard(
-                Modifier
-                    .weight(0.3f)
-                    .fillMaxHeight()
-            )
-        }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        sensorCard(Modifier.fillMaxWidth())
+        heroCard(Modifier.fillMaxWidth())
     }
 }
 

@@ -67,6 +67,13 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
     val veryLowValue by viewModel.veryLowThreshold.collectAsStateWithLifecycle()
     val veryHighValue by viewModel.veryHighThreshold.collectAsStateWithLifecycle()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scaleLimits = rememberChartScaleLimits(isMmol)
+    val scaleFactor = if (isMmol) GlucoseFormatter.mmolToMg(1f) else 1f
+    var scaleLow by remember(scaleLimits) { mutableFloatStateOf(scaleLimits.low) }
+    var scaleHigh by remember(scaleLimits) { mutableFloatStateOf(scaleLimits.high) }
+    val scaleMinimumSpan = scaleLimits.minimumSpan
+
     val valueStep = if (isMmol) 0.1f else 1f
     val targetLowBounds = if (isMmol) 2.0f..8.0f else 40f..140f
     val targetHighBounds = if (isMmol) 6.0f..16.0f else 100f..350f
@@ -159,6 +166,39 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
                 },
                 onHighValueChangeFinished = {
                     viewModel.setGraphRange(chartLowSlider, chartHighSlider)
+                }
+            )
+            HorizontalDivider()
+            Text(
+                text = stringResource(R.string.chart_scale_limits_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.chart_scale_limits_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            GlucoseRangeSliderSection(
+                lowLabel = stringResource(R.string.low_label),
+                highLabel = stringResource(R.string.high_label),
+                lowValue = scaleLow,
+                highValue = scaleHigh,
+                lowBounds = 0f..(216f / scaleFactor),
+                highBounds = (108f / scaleFactor)..(1000f / scaleFactor),
+                isMmol = isMmol,
+                onLowValueChange = { candidate ->
+                    scaleLow = snapRangeValue(candidate, isMmol)
+                        .coerceIn(0f, minOf(216f / scaleFactor, scaleHigh - scaleMinimumSpan))
+                },
+                onHighValueChange = { candidate ->
+                    scaleHigh = snapRangeValue(candidate, isMmol)
+                        .coerceIn(scaleLow + scaleMinimumSpan, 1000f / scaleFactor)
+                },
+                onLowValueChangeFinished = {
+                    saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
+                },
+                onHighValueChangeFinished = {
+                    saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
                 }
             )
         }
