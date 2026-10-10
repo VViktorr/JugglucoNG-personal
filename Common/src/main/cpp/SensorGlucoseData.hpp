@@ -1903,7 +1903,7 @@ uint32_t getlastpolltime() const {
       setlastscantime(tim);
   }
 
-  bool savepoll(time_t tim,int id,int glu,int trend,float change) {
+  bool savepoll(time_t tim,int id,int glu,int trend,float change,int raw = 0) {
     if(getinfo()->pollcount) {
         int count=getinfo()->pollcount-1;
         int previd=polls[count].id;
@@ -1930,8 +1930,7 @@ uint32_t getlastpolltime() const {
             getinfo()->pollinterval=weight*getinfo()->pollinterval+(1.0-weight)*af;
             }
         }
-    saveglucosedata(polls,getinfo()->pollcount,tim,id,glu,trend,change);
-    return true;
+    return saveglucosedata(polls,getinfo()->pollcount,tim,id,glu,trend,change,raw);
     }
 
   bool savestreamonly(time_t tim, int id, int glu, int trend, float change,

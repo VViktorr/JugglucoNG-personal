@@ -562,7 +562,7 @@ extern bool saveSputnik_PG2(const jniHistory &hist,time_t nutime,int nuid,const 
         if(newnu<(nutime-60*3)) {
 //            lastscan=nullptr;
             LOGGER("senso->finished was %d, set to 1. %s: newnu=%zd nutime=%zd\n",senso->finished,serial.data(),newnu,nutime);
-            senso->finished=1;
+            senso->markFinished();
             extern void    setstreaming(SensorGlucoseData *hist);
             setstreaming(hist);
             void setusedsensors() ;
