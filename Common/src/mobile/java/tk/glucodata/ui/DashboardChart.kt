@@ -3543,6 +3543,10 @@ fun InteractiveGlucoseChart(
                 chipLayoutZoom = visibleDuration
             }
             val chipPreviousSlots = remember(chipLayoutZoom) { HashMap<Long, JournalChipSlot>() }
+            val chipPreviousTucks = remember(chipLayoutZoom) { HashMap<Long, Long>() }
+            val chipIndexById = orderedChipMarkers.mapIndexed { index, marker ->
+                marker.entryId to index
+            }.toMap()
             val chipPlacements = JournalChipLayout.place(
                 orderedChipMarkers.map { marker ->
                     JournalChipRequest(
@@ -3550,6 +3554,9 @@ fun InteractiveGlucoseChart(
                         baseTop = chipBaseTop(marker),
                         width = chipWidthsById.getValue(marker.entryId),
                         previous = chipPreviousSlots[marker.entryId],
+                        previousTuck = chipPreviousTucks[marker.entryId]
+                            ?.let(chipIndexById::get)
+                            ?.let(::JournalChipTuck),
                         // Repeated amounts of the same kind can share a pile rather than
                         // occupying separate lanes over the glucose trace.
                         stackKey = marker.type to marker.detailText.ifBlank { marker.title.take(10) },
@@ -3566,18 +3573,27 @@ fun InteractiveGlucoseChart(
                     JournalChipBox(x - clear, y - clear, x + clear, y + clear)
                 }
             )
-            if (chipPreviousSlots.size > orderedChipMarkers.size * 2 + 64) {
+            if (chipPreviousSlots.size + chipPreviousTucks.size > orderedChipMarkers.size * 2 + 64) {
                 val visibleIds = orderedChipMarkers.mapTo(HashSet()) { it.entryId }
                 chipPreviousSlots.keys.retainAll(visibleIds)
+                chipPreviousTucks.keys.retainAll(visibleIds)
             }
             orderedChipMarkers.forEachIndexed { index, marker ->
                 val placement = chipPlacements[index]
-                // A tucked chip does not own a free slot; reusing its borrowed slot
-                // on the next frame could destabilize the pile.
-                if (placement.tuck == null && !placement.folded) {
-                    chipPreviousSlots[marker.entryId] = placement.slot
-                } else {
-                    chipPreviousSlots.remove(marker.entryId)
+                when {
+                    placement.folded -> {
+                        chipPreviousSlots.remove(marker.entryId)
+                        chipPreviousTucks.remove(marker.entryId)
+                    }
+                    placement.tuck != null -> {
+                        chipPreviousTucks[marker.entryId] =
+                            orderedChipMarkers[placement.tuck.front].entryId
+                        chipPreviousSlots.remove(marker.entryId)
+                    }
+                    else -> {
+                        chipPreviousSlots[marker.entryId] = placement.slot
+                        chipPreviousTucks.remove(marker.entryId)
+                    }
                 }
             }
             val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
