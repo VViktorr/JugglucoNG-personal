@@ -465,6 +465,9 @@ object WearSync2 {
                     if (doLog) Log.i(LOG_ID, "ignored chunk for $serial: this device is reading it")
                     return@execute
                 }
+                // Phone Libre 2 history belongs in Room; minute-based native imports
+                // must not alter Abbott's BLE cursor or seed authentication state.
+                val mirrorNative = Applic.isWearable || !isLibre2NativeSensor(serial)
                 var written = 0
                 var earliest = 0L
                 val stamps = LongArray(count)
@@ -482,7 +485,9 @@ object WearSync2 {
                         // Native scale contract (g.cpp addGlucoseStreamInternal):
                         // glucose param = mgdl/10 (native ×10), raw param = plain
                         // mgdl. Triples carry mgdl*10.
-                        Natives.ensureSensorShell(serial, (t - 3600L).coerceAtLeast(1L))
+                        if (mirrorNative) {
+                            Natives.ensureSensorShell(serial, (t - 3600L).coerceAtLeast(1L))
+                        }
                     }
                     val rawMgdl = if (raw10 > 0) raw10 / 10f else 0f
                     nativeSecs[written] = t
@@ -492,38 +497,22 @@ object WearSync2 {
                     raws[written] = rawMgdl
                     written++
                 }
-                if (written > 0) {
-                    // Libre 2 native polls are keyed by Abbott's stream id, not by
-                    // minutes since sensor start. The generic direct-stream mirror
-                    // below derives id=(timestamp-starttime)/60; feeding a phone-side
-                    // Libre 2 chunk through it can therefore advance polls.dat into
-                    // the future (for example 19 -> 2926) and make real BLE ids look
-                    // like duplicates until the sensor catches up. The phone already
-                    // persists mirrored readings to Room immediately below, so skip
-                    // only this native mirror for Libre 2 on the phone. Wear still
-                    // keeps the native path because it has no Room-backed history.
-                    val skipPhoneLibre2NativeMirror = !Applic.isWearable && isLibre2NativeSensor(serial)
-                    if (skipPhoneLibre2NativeMirror) {
-                        if (doLog) {
-                            Log.i(
-                                LOG_ID,
-                                "skipping native mirror for Libre2 on phone: serial=$serial written=$written",
-                            )
-                        }
-                    } else {
-                        // One JNI call for the chunk. Per reading, the native side
-                        // re-seeded direct-stream state (stat + read + alloc), logged a
-                        // line and rewound the stream cursor every time; a large chunk
-                        // was enough to GC-stall the app. Same reason the Sibionics and
-                        // Anytime history mirrors are batched.
-                        Natives.addGlucoseStreamBatchWithRawTemp(
-                            nativeSecs.copyOf(written),
-                            nativeValues.copyOf(written),
-                            raws.copyOf(written),
-                            FloatArray(written),
-                            serial,
-                        )
-                    }
+                if (written > 0 && !mirrorNative && doLog) {
+                    Log.i(LOG_ID, "skipping native mirror for Libre2 on phone: serial=$serial written=$written")
+                }
+                if (written > 0 && mirrorNative) {
+                    // One JNI call for the chunk. Per reading, the native side
+                    // re-seeded direct-stream state (stat + read + alloc), logged a
+                    // line and rewound the stream cursor every time; a large chunk
+                    // was enough to GC-stall the app. Same reason the Sibionics and
+                    // Anytime history mirrors are batched.
+                    Natives.addGlucoseStreamBatchWithRawTemp(
+                        nativeSecs.copyOf(written),
+                        nativeValues.copyOf(written),
+                        raws.copyOf(written),
+                        FloatArray(written),
+                        serial,
+                    )
                 }
                 // The phone reads its history from Room and never looks at native,
                 // so readings taken over by the watch landed somewhere the phone
@@ -640,8 +629,13 @@ object WearSync2 {
 
     private fun isLibre2NativeSensor(serial: String): Boolean =
         runCatching {
-            val dataptr = Natives.getdataptr(serial)
-            dataptr != 0L && Natives.getLibreVersion(dataptr) == 2
+            // Kotlin driver shells can look like Libre 2 by native elimination.
+            // This read-only snapshot has five fields in Hybrid. Newer upstream
+            // snapshots add the managed family as field six; honor it if present.
+            if (SensorIdentity.usesNativeDirectStreamShell(serial)) return@runCatching false
+            val snapshot = Natives.getSensorUiSnapshot(serial) ?: return@runCatching false
+            snapshot.size >= 5 && snapshot[0] == 2L &&
+                (snapshot.size < 6 || snapshot[5] == 0L)
         }.getOrDefault(false)
 
     private fun removalKey(serial: String): String = serial.trim().uppercase()
