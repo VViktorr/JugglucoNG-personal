@@ -1742,8 +1742,8 @@ private fun JournalFoodLibrarySelector(
                                 query = ""
                                 expanded = false
                             },
-                            shape = RoundedCornerShape(22.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
+                            shape = RoundedCornerShape(20.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                         ) {
                             Text(
                                 text = stringResource(R.string.close),
@@ -1786,7 +1786,7 @@ private fun JournalFoodLibrarySelector(
                         shrinkTowards = Alignment.Top
                     ) + fadeOut()
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         filteredFoods.forEach { food ->
                             val rowExpanded = expandedFoodId == food.id
                             val rowPortionGrams = parseFoodPortionGrams(expandedPortionText)
@@ -1990,7 +1990,7 @@ private fun JournalFoodPickerRow(
                         .size(10.dp)
                         .background(color, CircleShape)
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
