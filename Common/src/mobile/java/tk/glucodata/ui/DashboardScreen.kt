@@ -1498,10 +1498,12 @@ fun DashboardScreen(
                     // two, rather than four cells squeezed across it.
                     if (showPinnedStats) {
                         item {
-                            tk.glucodata.ui.stats.PinnedStatsStrip(
-                                rows = 2,
-                                windowState = pinnedStatsWindow
-                            )
+                            FontScaleCap {
+                                tk.glucodata.ui.stats.PinnedStatsStrip(
+                                    rows = 2,
+                                    windowState = pinnedStatsWindow
+                                )
+                            }
                         }
                     }
 
