@@ -1007,20 +1007,11 @@ private fun JournalFoodRow(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                color = tint.copy(alpha = if (isDisabled) 0.10f else 0.18f),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Restaurant,
-                        contentDescription = null,
-                        tint = tint,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            IconTile(
+                icon = Icons.Default.Restaurant,
+                tint = tint,
+                containerColor = IconTileDefaults.toggleContainerColor(tint, !isDisabled),
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
