@@ -4,8 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,13 +39,10 @@ fun DexcomSetupWizard(
     BackHandler(onBack = onDismiss)
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.dexcom_setup_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.cancel))
-                    }
-                }
+            tk.glucodata.ui.components.AppTopBar(
+                title = stringResource(R.string.dexcom_setup_title),
+                onNavigateBack = onDismiss,
+                navigationContentDescription = stringResource(R.string.cancel),
             )
         }
     ) { padding ->
