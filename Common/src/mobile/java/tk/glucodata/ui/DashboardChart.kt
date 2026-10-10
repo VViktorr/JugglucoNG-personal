@@ -3519,18 +3519,27 @@ fun InteractiveGlucoseChart(
                         .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
             }
             val orderedChipMarkers = visibleOverlayMarkers.sortedWith(compareBy({ it.timestamp }, { it.entryId }))
+            // Retain a free slot while the viewport pans; reset when zoom settles.
+            val chipPreviousSlots = remember(visibleDuration) { HashMap<Long, JournalChipSlot>() }
             val chipPlacements = JournalChipLayout.place(
                 orderedChipMarkers.map { marker ->
                     JournalChipRequest(
                         anchorX = markerXById.getValue(marker.entryId),
                         baseTop = chipBaseTop(marker),
                         width = chipWidthsById.getValue(marker.entryId),
-                        previous = null,
+                        previous = chipPreviousSlots[marker.entryId],
                         kind = marker.type
                     )
                 },
                 chipLayoutSpec
             )
+            if (chipPreviousSlots.size > orderedChipMarkers.size * 2 + 64) {
+                val visibleIds = orderedChipMarkers.mapTo(HashSet()) { it.entryId }
+                chipPreviousSlots.keys.retainAll(visibleIds)
+            }
+            orderedChipMarkers.forEachIndexed { index, marker ->
+                chipPreviousSlots[marker.entryId] = chipPlacements[index].slot
+            }
             val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to chipPlacements[index].box
             }.toMap()
