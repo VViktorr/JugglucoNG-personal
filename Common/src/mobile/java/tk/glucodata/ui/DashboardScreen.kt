@@ -1446,7 +1446,8 @@ fun DashboardScreen(
                     contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
                 ) {
                      item {
-                        DashboardCombinedHeader(
+                        FontScaleCap {
+                            DashboardCombinedHeader(
                             currentGlucose = currentGlucose,
                             currentRate = currentRate,
                             viewMode = viewMode,
@@ -1492,6 +1493,7 @@ fun DashboardScreen(
                                 )
                             }
                         )
+                        }
                     }
 
                     // Pinned metrics live in the narrow left column here, two rows of
@@ -1759,7 +1761,8 @@ fun DashboardScreen(
                             .padding(horizontal = contentHorizontalPadding)
                             .onSizeChanged { measuredHeaderHeightPx = it.height }
                     ) {
-                        DashboardCombinedHeader(
+                        FontScaleCap {
+                            DashboardCombinedHeader(
                             currentGlucose = currentGlucose,
                             currentRate = currentRate,
                             viewMode = viewMode,
@@ -1805,6 +1808,7 @@ fun DashboardScreen(
                                 )
                             }
                         )
+                        }
                     }
                 }
 
