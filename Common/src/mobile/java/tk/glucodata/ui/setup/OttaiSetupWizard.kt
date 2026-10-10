@@ -540,10 +540,10 @@ fun OttaiSetupWizard(
         devicesLoading = true
         scope.launch {
             val (list, failure) = withContext(Dispatchers.IO) {
-                val value = runCatching { OttaiCloudClient.listDevices(context) }
+                val value = runCatching { OttaiCloudClient.accountDevices(context) }
                     .onFailure { Log.w(tag, "refresh account sensors: ${it.message}") }
                     .getOrNull()
-                value to OttaiCloudClient.lastFailure
+                value?.devices to value?.failure
             }
             if (list != null && failure == null) {
                 devices = list
@@ -787,26 +787,25 @@ fun OttaiSetupWizard(
                             // Deliberately cloud-only. Do not call OttaiRegistry.removeSensor,
                             // SensorBluetooth, or any BLE/native path from this action.
                             val (released, failure) = withContext(Dispatchers.IO) {
-                                val success = runCatching {
-                                    OttaiCloudClient.unbind(context.applicationContext, targetId)
+                                runCatching {
+                                    OttaiCloudClient.unbindWithResult(context.applicationContext, targetId)
                                 }.onFailure {
                                     Log.w(tag, "cloud-only unbind $targetId: ${it.message}")
-                                }.getOrDefault(false)
-                                success to OttaiCloudClient.lastFailure
+                                }.getOrDefault(OttaiCloudClient.UnbindResult(false))
                             }
                             busy = false
                             if (released) {
                                 val unboundAt = System.currentTimeMillis()
                                 devices = devices?.map { device ->
                                     if (OttaiConstants.canonicalSensorId(device.mac) == targetId) {
-                                        device.copy(unbindTime = unboundAt)
+                                        device.copy(unbindTime = unboundAt, boundToAccount = false)
                                     } else {
                                         device
                                     }
                                 }
                                 selectedAccountDevice = selectedAccountDevice?.let { selected ->
                                     if (OttaiConstants.canonicalSensorId(selected.mac) == targetId) {
-                                        selected.copy(unbindTime = unboundAt)
+                                        selected.copy(unbindTime = unboundAt, boundToAccount = false)
                                     } else {
                                         selected
                                     }
@@ -1006,10 +1005,10 @@ fun OttaiSetupWizard(
                                 cloudBindingFailedId = ""
                                 accountDevicesFailure = null
                                 val (refreshedDevices, bindingFailure) = withContext(Dispatchers.IO) {
-                                    val value = runCatching { OttaiCloudClient.listDevices(context) }
+                                    val value = runCatching { OttaiCloudClient.accountDevices(context) }
                                         .onFailure { Log.w(tag, "refresh account sensors: ${it.message}") }
                                         .getOrNull()
-                                    value to OttaiCloudClient.lastFailure
+                                    value?.devices to value?.failure
                                 }
                                 if (refreshedDevices != null && bindingFailure == null) {
                                     devices = refreshedDevices
