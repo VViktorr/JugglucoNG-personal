@@ -195,6 +195,8 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
+import tk.glucodata.ui.components.TabScreenDefaults
+import tk.glucodata.ui.components.TabScreenHeader
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
@@ -257,13 +259,8 @@ fun SensorScreen(
     val sensors by viewModel.sensors.collectAsState()
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val compactLayout = adaptiveMetrics.isCompact
-    val panelPadding = 16.dp
-    val titleInset = 16.dp
-    val panelTopGap = if (compactLayout) 10.dp else 16.dp
-    val panelBottomPadding = if (compactLayout) 88.dp else 100.dp
-    val titleStyle = if (compactLayout) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.displaySmall
-    val titleBottomPadding = if (compactLayout) 16.dp else 24.dp
-    val fabPadding = 20.dp
+    val panelPadding = TabScreenDefaults.Gutter
+    val fabPadding = 16.dp
     
     // Start/stop real-time polling based on screen visibility.
     // Tied to the lifecycle, not just to composition: this screen is a tab, so leaving the
@@ -463,16 +460,11 @@ fun SensorScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = panelPadding)
-                    .padding(bottom = panelBottomPadding)
+                    .padding(horizontal = TabScreenDefaults.Gutter)
+                    .padding(bottom = TabScreenDefaults.BottomPadding)
             ) {
-                Spacer(modifier = Modifier.height(panelTopGap))
-                Text(
-                    text = stringResource(R.string.sensors_title),
-                    style = titleStyle,
-                    modifier = Modifier.padding(start = titleInset, end = titleInset)
-                )
-                Spacer(modifier = Modifier.height(panelTopGap))
+                Spacer(modifier = Modifier.height(TabScreenDefaults.Gutter))
+                TabScreenHeader(title = stringResource(R.string.sensors_title))
                 SensorsCgmReadinessBanner(onOpenReadiness = onNavigateToReadiness)
                 Spacer(modifier = Modifier.height(panelPadding))
                 tk.glucodata.ui.components.SensorsEmptyState(
@@ -498,20 +490,11 @@ fun SensorScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
-                contentPadding = PaddingValues(
-                    start = panelPadding,
-                    end = panelPadding,
-                    top = panelPadding,
-                    bottom = panelBottomPadding
-                )
+                contentPadding = TabScreenDefaults.contentPadding(hasFab = true)
             ) {
                 // Scrollable header
                 item {
-                    Text(
-                        text = stringResource(R.string.sensors_title),
-                    style = titleStyle,
-                    modifier = Modifier.padding(start = titleInset, bottom = titleBottomPadding)
-                    )
+                    TabScreenHeader(title = stringResource(R.string.sensors_title))
                 }
                 item {
                     SensorsCgmReadinessBanner(
