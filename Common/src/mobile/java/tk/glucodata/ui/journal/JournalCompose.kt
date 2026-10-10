@@ -1668,7 +1668,7 @@ private fun JournalFoodLibrarySelector(
             }
         } else {
             Column(
-                modifier = Modifier.padding(14.dp),
+                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
@@ -1680,7 +1680,7 @@ private fun JournalFoodLibrarySelector(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 62.dp)
-                            .padding(start = 14.dp, end = 4.dp),
+                            .padding(start = 16.dp, end = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -1909,10 +1909,10 @@ private fun JournalSelectedFoodChip(
     val color = Color(item.accentColor)
     Surface(
         color = color.copy(alpha = 0.18f),
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
+            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
