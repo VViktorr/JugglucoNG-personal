@@ -3491,8 +3491,13 @@ fun InteractiveGlucoseChart(
                         maxLines = 1
                     ).size.width + 1f
             } else 0f
+            // The counter uses labelSmall and can have a different font height at
+            // accessibility font scales. Reserve room for both texts and the icon.
             val chipHeightPx = maxOf(
                 chipTextMeasurer.measure("0", style = chipTextStyle, maxLines = 1).size.height.toFloat(),
+                chipTextMeasurer.measure(
+                    "+0", style = MaterialTheme.typography.labelSmall, maxLines = 1
+                ).size.height.toFloat(),
                 with(chipDensity) { 14.dp.toPx() }
             ) + with(chipDensity) { 10.dp.toPx() }
             val chipTextWidthCache = remember(chipTextStyle, chipDensity) { HashMap<String, Float>() }
