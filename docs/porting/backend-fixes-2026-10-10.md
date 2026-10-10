@@ -40,8 +40,8 @@ The combined Libre2 reconnect, native Libre2 packet processing and glucose
 algorithm, local LibreView transport/options, Hybrid NFC/history precedence and
 freshness checks remain. The resolver's normal path keeps its existing behavior;
 incoming-sample preference is enabled explicitly by external publication only.
-No official broad source-resolution or managed-family/native snapshot rewrite
-was substituted for local code. Ottai changes do not perform cloud operations
+At the end of the initial five-fix series, the managed-family/native snapshot
+metadata changes were not included; the follow-up below now ports #578 narrowly. Ottai changes do not perform cloud operations
 while porting; they change application code for later user-triggered operations.
 
 ## Validation and remaining work
@@ -60,5 +60,37 @@ consistent rows, statistics and exports; external calibrated publication; AAPS
 import cleanup; and Ottai account refresh/unbind with expired sessions.
 
 The five requested fixes are completed or retained where already present.
-Unrelated upstream backend differences and the separate Ottai history/live
-publication-claim rewrite (#602) were not included in this scoped series.
+Unrelated upstream backend differences remain outside this scoped series.
+The separately requested follow-up below completes #602.
+
+## Follow-up after comparison with official NG
+
+Base: `302c3e82961f29d42e9a0cf176946cc07cc7fb1b`.
+
+- #600: exclude deleted sensor directories from active native lists; rate-limit
+  ghost-main roster reconciliation and resolve the main role again independently
+  of whether updateDevices started a connection. Keep SensorIdentity's JNI-facing
+  method under R8. Apply counter-anchor and live timestamp lag recovery to iCan
+  only, preserving Libre2 timing and glucose processing.
+- #602: separate Ottai displayed and published high-water marks, so a history
+  record cannot silence a later fresh live delivery of the same record. Persist
+  the publication mark with apply(), avoiding synchronous disk work on GATT.
+  Preserve the previous stock/resolved calibration publication function verbatim.
+- #545: recover only an empty, unfinished, unbound manual Dexcom G7 record after
+  interrupted setup. Never reuse an established sensor merely because its PIN
+  matches. Existing manual-pairing UI/helper were already present.
+- #578: resolve managed families through persisted adapter records and the existing
+  native family stamp; append that stamp as snapshot field 5 without changing
+  fields 0..4 or the native record layout. Stamp MQ/Nightscout mirrors only after
+  successful storage. Report real driver names by default and retain the explicit
+  Identify as Libre2 option, preserving Libre3/G7 names. Native Libre2 stays Libre2.
+
+Validation: upstream hunks reviewed and applied selectively, adapter enum/imports
+and native declarations checked. The SuperGattCallback source outside the inserted
+main-role reconciliation and the Ottai calibration publication function remain
+unchanged. New regression sources accompany each relevant upstream policy; no
+compilation or test execution was performed. Libre2GattCallback, LibreView,
+CurrentDisplaySource and WearSync2 are unchanged in this follow-up. Remaining
+verification is runtime testing: sensor removal/switching, phone/Wear ownership,
+Ottai history-before-live alerts, interrupted Dexcom setup, iCan timestamps, and
+xDrip source labels with the compatibility option on/off.
