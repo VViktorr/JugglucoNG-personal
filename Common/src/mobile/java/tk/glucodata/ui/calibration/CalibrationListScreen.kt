@@ -1137,8 +1137,7 @@ private fun DiagnosticValuePill(
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelLargeEmphasized,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
