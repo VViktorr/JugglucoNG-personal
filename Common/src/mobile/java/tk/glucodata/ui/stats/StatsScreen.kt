@@ -2602,7 +2602,7 @@ private fun TemperatureOverviewCard(temperaturePoints: List<TemperaturePoint>) {
     val resolvedIndex = (selectedIndex ?: sampledPoints.lastIndex).coerceIn(0, sampledPoints.lastIndex)
     val selected = sampledPoints.getOrNull(resolvedIndex) ?: sampledPoints.last()
     val selectedTone by animateColorAsState(
-        targetValue = if (selectedIndex == null) Color(0xFF00838F) else Color(0xFF0277BD),
+        targetValue = if (selectedIndex == null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
         label = "tempSelectedTone"
     )
     val timeLabel = remember(selected.timestamp) {
@@ -2722,7 +2722,7 @@ private fun TemperatureSparkline(
     }
     var viewportStart by remember(points) { mutableFloatStateOf(0f) }
     var visibleSpan by remember(points, maxVisibleSpan) { mutableFloatStateOf(maxVisibleSpan) }
-    val lineColor = Color(0xFF00838F)
+    val lineColor = MaterialTheme.colorScheme.tertiary
     val selectorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
 
     val clampedViewportStart = { start: Float, span: Float ->
