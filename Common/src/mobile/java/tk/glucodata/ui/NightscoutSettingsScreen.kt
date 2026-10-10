@@ -535,7 +535,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         OutlinedTextField(
                             value = url,
@@ -575,7 +575,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
 
             // Test connection and token refresh — available regardless of mode
             item("nightscout_test") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             onClick = { testConnection() },
@@ -586,11 +586,11 @@ fun NightscoutSettingsScreen(navController: NavController) {
                         ) {
                             if (testState is TestState.Testing) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(stringResource(R.string.nightscout_test_testing))
                             } else {
                                 Icon(Icons.Default.NetworkCheck, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(stringResource(R.string.nightscout_test_connection))
                             }
                         }
@@ -603,11 +603,11 @@ fun NightscoutSettingsScreen(navController: NavController) {
                         ) {
                             if (tokenState is TokenState.Refreshing) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(stringResource(R.string.nightscout_token_refreshing))
                             } else {
                                 Icon(Icons.Default.Refresh, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(stringResource(R.string.nightscout_refresh_token))
                             }
                         }
@@ -664,7 +664,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                     ) {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(
                                 text = stringResource(R.string.nightscout_follow_interval_title),
@@ -714,7 +714,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(text = stringResource(R.string.status), style = MaterialTheme.typography.titleMedium)
                             Text(text = uploaderSummary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
@@ -847,7 +847,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                         )
                     ) {
                         Icon(Icons.Default.Send, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(stringResource(R.string.sendnow))
                     }
                 }
@@ -866,7 +866,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             .heightIn(min = 56.dp)
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(stringResource(R.string.resend_data_reset))
                     }
                 }
