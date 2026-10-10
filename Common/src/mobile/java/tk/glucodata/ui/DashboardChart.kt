@@ -3675,7 +3675,38 @@ fun InteractiveGlucoseChart(
                 }
             }
             if (chipSpreadShifts.size > orderedChipMarkers.size * 2 + 64) chipSpreadShifts.clear()
+            // In closed piles, let one chip peek out in the direction it will
+            // move on expansion. Keep the front on top and the rest hidden.
+            val chipPeekOffsets = JournalChipLayout.peeks(
+                boxes = chipPlacements.map { it.box },
+                piles = chipGroups.filter { it !== expandedGroup },
+                visibleLayers = 1,
+                peek = with(chipDensity) { 8.dp.toPx() },
+                spreadOf = { members ->
+                    JournalChipLayout.spread(
+                        boxes = chipPlacements.map { it.box },
+                        members = members,
+                        minX = 0f,
+                        maxX = overlayDataWidthPx,
+                        minTop = journalChipMinTopPx,
+                        maxTop = chipLayoutSpec.maxTop,
+                        gapPx = with(chipDensity) { 4.dp.toPx() },
+                        ringStepPx = with(chipDensity) { 8.dp.toPx() },
+                        maxRadiusPx = with(chipDensity) { 80.dp.toPx() }
+                    )
+                }
+            )
             val chipDisplayBoxes = HashMap(chipBoxById)
+            chipPeekOffsets.forEachIndexed { index, shift ->
+                if (shift != null) {
+                    val id = orderedChipMarkers[index].entryId
+                    val box = chipPlacements[index].box
+                    chipDisplayBoxes[id] = JournalChipBox(
+                        box.left + shift[0], box.top + shift[1],
+                        box.right + shift[0], box.bottom + shift[1]
+                    )
+                }
+            }
             if (spreadGroup != null && spread != null) {
                 spreadGroup.forEachIndexed { position, index ->
                     if (!spread.stuck[position]) {
@@ -3715,7 +3746,10 @@ fun InteractiveGlucoseChart(
                 val placement = chipPlacementById[markerId] ?: return false
                 val group = chipGroupById[markerId]
                 if (group == null) return !placement.folded
-                if (group !== expandedGroup) return markerId == orderedChipMarkers[group[0]].entryId
+                if (group !== expandedGroup) {
+                    return markerId == orderedChipMarkers[group[0]].entryId ||
+                        (chipIndexById[markerId]?.let { chipPeekOffsets[it] } != null)
+                }
                 val position = group.indexOfFirst { orderedChipMarkers[it].entryId == markerId }
                 return position >= 0 && (spread?.stuck?.getOrNull(position) == false || position == 0)
             }
