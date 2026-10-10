@@ -4,7 +4,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
@@ -28,17 +27,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.data.calibration.CalibrationEntity
@@ -174,36 +170,14 @@ fun CalibrationModelTableScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.calibration_model_table_title),
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(
-                                R.string.calibration_model_table_subtitle,
-                                modeTitle,
-                                selectedAlgorithm.title
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+            AppTopBar(
+                title = stringResource(R.string.calibration_model_table_title),
+                subtitle = stringResource(
+                    R.string.calibration_model_table_subtitle,
+                    modeTitle,
+                    selectedAlgorithm.title
+                ),
+                onNavigateBack = { navController.navigateUp() },
             )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -372,9 +346,7 @@ private fun CalibrationModelSummaryCard(
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = stringResource(R.string.calibration_model_summary_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+                style = MaterialTheme.typography.titleMediumEmphasized,)
             Text(
                 text = summarySubtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -461,9 +433,7 @@ private fun CalibrationMetricTile(
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+                style = MaterialTheme.typography.titleLargeEmphasized,)
         }
     }
 }
@@ -477,11 +447,13 @@ private fun CalibrationModelChart(
     dateFormatter: SimpleDateFormat,
     onEdit: (CalibrationEntity) -> Unit
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = tk.glucodata.ui.isAppInDarkTheme()
+    // ui-guardrails: allow-begin hex_color - the chart's four series, picked as light/dark pairs to stay apart from each other
     val activeColor = if (isDarkTheme) Color(0xFFDFFF78) else Color(0xFF496900)
     val disabledColor = if (isDarkTheme) Color(0xFF8B8A83) else Color(0xFF77746D)
     val fitColor = if (isDarkTheme) Color(0xFF77C8FF) else Color(0xFF00649F)
     val residualColor = if (isDarkTheme) Color(0xFFFFC857) else Color(0xFF8F5600)
+    // ui-guardrails: allow-end
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
     val crosshairColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -902,8 +874,7 @@ private fun CalibrationLegendItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelMediumEmphasized,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -979,8 +950,7 @@ private fun SelectedCalibrationTooltip(
         ) {
             Text(
                 text = "$sourceLabel ${formatCalibrationValue(row.sourceValue, isMmol)} \u2192 ${formatCalibrationValue(row.referenceValue, isMmol)}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleMediumEmphasized,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1029,3 +999,4 @@ private fun formatCoefficientValue(value: Float): String {
         String.format(Locale.getDefault(), "%.2f", value)
     }
 }
+

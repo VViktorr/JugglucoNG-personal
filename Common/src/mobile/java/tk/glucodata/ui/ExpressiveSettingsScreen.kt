@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
@@ -24,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -33,7 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material3.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -53,6 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import tk.glucodata.ui.components.TabScreenDefaults
 import tk.glucodata.ui.components.TabScreenHeader
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.util.findActivity
 import tk.glucodata.ui.util.fullRestart
 import tk.glucodata.ui.util.hardRestart
@@ -311,7 +311,7 @@ fun ExpressiveSettingsScreen(
 
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.manual_calibration),
-                    subtitle = "$calibrationModeLabel - ${
+                    subtitle = "$calibrationModeLabel · ${
                         stringResource(
                             if (calibrationEnabled) R.string.enabled_status else R.string.disabled_status
                         )
@@ -459,6 +459,7 @@ fun ExpressiveSettingsScreen(
             val xdripEnabled by viewModel.xDripBroadcastEnabled.collectAsStateWithLifecycle()
             val glucodataBroadcastEnabled by viewModel.glucodataBroadcastEnabled.collectAsStateWithLifecycle()
             val broadcastComputedTrend by viewModel.broadcastComputedTrend.collectAsStateWithLifecycle()
+            val xdripReportAsLibre2 by viewModel.xdripReportAsLibre2.collectAsStateWithLifecycle()
 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingsSwitchItem(
@@ -479,6 +480,19 @@ fun ExpressiveSettingsScreen(
                     position = CardPosition.MIDDLE,
                     onCheckedChange = { viewModel.toggleXDripBroadcast(it) }
                 )
+                // Only the xDrip-style broadcast carries the source name. Stay visible while
+                // enabled, so turning the broadcast off does not strand the claim out of reach.
+                if (xdripEnabled || xdripReportAsLibre2) {
+                    SettingsSwitchItem(
+                        title = stringResource(R.string.xdrip_report_as_libre2_title),
+                        subtitle = stringResource(R.string.xdrip_report_as_libre2_desc),
+                        checked = xdripReportAsLibre2,
+                        icon = Icons.Default.Badge,
+                        iconTint = exchangeColor,
+                        position = CardPosition.MIDDLE,
+                        onCheckedChange = { viewModel.setXdripReportAsLibre2(it) }
+                    )
+                }
                 SettingsSwitchItem(
                     title = stringResource(R.string.aaps_broadcast),
                     subtitle = stringResource(R.string.glucodata_subtitle),
@@ -1043,17 +1057,9 @@ fun PredictiveSimulationSettingsScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.predictive_simulation_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.navigate_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            AppTopBar(
+                title = stringResource(R.string.predictive_simulation_title),
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     ) { padding ->
@@ -1833,6 +1839,7 @@ private fun LanguagePickerDialog(onDismiss: () -> Unit) {
         "Chinese" to "zh",
         "German" to "de",
         "French" to "fr",
+        "Hungarian" to "hu",
         "Italian" to "it",
         "Dutch" to "nl",
         "Polish" to "pl",
@@ -1939,3 +1946,4 @@ private fun hasActiveLibreSensorForLibreView(): Boolean = runCatching {
         kind == SensorSourceResolver.SENSOR_KIND_LIBRE2 || kind == SensorSourceResolver.SENSOR_KIND_LIBRE3
     }
 }.getOrDefault(false)
+

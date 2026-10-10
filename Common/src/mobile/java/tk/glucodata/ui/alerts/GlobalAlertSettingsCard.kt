@@ -46,11 +46,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import tk.glucodata.ui.components.IconTile
 import tk.glucodata.BuildConfig
 import tk.glucodata.R
 import tk.glucodata.alerts.AlertConfig
 import tk.glucodata.alerts.AlertType
-import tk.glucodata.ui.components.IconTile
 import tk.glucodata.ui.components.StyledSwitch
 
 @Composable
@@ -268,3 +268,4 @@ internal fun AlertConfig.sameMasterDraft(other: AlertConfig): Boolean {
         soundDelaySeconds == other.soundDelaySeconds &&
         defaultSnoozeMinutes == other.defaultSnoozeMinutes
 }
+

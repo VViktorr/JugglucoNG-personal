@@ -47,7 +47,7 @@ fun CloneSourceMark(
             modifier = Modifier.size(iconSize),
         )
         if (showLabel) {
-            Spacer(modifier = Modifier.width(5.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = stringResource(R.string.clone_source_label),
                 style = textStyle,
@@ -57,3 +57,4 @@ fun CloneSourceMark(
         }
     }
 }
+

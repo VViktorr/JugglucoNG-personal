@@ -51,7 +51,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.BatterySaver
@@ -85,8 +84,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -110,9 +107,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import tk.glucodata.ui.components.IconTile
 import tk.glucodata.Natives
 import tk.glucodata.R
-import tk.glucodata.ui.components.IconTile
 import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.SensorSourceResolver
 import tk.glucodata.alerts.AlertRepository
@@ -799,10 +796,9 @@ private fun isLibreSensorId(sensorId: String): Boolean {
             SensorSourceResolver.SENSOR_KIND_UNKNOWN
         )
     }.getOrDefault(SensorSourceResolver.SENSOR_KIND_UNKNOWN)
-    if (kind == SensorSourceResolver.SENSOR_KIND_LIBRE2 ||
-        kind == SensorSourceResolver.SENSOR_KIND_LIBRE3
-    ) {
-        return true
+    if (kind != SensorSourceResolver.SENSOR_KIND_UNKNOWN) {
+        // Includes the managed families, which native alone calls Libre 2 by elimination.
+        return SensorSourceResolver.isLibreKind(kind)
     }
     val sensorPtr = runCatching { Natives.str2sensorptr(sensorId) }.getOrDefault(0L)
     if (sensorPtr != 0L) {
@@ -1194,3 +1190,4 @@ private fun Context.startReadinessSettingsActivity(action: CgmReadinessAction) {
         }
     }
 }
+

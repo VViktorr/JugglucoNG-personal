@@ -19,14 +19,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -54,11 +52,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import tk.glucodata.ui.components.IconTile
+import tk.glucodata.ui.components.IconTileDefaults
 import tk.glucodata.Applic
 import tk.glucodata.GlucoseRangeColors
 import tk.glucodata.Notify
 import tk.glucodata.R
 import tk.glucodata.alerts.*
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.SettingsItem
 import tk.glucodata.ui.components.StyledSwitch
 import tk.glucodata.ui.components.CardPosition as SettingsItemPosition
@@ -186,16 +187,9 @@ fun AlertSettingsScreen(
     CompositionLocalProvider(LocalAlertsAdvancedOpen provides advancedOpen) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.glucose_alerts_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.navigate_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
+            AppTopBar(
+                title = stringResource(R.string.glucose_alerts_title),
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     ) { padding ->
@@ -599,7 +593,6 @@ fun AddCustomAlertButton(text: String, onClick: () -> Unit) {
     FilledTonalButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(50), // Fully rounded
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
@@ -624,7 +617,7 @@ fun CustomAlertCard(
 ) {
     // Determine icon/color based on type to match AlertCard style
     val icon = if (alert.type == CustomAlertType.HIGH) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown
-    val isDark = isSystemInDarkTheme()
+    val isDark = tk.glucodata.ui.isAppInDarkTheme()
     val accentColor = if (alert.type == CustomAlertType.HIGH) {
         Color(GlucoseRangeColors.high(isDark))
     } else {
@@ -686,22 +679,13 @@ fun CustomAlertCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Colored icon container (Identical to AlertCard)
-                Surface(
-                    modifier = Modifier.size(40.dp),
-                    shape = CircleShape,
-                    color = accentColor.copy(alpha = 0.12f)
-                ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Icon(icon, null, tint = accentColor, modifier = Modifier.size(20.dp))
-                    }
-                }
+                IconTile(icon = icon, tint = accentColor)
 
                 // Title and subtitle
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMediumEmphasized,
-                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
@@ -895,20 +879,7 @@ private fun SliderSettingsItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.Top
         ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            IconTile(icon = icon, tint = MaterialTheme.colorScheme.secondary)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -950,9 +921,7 @@ private fun SectionHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMediumEmphasized,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
-        )
+            color = MaterialTheme.colorScheme.primary,)
     }
 }
 
@@ -999,8 +968,8 @@ private fun AlertCard(
     onConfigChange: (AlertConfig) -> Unit,
     onPickSound: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val (icon, accentColor) = getAlertIconAndColor(config.type, isDark)
+    val isDark = tk.glucodata.ui.isAppInDarkTheme()
+    val (icon, accentColor) = getAlertIconAndColor(config.type, isDark, MaterialTheme.colorScheme)
     val chevronRotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         label = "standardAlertChevron"
@@ -1022,32 +991,13 @@ private fun AlertCard(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Colored icon container
-                Surface(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(end = 0.dp),
-                    shape = CircleShape,
-                    color = accentColor.copy(alpha = 0.12f)
-                )
-                {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = accentColor,
-                            modifier = Modifier.size(20.dp),
-
-                            )
-                    }
-                }
+                IconTile(icon = icon, tint = accentColor)
 
                 // Title and subtitle
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = stringResource(config.type.nameResId),
                         style = MaterialTheme.typography.titleMediumEmphasized,
-                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     val subtitle = buildString {
@@ -1921,9 +1871,7 @@ private fun TimeChip(
             )
             Text(
                 text = formatTime(hour, minute),
-                style = MaterialTheme.typography.titleMediumEmphasized,
-                fontWeight = FontWeight.Bold
-            )
+                style = MaterialTheme.typography.titleMediumEmphasized,)
         }
     }
     
@@ -1963,41 +1911,6 @@ internal fun formatTimeRange(start: Int, end: Int): String {
     return "${formatHour(start)}–${formatHour(end)}"
 }
 
-
-@Composable
-private fun AlertChoiceChip(
-    selected: Boolean,
-    onClick: () -> Unit,
-    text: String
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = if (selected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            Color.Transparent
-        },
-        contentColor = if (selected) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-        border = if (selected) {
-            null
-        } else {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-        }
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.labelLarge
-        )
-    }
-}
 // === NEW: Retry Settings ===
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -2038,18 +1951,24 @@ internal fun RetrySettings(
                 Spacer(Modifier.height(4.dp))
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    AlertChoiceChip(
+                    FilterChip(
                         selected = intervalMinutes <= 0,
                         onClick = { onIntervalChange(0) },
-                        text = stringResource(R.string.retry_constantly)
+                        label = {
+                            Text(
+                                text = stringResource(R.string.retry_constantly),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     )
                     listOf(1, 2, 3, 5, 10, 15).forEach { minutes ->
-                        AlertChoiceChip(
+                        FilterChip(
                             selected = intervalMinutes == minutes,
                             onClick = { onIntervalChange(minutes) },
-                            text = stringResource(R.string.minutes_short_format, minutes)
+                            label = { Text(stringResource(R.string.minutes_short_format, minutes)) }
                         )
                     }
                 }
@@ -2060,13 +1979,19 @@ internal fun RetrySettings(
                 Spacer(Modifier.height(4.dp))
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(0 to stringResource(R.string.retry_forever), 1 to "1", 2 to "2", 3 to "3", 5 to "5").forEach { (count, label) ->
-                        AlertChoiceChip(
+                        FilterChip(
                             selected = retryCount == count,
                             onClick = { onCountChange(count) },
-                            text = label
+                            label = {
+                                Text(
+                                    text = label,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         )
                     }
                 }
@@ -2077,7 +2002,8 @@ internal fun RetrySettings(
 
 // ---- Helper functions ----
 
-private fun getAlertIconAndColor(type: AlertType, isDark: Boolean): Pair<ImageVector, Color> {
+/** Glucose alerts wear their range colour; the rest take theme roles (system = secondary). */
+private fun getAlertIconAndColor(type: AlertType, isDark: Boolean, scheme: ColorScheme): Pair<ImageVector, Color> {
     return when (type) {
         AlertType.VERY_LOW -> Icons.Default.Warning to Color(GlucoseRangeColors.veryLow(isDark))
         AlertType.LOW -> Icons.Default.ArrowDownward to Color(GlucoseRangeColors.low(isDark))
@@ -2088,10 +2014,10 @@ private fun getAlertIconAndColor(type: AlertType, isDark: Boolean): Pair<ImageVe
         AlertType.FALLING_FAST -> Icons.AutoMirrored.Filled.TrendingDown to Color(GlucoseRangeColors.veryLow(isDark))
         AlertType.RISING_FAST -> Icons.AutoMirrored.Filled.TrendingUp to Color(GlucoseRangeColors.veryHigh(isDark))
         AlertType.PERSISTENT_HIGH -> Icons.Default.Timer to Color(GlucoseRangeColors.veryHigh(isDark))
-        AlertType.MISSED_READING -> Icons.Default.SignalWifiOff to Color(0xFF78909C)
-        AlertType.LOSS -> Icons.Default.BluetoothDisabled to Color(0xFF90A4AE)
-        AlertType.SENSOR_EXPIRY -> Icons.Default.Schedule to Color(0xFF7E57C2)
-        else -> Icons.Default.Notifications to Color(0xFF42A5F5)  // Default blue
+        AlertType.MISSED_READING -> Icons.Default.SignalWifiOff to scheme.secondary
+        AlertType.LOSS -> Icons.Default.BluetoothDisabled to scheme.secondary
+        AlertType.SENSOR_EXPIRY -> Icons.Default.Schedule to scheme.tertiary
+        else -> Icons.Default.Notifications to scheme.primary
     }
 }
 
@@ -2194,25 +2120,13 @@ internal fun ExpressiveToggleCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon with tinted background
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = iconTint.copy(alpha = if (checked) 0.2f else 0.1f),
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            
-            Spacer(Modifier.width(16.dp))
+            IconTile(
+                icon = icon,
+                tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
+                containerColor = IconTileDefaults.toggleContainerColor(iconTint, checked),
+            )
+
+            Spacer(Modifier.width(IconTileDefaults.Gap))
             
             // Text content
             Column(modifier = Modifier.weight(1f)) {
@@ -2359,3 +2273,4 @@ internal fun ClickableToggleRow(
         )
     }
 }
+

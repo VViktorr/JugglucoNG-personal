@@ -224,7 +224,7 @@ fun ExpressiveColorPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 tk.glucodata.ui.components.ExpressiveHueWheelPicker(
                     hue = colorState.hue,
                     onHueChange = { hue ->
@@ -382,3 +382,4 @@ private fun parseColorHex(raw: String): Int? {
     }
     return normalized.toLongOrNull(16)?.toInt()
 }
+

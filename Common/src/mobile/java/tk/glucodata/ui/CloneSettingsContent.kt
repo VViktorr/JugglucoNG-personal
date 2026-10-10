@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.QrCodeScanner
@@ -17,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import tk.glucodata.R
 import tk.glucodata.ui.components.*
+import tk.glucodata.ui.components.AppTopBar
 
 @Composable
 internal fun CloneSettingsContent(
@@ -139,3 +139,4 @@ internal fun CloneSettingsContent(
         }
     }
 }
+

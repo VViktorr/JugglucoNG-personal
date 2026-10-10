@@ -33,7 +33,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -66,15 +65,15 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import tk.glucodata.ui.components.ConnectedButtonShapes
+import tk.glucodata.ui.components.IconTile
+import tk.glucodata.ui.components.IconTileDefaults
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.data.HistoryRepository
 import tk.glucodata.data.calibration.CalibrationEntity
 import tk.glucodata.data.calibration.CalibrationManager
-import tk.glucodata.ui.components.IconTile
-import tk.glucodata.ui.components.IconTileDefaults
-import tk.glucodata.ui.components.ConnectedButtonShapes
-import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.StableModalBottomSheet
 import tk.glucodata.ui.components.StyledSwitch
@@ -272,6 +271,7 @@ fun CalibrationListScreen(
         topBar = {
             if (isSelectionMode) {
                 // Selection Mode TopBar
+                // ui-guardrails: allow hand_built_top_bar - a contextual selection bar (close, count, select all), not a screen's top bar
                 TopAppBar(
                     title = { Text(stringResource(R.string.selected_count, selectedIds.size)) },
                     navigationIcon = {
@@ -1806,3 +1806,4 @@ private fun ClearOptionsBottomSheet(
         }
     }
 }
+

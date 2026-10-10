@@ -8,6 +8,7 @@ public final class SensorSourceResolver {
     public static final int SENSOR_KIND_ACCUCHEK = 0x20;
     public static final int SENSOR_KIND_AIDEX = 0x30;
     public static final int SENSOR_KIND_DEXCOM = 0x40;
+    public static final int SENSOR_KIND_CARESENS_AIR = 0x60;
 
     private SensorSourceResolver() {}
 
@@ -17,15 +18,23 @@ public final class SensorSourceResolver {
 
     public static String resolveXdripSourceInfo(String sensorId, int fallbackSensorGen) {
         final int sensorKind = resolveSensorKind(sensorId, fallbackSensorGen);
-        return switch (sensorKind) {
+        final String source = switch (sensorKind) {
             case SENSOR_KIND_LIBRE3 -> "Libre3";
             case SENSOR_KIND_LIBRE2 -> "Libre2";
             case SENSOR_KIND_DEXCOM -> "G7";
+            case SENSOR_KIND_CARESENS_AIR -> "CareSenseAir";
             case SENSOR_KIND_SIBIONICS -> "GS1Sb";
             case SENSOR_KIND_ACCUCHEK -> "AccuChek";
             case SENSOR_KIND_AIDEX, SENSOR_KIND_UNKNOWN -> "Libre2";
             default -> "Libre2";
         };
+        // Keep existing source resolution unless the user enables the new UI option.
+        return XdripReportAsLibre2.enabled() && sensorKind != SENSOR_KIND_LIBRE3
+                && sensorKind != SENSOR_KIND_DEXCOM ? "Libre2" : source;
+    }
+
+    public static boolean isLibreKind(int sensorKind) {
+        return sensorKind == SENSOR_KIND_LIBRE2 || sensorKind == SENSOR_KIND_LIBRE3;
     }
 
     public static int resolveSensorKind(String sensorId, int fallbackSensorGen) {
@@ -59,6 +68,7 @@ public final class SensorSourceResolver {
             case SENSOR_KIND_ACCUCHEK -> SENSOR_KIND_ACCUCHEK;
             case SENSOR_KIND_AIDEX -> SENSOR_KIND_AIDEX;
             case SENSOR_KIND_DEXCOM -> SENSOR_KIND_DEXCOM;
+            case SENSOR_KIND_CARESENS_AIR -> SENSOR_KIND_CARESENS_AIR;
             default -> SENSOR_KIND_UNKNOWN;
         };
     }
@@ -70,8 +80,10 @@ public final class SensorSourceResolver {
             case SENSOR_KIND_ACCUCHEK -> "AccuChek";
             case SENSOR_KIND_AIDEX -> "AiDex";
             case SENSOR_KIND_DEXCOM -> "G7";
+            case SENSOR_KIND_CARESENS_AIR -> "CareSensAir";
             case SENSOR_KIND_LIBRE2 -> "Libre2";
             default -> "Unknown";
         };
     }
 }
+
