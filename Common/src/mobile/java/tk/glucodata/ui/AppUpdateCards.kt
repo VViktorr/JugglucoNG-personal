@@ -464,8 +464,7 @@ internal fun AppUpdateCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         modifier = Modifier.weight(1f)
                     )
                     if (onDismiss != null) {
