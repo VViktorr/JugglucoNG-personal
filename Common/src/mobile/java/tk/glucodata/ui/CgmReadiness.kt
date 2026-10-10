@@ -112,6 +112,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import tk.glucodata.Natives
 import tk.glucodata.R
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.SensorSourceResolver
 import tk.glucodata.alerts.AlertRepository
 import tk.glucodata.alerts.AlertType
@@ -194,16 +195,9 @@ fun CgmReadinessScreen(navController: NavController) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.cgm_readiness_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.navigate_back)
-                        )
-                    }
-                },
+            AppTopBar(
+                title = stringResource(R.string.cgm_readiness_title),
+                onNavigateBack = { navController.popBackStack() },
                 actions = {
                     IconButton(onClick = { refreshTick++ }) {
                         Icon(
@@ -212,7 +206,6 @@ fun CgmReadinessScreen(navController: NavController) {
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
