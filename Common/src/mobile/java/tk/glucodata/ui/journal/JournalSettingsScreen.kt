@@ -206,7 +206,7 @@ fun JournalSettingsScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item(key = "gate") {
                 MasterSwitchCard(
@@ -360,7 +360,7 @@ private fun JournalActionRow(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         JournalActionButton(
             text = stringResource(R.string.historyname),
@@ -386,7 +386,7 @@ private fun JournalActionButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.height(if (prominent) 48.dp else 36.dp),
-        shape = RoundedCornerShape(if (prominent) 24.dp else 20.dp),
+        shape = RoundedCornerShape(if (prominent) 28.dp else 20.dp),
         colors = if (prominent) {
             ButtonDefaults.filledTonalButtonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -395,14 +395,14 @@ private fun JournalActionButton(
         } else {
             ButtonDefaults.filledTonalButtonColors()
         },
-        contentPadding = PaddingValues(horizontal = if (prominent) 18.dp else 14.dp)
+        contentPadding = PaddingValues(horizontal = if (prominent) 16.dp else 16.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(if (prominent) 20.dp else 16.dp)
         )
-        Spacer(modifier = Modifier.width(if (prominent) 10.dp else 8.dp))
+        Spacer(modifier = Modifier.width(if (prominent) 8.dp else 8.dp))
         Text(
             text = text,
             style = if (prominent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
@@ -425,7 +425,7 @@ private fun JournalIntelligenceCard(
             .fillMaxWidth()
             .alpha(if (journalEnabled) 1f else 0.58f),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(30.dp)
+        shape = RoundedCornerShape(28.dp)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -441,7 +441,7 @@ private fun JournalIntelligenceCard(
                 onCheckedChange = onDoseCalculatorChange
             )
             HorizontalDivider(
-                modifier = Modifier.padding(start = 58.dp),
+                modifier = Modifier.padding(start = 56.dp),
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
             )
             JournalIntelligenceRow(
@@ -472,9 +472,9 @@ private fun JournalIntelligenceRow(
             .fillMaxWidth()
             .alpha(if (enabled) 1f else 0.52f)
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Surface(
             modifier = Modifier.size(44.dp),
@@ -486,7 +486,7 @@ private fun JournalIntelligenceRow(
                     imageVector = icon,
                     contentDescription = null,
                     tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -531,7 +531,7 @@ private fun JournalLibraryHub(
             subtitle = stringResource(R.string.journal_food_library_count, activeFoods, totalFoods),
             icon = Icons.Default.Restaurant,
             tint = MaterialTheme.colorScheme.secondary,
-            shape = RoundedCornerShape(topStart = 34.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 28.dp),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 28.dp),
             modifier = Modifier.weight(1f),
             onClick = onFoodClick
         )
@@ -540,7 +540,7 @@ private fun JournalLibraryHub(
             subtitle = stringResource(R.string.journal_insulin_library_count, activeInsulin, totalInsulin),
             icon = Icons.Default.Vaccines,
             tint = MaterialTheme.colorScheme.tertiary,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 34.dp, bottomStart = 28.dp, bottomEnd = 20.dp),
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 28.dp, bottomStart = 28.dp, bottomEnd = 20.dp),
             modifier = Modifier.weight(1f),
             onClick = onInsulinClick
         )
@@ -572,7 +572,7 @@ private fun JournalLibraryTile(
             Surface(
                 modifier = Modifier.size(48.dp),
                 color = tint.copy(alpha = 0.20f),
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -583,7 +583,7 @@ private fun JournalLibraryTile(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
@@ -676,7 +676,7 @@ fun JournalFoodLibraryScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item(key = "food_library_enabled") {
                 SettingsSwitchItem(
@@ -838,7 +838,7 @@ fun JournalInsulinLibraryScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (activePresets.isNotEmpty()) {
                 item(key = "active_group") {
@@ -942,7 +942,7 @@ private fun JournalPresetRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .alpha(if (isDisabled) 0.6f else 1f)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -1032,7 +1032,7 @@ private fun JournalFoodRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .alpha(if (isDisabled) 0.6f else 1f)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
@@ -1045,11 +1045,11 @@ private fun JournalFoodRow(
                         imageVector = Icons.Default.Restaurant,
                         contentDescription = null,
                         tint = tint,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -1068,9 +1068,9 @@ private fun JournalFoodRow(
                     }
                 }
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.padding(top = 6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 8.dp)
                 ) {
                     FoodMetricChip(
                         label = stringResource(R.string.carbo).trimTrailingLabel(),
@@ -1137,7 +1137,7 @@ private fun JournalFoodImportRow(
                         .size(9.dp)
                         .background(tint, CircleShape)
                 )
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = food.displayName,
@@ -1184,7 +1184,7 @@ private fun JournalFoodImportRow(
                     shrinkTowards = Alignment.Top
                 ) + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(top = 10.dp)) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
                     JournalFoodCompositionDetails(
                         details = details,
                         color = tint,
@@ -1216,14 +1216,14 @@ private fun JournalFoodLibrarySearchField(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 62.dp)
-                .padding(start = 14.dp, end = 4.dp),
+                .padding(start = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             BasicTextField(
@@ -1259,7 +1259,7 @@ private fun JournalFoodLibrarySearchField(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.clear),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(19.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -1275,11 +1275,11 @@ private fun FoodMetricChip(
 ) {
     Surface(
         color = tint.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(14.dp)
+        shape = RoundedCornerShape(12.dp)
     ) {
         Text(
             text = if (label.isBlank()) value else "$label $value",
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -1351,7 +1351,7 @@ private fun JournalFoodSheet(
                             onClick = { draft = draft.copy(isArchived = !draft.isArchived) },
                             modifier = Modifier.height(40.dp),
                             shape = RoundedCornerShape(20.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = containerColor,
                                 contentColor = contentColor
@@ -1360,9 +1360,9 @@ private fun JournalFoodSheet(
                             Icon(
                                 imageVector = if (archived) Icons.Default.CheckCircle else Icons.Default.Block,
                                 contentDescription = null,
-                                modifier = Modifier.size(17.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(7.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = stringResource(if (archived) R.string.enable else R.string.disable),
                                 style = MaterialTheme.typography.labelLarge
@@ -1395,7 +1395,7 @@ private fun JournalFoodSheet(
             }
 
             item(key = "macros") {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     JournalFoodEditorField(
                         value = draft.carbsText,
                         onValueChange = { draft = draft.copy(carbsText = it) },
@@ -1491,13 +1491,13 @@ private fun JournalFoodNameField(
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 68.dp)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
@@ -1537,14 +1537,14 @@ private fun JournalFoodEditorField(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 68.dp)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             FilledTonalIconButton(
@@ -1733,7 +1733,7 @@ private fun JournalInsulinPresetSheet(
                             onClick = { toggleArchivedAndPersist() },
                             modifier = Modifier.height(40.dp),
                             shape = RoundedCornerShape(20.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = containerColor,
                                 contentColor = contentColor
@@ -1742,9 +1742,9 @@ private fun JournalInsulinPresetSheet(
                             Icon(
                                 imageVector = if (archived) Icons.Default.CheckCircle else Icons.Default.Block,
                                 contentDescription = null,
-                                modifier = Modifier.size(17.dp)
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(7.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = stringResource(
                                     if (archived) R.string.enable else R.string.disable
@@ -1764,7 +1764,7 @@ private fun JournalInsulinPresetSheet(
                             if (draft.isArchived) {
                                 Modifier.background(
                                     color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.08f),
-                                    shape = RoundedCornerShape(22.dp)
+                                    shape = RoundedCornerShape(20.dp)
                                 )
                             } else {
                                 Modifier
@@ -1862,11 +1862,11 @@ private fun JournalInsulinPresetSheet(
                         isSteadyState || isReferenceOnly -> MaterialTheme.colorScheme.tertiaryContainer
                         else -> MaterialTheme.colorScheme.primaryContainer
                     },
-                    shape = RoundedCornerShape(18.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = stringResource(
@@ -1904,7 +1904,7 @@ private fun JournalInsulinPresetSheet(
                                 Modifier
                                     .background(
                                         color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.05f),
-                                        shape = RoundedCornerShape(22.dp)
+                                        shape = RoundedCornerShape(20.dp)
                                     )
                                     .padding(12.dp)
                             } else {
@@ -1964,7 +1964,7 @@ private fun JournalInsulinPresetSheet(
                                     )
                                     selectedPointIndex = defaultSelectedPointIndex(defaultCurve)
                                 },
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                                 modifier = Modifier
                                     .height(32.dp)
                                     .widthIn(max = 132.dp)
@@ -1990,7 +1990,7 @@ private fun JournalInsulinPresetSheet(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                         }
                         Text(
                             text = curveWindowSummary(draft.curvePoints, draft.curveProfileId),
@@ -2148,9 +2148,9 @@ private fun JournalCompactSwitchRow(
         shape = RoundedCornerShape(16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Surface(
                 modifier = Modifier.size(44.dp),
@@ -2209,7 +2209,7 @@ private fun CompactPresetToggleRow(
             .alpha(if (enabled) 1f else 0.5f)
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
             .padding(contentPadding)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -2257,7 +2257,7 @@ private fun SelectedCurvePointEditor(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2280,7 +2280,7 @@ private fun SelectedCurvePointEditor(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
                 value = minuteText,
@@ -2512,13 +2512,13 @@ private fun JournalCurvePreview(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface
     ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp)
+                .padding(12.dp)
         ) {
             if (normalizedPoints.size < 2) return@Canvas
             val maxMinute = normalizedPoints.last().minute.coerceAtLeast(1).toFloat()
