@@ -3572,6 +3572,11 @@ fun InteractiveGlucoseChart(
             val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to chipPlacements[index].box
             }.toMap()
+            // Do not give fully folded chips invisible touch targets. Keep tucked chips
+            // behind their front, so the front remains the primary interactive surface.
+            val chipPlacementById = orderedChipMarkers.mapIndexed { index, marker ->
+                marker.entryId to chipPlacements[index]
+            }.toMap()
 
             Canvas(
                 modifier = Modifier
@@ -3604,12 +3609,14 @@ fun InteractiveGlucoseChart(
             visibleOverlayMarkers.forEach { marker ->
                 val markerX = markerXById[marker.entryId] ?: return@forEach
                 val chipBox = chipBoxById[marker.entryId] ?: return@forEach
+                val placement = chipPlacementById[marker.entryId] ?: return@forEach
+                if (placement.folded) return@forEach
                 JournalMarkerChip(
                     marker = marker,
                     activePointerIds = activeJournalMarkerPointers,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .zIndex(1.5f)
+                        .zIndex(if (placement.tuck == null) 1.5f else 1.4f - placement.depth * 0.001f)
                         .offset {
                             androidx.compose.ui.unit.IntOffset(
                                 x = chipBox.left.toInt(),
