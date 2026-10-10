@@ -3625,6 +3625,13 @@ fun InteractiveGlucoseChart(
                 group.forEach { index -> chipGroupById[orderedChipMarkers[index].entryId] = group }
             }
             val expandedGroup = expandedJournalChipId?.let(chipGroupById::get)
+            // Panning, filtering or zooming can remove the front of an open pile.
+            // Close it instead of retaining a stale expansion across later frames.
+            LaunchedEffect(expandedJournalChipId, expandedGroup != null) {
+                if (expandedJournalChipId != null && expandedGroup == null) {
+                    expandedJournalChipId = null
+                }
+            }
             val chipHiddenCounts = chipGroups.associate { group ->
                 orderedChipMarkers[group[0]].entryId to (group.size - 1)
             }
