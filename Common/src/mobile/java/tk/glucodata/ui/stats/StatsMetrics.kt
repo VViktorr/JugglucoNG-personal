@@ -696,7 +696,7 @@ internal fun metricSpec(
                     else -> R.string.risk_high
                 }
             ),
-            meta = "$targetWord <2.5",
+            meta = "$targetWord ${String.format(Locale.getDefault(), "<%.1f", 2.5f)}",
             tone = if (summary.risk.lbgi < 2.5f) TirInRangeColor else TirVeryLowColor,
             infoText = stringResource(R.string.lbgi_description)
         )
@@ -710,7 +710,7 @@ internal fun metricSpec(
                     else -> R.string.risk_high
                 }
             ),
-            meta = "$targetWord <4.5",
+            meta = "$targetWord ${String.format(Locale.getDefault(), "<%.1f", 4.5f)}",
             tone = if (summary.risk.hbgi < 4.5f) TirInRangeColor else TirVeryHighColor,
             infoText = stringResource(R.string.hbgi_description)
         )
@@ -1643,9 +1643,8 @@ private fun MetricSheetRow(
         )
         Text(
             text = spec.value,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontFeatureSettings = "tnum",
-                fontWeight = FontWeight.SemiBold
+            style = MaterialTheme.typography.titleMediumEmphasized.copy(
+                fontFeatureSettings = "tnum"
             ),
             color = spec.tone.copy(alpha = if (selected) 1f else 0.55f),
             maxLines = 1
