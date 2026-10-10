@@ -1471,9 +1471,8 @@ private fun JournalFoodNameField(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 cursorBrush = SolidColor(accentColor),
-                textStyle = MaterialTheme.typography.titleLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                textStyle = MaterialTheme.typography.titleLargeEmphasized.copy(
+                    color = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -1537,9 +1536,8 @@ private fun JournalFoodEditorField(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                         cursorBrush = SolidColor(accentColor),
-                        textStyle = MaterialTheme.typography.titleLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.SemiBold
+                        textStyle = MaterialTheme.typography.titleLargeEmphasized.copy(
+                            color = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.weight(1f),
                         decorationBox = { innerTextField ->
