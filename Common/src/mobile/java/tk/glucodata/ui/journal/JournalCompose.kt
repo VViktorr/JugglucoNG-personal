@@ -2738,8 +2738,36 @@ private fun journalInlineChipContent(
         )
     }
     return when (entry.type) {
-        JournalEntryType.INSULIN, JournalEntryType.CARBS -> {
-            entry.amount?.let { journalMarkerAmountText(entry.type, it) }.orEmpty()
+        JournalEntryType.INSULIN -> {
+            val amount = entry.amount?.let { Applic.app.getString(R.string.unit_insulin_value, formatFloatForEditor(it)) }
+            val label = insulinPreset?.displayName.cleanJournalChipText()
+                ?: entry.title.cleanJournalChipText()
+                ?: journalMarkerDetail(entry, insulinPreset, unit)
+            JournalInlineChipContent(
+                label = label,
+                value = amount?.takeUnless { it == label }
+            )
+        }
+
+        JournalEntryType.CARBS -> {
+            val amount = entry.amount?.let { Applic.app.getString(R.string.unit_carbs_value, formatFloatForEditor(it)) }
+            val label = food?.displayName.cleanJournalChipText()
+                ?: entry.title.cleanJournalChipText()
+                    ?.takeUnless(::isGenericCarbsChipTitle)
+                ?: Applic.app.getString(R.string.journal_type_food)
+            val macros = listOfNotNull(
+                entry.proteinGrams?.takeIf { it > 0f }?.let {
+                    Applic.app.getString(R.string.journal_food_protein_short, formatFloatForEditor(it))
+                },
+                entry.fatGrams?.takeIf { it > 0f }?.let {
+                    Applic.app.getString(R.string.journal_food_fat_short, formatFloatForEditor(it))
+                }
+            ).joinToString(" · ").takeIf { it.isNotBlank() }
+            JournalInlineChipContent(
+                label = label,
+                value = amount?.takeUnless { it == label },
+                detail = macros
+            )
         }
 
         JournalEntryType.FINGERSTICK -> {

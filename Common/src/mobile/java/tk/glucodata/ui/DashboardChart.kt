@@ -3516,6 +3516,7 @@ fun InteractiveGlucoseChart(
                 val amountFactor = (ln(1f + doseUnits) / ln(1f + insulinReferenceDoseUnits)).coerceIn(0.08f, 1f)
                 return insulinBaseCurveHeightPx + (insulinExtraCurveHeightPx * amountFactor)
             }
+            val journalChipMaxTopPx = (chartHeightPx - with(LocalDensity.current) { 34.dp.toPx() }).coerceAtLeast(journalChipMinTopPx)
             val connectorStrokePx = with(LocalDensity.current) { 0.85.dp.toPx() }
             val connectorUnderlapPx = with(LocalDensity.current) { 8.dp.toPx() }
             val insulinConnectorY = chartHeightPx - with(LocalDensity.current) { 1.dp.toPx() }
