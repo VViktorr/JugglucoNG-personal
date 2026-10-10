@@ -449,8 +449,8 @@ private fun CalibrationMetricTile(
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = label,
@@ -540,7 +540,7 @@ private fun CalibrationModelChart(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
         BoxWithConstraints(
@@ -840,7 +840,7 @@ private fun CalibrationModelLegend(
     disabledColor: Color,
     fitColor: Color
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             CalibrationLegendItem(
                 color = activeColor,
@@ -890,7 +890,7 @@ private fun CalibrationLegendItem(
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.54f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CalibrationLegendSwatch(
@@ -968,13 +968,13 @@ private fun SelectedCalibrationTooltip(
     Surface(
         onClick = { onEdit(row.calibration) },
         modifier = modifier.width(176.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
 //        tonalElevation = 2.dp,
 //        shadowElevation = 2.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
