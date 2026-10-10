@@ -30,8 +30,10 @@ import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationItemIconPosition
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarArrangement
+import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.MaterialTheme
@@ -992,10 +994,11 @@ fun MainApp(themeMode: ThemeMode, onThemeChanged: (ThemeMode) -> Unit) {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0), // Fix: Prevent double padding for child Scaffolds
             bottomBar = {
-                NavigationBar {
+                ShortNavigationBar(arrangement = ShortNavigationBarArrangement.EqualWeight) {
                     navItems.forEach { item ->
                         val isSelected = currentRoute == item.route || getParentRoute(currentRoute) == item.route
-                        NavigationBarItem(
+                        ShortNavigationBarItem(
+                            iconPosition = NavigationItemIconPosition.Top,
                             icon = {
                                 TabIcon(
                                     isSelected = isSelected,
