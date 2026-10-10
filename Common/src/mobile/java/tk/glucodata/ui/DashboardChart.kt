@@ -3672,7 +3672,12 @@ fun InteractiveGlucoseChart(
                     }
                 }
             } else emptyList()
-            var nextUnplacedChipIndex by remember(expandedJournalChipId) { mutableStateOf(0) }
+            // Keep overflow selection tied to the current members, not the number of
+            // taps on an older pile: panning may replace all of its hidden entries.
+            val overflowSelectionKey = unplacedExpandedIds.toList()
+            var nextUnplacedChipIndex by remember(expandedJournalChipId, overflowSelectionKey) {
+                mutableStateOf(0)
+            }
             // An item can enter or leave the unplaced set as the chart is panned.
             // Keep the selection index within the current set before opening an entry.
             val unplacedCount = unplacedExpandedIds.size
