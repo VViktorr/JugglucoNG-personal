@@ -146,7 +146,7 @@ fun DataSmoothingSettingsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 18.dp),
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Row(
@@ -176,7 +176,7 @@ fun DataSmoothingSettingsScreen(
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = if (isEnabled) {
                                 MaterialTheme.colorScheme.surfaceContainerHighest
                             } else {
