@@ -402,8 +402,7 @@ private fun CgmReadinessHero(snapshot: CgmReadinessSnapshot) {
                     } else {
                         stringResource(R.string.cgm_readiness_attention_title)
                     },
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleLargeEmphasized
                 )
                 Text(
                     text = if (ready) {
@@ -477,8 +476,7 @@ private fun CgmReadinessSummaryCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleMediumEmphasized,
                             modifier = Modifier.weight(1f)
                         )
 //                        CgmReadinessCountChip(snapshot = snapshot, items = items)
@@ -549,8 +547,7 @@ private fun CgmReadinessDetailRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = stringResource(item.titleRes),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         modifier = Modifier.weight(1f)
                     )
                     CgmStatusChip(status = item.status)
