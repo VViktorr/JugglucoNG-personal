@@ -3623,6 +3623,7 @@ fun InteractiveGlucoseChart(
             val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to chipPlacements[index].box
             }.toMap()
+            val chipPlacementBoxes = chipPlacements.map { it.box }
             val chipGroups = JournalChipLayout.piles(
                 chipPlacements,
                 minOverlapX = with(chipDensity) { 12.dp.toPx() },
@@ -3653,7 +3654,7 @@ fun InteractiveGlucoseChart(
             val spreadGroup = expandedGroup
             val spread = spreadGroup?.let { group ->
                 JournalChipLayout.spread(
-                    boxes = chipPlacements.map { it.box },
+                    boxes = chipPlacementBoxes,
                     members = group,
                     minX = 0f,
                     maxX = overlayDataWidthPx,
@@ -3678,13 +3679,13 @@ fun InteractiveGlucoseChart(
             // In closed piles, let one chip peek out in the direction it will
             // move on expansion. Keep the front on top and the rest hidden.
             val chipPeekOffsets = JournalChipLayout.peeks(
-                boxes = chipPlacements.map { it.box },
+                boxes = chipPlacementBoxes,
                 piles = chipGroups.filter { it !== expandedGroup },
                 visibleLayers = 1,
                 peek = with(chipDensity) { 8.dp.toPx() },
                 spreadOf = { members ->
                     JournalChipLayout.spread(
-                        boxes = chipPlacements.map { it.box },
+                        boxes = chipPlacementBoxes,
                         members = members,
                         minX = 0f,
                         maxX = overlayDataWidthPx,
