@@ -1341,28 +1341,28 @@ private fun GlycemicOverviewCard(
         TirRowDescriptor(
             band = TirBand.VERY_HIGH,
             label = stringResource(R.string.very_high),
-            rangeLabel = ">= ${formatMgDl(targets.veryHighMgDl, unit)}",
+            rangeLabel = "≥ ${formatMgDl(targets.veryHighMgDl, unit)}",
             percent = summary.tir.veryHighPercent,
             color = TirVeryHighColor
         ),
         TirRowDescriptor(
             band = TirBand.HIGH,
             label = stringResource(R.string.high_range),
-            rangeLabel = "${formatMgDl(targets.highMgDl, unit)}-${formatMgDl(targets.veryHighMgDl, unit)}",
+            rangeLabel = "${formatMgDl(targets.highMgDl, unit)}–${formatMgDl(targets.veryHighMgDl, unit)}",
             percent = summary.tir.highPercent,
             color = TirHighColor
         ),
         TirRowDescriptor(
             band = TirBand.IN_RANGE,
             label = stringResource(R.string.in_range),
-            rangeLabel = "${formatMgDl(targets.lowMgDl, unit)}-${formatMgDl(targets.highMgDl, unit)}",
+            rangeLabel = "${formatMgDl(targets.lowMgDl, unit)}–${formatMgDl(targets.highMgDl, unit)}",
             percent = summary.tir.inRangePercent,
             color = TirInRangeColor
         ),
         TirRowDescriptor(
             band = TirBand.LOW,
             label = stringResource(R.string.low_range),
-            rangeLabel = "${formatMgDl(targets.veryLowMgDl, unit)}-${formatMgDl(targets.lowMgDl, unit)}",
+            rangeLabel = "${formatMgDl(targets.veryLowMgDl, unit)}–${formatMgDl(targets.lowMgDl, unit)}",
             percent = summary.tir.lowPercent,
             color = TirLowColor
         ),
