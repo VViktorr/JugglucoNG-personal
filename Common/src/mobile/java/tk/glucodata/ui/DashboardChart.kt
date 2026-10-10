@@ -3521,7 +3521,11 @@ fun InteractiveGlucoseChart(
                 minX = 0f,
                 maxX = overlayDataWidthPx,
                 minTop = journalChipMinTopPx,
-                maxTop = journalChipMaxTopPx
+                maxTop = journalChipMaxTopPx,
+                // Without repeatReach the layout defaults to zero: identical doses
+                // cannot form a stable pile unless their anchors coincide exactly.
+                repeatReach = with(chipDensity) { 96.dp.toPx() },
+                maxStack = 4
             )
             fun chipBaseTop(marker: JournalChartMarker): Float = when (marker.type) {
                 JournalEntryType.FINGERSTICK ->
