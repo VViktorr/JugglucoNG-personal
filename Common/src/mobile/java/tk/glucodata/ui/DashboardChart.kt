@@ -3485,7 +3485,7 @@ fun InteractiveGlucoseChart(
             val chipTextMeasurer = rememberTextMeasurer()
             val chipDensity = LocalDensity.current
             val chipTextMaxWidthPx = with(chipDensity) { 88.dp.toPx() }
-            val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
+            val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp + 28.dp).toPx() }
             val chipHeightPx = maxOf(
                 chipTextMeasurer.measure("0", style = chipTextStyle, maxLines = 1).size.height.toFloat(),
                 with(chipDensity) { 14.dp.toPx() }
@@ -3584,6 +3584,9 @@ fun InteractiveGlucoseChart(
                 group.forEach { index -> chipGroupById[orderedChipMarkers[index].entryId] = group }
             }
             val expandedGroup = expandedJournalChipId?.let(chipGroupById::get)
+            val chipHiddenCounts = chipGroups.associate { group ->
+                orderedChipMarkers[group[0]].entryId to (group.size - 1)
+            }
             val spread = expandedGroup?.let { group ->
                 JournalChipLayout.spread(
                     boxes = chipPlacements.map { it.box },
@@ -3663,6 +3666,7 @@ fun InteractiveGlucoseChart(
                 JournalMarkerChip(
                     marker = marker,
                     activePointerIds = activeJournalMarkerPointers,
+                    hiddenCount = if (expandedGroup != null && chipGroupById[marker.entryId] === expandedGroup) 0 else chipHiddenCounts[marker.entryId] ?: 0,
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .zIndex(
@@ -4898,6 +4902,7 @@ fun InteractiveGlucoseChart(
 private fun JournalMarkerChip(
     marker: JournalChartMarker,
     activePointerIds: MutableSet<PointerId>,
+    hiddenCount: Int = 0,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -4934,6 +4939,15 @@ private fun JournalMarkerChip(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = 88.dp)
             )
+            if (hiddenCount > 0) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "+$hiddenCount",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = tint,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
