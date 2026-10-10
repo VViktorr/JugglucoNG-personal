@@ -3561,12 +3561,12 @@ fun InteractiveGlucoseChart(
             // A font-scale or density change alters the measured chip boxes; old
             // slots and tucks must not constrain the new layout.
             val chipPreviousSlots = remember(
-                chipLayoutZoom, chipHeightPx, chipDensity.density,
-                overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
+                chipLayoutZoom, chipHeightPx, chipDensity.density, chipDensity.fontScale,
+                chipTextStyle, overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
             ) { HashMap<Long, JournalChipSlot>() }
             val chipPreviousTucks = remember(
-                chipLayoutZoom, chipHeightPx, chipDensity.density,
-                overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
+                chipLayoutZoom, chipHeightPx, chipDensity.density, chipDensity.fontScale,
+                chipTextStyle, overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
             ) { HashMap<Long, Long>() }
             val chipIndexById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to index
@@ -3647,7 +3647,8 @@ fun InteractiveGlucoseChart(
             // Shifts from one expanded pile must not bias the layout of another.
             val chipSpreadShifts = remember(
                 chipLayoutZoom, expandedJournalChipId, chipHeightPx, chipDensity.density,
-                overlayDataWidthPx, journalChipMinTopPx, journalChipMaxTopPx
+                chipDensity.fontScale, chipTextStyle, overlayDataWidthPx,
+                journalChipMinTopPx, journalChipMaxTopPx
             ) { HashMap<Long, FloatArray>() }
             // Keep every member reachable on expansion, even in unusually dense
             // viewports; limiting this group without paging would hide entries.
