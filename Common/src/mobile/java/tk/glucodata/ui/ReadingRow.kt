@@ -135,6 +135,7 @@ fun ReadingRow(
     val activeColor = MaterialTheme.colorScheme.secondaryContainer
     val stockColor = MaterialTheme.colorScheme.surfaceContainerLow
     val staleColor = MaterialTheme.colorScheme.surfaceContainerHighest // Slightly darker/different
+    val dividerColor = MaterialTheme.colorScheme.outlineVariant
 
     val ageState = remember(point.timestamp) { mutableLongStateOf(System.currentTimeMillis() - point.timestamp) }
     // Timer to update age for the active item
@@ -641,7 +642,7 @@ fun ReadingRow(
                         .height(1.dp)
                         .drawBehind {
                             val alpha = if (isActive) activeRowDividerAlpha(ageState.longValue) else ROW_DIVIDER_ALPHA
-                            drawRect(MaterialTheme.colorScheme.outlineVariant.copy(alpha = alpha))
+                            drawRect(dividerColor.copy(alpha = alpha))
                         }
                 )
             }
