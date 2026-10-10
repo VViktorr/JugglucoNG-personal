@@ -477,6 +477,19 @@ class JournalChipLayoutTests {
     }
 
     @Test
+    fun fullSizeTouchTargetsReportOverflowWhenChartHasNoSpace() {
+        val boxes = List(4) { box(0f, 0f, width = 110f, height = 48f) }
+        val expanded = JournalChipLayout.spread(
+            boxes = boxes,
+            members = intArrayOf(0, 1, 2, 3),
+            minX = 0f, maxX = 110f, minTop = 0f, maxTop = 0f,
+            gapPx = 4f, ringStepPx = 8f, maxRadiusPx = 40f
+        )
+        assertEquals(3, expanded.stuckCount)
+        assertEquals(listOf(false, true, true, true), expanded.stuck.toList())
+    }
+
+    @Test
     fun expandedFullSizeTouchTargetsStayInsideChartBounds() {
         val boxes = listOf(
             box(80f, 60f, width = 110f, height = 48f),
