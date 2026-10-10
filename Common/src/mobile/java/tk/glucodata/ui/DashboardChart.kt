@@ -3763,6 +3763,12 @@ fun InteractiveGlucoseChart(
                     val markerX = markerXById[marker.entryId] ?: return@forEach
                     val chipBox = chipDisplayBoxes[marker.entryId] ?: return@forEach
                     if (!isChipVisible(marker.entryId)) return@forEach
+                    // The peeking layer is only a visual hint: its connector belongs
+                    // to the expanded state and would clutter the closed pile.
+                    val pile = chipGroupById[marker.entryId]
+                    if (pile != null && pile !== expandedGroup &&
+                        marker.entryId != orderedChipMarkers[pile[0]].entryId
+                    ) return@forEach
                     val sourceY = when (marker.type) {
                         JournalEntryType.FINGERSTICK -> marker.chartGlucoseValue
                             ?.let(overlayValueToY)
