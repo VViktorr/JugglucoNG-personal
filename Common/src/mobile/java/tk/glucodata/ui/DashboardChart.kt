@@ -3611,6 +3611,12 @@ fun InteractiveGlucoseChart(
                     }
                 }
             }
+            // Do not give fully folded chips invisible touch targets. Keep tucked chips
+            // behind their front, so the front remains the primary interactive surface.
+            val chipPlacementById = orderedChipMarkers.mapIndexed { index, marker ->
+                marker.entryId to chipPlacements[index]
+            }.toMap()
+
             fun isChipVisible(markerId: Long): Boolean {
                 val placement = chipPlacementById[markerId] ?: return false
                 val group = chipGroupById[markerId]
@@ -3619,11 +3625,6 @@ fun InteractiveGlucoseChart(
                 val position = group.indexOfFirst { orderedChipMarkers[it].entryId == markerId }
                 return position >= 0 && (spread?.stuck?.getOrNull(position) == false || position == 0)
             }
-            // Do not give fully folded chips invisible touch targets. Keep tucked chips
-            // behind their front, so the front remains the primary interactive surface.
-            val chipPlacementById = orderedChipMarkers.mapIndexed { index, marker ->
-                marker.entryId to chipPlacements[index]
-            }.toMap()
 
             Canvas(
                 modifier = Modifier
