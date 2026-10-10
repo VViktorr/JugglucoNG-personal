@@ -35,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -133,22 +136,17 @@ fun ReadingRow(
     val stockColor = MaterialTheme.colorScheme.surfaceContainerLow
     val staleColor = MaterialTheme.colorScheme.surfaceContainerHighest // Slightly darker/different
 
-    val ageState = remember(point.timestamp) { mutableStateOf(System.currentTimeMillis() - point.timestamp) }
+    val ageState = remember(point.timestamp) { mutableLongStateOf(System.currentTimeMillis() - point.timestamp) }
     // Timer to update age for the active item
     if (isActive) {
         LaunchedEffect(point.timestamp) {
             while (true) {
-                ageState.value = System.currentTimeMillis() - point.timestamp
+                ageState.longValue = System.currentTimeMillis() - point.timestamp
                 delay(1000) // Update every second
             }
         }
     }
 
-    val containerColor = if (isActive) {
-        activeRowColor(ageState.value, activeColor, stockColor, staleColor)
-    } else {
-        stockColor
-    }
 
     // Shape:
     // Active (Hero): "4dp bottom radius" to imply continuity. Top matches parent (16dp).
@@ -162,7 +160,6 @@ fun ReadingRow(
         else -> RectangleShape
     }
 
-    val dividerAlpha = if (isActive) activeRowDividerAlpha(ageState.value) else ROW_DIVIDER_ALPHA
 
     // --- ADVANCED TREND ENGINE ---
     // Calculate on the fly using the passed history subset. The engine reads
@@ -188,6 +185,14 @@ fun ReadingRow(
         modifier = modifier
             .fillMaxWidth()
             .then(
+                if (isActive) Modifier.drawBehind {
+                    drawOutline(
+                        outline = shape.createOutline(size, layoutDirection, this),
+                        color = activeRowColor(ageState.longValue, activeColor, stockColor, staleColor)
+                    )
+                } else Modifier
+            )
+            .then(
                 when {
                     onDeleteReading != null && hasValueClick -> Modifier.combinedClickable(
                         onClick = handlePrimaryValueClick,
@@ -202,7 +207,7 @@ fun ReadingRow(
                 }
             ),
         shape = shape,
-        color = containerColor,
+        color = if (isActive) Color.Transparent else stockColor,
         // User Request: Kill shadows (0dp)
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -629,10 +634,15 @@ fun ReadingRow(
             }
 
             if (index < totalCount - 1) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = dividerHorizontalInset),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = dividerAlpha),
-                    thickness = 1.dp
+                Spacer(
+                    modifier = Modifier
+                        .padding(horizontal = dividerHorizontalInset)
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .drawBehind {
+                            val alpha = if (isActive) activeRowDividerAlpha(ageState.longValue) else ROW_DIVIDER_ALPHA
+                            drawRect(MaterialTheme.colorScheme.outlineVariant.copy(alpha = alpha))
+                        }
                 )
             }
         }
