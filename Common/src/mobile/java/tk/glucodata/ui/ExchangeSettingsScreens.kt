@@ -2,6 +2,7 @@
 
 package tk.glucodata.ui
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -66,7 +67,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -326,7 +326,7 @@ fun WearOsConfigScreen(navController: NavController) {
     var autoSwitch by rememberSaveable { mutableStateOf(AutoSensorSwitch.isEnabled()) }
     var refreshingNodes by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf(WatchInterop.getWearSyncStatus()) }
-    val claimRevision by WearSensorClaimStatus.revision.collectAsState()
+    val claimRevision by WearSensorClaimStatus.revision.collectAsStateWithLifecycle()
 
     fun applyNodes(latest: List<WatchInterop.WearNodeInfo>) {
         nodes = latest
