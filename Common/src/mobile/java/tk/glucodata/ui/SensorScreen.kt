@@ -256,7 +256,7 @@ fun SensorScreen(
     viewModel: tk.glucodata.ui.viewmodel.SensorViewModel = viewModel(),
 ) {
     val context = LocalContext.current
-    val sensors by viewModel.sensors.collectAsState()
+    val sensors by viewModel.sensors.collectAsStateWithLifecycle()
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val compactLayout = adaptiveMetrics.isCompact
     val panelPadding = TabScreenDefaults.Gutter
