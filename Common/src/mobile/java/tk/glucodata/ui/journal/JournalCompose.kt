@@ -786,7 +786,7 @@ fun JournalEntrySheet(
                         noteFieldExpanded -> 3
                         else -> 1
                     },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -1628,7 +1628,7 @@ private fun JournalFoodLibrarySelector(
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         expanded = true
                     }
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -1638,7 +1638,7 @@ private fun JournalFoodLibrarySelector(
                         ?: MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(28.dp)
                 )
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = visibleItems.singleOrNull()?.displayName ?: stringResource(R.string.journal_add_food),
