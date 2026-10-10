@@ -5064,7 +5064,8 @@ private fun JournalMarkerChip(
     Surface(
         modifier = modifier.journalMarkerInput(activePointerIds, activate),
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
+        // Opaque backgrounds prevent labels in a stacked pile from bleeding through.
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(1.dp, tint.copy(alpha = 0.18f)),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
