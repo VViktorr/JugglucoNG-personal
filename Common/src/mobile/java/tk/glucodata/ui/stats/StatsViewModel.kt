@@ -492,7 +492,7 @@ class StatsViewModel : ViewModel() {
 
             historyRepository.getDisplayHistoryFlowForStats(serial, startTime)
                 .conflate()
-                .distinctUntilChangedBy(::historyEdgeSignature)
+                .distinctUntilChangedBy(::historySignature)
                 .collect { points ->
                     _historyPoints.value = points
                     _isLoading.value = false
@@ -1075,6 +1075,8 @@ class StatsViewModel : ViewModel() {
             hash = 31L * hash + java.lang.Float.floatToRawIntBits(point.value).toLong()
             hash = 31L * hash + java.lang.Float.floatToRawIntBits(point.rawValue).toLong()
             hash = 31L * hash + (point.sensorSerial?.hashCode()?.toLong() ?: 0L)
+            hash = 31L * hash + (point.sealedDisplayValue?.toRawBits()?.toLong() ?: 0L)
+            hash = 31L * hash + (point.sealedDisplayViewMode?.toLong() ?: -1L)
         }
 
         return StatsHistorySignature(
