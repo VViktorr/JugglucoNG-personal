@@ -1809,6 +1809,7 @@ fun InteractiveGlucoseChart(
     }
 
     val activeJournalMarkerPointers = remember { mutableSetOf<PointerId>() }
+    var expandedJournalChipId by remember { mutableStateOf<Long?>(null) }
 
 
 
@@ -3572,6 +3573,51 @@ fun InteractiveGlucoseChart(
             val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to chipPlacements[index].box
             }.toMap()
+            val chipGroups = JournalChipLayout.piles(
+                chipPlacements,
+                minOverlapX = with(chipDensity) { 12.dp.toPx() },
+                minOverlapY = with(chipDensity) { 8.dp.toPx() }
+            )
+            val chipGroupById = HashMap<Long, IntArray>()
+            chipGroups.forEach { group ->
+                group.forEach { index -> chipGroupById[orderedChipMarkers[index].entryId] = group }
+            }
+            val expandedGroup = expandedJournalChipId?.let(chipGroupById::get)
+            val spread = expandedGroup?.let { group ->
+                JournalChipLayout.spread(
+                    boxes = chipPlacements.map { it.box },
+                    members = group,
+                    minX = 0f,
+                    maxX = overlayDataWidthPx,
+                    minTop = journalChipMinTopPx,
+                    maxTop = journalChipMaxTopPx,
+                    gapPx = with(chipDensity) { 4.dp.toPx() },
+                    ringStepPx = with(chipDensity) { 8.dp.toPx() },
+                    maxRadiusPx = with(chipDensity) { 160.dp.toPx() }
+                )
+            }
+            val chipDisplayBoxes = HashMap(chipBoxById)
+            if (expandedGroup != null && spread != null) {
+                expandedGroup.forEachIndexed { position, index ->
+                    if (!spread.stuck[position]) {
+                        val markerId = orderedChipMarkers[index].entryId
+                        val box = chipPlacements[index].box
+                        val shift = spread.shifts[position]
+                        chipDisplayBoxes[markerId] = JournalChipBox(
+                            box.left + shift[0], box.top + shift[1],
+                            box.right + shift[0], box.bottom + shift[1]
+                        )
+                    }
+                }
+            }
+            fun isChipVisible(markerId: Long): Boolean {
+                val placement = chipPlacementById[markerId] ?: return false
+                val group = chipGroupById[markerId]
+                if (group == null) return !placement.folded
+                if (group !== expandedGroup) return markerId == orderedChipMarkers[group[0]].entryId
+                val position = group.indexOfFirst { orderedChipMarkers[it].entryId == markerId }
+                return position >= 0 && (spread?.stuck?.getOrNull(position) == false || position == 0)
+            }
             // Do not give fully folded chips invisible touch targets. Keep tucked chips
             // behind their front, so the front remains the primary interactive surface.
             val chipPlacementById = orderedChipMarkers.mapIndexed { index, marker ->
@@ -3585,8 +3631,8 @@ fun InteractiveGlucoseChart(
             ) {
                 visibleOverlayMarkers.forEach { marker ->
                     val markerX = markerXById[marker.entryId] ?: return@forEach
-                    val chipBox = chipBoxById[marker.entryId] ?: return@forEach
-                    if (chipPlacementById[marker.entryId]?.folded == true) return@forEach
+                    val chipBox = chipDisplayBoxes[marker.entryId] ?: return@forEach
+                    if (!isChipVisible(marker.entryId)) return@forEach
                     val sourceY = when (marker.type) {
                         JournalEntryType.FINGERSTICK -> marker.chartGlucoseValue
                             ?.let(overlayValueToY)
@@ -3609,9 +3655,9 @@ fun InteractiveGlucoseChart(
 
             visibleOverlayMarkers.forEach { marker ->
                 val markerX = markerXById[marker.entryId] ?: return@forEach
-                val chipBox = chipBoxById[marker.entryId] ?: return@forEach
+                val chipBox = chipDisplayBoxes[marker.entryId] ?: return@forEach
                 val placement = chipPlacementById[marker.entryId] ?: return@forEach
-                if (placement.folded) return@forEach
+                if (!isChipVisible(marker.entryId)) return@forEach
                 JournalMarkerChip(
                     marker = marker,
                     activePointerIds = activeJournalMarkerPointers,
@@ -3624,7 +3670,14 @@ fun InteractiveGlucoseChart(
                                 y = chipBox.top.toInt()
                             )
                         },
-                    onClick = { onJournalMarkerClick?.invoke(marker.entryId) }
+                    onClick = {
+                        val group = chipGroupById[marker.entryId]
+                        if (group != null && group !== expandedGroup) {
+                            expandedJournalChipId = orderedChipMarkers[group[0]].entryId
+                        } else {
+                            onJournalMarkerClick?.invoke(marker.entryId)
+                        }
+                    }
                 )
             }
 
