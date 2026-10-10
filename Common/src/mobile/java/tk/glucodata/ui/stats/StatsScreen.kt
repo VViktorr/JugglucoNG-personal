@@ -2327,10 +2327,10 @@ private fun AgpChart(
         ) {
             LegendDot(
                 color = targetBandColor,
-                label = "${stringResource(R.string.in_range)} ${formatMgDl(targets.lowMgDl, unit)}-${formatMgDl(targets.highMgDl, unit)}"
+                label = "${stringResource(R.string.in_range)} ${formatMgDl(targets.lowMgDl, unit)}–${formatMgDl(targets.highMgDl, unit)}"
             )
-            LegendDot(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), label = "P10-90")
-            LegendDot(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f), label = "IQR")
+            LegendDot(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), label = stringResource(R.string.report_p10_p90))
+            LegendDot(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f), label = stringResource(R.string.report_iqr_short))
             LegendDot(color = MaterialTheme.colorScheme.primary, label = stringResource(R.string.median))
             LegendDot(color = selectorColor, label = stringResource(R.string.stats_selected))
         }
