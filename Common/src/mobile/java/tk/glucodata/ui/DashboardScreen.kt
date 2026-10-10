@@ -1628,7 +1628,8 @@ fun DashboardScreen(
                 ) {
                         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                             key(sensorName) {
-                                DashboardChartSection(
+                                FontScaleCap {
+                                    DashboardChartSection(
                                     modifier = Modifier.fillMaxSize(),
                                     glucoseHistory = glucoseHistory,
                                     dataBounds = chartDataBounds,
@@ -1694,6 +1695,7 @@ fun DashboardScreen(
                                     },
                                     onViewportSnapshotChanged = { dashboardChartViewport = it }
                                 )
+                                }
                             }
                             journalActionTimestamp?.let { actionTimestamp ->
                                 JournalFloatingActionMenu(
@@ -1868,7 +1870,8 @@ fun DashboardScreen(
                                 .height(animatedChartItemHeight)
                         ) {
                             key(sensorName) {
-                                DashboardChartSection(
+                                FontScaleCap {
+                                    DashboardChartSection(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(bottom = 0.dp),
@@ -1937,6 +1940,7 @@ fun DashboardScreen(
                                     },
                                     onViewportSnapshotChanged = { dashboardChartViewport = it }
                                 )
+                                }
                             }
                             journalActionTimestamp?.let { actionTimestamp ->
                                 JournalFloatingActionMenu(
