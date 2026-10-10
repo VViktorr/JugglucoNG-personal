@@ -489,7 +489,7 @@ fun JournalEntrySheet(
         sheetState = sheetState,
         dragHandle = { CompactSheetDragHandle() },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         contentKey = draft.type,
     ) {
         LazyColumn(
@@ -514,15 +514,14 @@ fun JournalEntrySheet(
                                     else -> draft.type.labelRes()
                                 }
                             ),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.headlineSmallEmphasized
                         )
                         existingEntry?.source?.presentation()?.let { source ->
                             // The icon on the row only explains itself for NFC; here the
                             // origin is spelled out.
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
                                     imageVector = source.icon,
