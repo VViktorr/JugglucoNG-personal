@@ -3664,6 +3664,14 @@ fun InteractiveGlucoseChart(
                 marker.entryId to chipPlacements[index]
             }.toMap()
 
+            val unplacedExpandedIds = if (expandedGroup != null && spread != null) {
+                expandedGroup.mapIndexedNotNull { position, index ->
+                    orderedChipMarkers[index].entryId.takeIf {
+                        position > 0 && spread.stuck[position]
+                    }
+                }
+            } else emptyList()
+            var nextUnplacedChipIndex by remember(expandedJournalChipId) { mutableStateOf(0) }
             fun isChipVisible(markerId: Long): Boolean {
                 val placement = chipPlacementById[markerId] ?: return false
                 val group = chipGroupById[markerId]
@@ -3710,7 +3718,9 @@ fun InteractiveGlucoseChart(
                 JournalMarkerChip(
                     marker = marker,
                     activePointerIds = activeJournalMarkerPointers,
-                    hiddenCount = if (expandedGroup != null && chipGroupById[marker.entryId] === expandedGroup) 0 else chipHiddenCounts[marker.entryId] ?: 0,
+                    hiddenCount = if (expandedGroup != null && chipGroupById[marker.entryId] === expandedGroup) {
+                        if (marker.entryId == orderedChipMarkers[expandedGroup[0]].entryId) unplacedExpandedIds.size else 0
+                    } else chipHiddenCounts[marker.entryId] ?: 0,
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .zIndex(
@@ -3732,6 +3742,15 @@ fun InteractiveGlucoseChart(
                         val group = chipGroupById[marker.entryId]
                         if (group != null && group !== expandedGroup) {
                             expandedJournalChipId = orderedChipMarkers[group[0]].entryId
+                        } else if (group != null && group === expandedGroup &&
+                            marker.entryId == orderedChipMarkers[group[0]].entryId &&
+                            unplacedExpandedIds.isNotEmpty()
+                        ) {
+                            // The front cycles through entries that could not find a clear
+                            // spot, so a crowded pile never makes those entries unreachable.
+                            val id = unplacedExpandedIds[nextUnplacedChipIndex % unplacedExpandedIds.size]
+                            nextUnplacedChipIndex++
+                            onJournalMarkerClick?.invoke(id)
                         } else {
                             expandedJournalChipId = null
                             onJournalMarkerClick?.invoke(marker.entryId)
