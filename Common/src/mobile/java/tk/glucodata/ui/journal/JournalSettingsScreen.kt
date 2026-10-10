@@ -1277,14 +1277,14 @@ private fun JournalFoodSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .imePadding(),
-            contentPadding = PaddingValues(top = 4.dp, bottom = 18.dp),
+            contentPadding = PaddingValues(top = 4.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item(key = "header") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp),
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -1308,8 +1308,7 @@ private fun JournalFoodSheet(
                         }
                         FilledTonalButton(
                             onClick = { draft = draft.copy(isArchived = !draft.isArchived) },
-                            modifier = Modifier.height(40.dp),
-                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.heightIn(min = 40.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = containerColor,
@@ -1656,14 +1655,14 @@ private fun JournalInsulinPresetSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .imePadding(),
-            contentPadding = PaddingValues(top = 4.dp, bottom = 18.dp),
+            contentPadding = PaddingValues(top = 4.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item(key = "header") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp),
+                        .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -1689,8 +1688,7 @@ private fun JournalInsulinPresetSheet(
                         }
                         FilledTonalButton(
                             onClick = { toggleArchivedAndPersist() },
-                            modifier = Modifier.height(40.dp),
-                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.heightIn(min = 40.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = containerColor,
