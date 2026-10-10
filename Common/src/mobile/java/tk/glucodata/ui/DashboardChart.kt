@@ -3612,6 +3612,7 @@ fun InteractiveGlucoseChart(
             val chipHiddenCounts = chipGroups.associate { group ->
                 orderedChipMarkers[group[0]].entryId to (group.size - 1)
             }
+            val chipSpreadShifts = remember(chipLayoutZoom) { HashMap<Long, FloatArray>() }
             val spread = expandedGroup?.let { group ->
                 JournalChipLayout.spread(
                     boxes = chipPlacements.map { it.box },
@@ -3622,9 +3623,20 @@ fun InteractiveGlucoseChart(
                     maxTop = journalChipMaxTopPx,
                     gapPx = with(chipDensity) { 4.dp.toPx() },
                     ringStepPx = with(chipDensity) { 8.dp.toPx() },
-                    maxRadiusPx = with(chipDensity) { 160.dp.toPx() }
+                    maxRadiusPx = with(chipDensity) { 160.dp.toPx() },
+                    preferred = Array(group.size) { slot ->
+                        chipSpreadShifts[orderedChipMarkers[group[slot]].entryId]
+                    }
                 )
             }
+            if (expandedGroup != null && spread != null) {
+                expandedGroup.forEachIndexed { position, index ->
+                    val id = orderedChipMarkers[index].entryId
+                    if (spread.stuck[position]) chipSpreadShifts.remove(id)
+                    else chipSpreadShifts[id] = spread.shifts[position]
+                }
+            }
+            if (chipSpreadShifts.size > orderedChipMarkers.size * 2 + 64) chipSpreadShifts.clear()
             val chipDisplayBoxes = HashMap(chipBoxById)
             if (expandedGroup != null && spread != null) {
                 expandedGroup.forEachIndexed { position, index ->
