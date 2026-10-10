@@ -148,6 +148,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import tk.glucodata.ui.components.TabScreenDefaults
+import tk.glucodata.ui.components.TabScreenHeader
 import tk.glucodata.R
 import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.StableModalBottomSheet
@@ -333,7 +335,7 @@ fun StatsScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp)
+            contentPadding = TabScreenDefaults.contentPadding()
         ) {
             item(key = "header") {
                 HeaderBlock(onShareClick = {
@@ -1205,24 +1207,9 @@ private val StatsCardShape = RoundedCornerShape(topStart = 28.dp, topEnd = 16.dp
 @Composable
 private fun HeaderBlock(
     onShareClick: () -> Unit
-)
-{
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(R.string.statistics_title),
-            style = MaterialTheme.typography.displaySmall,
-            modifier = Modifier.padding(start = 16.dp)
-        )
-        IconButton(
-            onClick = onShareClick,
-            modifier = Modifier.size(40.dp)
-        ) {
+) {
+    TabScreenHeader(title = stringResource(R.string.statistics_title)) {
+        IconButton(onClick = onShareClick) {
             Icon(
                 imageVector = Icons.Filled.Share,
                 contentDescription = stringResource(R.string.export),
