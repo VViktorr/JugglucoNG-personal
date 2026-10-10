@@ -1,5 +1,6 @@
 package tk.glucodata.ui.calibration
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -39,7 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -131,14 +131,14 @@ fun CalibrationModelTableScreen(
     val currentSensor = SensorIdentity.resolveAppSensorId(sensorId) ?: sensorId
     val allCalibrations by CalibrationManager
         .getCalibrationsFlow()
-        .collectAsState(initial = CalibrationManager.getCachedCalibrations())
-    val calibrationRevision by CalibrationManager.revision.collectAsState()
-    val algorithmForRaw by CalibrationManager.algorithmForRaw.collectAsState()
-    val algorithmForAuto by CalibrationManager.algorithmForAuto.collectAsState()
-    val applyToPast by CalibrationManager.applyToPast.collectAsState()
-    val lockPastHistory by CalibrationManager.lockPastHistory.collectAsState()
-    val keepDisabledHistory by CalibrationManager.keepDisabledHistory.collectAsState()
-    val weightMode by CalibrationManager.weightMode.collectAsState()
+        .collectAsStateWithLifecycle(initialValue = CalibrationManager.getCachedCalibrations())
+    val calibrationRevision by CalibrationManager.revision.collectAsStateWithLifecycle()
+    val algorithmForRaw by CalibrationManager.algorithmForRaw.collectAsStateWithLifecycle()
+    val algorithmForAuto by CalibrationManager.algorithmForAuto.collectAsStateWithLifecycle()
+    val applyToPast by CalibrationManager.applyToPast.collectAsStateWithLifecycle()
+    val lockPastHistory by CalibrationManager.lockPastHistory.collectAsStateWithLifecycle()
+    val keepDisabledHistory by CalibrationManager.keepDisabledHistory.collectAsStateWithLifecycle()
+    val weightMode by CalibrationManager.weightMode.collectAsStateWithLifecycle()
 
     val isCalibrationEnabled = remember(isRawMode, currentSensor, calibrationRevision) {
         CalibrationManager.isEnabledForMode(isRawMode, currentSensor)
