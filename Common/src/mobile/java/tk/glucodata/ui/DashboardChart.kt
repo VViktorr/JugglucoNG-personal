@@ -5057,8 +5057,12 @@ private fun JournalMarkerChip(
     onClick: () -> Unit
 ) {
     val tint = Color(marker.accentColor)
+    // Keep the pointer gesture alive while the chart recomposes during a pan or zoom.
+    // A new inline onClick lambda should not cancel an in-flight touch gesture.
+    val currentOnClick by rememberUpdatedState(onClick)
+    val activate = remember { { currentOnClick() } }
     Surface(
-        modifier = modifier.journalMarkerInput(activePointerIds, onClick),
+        modifier = modifier.journalMarkerInput(activePointerIds, activate),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
         border = BorderStroke(1.dp, tint.copy(alpha = 0.18f)),
