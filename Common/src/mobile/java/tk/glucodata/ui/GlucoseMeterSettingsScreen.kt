@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import androidx.compose.foundation.layout.heightIn
+import tk.glucodata.ui.components.AppTopBar
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -255,13 +258,9 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.meterlist)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+            AppTopBar(
+                title = stringResource(R.string.meterlist),
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     ) { padding ->
@@ -374,7 +373,7 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                         else permissionLauncher.launch(missing.toTypedArray())
                     },
                     enabled = !scanning,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 ) {
                     Icon(Icons.AutoMirrored.Filled.BluetoothSearching, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
