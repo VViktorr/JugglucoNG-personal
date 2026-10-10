@@ -1668,20 +1668,7 @@ private fun CalibrationTransferAction(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = contentColor.copy(alpha = 0.14f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = contentColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            IconTile(icon = icon, tint = contentColor)
 
             Spacer(modifier = Modifier.width(16.dp))
 
