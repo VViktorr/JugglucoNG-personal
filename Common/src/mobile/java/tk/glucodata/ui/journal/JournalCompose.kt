@@ -327,8 +327,8 @@ fun JournalQuickDock(
 
         if (visibleEntries.isNotEmpty()) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 visibleEntries.forEach { entry ->
                     JournalEntryChip(
