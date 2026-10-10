@@ -1092,9 +1092,8 @@ internal fun PinnedMetricChip(
                 transitionSpec = { verticalValueSwap() },
                 label = "pinnedMetricValue"
             ) { value ->
-                val valueStyle = MaterialTheme.typography.titleMedium.copy(
-                    fontFeatureSettings = "tnum",
-                    fontWeight = FontWeight.SemiBold
+                val valueStyle = MaterialTheme.typography.titleMediumEmphasized.copy(
+                    fontFeatureSettings = "tnum"
                 ).scalePinnedStyle(contentScale)
                 // The cell is whatever the row shares out; "100%" a couple of dp wider
                 // than that used to lose its sign to the clip. The value gives up a
@@ -1510,7 +1509,7 @@ private fun PinnedMetricPickerSheet(
             ) {
                 Text(
                     text = stringResource(R.string.stats_pinned_pick_title),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
                     modifier = Modifier.weight(1f)
                 )
                 onRemove?.let { remove ->
@@ -1672,9 +1671,8 @@ private fun MetricSheetRow(
 
 /** The window pill's label. [PinnedStatsStrip] measures with it to size the pill. */
 @Composable
-private fun pinnedWindowLabelStyle(): TextStyle = MaterialTheme.typography.labelMedium.copy(
-    fontFeatureSettings = "tnum",
-    fontWeight = FontWeight.SemiBold
+private fun pinnedWindowLabelStyle(): TextStyle = MaterialTheme.typography.labelMediumEmphasized.copy(
+    fontFeatureSettings = "tnum"
 )
 
 @Composable
