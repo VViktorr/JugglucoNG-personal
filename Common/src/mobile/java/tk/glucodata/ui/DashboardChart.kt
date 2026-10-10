@@ -3793,9 +3793,6 @@ fun InteractiveGlucoseChart(
                             // spot, so a crowded pile never makes those entries unreachable.
                             val id = unplacedExpandedIds[nextUnplacedChipIndex % unplacedCount]
                             nextUnplacedChipIndex = (nextUnplacedChipIndex + 1) % unplacedCount
-                            // Match normal chip selection: dismiss the spread before
-                            // the details UI opens, even for an overflow-only entry.
-                            expandedJournalChipId = null
                             onJournalMarkerClick?.invoke(id)
                         } else {
                             expandedJournalChipId = null
