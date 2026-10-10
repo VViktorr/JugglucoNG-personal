@@ -45,7 +45,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
@@ -54,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils
 import kotlinx.coroutines.delay
 import tk.glucodata.R
 import tk.glucodata.GlucoseReadingSource
