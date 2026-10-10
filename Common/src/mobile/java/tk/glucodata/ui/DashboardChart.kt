@@ -3481,15 +3481,17 @@ fun InteractiveGlucoseChart(
             val chipDensity = LocalDensity.current
             val chipTextMaxWidthPx = with(chipDensity) { 88.dp.toPx() }
             val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
-            // Reserve space for the largest possible pile counter before placement.
-            val chipCounterWidthPx = if (visibleOverlayMarkers.size > 1) {
-                with(chipDensity) { 4.dp.toPx() } +
+            // A pile never mixes different journal types. Reserve only enough
+            // counter width for the number of visible entries of each marker type.
+            val chipTypeCounts = visibleOverlayMarkers.groupingBy { it.type }.eachCount()
+            val chipCounterWidthsByType = chipTypeCounts.mapValues { (_, count) ->
+                if (count <= 1) 0f else with(chipDensity) { 4.dp.toPx() } +
                     chipTextMeasurer.measure(
-                        "+${visibleOverlayMarkers.size - 1}",
+                        "+${count - 1}",
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1
                     ).size.width + 1f
-            } else 0f
+            }
             // The counter uses labelSmall and can have a different font height at
             // accessibility font scales. Reserve room for both texts and the icon.
             val chipHeightPx = maxOf(
@@ -3510,7 +3512,7 @@ fun InteractiveGlucoseChart(
                 val label = marker.detailText.ifBlank { marker.title.take(10) }
                 marker.entryId to (
                     chipChromeWidthPx +
-                        measuredChipTextWidth(label) + chipCounterWidthPx + 1f
+                        measuredChipTextWidth(label) + (chipCounterWidthsByType[marker.type] ?: 0f) + 1f
                     )
             }
             val chipLayoutSpec = JournalChipLayout.Spec(
