@@ -2,6 +2,7 @@
 
 package tk.glucodata.ui.alerts
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -178,7 +179,7 @@ fun AlertSettingsScreen(
 
     // Collected outside the LazyColumn: the quiet-window card only exists while
     // something can be silenced, or while a window runs.
-    val quietWindowStateNow by tk.glucodata.alerts.QuietWindow.state.collectAsState()
+    val quietWindowStateNow by tk.glucodata.alerts.QuietWindow.state.collectAsStateWithLifecycle()
     // One Advanced state for every card on this screen.
     val advancedOpen = rememberSaveable { mutableStateOf(false) }
 
