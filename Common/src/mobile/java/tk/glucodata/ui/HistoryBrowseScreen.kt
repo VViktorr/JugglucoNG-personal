@@ -703,7 +703,8 @@ fun HistoryBrowseScreen(
             if (activeHistory.isNotEmpty() || rangeSummary != null) {
                 item(key = "history-chart") {
                     Box(modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp)) {
-                        DashboardChartSection(
+                        FontScaleCap {
+                            DashboardChartSection(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(420.dp),
@@ -737,7 +738,8 @@ fun HistoryBrowseScreen(
                             },
                             resetToLatestOnResume = false,
                             onViewportSnapshotChanged = { viewportSnapshot = it }
-                        )
+                            )
+                        }
                     }
                 }
             }
