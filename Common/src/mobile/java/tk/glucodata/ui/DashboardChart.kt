@@ -3728,7 +3728,6 @@ fun InteractiveGlucoseChart(
             }
 
             visibleOverlayMarkers.forEach { marker ->
-                val markerX = markerXById[marker.entryId] ?: return@forEach
                 val chipBox = chipDisplayBoxes[marker.entryId] ?: return@forEach
                 val placement = chipPlacementById[marker.entryId] ?: return@forEach
                 if (!isChipVisible(marker.entryId)) return@forEach
