@@ -3488,12 +3488,17 @@ fun InteractiveGlucoseChart(
                 chipTextMeasurer.measure("0", style = chipTextStyle, maxLines = 1).size.height.toFloat(),
                 with(chipDensity) { 14.dp.toPx() }
             ) + with(chipDensity) { 10.dp.toPx() }
+            val chipTextWidthCache = remember(chipTextStyle, chipDensity) { HashMap<String, Float>() }
+            fun measuredChipTextWidth(label: String): Float = chipTextWidthCache.getOrPut(label) {
+                if (chipTextWidthCache.size >= 256) chipTextWidthCache.clear()
+                chipTextMeasurer.measure(label, style = chipTextStyle, maxLines = 1)
+                    .size.width.toFloat().coerceAtMost(chipTextMaxWidthPx)
+            }
             val chipWidthsById = visibleOverlayMarkers.associate { marker ->
                 val label = marker.detailText.ifBlank { marker.title.take(10) }
                 marker.entryId to (
                     chipChromeWidthPx +
-                        chipTextMeasurer.measure(label, style = chipTextStyle, maxLines = 1)
-                            .size.width.coerceAtMost(chipTextMaxWidthPx.toInt()) + 1f
+                        measuredChipTextWidth(label) + 1f
                     )
             }
             val chipLayoutSpec = JournalChipLayout.Spec(
@@ -3531,7 +3536,15 @@ fun InteractiveGlucoseChart(
                         kind = marker.type
                     )
                 },
-                chipLayoutSpec
+                chipLayoutSpec,
+                // Keep labels clear of the associated non-insulin event dots.
+                obstacles = orderedChipMarkers.mapNotNull { marker ->
+                    if (marker.type == JournalEntryType.INSULIN) return@mapNotNull null
+                    val x = markerXById[marker.entryId] ?: return@mapNotNull null
+                    val y = markerOverlayY(marker) ?: eventRailOverlayY
+                    val clear = with(chipDensity) { 5.dp.toPx() }
+                    JournalChipBox(x - clear, y - clear, x + clear, y + clear)
+                }
             )
             if (chipPreviousSlots.size > orderedChipMarkers.size * 2 + 64) {
                 val visibleIds = orderedChipMarkers.mapTo(HashSet()) { it.entryId }
