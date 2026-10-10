@@ -695,8 +695,7 @@ private fun MasterCalibrationCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.enable_calibration),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleMediumEmphasized
                     )
                     Text(
                         text = if (isEnabled) stringResource(R.string.enabled_status) else stringResource(R.string.disabled_status),
@@ -902,8 +901,7 @@ private fun CalibrationAlgorithmCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.calibration_algorithm),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleMediumEmphasized
                     )
                     Text(
                         text = selectedAlgorithm.title,
@@ -1011,8 +1009,7 @@ private fun CalibrationWeightControl(
     ) {
         Text(
             text = stringResource(R.string.calibration_weight_title),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold
+            style = MaterialTheme.typography.titleSmallEmphasized
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1599,8 +1596,7 @@ private fun CalibrationImportExportBottomSheet(
         ) {
             Text(
                 text = stringResource(R.string.calibration_import_export_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.headlineSmallEmphasized
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1742,8 +1738,7 @@ private fun ClearOptionsBottomSheet(
         ) {
             Text(
                 text = stringResource(R.string.clear_calibrations_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.headlineSmallEmphasized
             )
             
             Spacer(modifier = Modifier.height(8.dp))
