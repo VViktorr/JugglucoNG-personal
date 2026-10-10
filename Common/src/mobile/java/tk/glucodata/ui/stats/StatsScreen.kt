@@ -822,7 +822,7 @@ private fun ArrangeSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.stats_arrange_title),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
+                        style = MaterialTheme.typography.headlineSmallEmphasized
                     )
                     Text(
                         text = stringResource(R.string.stats_arrange_hint),
@@ -1852,7 +1852,7 @@ private fun PatternsCard(
                 ) {
                     Text(
                         text = stringResource(R.string.stats_patterns),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
+                        style = MaterialTheme.typography.headlineSmallEmphasized
                     )
                     Text(
                         text = subtitle,
@@ -2889,7 +2889,7 @@ private fun InsightsCard(insights: List<StatsInsight>) {
             ) {
                 Text(
                     text = stringResource(R.string.insights),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold)
+                    style = MaterialTheme.typography.headlineSmallEmphasized
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
