@@ -3481,10 +3481,13 @@ fun InteractiveGlucoseChart(
             val chipDensity = LocalDensity.current
             val chipTextMaxWidthPx = with(chipDensity) { 88.dp.toPx() }
             val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
-            // A pile never mixes different journal types. Reserve only enough
-            // counter width for the number of visible entries of each marker type.
-            val chipTypeCounts = visibleOverlayMarkers.groupingBy { it.type }.eachCount()
-            val chipCounterWidthsByType = chipTypeCounts.mapValues { (_, count) ->
+            // A repeated-entry pile shares a type AND its displayed label.
+            // Count by the same key used by JournalChipLayout, rather than reserving
+            // the width of every event of that type for every individual chip.
+            fun chipStackKey(marker: JournalChartMarker) =
+                marker.type to marker.detailText.ifBlank { marker.title.take(10) }
+            val chipStackCounts = visibleOverlayMarkers.groupingBy(::chipStackKey).eachCount()
+            val chipCounterWidthsByStack = chipStackCounts.mapValues { (_, count) ->
                 if (count <= 1) 0f else with(chipDensity) { 4.dp.toPx() } +
                     chipTextMeasurer.measure(
                         "+${count - 1}",
@@ -3517,7 +3520,7 @@ fun InteractiveGlucoseChart(
                 val label = marker.detailText.ifBlank { marker.title.take(10) }
                 marker.entryId to maxOf(
                     chipChromeWidthPx +
-                        measuredChipTextWidth(label) + (chipCounterWidthsByType[marker.type] ?: 0f) + 1f,
+                        measuredChipTextWidth(label) + (chipCounterWidthsByStack[chipStackKey(marker)] ?: 0f) + 1f,
                     with(chipDensity) { 48.dp.toPx() }
                 )
             }
@@ -3572,7 +3575,7 @@ fun InteractiveGlucoseChart(
                             ?.let(::JournalChipTuck),
                         // Repeated amounts of the same kind can share a pile rather than
                         // occupying separate lanes over the glucose trace.
-                        stackKey = marker.type to marker.detailText.ifBlank { marker.title.take(10) },
+                        stackKey = chipStackKey(marker),
                         kind = marker.type
                     )
                 },
