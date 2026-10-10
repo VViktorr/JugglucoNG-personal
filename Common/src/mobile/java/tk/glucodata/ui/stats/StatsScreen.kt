@@ -2579,9 +2579,9 @@ private fun DailyTrendSparkline(
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            LegendDot(color = tirHeatColor(85f), label = ">=70%")
-            LegendDot(color = tirHeatColor(60f), label = "50-69%")
-            LegendDot(color = tirHeatColor(30f), label = "<50%")
+            LegendDot(color = tirHeatColor(85f), label = "≥${formatLocalePercent(70f)}")
+            LegendDot(color = tirHeatColor(60f), label = "${formatLocalePercent(50f)}–${formatLocalePercent(69f)}")
+            LegendDot(color = tirHeatColor(30f), label = "<${formatLocalePercent(50f)}")
         }
 
         Spacer(modifier = Modifier.height(2.dp))
