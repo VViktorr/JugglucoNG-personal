@@ -510,7 +510,7 @@ internal fun metricSpec(
     unit: GlucoseUnit
 ): MetricSpec {
     val title = stringResource(metric.titleResId)
-    val targetRange = "${formatMgDl(targets.lowMgDl, unit)}-${formatMgDl(targets.highMgDl, unit)}"
+    val targetRange = "${formatMgDl(targets.lowMgDl, unit)}–${formatMgDl(targets.highMgDl, unit)}"
 
     val lowWord = stringResource(R.string.low_range)
     val highWord = stringResource(R.string.high_range)
@@ -599,7 +599,7 @@ internal fun metricSpec(
 
         StatsMetric.TIGHT_RANGE -> {
             val (low, high) = StatsAnalytics.tightRangeBounds(targets)
-            val bounds = "${formatMgDl(low, unit)}-${formatMgDl(high, unit)}"
+            val bounds = "${formatMgDl(low, unit)}–${formatMgDl(high, unit)}"
             spec(
                 value = String.format(Locale.getDefault(), "%.0f%%", summary.tightRangePercent),
                 status = if (summary.tightRangePercent >= 50f) steadyWord else middlingWord,
@@ -623,7 +623,7 @@ internal fun metricSpec(
         StatsMetric.IQR -> spec(
             value = formatMgDl((summary.p75MgDl - summary.p25MgDl).coerceAtLeast(0f), unit),
             status = typicalWord,
-            meta = "${formatMgDl(summary.p25MgDl, unit)}-${formatMgDl(summary.p75MgDl, unit)}",
+            meta = "${formatMgDl(summary.p25MgDl, unit)}–${formatMgDl(summary.p75MgDl, unit)}",
             tone = when {
                 summary.cvPercent < 32f -> TirInRangeColor
                 summary.cvPercent < 40f -> TirHighColor
