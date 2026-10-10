@@ -271,8 +271,7 @@ private fun RiskIndexRow(
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleSmallEmphasized.copy(fontFeatureSettings = "tnum")
                 )
             }
         }
@@ -431,9 +430,8 @@ private fun EpisodeTile(
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = summary.count.toString(),
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontFeatureSettings = "tnum",
-                    fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.headlineMediumEmphasized.copy(
+                    fontFeatureSettings = "tnum"
                 )
             )
             if (summary.severeCount > 0) {
@@ -809,9 +807,8 @@ private fun DaySheetStat(label: String, value: String, modifier: Modifier = Modi
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontFeatureSettings = "tnum",
-                fontWeight = FontWeight.SemiBold
+            style = MaterialTheme.typography.titleMediumEmphasized.copy(
+                fontFeatureSettings = "tnum"
             ),
             maxLines = 1
         )
