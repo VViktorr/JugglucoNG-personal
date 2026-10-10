@@ -1,5 +1,6 @@
 package tk.glucodata.ui
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -42,7 +43,6 @@ import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.StableModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -360,7 +360,7 @@ fun DashboardCombinedHeader(
     )
 
     // 1. Resolve Values using shared logic (with calibration if active)
-    val refreshRevision by UiRefreshBus.revision.collectAsState(initial = 0L)
+    val refreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val resolvedCurrentSnapshot = currentSnapshot ?: remember(refreshRevision, sensorName, currentGlucose, currentRate, latestPoint?.timestamp, viewMode) {
         CurrentDisplaySource.resolveCurrent(
             maxAgeMillis = Notify.glucosetimeout,
@@ -1756,7 +1756,7 @@ fun CalibrationsCard(
     val isRawMode = viewMode == 1 || viewMode == 3
     
     // Collect calibrations and enable state
-    val allCalibrations by tk.glucodata.data.calibration.CalibrationManager.getCalibrationsFlow()?.collectAsState(initial = tk.glucodata.data.calibration.CalibrationManager.getCachedCalibrations())
+    val allCalibrations by tk.glucodata.data.calibration.CalibrationManager.getCalibrationsFlow()?.collectAsStateWithLifecycle(initialValue = tk.glucodata.data.calibration.CalibrationManager.getCachedCalibrations())
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(tk.glucodata.data.calibration.CalibrationManager.getCachedCalibrations()) }
     val currentSensor = SensorIdentity.resolveAppSensorId(sensorId) ?: sensorId
     val calibrations = allCalibrations.filter {
@@ -1765,7 +1765,7 @@ fun CalibrationsCard(
             tk.glucodata.data.calibration.CalibrationManager.calibrationMatchesSensor(it.sensorId, currentSensor)
     }
     
-    val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsState()
+    val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsStateWithLifecycle()
     val isCalibrationEnabled = remember(isRawMode, currentSensor, calibrationRevision) {
         tk.glucodata.data.calibration.CalibrationManager.isEnabledForMode(isRawMode, currentSensor)
     }
