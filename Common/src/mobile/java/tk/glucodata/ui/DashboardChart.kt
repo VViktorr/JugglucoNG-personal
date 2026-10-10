@@ -89,8 +89,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberDatePickerState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -1039,7 +1039,7 @@ fun InteractiveGlucoseChart(
     // low/high banding by default.
     val primaryPickedColor = tk.glucodata.SensorVisuals.colorOverrideArgb(primarySerial)
         ?.let { Color(it) }
-    val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsState()
+    val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsStateWithLifecycle()
     val isRawModeChart = viewMode == 1 || viewMode == 3
     // A fact, not a decision: whether a calibration applies to the primary lane.
     val hasCalibration = remember(calibrationRevision, isRawModeChart, primarySerial) {
