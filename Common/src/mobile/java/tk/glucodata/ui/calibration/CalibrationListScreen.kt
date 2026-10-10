@@ -1366,9 +1366,8 @@ private fun CalibrationItemContent(
                     if (!showOnlyCalibrated) {
                         Text(
                             text = String.format(Locale.getDefault(), sFmt, primaryValue),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = if (cal.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleLargeEmphasized,
+                            color = if (cal.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -1380,9 +1379,8 @@ private fun CalibrationItemContent(
                     }
                     Text(
                         text = String.format(Locale.getDefault(), sFmt, cal.userValue),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = if (cal.isEnabled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleLargeEmphasized,
+                        color = if (cal.isEnabled) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
                     )
                 }
 
