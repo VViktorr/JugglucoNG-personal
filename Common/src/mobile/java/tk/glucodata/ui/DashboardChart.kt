@@ -3617,7 +3617,10 @@ fun InteractiveGlucoseChart(
                 orderedChipMarkers[group[0]].entryId to (group.size - 1)
             }
             val chipSpreadShifts = remember(chipLayoutZoom) { HashMap<Long, FloatArray>() }
-            val spread = expandedGroup?.let { group ->
+            // Limit expensive radial searches when a dense viewport contains many entries.
+            // The collapsed front remains accessible for the remainder of the pile.
+            val spreadGroup = expandedGroup?.take(24)?.toIntArray()
+            val spread = spreadGroup?.let { group ->
                 JournalChipLayout.spread(
                     boxes = chipPlacements.map { it.box },
                     members = group,
@@ -3633,8 +3636,8 @@ fun InteractiveGlucoseChart(
                     }
                 )
             }
-            if (expandedGroup != null && spread != null) {
-                expandedGroup.forEachIndexed { position, index ->
+            if (spreadGroup != null && spread != null) {
+                spreadGroup.forEachIndexed { position, index ->
                     val id = orderedChipMarkers[index].entryId
                     if (spread.stuck[position]) chipSpreadShifts.remove(id)
                     else chipSpreadShifts[id] = spread.shifts[position]
@@ -3642,8 +3645,8 @@ fun InteractiveGlucoseChart(
             }
             if (chipSpreadShifts.size > orderedChipMarkers.size * 2 + 64) chipSpreadShifts.clear()
             val chipDisplayBoxes = HashMap(chipBoxById)
-            if (expandedGroup != null && spread != null) {
-                expandedGroup.forEachIndexed { position, index ->
+            if (spreadGroup != null && spread != null) {
+                spreadGroup.forEachIndexed { position, index ->
                     if (!spread.stuck[position]) {
                         val markerId = orderedChipMarkers[index].entryId
                         val box = chipPlacements[index].box
@@ -3667,7 +3670,8 @@ fun InteractiveGlucoseChart(
                 if (group == null) return !placement.folded
                 if (group !== expandedGroup) return markerId == orderedChipMarkers[group[0]].entryId
                 val position = group.indexOfFirst { orderedChipMarkers[it].entryId == markerId }
-                return position >= 0 && (spread?.stuck?.getOrNull(position) == false || position == 0)
+                return position >= 0 && position < (spreadGroup?.size ?: 0) &&
+                    (spread?.stuck?.getOrNull(position) == false || position == 0)
             }
 
             Canvas(
