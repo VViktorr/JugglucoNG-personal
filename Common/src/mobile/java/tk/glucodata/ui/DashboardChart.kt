@@ -3515,10 +3515,11 @@ fun InteractiveGlucoseChart(
             }
             val chipWidthsById = visibleOverlayMarkers.associate { marker ->
                 val label = marker.detailText.ifBlank { marker.title.take(10) }
-                marker.entryId to (
+                marker.entryId to maxOf(
                     chipChromeWidthPx +
-                        measuredChipTextWidth(label) + (chipCounterWidthsByType[marker.type] ?: 0f) + 1f
-                    )
+                        measuredChipTextWidth(label) + (chipCounterWidthsByType[marker.type] ?: 0f) + 1f,
+                    with(chipDensity) { 48.dp.toPx() }
+                )
             }
             val chipLayoutSpec = JournalChipLayout.Spec(
                 chipHeight = chipHeightPx,
