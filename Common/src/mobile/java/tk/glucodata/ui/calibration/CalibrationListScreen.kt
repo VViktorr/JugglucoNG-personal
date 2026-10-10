@@ -279,7 +279,7 @@ fun CalibrationListScreen(
                             isSelectionMode = false
                             selectedIds = emptySet()
                         }) {
-                            Icon(Icons.Default.Close, contentDescription = null)
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
                         }
                     },
                     actions = {
