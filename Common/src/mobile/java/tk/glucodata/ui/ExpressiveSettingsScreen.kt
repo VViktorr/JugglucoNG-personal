@@ -50,6 +50,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import tk.glucodata.ui.components.TabScreenDefaults
+import tk.glucodata.ui.components.TabScreenHeader
 import tk.glucodata.ui.util.findActivity
 import tk.glucodata.ui.util.fullRestart
 import tk.glucodata.ui.util.hardRestart
@@ -244,15 +246,10 @@ fun ExpressiveSettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(), // Add status bar padding
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp)
+        contentPadding = TabScreenDefaults.contentPadding()
     ) {
-        // Title
         item(key = "title") {
-            Text(
-                text = stringResource(R.string.settings),
-                style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier.padding(start = 16.dp, bottom = 24.dp)
-            )
+            TabScreenHeader(title = stringResource(R.string.settings))
         }
 
         item(key = "general_group") {
