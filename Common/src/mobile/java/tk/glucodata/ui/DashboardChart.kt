@@ -3617,9 +3617,9 @@ fun InteractiveGlucoseChart(
                 orderedChipMarkers[group[0]].entryId to (group.size - 1)
             }
             val chipSpreadShifts = remember(chipLayoutZoom) { HashMap<Long, FloatArray>() }
-            // Limit expensive radial searches when a dense viewport contains many entries.
-            // The collapsed front remains accessible for the remainder of the pile.
-            val spreadGroup = expandedGroup?.take(24)?.toIntArray()
+            // Keep every member reachable on expansion, even in unusually dense
+            // viewports; limiting this group without paging would hide entries.
+            val spreadGroup = expandedGroup
             val spread = spreadGroup?.let { group ->
                 JournalChipLayout.spread(
                     boxes = chipPlacements.map { it.box },
@@ -3670,8 +3670,7 @@ fun InteractiveGlucoseChart(
                 if (group == null) return !placement.folded
                 if (group !== expandedGroup) return markerId == orderedChipMarkers[group[0]].entryId
                 val position = group.indexOfFirst { orderedChipMarkers[it].entryId == markerId }
-                return position >= 0 && position < (spreadGroup?.size ?: 0) &&
-                    (spread?.stuck?.getOrNull(position) == false || position == 0)
+                return position >= 0 && (spread?.stuck?.getOrNull(position) == false || position == 0)
             }
 
             Canvas(
