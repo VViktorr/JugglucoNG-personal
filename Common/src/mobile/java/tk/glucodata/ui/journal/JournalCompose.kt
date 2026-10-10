@@ -1963,7 +1963,7 @@ private fun JournalFoodPickerRow(
     detailsContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(16.dp)
     Surface(
         color = if (selected) color.copy(alpha = 0.18f) else unselectedContainerColor,
         shape = shape
@@ -1982,7 +1982,7 @@ private fun JournalFoodPickerRow(
                         stiffness = Spring.StiffnessMediumLow
                     )
                 )
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
