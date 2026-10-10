@@ -1796,7 +1796,7 @@ private fun PatternsCard(
             val iqrLow = selectedAgpBin?.p25MgDl
             val iqrHigh = selectedAgpBin?.p75MgDl
             if (iqrLow != null && iqrHigh != null) {
-                "IQR ${formatMgDl(iqrLow, unit)}-${formatMgDl(iqrHigh, unit)}"
+                "IQR ${formatMgDl(iqrLow, unit)}–${formatMgDl(iqrHigh, unit)}"
             } else {
                 contextLabel
             }
@@ -2040,7 +2040,7 @@ private fun AgpChart(
         chartContext.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
             .getBoolean("glucose_app_chart_range_colors_enabled", false)
     }
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = tk.glucodata.ui.isAppInDarkTheme()
     val targetBandColor = TirInRangeColor.copy(alpha = 0.16f)
     val iqrBandColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
     val p10P90Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
