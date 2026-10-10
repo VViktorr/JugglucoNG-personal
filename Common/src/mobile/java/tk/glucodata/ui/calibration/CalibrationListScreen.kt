@@ -69,6 +69,7 @@ import tk.glucodata.SensorIdentity
 import tk.glucodata.data.HistoryRepository
 import tk.glucodata.data.calibration.CalibrationEntity
 import tk.glucodata.data.calibration.CalibrationManager
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.StableModalBottomSheet
 import tk.glucodata.ui.components.StyledSwitch
@@ -293,18 +294,9 @@ fun CalibrationListScreen(
                     )
                 )
             } else {
-                TopAppBar(
-                    title = { 
-                        Text(
-                            stringResource(R.string.calibration_with_mode, modeTitle),
-                            fontWeight = FontWeight.SemiBold
-                        ) 
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                        }
-                    },
+                AppTopBar(
+                    title = stringResource(R.string.calibration_with_mode, modeTitle),
+                    onNavigateBack = { navController.navigateUp() },
                     actions = {
                         IconButton(onClick = onOpenModelTable) {
                             Icon(
