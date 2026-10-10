@@ -3560,8 +3560,7 @@ fun InteractiveGlucoseChart(
                                 x = chipBox.left.toInt(),
                                 y = chipBox.top.toInt()
                             )
-                        }
-,
+                        },
                     onClick = { onJournalMarkerClick?.invoke(marker.entryId) }
                 )
             }
