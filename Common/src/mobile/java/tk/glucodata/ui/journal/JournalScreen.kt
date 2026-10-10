@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import tk.glucodata.ui.FontScaleCap
 import tk.glucodata.R
 import tk.glucodata.RemoteIobSnapshot
 import tk.glucodata.UiRefreshBus
@@ -215,6 +216,7 @@ fun JournalScreen(
                             .fillMaxWidth()
                             .height(if (showTitle) 324.dp else 348.dp)
                     ) {
+                        FontScaleCap {
                         DashboardChartSection(
                             modifier = Modifier.matchParentSize(),
                             appChartRangeColors = chartRangeColors,
@@ -264,6 +266,7 @@ fun JournalScreen(
                             },
                             onViewportSnapshotChanged = { viewportSnapshot = it }
                         )
+                        }
 
                         chartActionTimestamp?.let { actionTimestamp ->
                             JournalFloatingActionMenu(
