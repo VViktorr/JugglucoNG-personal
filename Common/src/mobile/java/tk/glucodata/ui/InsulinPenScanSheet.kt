@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import tk.glucodata.ui.components.StableModalBottomSheet
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -93,8 +92,7 @@ fun InsulinPenScanSheetHost() {
             // No icon tile on the header: everything in the sheet then shares one left edge.
             Text(
                 stringResource(R.string.insulin_pen_name, result.serial),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleLargeEmphasized,
             )
             Spacer(Modifier.size(4.dp))
             Text(
