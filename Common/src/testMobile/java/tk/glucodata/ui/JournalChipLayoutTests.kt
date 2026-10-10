@@ -477,6 +477,27 @@ class JournalChipLayoutTests {
     }
 
     @Test
+    fun expandedFullSizeTouchTargetsStayInsideChartBounds() {
+        val boxes = listOf(
+            box(80f, 60f, width = 110f, height = 48f),
+            box(82f, 62f, width = 110f, height = 48f),
+            box(84f, 64f, width = 110f, height = 48f)
+        )
+        val members = intArrayOf(0, 1, 2)
+        val result = JournalChipLayout.spread(
+            boxes = boxes, members = members,
+            minX = 0f, maxX = 400f, minTop = 0f, maxTop = 150f,
+            gapPx = 4f, ringStepPx = 8f, maxRadiusPx = 160f
+        )
+        val movedBoxes = moved(boxes, members, result.shifts)
+        members.indices.filterNot { result.stuck[it] }.forEach { slot ->
+            val chip = movedBoxes[members[slot]]
+            assertTrue(chip.left >= 0f && chip.right <= 400f)
+            assertTrue(chip.top >= 0f && chip.bottom <= 198f)
+        }
+    }
+
+    @Test
     fun aChipArrivingFromTheRightLeavesARightHandSpotItHadKept() {
         // Its entry is past the right edge, and last frame it hung to the right of it.
         val placed = JournalChipLayout.place(listOf(request(420f, previous = JournalChipSlot.Preferred)), spec).single()
