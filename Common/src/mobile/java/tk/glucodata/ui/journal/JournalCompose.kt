@@ -2019,7 +2019,7 @@ private fun JournalFoodPickerRow(
                     shrinkTowards = Alignment.Top
                 ) + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(top = 10.dp)) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
                     detailsContent?.invoke()
                 }
             }
