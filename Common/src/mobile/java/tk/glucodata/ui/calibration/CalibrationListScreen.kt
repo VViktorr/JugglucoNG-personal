@@ -1748,8 +1748,7 @@ private fun ClearOptionsBottomSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.clear_disabled_only),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium
+                                style = MaterialTheme.typography.titleMediumEmphasized
                             )
                             Text(
                                 stringResource(R.string.disabled_calibrations_count, disabledCount),
@@ -1783,8 +1782,7 @@ private fun ClearOptionsBottomSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             stringResource(R.string.clear),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
+                            style = MaterialTheme.typography.titleMediumEmphasized,
                             color = MaterialTheme.colorScheme.error
                         )
                         Text(
