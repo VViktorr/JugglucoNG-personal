@@ -3500,7 +3500,12 @@ fun InteractiveGlucoseChart(
                     "+0", style = MaterialTheme.typography.labelSmall, maxLines = 1
                 ).size.height.toFloat(),
                 with(chipDensity) { 14.dp.toPx() }
-            ) + with(chipDensity) { 10.dp.toPx() }
+            ).let { measuredPillHeight ->
+                // journalMarkerInput reserves a 48dp interactive surface around the pill.
+                // Collision boxes must account for that actual Compose layout footprint.
+                maxOf(measuredPillHeight + with(chipDensity) { 10.dp.toPx() },
+                    with(chipDensity) { 48.dp.toPx() })
+            }
             val journalChipMaxTopPx = (chartHeightPx - chipHeightPx).coerceAtLeast(journalChipMinTopPx)
             val chipTextWidthCache = remember(chipTextStyle, chipDensity) { HashMap<String, Float>() }
             fun measuredChipTextWidth(label: String): Float = chipTextWidthCache.getOrPut(label) {
