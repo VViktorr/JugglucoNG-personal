@@ -3707,7 +3707,15 @@ fun InteractiveGlucoseChart(
                         JournalEntryType.INSULIN -> insulinConnectorY
                         else -> markerOverlayY(marker) ?: eventRailOverlayY
                     }
-                    val labelEdgeX = if (chipBox.left >= markerX) chipBox.left else chipBox.right
+                    // Connect to the edge closest to the source, including when a
+                    // crowded pile has been expanded to the opposite side.
+                    val labelEdgeX = if (markerX <= chipBox.left) {
+                        chipBox.left
+                    } else if (markerX >= chipBox.right) {
+                        chipBox.right
+                    } else {
+                        markerX
+                    }
                     val labelCenterY = (chipBox.top + chipHeightPx / 2f).coerceIn(0f, chartHeightPx)
                     drawLine(
                         color = Color(marker.accentColor).copy(alpha = 0.22f),
