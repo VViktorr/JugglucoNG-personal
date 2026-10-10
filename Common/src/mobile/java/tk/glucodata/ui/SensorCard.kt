@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
@@ -1706,10 +1707,10 @@ fun SensorCard(
     val isLocallyStreaming = sensor.streaming
     val isLocallyEnabled = isSensorLocallyEnabled(sensor.streaming, sensor.paused)
     val isHandedOff = sensor.handoffUiState != SensorHandoffUiState.NONE
-    val refreshRevision by UiRefreshBus.revision.collectAsState(initial = 0L)
+    val refreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val latestPersistedReading by remember(sensor.serial) {
         HistoryRepository().getLatestReadingFlowForSensor(sensor.serial)
-    }.collectAsState(initial = null)
+    }.collectAsStateWithLifecycle(initialValue = null)
     val currentSnapshot = remember(
         refreshRevision,
         sensor.serial,
