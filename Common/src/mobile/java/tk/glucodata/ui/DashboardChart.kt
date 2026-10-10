@@ -3442,19 +3442,6 @@ fun InteractiveGlucoseChart(
                         ?.takeIf { it.isFinite() }
                         ?.coerceIn(0f, chartHeightPx)
             }
-            fun laneAssignments(markers: List<Pair<JournalChartMarker, Float>>): Map<Long, Int> {
-                val laneEndXs = mutableListOf<Float>()
-                val assignments = mutableMapOf<Long, Int>()
-                markers.sortedBy { it.second }.forEach { (marker, markerX) ->
-                    val laneIndex = laneEndXs.indexOfFirst { markerX - it >= journalChipMinGapPx }
-                    val resolvedLane = if (laneIndex >= 0) laneIndex else laneEndXs.size.also {
-                        laneEndXs.add(Float.NEGATIVE_INFINITY)
-                    }
-                    laneEndXs[resolvedLane] = markerX
-                    assignments[marker.entryId] = resolvedLane
-                }
-                return assignments
-            }
             val visibleOverlayMarkers = journalMarkers.filter { marker ->
                 marker.timestamp in overlayViewportStart..overlayViewportEnd
             }
@@ -3462,21 +3449,6 @@ fun InteractiveGlucoseChart(
                 val xFraction = (marker.timestamp - overlayViewportStart).toFloat() / overlayDuration
                 marker.entryId to (overlayDataWidthPx * xFraction).coerceIn(0f, overlayDataWidthPx)
             }
-            val fingerstickLanes = laneAssignments(
-                visibleOverlayMarkers
-                    .filter { it.type == JournalEntryType.FINGERSTICK }
-                    .mapNotNull { marker -> markerXById[marker.entryId]?.let { marker to it } }
-            )
-            val insulinLanes = laneAssignments(
-                visibleOverlayMarkers
-                    .filter { it.type == JournalEntryType.INSULIN }
-                    .mapNotNull { marker -> markerXById[marker.entryId]?.let { marker to it } }
-            )
-            val eventLanes = laneAssignments(
-                visibleOverlayMarkers
-                    .filter { it.type != JournalEntryType.INSULIN && it.type != JournalEntryType.FINGERSTICK }
-                    .mapNotNull { marker -> markerXById[marker.entryId]?.let { marker to it } }
-            )
             val fingerstickLiftPx = with(LocalDensity.current) { 48.dp.toPx() }
             val journalChipSideOffsetPx = with(LocalDensity.current) { 10.dp.toPx() }
             val eventBaseTopPx = (chartHeightPx - with(LocalDensity.current) { 44.dp.toPx() }).coerceAtLeast(journalChipMinTopPx)
@@ -3503,6 +3475,49 @@ fun InteractiveGlucoseChart(
             val connectorUnderlapPx = with(LocalDensity.current) { 8.dp.toPx() }
             val insulinConnectorY = chartHeightPx - with(LocalDensity.current) { 1.dp.toPx() }
 
+            // Place journal labels with the shared collision-aware algorithm, keeping
+            // all glucose rendering and marker click handlers unchanged.
+            val chipHeightPx = with(LocalDensity.current) { 32.dp.toPx() }
+            val chipWidthPx = with(LocalDensity.current) { 132.dp.toPx() }
+            val chipLayoutSpec = JournalChipLayout.Spec(
+                chipHeight = chipHeightPx,
+                sideOffset = journalChipSideOffsetPx,
+                rowStep = chipHeightPx + with(LocalDensity.current) { 4.dp.toPx() },
+                nudgeStep = with(LocalDensity.current) { 12.dp.toPx() },
+                gap = with(LocalDensity.current) { 4.dp.toPx() },
+                minX = 0f,
+                maxX = overlayDataWidthPx,
+                minTop = journalChipMinTopPx,
+                maxTop = journalChipMaxTopPx
+            )
+            fun chipBaseTop(marker: JournalChartMarker): Float = when (marker.type) {
+                JournalEntryType.FINGERSTICK ->
+                    ((marker.chartGlucoseValue?.let(overlayValueToY) ?: eventBaseTopPx) - fingerstickLiftPx)
+                        .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
+                JournalEntryType.INSULIN ->
+                    (chartHeightPx - insulinCurveHeightFor(marker.amount) - insulinLabelGapPx)
+                        .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
+                else ->
+                    ((markerOverlayY(marker) ?: eventBaseTopPx) - fingerstickLiftPx)
+                        .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
+            }
+            val orderedChipMarkers = visibleOverlayMarkers.sortedWith(compareBy({ it.timestamp }, { it.entryId }))
+            val chipPlacements = JournalChipLayout.place(
+                orderedChipMarkers.map { marker ->
+                    JournalChipRequest(
+                        anchorX = markerXById.getValue(marker.entryId),
+                        baseTop = chipBaseTop(marker),
+                        width = chipWidthPx,
+                        previous = null,
+                        kind = marker.type
+                    )
+                },
+                chipLayoutSpec
+            )
+            val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
+                marker.entryId to chipPlacements[index].box
+            }.toMap()
+
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
@@ -3510,36 +3525,7 @@ fun InteractiveGlucoseChart(
             ) {
                 visibleOverlayMarkers.forEach { marker ->
                     val markerX = markerXById[marker.entryId] ?: return@forEach
-                    val preferLeadingAnchor = markerX > (overlayDataWidthPx * 0.58f)
-                    val markerTop = when (marker.type) {
-                        JournalEntryType.FINGERSTICK -> {
-                            val lane = fingerstickLanes[marker.entryId] ?: 0
-                            (
-                                (marker.chartGlucoseValue?.let(overlayValueToY) ?: eventBaseTopPx) -
-                                    fingerstickLiftPx -
-                                    (lane * journalChipLaneStepPx)
-                                ).coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
-                        }
-
-                        JournalEntryType.INSULIN -> {
-                            val lane = insulinLanes[marker.entryId] ?: 0
-                            (
-                                chartHeightPx -
-                                    insulinCurveHeightFor(marker.amount) -
-                                    insulinLabelGapPx -
-                                    (lane * journalChipLaneStepPx)
-                                ).coerceAtLeast(journalChipMinTopPx)
-                        }
-
-                        else -> {
-                            val lane = eventLanes[marker.entryId] ?: 0
-                            (
-                                (markerOverlayY(marker) ?: eventBaseTopPx) -
-                                    fingerstickLiftPx -
-                                    (lane * journalChipLaneStepPx)
-                                ).coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
-                        }
-                    }
+                    val chipBox = chipBoxById[marker.entryId] ?: return@forEach
                     val sourceY = when (marker.type) {
                         JournalEntryType.FINGERSTICK -> marker.chartGlucoseValue
                             ?.let(overlayValueToY)
@@ -3548,12 +3534,8 @@ fun InteractiveGlucoseChart(
                         JournalEntryType.INSULIN -> insulinConnectorY
                         else -> markerOverlayY(marker) ?: eventRailOverlayY
                     }
-                    val labelEdgeX = if (preferLeadingAnchor) {
-                        markerX - journalChipSideOffsetPx - connectorUnderlapPx
-                    } else {
-                        markerX + journalChipSideOffsetPx + connectorUnderlapPx
-                    }.coerceIn(0f, size.width)
-                    val labelCenterY = (markerTop + connectorLabelCenterOffsetPx).coerceIn(0f, chartHeightPx)
+                    val labelEdgeX = if (chipBox.left >= markerX) chipBox.left else chipBox.right
+                    val labelCenterY = (chipBox.top + chipHeightPx / 2f).coerceIn(0f, chartHeightPx)
                     drawLine(
                         color = Color(marker.accentColor).copy(alpha = 0.22f),
                         start = Offset(markerX, sourceY.coerceIn(0f, chartHeightPx)),
@@ -3566,36 +3548,7 @@ fun InteractiveGlucoseChart(
 
             visibleOverlayMarkers.forEach { marker ->
                 val markerX = markerXById[marker.entryId] ?: return@forEach
-                val preferLeadingAnchor = markerX > (overlayDataWidthPx * 0.58f)
-                val markerTop = when (marker.type) {
-                    JournalEntryType.FINGERSTICK -> {
-                        val lane = fingerstickLanes[marker.entryId] ?: 0
-                        (
-                            (marker.chartGlucoseValue?.let(overlayValueToY) ?: eventBaseTopPx) -
-                                fingerstickLiftPx -
-                                (lane * journalChipLaneStepPx)
-                            ).coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
-                    }
-
-                    JournalEntryType.INSULIN -> {
-                        val lane = insulinLanes[marker.entryId] ?: 0
-                        (
-                            chartHeightPx -
-                                insulinCurveHeightFor(marker.amount) -
-                                insulinLabelGapPx -
-                                (lane * journalChipLaneStepPx)
-                            ).coerceAtLeast(journalChipMinTopPx)
-                    }
-
-                    else -> {
-                        val lane = eventLanes[marker.entryId] ?: 0
-                        (
-                            (markerOverlayY(marker) ?: eventBaseTopPx) -
-                                fingerstickLiftPx -
-                                (lane * journalChipLaneStepPx)
-                            ).coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
-                    }
-                }
+                val chipBox = chipBoxById[marker.entryId] ?: return@forEach
                 JournalMarkerChip(
                     marker = marker,
                     activePointerIds = activeJournalMarkerPointers,
@@ -3604,17 +3557,11 @@ fun InteractiveGlucoseChart(
                         .zIndex(1.5f)
                         .offset {
                             androidx.compose.ui.unit.IntOffset(
-                                x = markerX.toInt(),
-                                y = markerTop.toInt()
+                                x = chipBox.left.toInt(),
+                                y = chipBox.top.toInt()
                             )
                         }
-                        .graphicsLayer {
-                            translationX = if (preferLeadingAnchor) {
-                                -size.width - journalChipSideOffsetPx
-                            } else {
-                                journalChipSideOffsetPx
-                            }
-                        },
+,
                     onClick = { onJournalMarkerClick?.invoke(marker.entryId) }
                 )
             }
