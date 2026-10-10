@@ -3539,6 +3539,9 @@ fun InteractiveGlucoseChart(
                         baseTop = chipBaseTop(marker),
                         width = chipWidthsById.getValue(marker.entryId),
                         previous = chipPreviousSlots[marker.entryId],
+                        // Repeated amounts of the same kind can share a pile rather than
+                        // occupying separate lanes over the glucose trace.
+                        stackKey = marker.type to marker.detailText.ifBlank { marker.title.take(10) },
                         kind = marker.type
                     )
                 },
