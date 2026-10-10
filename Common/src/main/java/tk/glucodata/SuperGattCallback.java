@@ -332,8 +332,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         final long generation;
         try {
             if(doLog) {Log.i(LOG_ID,"reconnect "+SerialNumber);};
-            constatstatusstr = "Loss of signal";
-            constatchange[1] = now;
+            noteLossOfSignal(now);
             synchronized(gattLock) {
                 thegatt=mBluetoothGatt;
                 if(thegatt==null)
@@ -371,6 +370,9 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
 
     void setConStatus(int status) {
         constatstatusstr = "Status="+status;
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            BleErrorHistory.record(SerialNumber, constatstatusstr, System.currentTimeMillis());
+        }
         }
 
     void shouldreconnect(long now) {
@@ -1336,8 +1338,8 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         }
         if (tmpgatt != null) {
             try {
-                tmpgatt.disconnect();
-                tmpgatt.close();
+                try { tmpgatt.disconnect(); }
+                finally { tmpgatt.close(); }
             } catch (Throwable se) {
                 var mess = se.getMessage();
                 mess = mess == null ? "" : mess;

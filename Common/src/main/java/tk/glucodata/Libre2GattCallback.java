@@ -581,8 +581,10 @@ private	void oldonCharacteristicChanged(byte[] value) {
 				if (pack1 && pack2) {
 					markGattHealthy();
 					final var wakeLock=Natives.hasRootcheck()?getwakelock():null;
-					if(wakeLock!=null)
-						wakeLock.acquire();
+					if(wakeLock!=null) {
+						wakeLock.setReferenceCounted(false);
+						wakeLock.acquire(Applic.GLUCOSE_WAKELOCK_TIMEOUT_MS);
+						}
                         /*
                     if(isWearable) {
                         if(Natives.getDisconnectSensor()) {
@@ -596,21 +598,24 @@ private	void oldonCharacteristicChanged(byte[] value) {
                                     
                             }
                         } */
-					final long timmsec = System.currentTimeMillis();
+					try {
+						final long timmsec = System.currentTimeMillis();
 
-					pack1 = false;
-					pack2 = false;
-					System.arraycopy(value, 0, packet, 38, 8);
-					final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
-					if(newpacket!=null) {
-						long res = processTooth(dataptr, newpacket);
-						if(res!=1L) {
-							handleGlucoseResult(res,timmsec);
+						pack1 = false;
+						pack2 = false;
+						System.arraycopy(value, 0, packet, 38, 8);
+						final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
+						if(newpacket!=null) {
+							long res = processTooth(dataptr, newpacket);
+							if(res!=1L) {
+								handleGlucoseResult(res,timmsec);
+								}
 							}
+	                    datatime=timmsec;
+					}
+					finally {
+						Applic.releasewakelock(wakeLock);
 						}
-                    datatime=timmsec;
-					if(wakeLock!=null)
-						wakeLock.release();
                   /*  if(isWearable) {
                         if(Natives.getDisconnectSensor()&&!autoconnect) {
                             disconnect();  
