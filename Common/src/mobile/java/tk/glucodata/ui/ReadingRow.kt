@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
@@ -146,39 +147,8 @@ fun ReadingRow(
     }
 
     val containerColor = if (isActive) {
-        val age = ageState.value
-        when {
-            age < 60_000 -> {
-                // Phase 1: Fade to Stock
-                val progress = age / 60_000f
-                Color(
-                    ColorUtils.blendARGB(
-                        activeColor.toArgb(),
-                        stockColor.toArgb(),
-                        progress.coerceIn(0f, 1f)
-                    )
-                )
-            }
-            age < 90_000 -> {
-                // Phase 2: Stock (Stable)
-                stockColor
-            }
-            else -> {
-                 // Phase 3: Stale (Darken slowly)
-                 // "slowly start getting different darker shade"
-                 // Let's cap the darkening at 100% after another 60s (just to have a bound)
-                 val staleProgress = ((age - 90_000) / 60_000f).coerceIn(0f, 1f)
-                 Color(
-                    ColorUtils.blendARGB(
-                        stockColor.toArgb(),
-                        staleColor.toArgb(),
-                        staleProgress
-                    )
-                )
-            }
-        }
+        activeRowColor(ageState.value, activeColor, stockColor, staleColor)
     } else {
-        // History: Always Stock
         stockColor
     }
 
@@ -194,29 +164,7 @@ fun ReadingRow(
         else -> RectangleShape
     }
 
-    // Divider Alpha Logic
-    val baseDividerAlpha = 0.1f // User Request: "perhaps make it 0.1f"
-    val dividerAlpha = if (isActive) {
-        val age = ageState.value
-        when {
-            age < 60_000 -> {
-                // Fresh: Color is Distinct -> Stock. Divider: Hidden -> Visible.
-                val progress = age / 60_000f
-                baseDividerAlpha * progress.coerceIn(0f, 1f)
-            }
-            age < 90_000 -> {
-                // Normal: Color is Stock. Divider: Visible.
-                baseDividerAlpha
-            }
-            else -> {
-                // Stale: Color is Stock -> Distinct. Divider: Visible -> Hidden.
-                val staleProgress = ((age - 90_000) / 60_000f).coerceIn(0f, 1f)
-                baseDividerAlpha * (1f - staleProgress)
-            }
-        }
-    } else {
-        baseDividerAlpha
-    }
+    val dividerAlpha = if (isActive) activeRowDividerAlpha(ageState.value) else ROW_DIVIDER_ALPHA
 
     // --- ADVANCED TREND ENGINE ---
     // Calculate on the fly using the passed history subset. The engine reads
@@ -901,4 +849,24 @@ internal fun rowTrendResult(
 ): tk.glucodata.logic.TrendEngine.TrendResult {
     val rate = deltaRateMgdlPerMinute?.takeIf { it.isFinite() } ?: return regressed
     return regressed.copy(state = tk.glucodata.logic.TrendEngine.stateFor(rate), velocity = rate)
+}
+
+
+private const val ROW_DIVIDER_ALPHA = 0.1f
+private const val ACTIVE_ROW_SETTLE_MS = 60_000L
+private const val ACTIVE_ROW_STALE_AFTER_MS = 90_000L
+private const val ACTIVE_ROW_STALE_SPAN_MS = 60_000L
+
+/** Newest row: accent to stock over its first minute, stock until 90s, then toward the stale shade. */
+internal fun activeRowColor(ageMs: Long, active: Color, stock: Color, stale: Color): Color = when {
+    ageMs < ACTIVE_ROW_SETTLE_MS -> lerp(active, stock, (ageMs / ACTIVE_ROW_SETTLE_MS.toFloat()).coerceIn(0f, 1f))
+    ageMs < ACTIVE_ROW_STALE_AFTER_MS -> stock
+    else -> lerp(stock, stale, ((ageMs - ACTIVE_ROW_STALE_AFTER_MS) / ACTIVE_ROW_STALE_SPAN_MS.toFloat()).coerceIn(0f, 1f))
+}
+
+/** The newest row's divider follows its colour: hidden while accented, back once settled, gone again when stale. */
+internal fun activeRowDividerAlpha(ageMs: Long): Float = when {
+    ageMs < ACTIVE_ROW_SETTLE_MS -> ROW_DIVIDER_ALPHA * (ageMs / ACTIVE_ROW_SETTLE_MS.toFloat()).coerceIn(0f, 1f)
+    ageMs < ACTIVE_ROW_STALE_AFTER_MS -> ROW_DIVIDER_ALPHA
+    else -> ROW_DIVIDER_ALPHA * (1f - ((ageMs - ACTIVE_ROW_STALE_AFTER_MS) / ACTIVE_ROW_STALE_SPAN_MS.toFloat()).coerceIn(0f, 1f))
 }
