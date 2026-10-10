@@ -2645,9 +2645,8 @@ private fun TemperatureOverviewCard(temperaturePoints: List<TemperaturePoint>) {
                 }
                 Text(
                     text = "${String.format(Locale.getDefault(), "%.1f", selected.temperatureCelsius)} °C",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontFeatureSettings = "tnum",
-                        fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.headlineMediumEmphasized.copy(
+                        fontFeatureSettings = "tnum"
                     ),
                     color = selectedTone
                 )
