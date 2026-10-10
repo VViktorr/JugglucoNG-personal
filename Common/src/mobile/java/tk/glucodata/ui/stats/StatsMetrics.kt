@@ -249,7 +249,7 @@ internal fun ScoreTile(
                             Text(
                                 text = value,
                                 style = valueStyle,
-                                fontWeight = FontWeight.SemiBold,
+
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(start = 8.dp),
                                 maxLines = 1,
@@ -279,7 +279,7 @@ internal fun ScoreTile(
                             Text(
                                 text = value,
                                 style = valueStyle,
-                                fontWeight = FontWeight.SemiBold,
+
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(start = 12.dp),
                                 maxLines = 1,
@@ -324,7 +324,7 @@ internal fun ScoreTile(
                         Text(
                             text = value,
                             style = valueStyle,
-                            fontWeight = FontWeight.SemiBold,
+
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(start = 12.dp),
                             maxLines = 1,
