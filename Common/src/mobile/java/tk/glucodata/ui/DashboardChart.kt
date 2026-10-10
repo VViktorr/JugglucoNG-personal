@@ -3560,7 +3560,14 @@ fun InteractiveGlucoseChart(
                 chipPreviousSlots.keys.retainAll(visibleIds)
             }
             orderedChipMarkers.forEachIndexed { index, marker ->
-                chipPreviousSlots[marker.entryId] = chipPlacements[index].slot
+                val placement = chipPlacements[index]
+                // A tucked chip does not own a free slot; reusing its borrowed slot
+                // on the next frame could destabilize the pile.
+                if (placement.tuck == null && !placement.folded) {
+                    chipPreviousSlots[marker.entryId] = placement.slot
+                } else {
+                    chipPreviousSlots.remove(marker.entryId)
+                }
             }
             val chipBoxById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to chipPlacements[index].box
