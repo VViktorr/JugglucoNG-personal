@@ -481,7 +481,7 @@ fun AlertSettingsScreen(
             // The cross-family quiet period (#210) belongs with the trend alerts it
             // coordinates. Its High coverage is on and has no switch.
             item(key = "same-direction-quiet-period") {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 SliderSettingsItem(
                     title = stringResource(R.string.same_direction_suppression_title),
                     subtitle = stringResource(R.string.same_direction_suppression_summary),
@@ -686,7 +686,7 @@ fun CustomAlertCard(
                 // Colored icon container (Identical to AlertCard)
                 Surface(
                     modifier = Modifier.size(40.dp),
-                    shape = RoundedCornerShape(40.dp),
+                    shape = CircleShape,
                     color = accentColor.copy(alpha = 0.12f)
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -1025,7 +1025,7 @@ private fun AlertCard(
                     modifier = Modifier
                         .size(40.dp)
                         .padding(end = 0.dp),
-                    shape = RoundedCornerShape(40.dp),
+                    shape = CircleShape,
                     color = accentColor.copy(alpha = 0.12f)
                 )
                 {
