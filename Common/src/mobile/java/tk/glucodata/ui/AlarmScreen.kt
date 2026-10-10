@@ -449,6 +449,7 @@ private fun ActionDock(
                 Text(
                     text = stringResource(R.string.stop),
                     style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Medium,
                         letterSpacing = (-0.1).sp
                     )
                 )
