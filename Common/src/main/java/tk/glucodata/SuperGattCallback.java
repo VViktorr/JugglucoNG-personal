@@ -280,6 +280,12 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     }
 
     public void disconnect() {
+    if (!usesHybridLibre2Connection()) {
+        synchronized (this) {
+            connectDeadline.cancel();
+            clearPendingConnect();
+        }
+    }
     final var thegatt= mBluetoothGatt;
     if(thegatt!=null) {
         {if(doLog) {Log.i(LOG_ID,"Disconnect");};};
@@ -1692,10 +1698,16 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
                 Log.e(LOG_ID, note + " descriptor.setValue failed");
                 return false;
                 }
-            if (!gatt.writeDescriptor(descriptor)) {
-                Log.e(LOG_ID, note + " writeDescriptor failed");
-                return false;
-               }
+            final int originalWriteType = characteristic.getWriteType();
+            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+            try {
+                if (!gatt.writeDescriptor(descriptor)) {
+                    Log.e(LOG_ID, note + " writeDescriptor failed");
+                    return false;
+                }
+            } finally {
+                characteristic.setWriteType(originalWriteType);
+            }
             }
         if(doLog) {
             showbytes(LOG_ID + " " + note + " enableNotification ", value);
