@@ -39,11 +39,9 @@ internal fun CloneSettingsContent(
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.clone_sync_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.navigate_back)) }
-                },
+            AppTopBar(
+                title = stringResource(R.string.clone_sync_title),
+                onNavigateBack = onBack,
                 actions = {
                     IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, stringResource(R.string.mirror_reconnect_all)) }
                 },
