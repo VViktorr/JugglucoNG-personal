@@ -3477,8 +3477,25 @@ fun InteractiveGlucoseChart(
 
             // Place journal labels with the shared collision-aware algorithm, keeping
             // all glucose rendering and marker click handlers unchanged.
-            val chipHeightPx = with(LocalDensity.current) { 32.dp.toPx() }
-            val chipWidthPx = with(LocalDensity.current) { 132.dp.toPx() }
+            // Match the pill's actual text style, icon, spacer and horizontal padding.
+            // Widths are measured per label rather than reserving the same space for all entries.
+            val chipTextStyle = MaterialTheme.typography.labelMedium
+            val chipTextMeasurer = rememberTextMeasurer()
+            val chipDensity = LocalDensity.current
+            val chipTextMaxWidthPx = with(chipDensity) { 88.dp.toPx() }
+            val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
+            val chipHeightPx = maxOf(
+                chipTextMeasurer.measure("0", style = chipTextStyle, maxLines = 1).size.height.toFloat(),
+                with(chipDensity) { 14.dp.toPx() }
+            ) + with(chipDensity) { 10.dp.toPx() }
+            val chipWidthsById = visibleOverlayMarkers.associate { marker ->
+                val label = marker.detailText.ifBlank { marker.title.take(10) }
+                marker.entryId to (
+                    chipChromeWidthPx +
+                        chipTextMeasurer.measure(label, style = chipTextStyle, maxLines = 1)
+                            .size.width.coerceAtMost(chipTextMaxWidthPx.toInt()) + 1f
+                    )
+            }
             val chipLayoutSpec = JournalChipLayout.Spec(
                 chipHeight = chipHeightPx,
                 sideOffset = journalChipSideOffsetPx,
@@ -3507,7 +3524,7 @@ fun InteractiveGlucoseChart(
                     JournalChipRequest(
                         anchorX = markerXById.getValue(marker.entryId),
                         baseTop = chipBaseTop(marker),
-                        width = chipWidthPx,
+                        width = chipWidthsById.getValue(marker.entryId),
                         previous = null,
                         kind = marker.type
                     )
