@@ -3586,6 +3586,7 @@ fun InteractiveGlucoseChart(
                 visibleOverlayMarkers.forEach { marker ->
                     val markerX = markerXById[marker.entryId] ?: return@forEach
                     val chipBox = chipBoxById[marker.entryId] ?: return@forEach
+                    if (chipPlacementById[marker.entryId]?.folded == true) return@forEach
                     val sourceY = when (marker.type) {
                         JournalEntryType.FINGERSTICK -> marker.chartGlucoseValue
                             ?.let(overlayValueToY)
