@@ -3617,7 +3617,8 @@ fun InteractiveGlucoseChart(
             val chipHiddenCounts = chipGroups.associate { group ->
                 orderedChipMarkers[group[0]].entryId to (group.size - 1)
             }
-            val chipSpreadShifts = remember(chipLayoutZoom) { HashMap<Long, FloatArray>() }
+            // Shifts from one expanded pile must not bias the layout of another.
+            val chipSpreadShifts = remember(chipLayoutZoom, expandedJournalChipId) { HashMap<Long, FloatArray>() }
             // Keep every member reachable on expansion, even in unusually dense
             // viewports; limiting this group without paging would hide entries.
             val spreadGroup = expandedGroup
