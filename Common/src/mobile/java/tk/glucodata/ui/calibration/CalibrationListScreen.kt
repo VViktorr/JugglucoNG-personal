@@ -71,6 +71,7 @@ import tk.glucodata.data.calibration.CalibrationEntity
 import tk.glucodata.data.calibration.CalibrationManager
 import tk.glucodata.ui.components.IconTile
 import tk.glucodata.ui.components.IconTileDefaults
+import tk.glucodata.ui.components.ConnectedButtonShapes
 import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.StableModalBottomSheet
@@ -1459,12 +1460,7 @@ private fun FloatingActionToolbar(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp),
-                shape = RoundedCornerShape(
-                    topStart = 16.dp,
-                    bottomStart = 16.dp, 
-                    topEnd = 4.dp,
-                    bottomEnd = 4.dp
-                ),
+                shape = ConnectedButtonShapes.Leading,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1484,12 +1480,7 @@ private fun FloatingActionToolbar(
             modifier = Modifier
                 .weight(1f)
                 .heightIn(min = 48.dp),
-            shape = RoundedCornerShape(
-                topStart = 4.dp,
-                bottomStart = 4.dp,
-                topEnd = 28.dp,
-                bottomEnd = 28.dp
-            ),
+            shape = ConnectedButtonShapes.Trailing,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
