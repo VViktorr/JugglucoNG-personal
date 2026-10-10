@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
@@ -248,8 +249,7 @@ private fun SensorSetupStatusScreen(
 
         Text(
             text = title,
-            style = if (ui.compact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.SemiBold,
+            style = if (ui.compact) MaterialTheme.typography.headlineMediumEmphasized else MaterialTheme.typography.headlineLargeEmphasized,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -273,7 +273,7 @@ private fun SensorSetupStatusScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.42f)
                     .height(6.dp)
-                    .clip(RoundedCornerShape(999.dp)),
+                    .clip(CircleShape),
                 color = accentColor,
                 trackColor = accentColor.copy(alpha = 0.18f)
             )
@@ -282,7 +282,7 @@ private fun SensorSetupStatusScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.42f)
                     .height(6.dp)
-                    .clip(RoundedCornerShape(999.dp)),
+                    .clip(CircleShape),
                 color = accentColor,
                 trackColor = accentColor.copy(alpha = 0.18f)
             )
