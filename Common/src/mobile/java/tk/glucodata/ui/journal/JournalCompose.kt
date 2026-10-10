@@ -1338,8 +1338,7 @@ private fun JournalDoseAssistCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.journal_dose_math_title),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelLargeEmphasized,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
@@ -1358,8 +1357,7 @@ private fun JournalDoseAssistCard(
                             R.string.journal_dose_suggested_insulin,
                             suggestion?.totalInsulinUnits?.let(::formatInsulinDose) ?: "—"
                         ),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = if (suggestion != null) {
                             MaterialTheme.colorScheme.onSurface
                         } else {
@@ -1402,8 +1400,7 @@ private fun JournalDoseAssistCard(
                             R.string.journal_dose_covers_carbs,
                             coveredCarbsSuggestion?.let(::formatCarbDose) ?: "—"
                         ),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = if (coveredCarbsSuggestion != null) {
                             MaterialTheme.colorScheme.onSurface
                         } else {
@@ -1646,8 +1643,7 @@ private fun JournalFoodLibrarySelector(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = visibleItems.singleOrNull()?.displayName ?: stringResource(R.string.journal_add_food),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1929,8 +1925,7 @@ private fun JournalSelectedFoodChip(
             Column(modifier = Modifier.widthIn(max = 180.dp)) {
                 Text(
                     text = item.displayName,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelLargeEmphasized,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -2000,8 +1995,7 @@ private fun JournalFoodPickerRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.labelLargeEmphasized,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
