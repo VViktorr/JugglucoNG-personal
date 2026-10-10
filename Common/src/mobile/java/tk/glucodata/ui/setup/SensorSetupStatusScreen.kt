@@ -233,11 +233,11 @@ private fun SensorSetupStatusScreen(
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                shape = RoundedCornerShape(999.dp)
+                shape = CircleShape
             ) {
                 Text(
                     text = sensorLabel,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1
                 )
