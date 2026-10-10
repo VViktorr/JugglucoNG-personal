@@ -906,6 +906,7 @@ fun InteractiveGlucoseChart(
 //    val targetBandColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
     val hoverLineColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
     val minMaxLineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    val axisTextColorArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
     val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
     val chartUnderlayBottomDp = expandedUnderlayBottom * safeExpandedProgress
     val chartUnderlayBottomPx = with(LocalDensity.current) { chartUnderlayBottomDp.toPx() }
@@ -1004,18 +1005,19 @@ fun InteractiveGlucoseChart(
     }
 
     // Paints
-    val axisTextPaint = remember(graphFont) {
+    val axisLabelTextPx = with(LocalDensity.current) { 11.sp.toPx() }
+    val axisTextPaint = remember(graphFont, axisLabelTextPx) {
         android.graphics.Paint().apply {
             color = android.graphics.Color.GRAY
-            textSize = 10f * density
+            textSize = axisLabelTextPx
             textAlign = android.graphics.Paint.Align.LEFT
             typeface = graphFont
         }
     }
-    val xTextPaint = remember(graphFont) {
+    val xTextPaint = remember(graphFont, axisLabelTextPx) {
         android.graphics.Paint().apply {
             color = android.graphics.Color.GRAY
-            textSize = 10f * density
+            textSize = axisLabelTextPx
             textAlign = android.graphics.Paint.Align.CENTER
             typeface = graphFont
         }
@@ -2578,6 +2580,7 @@ fun InteractiveGlucoseChart(
                         drawLine(gridColor, Offset(0f, y), Offset(width, y), 1f)
                         // Text - Vertically centered with grid line, 4dp left padding
                         val labelText = yVal.toString()
+                        axisTextPaint.color = axisTextColorArgb
                         axisTextPaint.getTextBounds(labelText, 0, labelText.length, axisLabelBounds)
                         val centeredY = y + (axisLabelBounds.height() / 2f)
                         val labelPadding = 16f * density
@@ -2604,6 +2607,7 @@ fun InteractiveGlucoseChart(
                 }
 
                 // --- 2. DRAW X-AXIS GRID ---
+                xTextPaint.color = axisTextColorArgb
                 // Intervals: 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 24h
                 // Pick interval keeping labels ~120px apart
                 val pxPerMs = width / animDur
@@ -2637,10 +2641,13 @@ fun InteractiveGlucoseChart(
                                     reusableDate.time = tGrid
                                     formatDate.format(reusableDate)
                                 }
-                                drawContext.canvas.nativeCanvas.drawText(
-                                    dateLabel, x, contentHeight - labelsLiftPx - 25f,
-                                    xTextPaint.apply { typeface = graphFontBold }
-                                )
+                                xTextPaint.typeface = graphFontBold
+                                val halfDateLabel = xTextPaint.measureText(dateLabel) / 2f
+                                if (x - halfDateLabel >= 0f && x + halfDateLabel <= width) {
+                                    drawContext.canvas.nativeCanvas.drawText(
+                                        dateLabel, x, contentHeight - labelsLiftPx - 25f, xTextPaint
+                                    )
+                                }
                                 xTextPaint.typeface = graphFont
                             } else {
                                 // Time Line
@@ -2650,7 +2657,10 @@ fun InteractiveGlucoseChart(
                                     val mm = if (m < 10) "0$m" else m.toString()
                                     "$hh:$mm"
                                 }
-                                drawContext.canvas.nativeCanvas.drawText(timeLabel, x, contentHeight - labelsLiftPx - 28f, xTextPaint)
+                                val halfLabel = xTextPaint.measureText(timeLabel) / 2f
+                                if (x - halfLabel >= 0f && x + halfLabel <= width) {
+                                    drawContext.canvas.nativeCanvas.drawText(timeLabel, x, contentHeight - labelsLiftPx - 28f, xTextPaint)
+                                }
                             }
                         }
                         tGrid += gridInterval
