@@ -1845,6 +1845,7 @@ fun InteractiveGlucoseChart(
                             // This prevents the chart from hijacking touches meant for the floating buttons.
                             val down = awaitFirstDown()
                             val startedOnJournalMarker = down.id in activeJournalMarkerPointers
+                            if (!startedOnJournalMarker) expandedJournalChipId = null
                             val gestureStartTime = System.currentTimeMillis()
                             lastInteractionTimestamp = gestureStartTime
                             cancelAutoScroll()
