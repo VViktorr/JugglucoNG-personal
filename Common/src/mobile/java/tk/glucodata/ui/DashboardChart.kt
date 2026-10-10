@@ -3665,7 +3665,15 @@ fun InteractiveGlucoseChart(
                     activePointerIds = activeJournalMarkerPointers,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .zIndex(if (placement.tuck == null) 1.5f else 1.4f - placement.depth * 0.001f)
+                        .zIndex(
+                            if (expandedGroup != null && chipGroupById[marker.entryId] === expandedGroup) {
+                                1.6f + (expandedGroup.size - placement.depth) * 0.001f
+                            } else if (placement.tuck == null) {
+                                1.5f
+                            } else {
+                                1.4f - placement.depth * 0.001f
+                            }
+                        )
                         .offset {
                             androidx.compose.ui.unit.IntOffset(
                                 x = chipBox.left.toInt(),
@@ -3677,6 +3685,7 @@ fun InteractiveGlucoseChart(
                         if (group != null && group !== expandedGroup) {
                             expandedJournalChipId = orderedChipMarkers[group[0]].entryId
                         } else {
+                            expandedJournalChipId = null
                             onJournalMarkerClick?.invoke(marker.entryId)
                         }
                     }
