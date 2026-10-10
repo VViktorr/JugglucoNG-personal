@@ -3469,7 +3469,6 @@ fun InteractiveGlucoseChart(
                 val amountFactor = (ln(1f + doseUnits) / ln(1f + insulinReferenceDoseUnits)).coerceIn(0.08f, 1f)
                 return insulinBaseCurveHeightPx + (insulinExtraCurveHeightPx * amountFactor)
             }
-            val journalChipMaxTopPx = (chartHeightPx - with(LocalDensity.current) { 34.dp.toPx() }).coerceAtLeast(journalChipMinTopPx)
             val connectorStrokePx = with(LocalDensity.current) { 0.85.dp.toPx() }
             val insulinConnectorY = chartHeightPx - with(LocalDensity.current) { 1.dp.toPx() }
 
@@ -3500,6 +3499,7 @@ fun InteractiveGlucoseChart(
                 ).size.height.toFloat(),
                 with(chipDensity) { 14.dp.toPx() }
             ) + with(chipDensity) { 10.dp.toPx() }
+            val journalChipMaxTopPx = (chartHeightPx - chipHeightPx).coerceAtLeast(journalChipMinTopPx)
             val chipTextWidthCache = remember(chipTextStyle, chipDensity) { HashMap<String, Float>() }
             fun measuredChipTextWidth(label: String): Float = chipTextWidthCache.getOrPut(label) {
                 if (chipTextWidthCache.size >= 256) chipTextWidthCache.clear()
@@ -3522,7 +3522,7 @@ fun InteractiveGlucoseChart(
                 minX = 0f,
                 maxX = overlayDataWidthPx,
                 minTop = journalChipMinTopPx,
-                maxTop = (chartHeightPx - chipHeightPx).coerceAtLeast(journalChipMinTopPx),
+                maxTop = journalChipMaxTopPx,
                 // Without repeatReach the layout defaults to zero: identical doses
                 // cannot form a stable pile unless their anchors coincide exactly.
                 repeatReach = with(chipDensity) { 96.dp.toPx() },
