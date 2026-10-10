@@ -3524,8 +3524,14 @@ fun InteractiveGlucoseChart(
                         .coerceIn(journalChipMinTopPx, journalChipMaxTopPx)
             }
             val orderedChipMarkers = visibleOverlayMarkers.sortedWith(compareBy({ it.timestamp }, { it.entryId }))
-            // Retain a free slot while the viewport pans; reset when zoom settles.
-            val chipPreviousSlots = remember(visibleDuration) { HashMap<Long, JournalChipSlot>() }
+            // Keep chip positions steady throughout a zoom gesture. Once the zoom settles,
+            // forget previous slots so the collision layout can tidy up at the new scale.
+            var chipLayoutZoom by remember { mutableLongStateOf(visibleDuration) }
+            LaunchedEffect(visibleDuration) {
+                kotlinx.coroutines.delay(350L)
+                chipLayoutZoom = visibleDuration
+            }
+            val chipPreviousSlots = remember(chipLayoutZoom) { HashMap<Long, JournalChipSlot>() }
             val chipPlacements = JournalChipLayout.place(
                 orderedChipMarkers.map { marker ->
                     JournalChipRequest(
