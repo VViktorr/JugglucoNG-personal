@@ -2,6 +2,8 @@ package tk.glucodata.ui.setup
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -54,6 +56,7 @@ fun DexcomSetupWizard(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(ui.horizontalPadding)
+                .verticalScroll(rememberScrollState())
                 .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
