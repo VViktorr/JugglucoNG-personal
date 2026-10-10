@@ -51,12 +51,18 @@ class LiveCalibrationPolicyTests {
     @Test
     fun ottaiPublishesCurrentThroughTheResolvedExternalPath() {
         // displayValue is formula glucose in display units, not a user calibration.
-        // processExternalCurrentReading marks it resolved, so the display does not
-        // calibrate it. handleGlucoseResult would apply getCalibratedValue once,
-        // the first time, because Ottai does not fold calibration in. This must stay
+        // Resolve stock formula glucose once before passing the explicit resolved
+        // value to processExternalCurrentReading. This must stay
         // the only publish of that sample: both paths would publish it twice.
         val ottai = source("Common/src/main/java/tk/glucodata/drivers/ottai/OttaiBleManager.kt")
-        assertTrue(ottai.contains("processExternalCurrentReading(id, reading.displayValue"))
+        val publish = ottai.substringAfter("private fun publishCurrentReading(")
+            .substringBefore("private fun resolveSampleTimeMs(")
+        assertTrue(publish.contains("CurrentDisplaySource.resolveIncomingReading("))
+        assertTrue(publish.contains("LiveReadingLanes.stock(reading.displayValue, Float.NaN)"))
+        assertTrue(publish.contains("preferredSensorId = id"))
+        assertTrue(publish.contains("preferIncomingSample = true"))
+        assertTrue(publish.contains("LiveReadingLanes.resolved(display.primaryValue)"))
+        assertFalse(publish.contains("processExternalCurrentReading(id, reading.displayValue"))
         assertFalse(ottai.contains("handleGlucoseResult("))
     }
 
