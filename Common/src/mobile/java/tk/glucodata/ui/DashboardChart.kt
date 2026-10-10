@@ -454,7 +454,7 @@ private fun PreviewWindowNavigator(
     val previewStart = previewCenterTime - previewHalfDuration
     val previewEnd = previewCenterTime + previewHalfDuration
     val secondaryLineColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-    val isDark = isSystemInDarkTheme()
+    val isDark = tk.glucodata.ui.isAppInDarkTheme()
     val paletteRevision = GlucosePaletteState.revision
     val targetBandColor = remember(isDark, paletteRevision) {
         Color(GlucoseRangeColors.targetBackground(isDark)).copy(alpha = 0.12f)
@@ -888,7 +888,7 @@ fun InteractiveGlucoseChart(
     onVisibleRangeChanged: ((startMs: Long, endMs: Long) -> Unit)? = null
 ) {
     // --- THEME & PAINTS ---
-    val isDark = isSystemInDarkTheme()
+    val isDark = tk.glucodata.ui.isAppInDarkTheme()
     // Observe the glucose palette so target band / band tints recompute live
     // when the user switches presets or edits a band colour (no restart).
     val glucosePaletteRevision = GlucosePaletteState.revision
@@ -2360,7 +2360,7 @@ fun InteractiveGlucoseChart(
             // Multi-sensor: the primary trace carries a subtle identity tint so
             // it pairs with its (tinted) values, like the peer traces do.
             val primaryLineTintFraction = if (peerChartSeries.isNotEmpty()) 0.22f else 0f
-            val appRangeDark = isSystemInDarkTheme()
+            val appRangeDark = tk.glucodata.ui.isAppInDarkTheme()
             val gradientBrush = remember(
                 limitYVeryHigh,
                 limitYHigh,
