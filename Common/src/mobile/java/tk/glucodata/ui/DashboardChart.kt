@@ -3642,7 +3642,9 @@ fun InteractiveGlucoseChart(
                 orderedChipMarkers[group[0]].entryId to (group.size - 1)
             }
             // Shifts from one expanded pile must not bias the layout of another.
-            val chipSpreadShifts = remember(chipLayoutZoom, expandedJournalChipId) { HashMap<Long, FloatArray>() }
+            val chipSpreadShifts = remember(
+                chipLayoutZoom, expandedJournalChipId, chipHeightPx, chipDensity.density
+            ) { HashMap<Long, FloatArray>() }
             // Keep every member reachable on expansion, even in unusually dense
             // viewports; limiting this group without paging would hide entries.
             val spreadGroup = expandedGroup
