@@ -3558,8 +3558,14 @@ fun InteractiveGlucoseChart(
                 kotlinx.coroutines.delay(350L)
                 chipLayoutZoom = visibleDuration
             }
-            val chipPreviousSlots = remember(chipLayoutZoom) { HashMap<Long, JournalChipSlot>() }
-            val chipPreviousTucks = remember(chipLayoutZoom) { HashMap<Long, Long>() }
+            // A font-scale or density change alters the measured chip boxes; old
+            // slots and tucks must not constrain the new layout.
+            val chipPreviousSlots = remember(chipLayoutZoom, chipHeightPx, chipDensity.density) {
+                HashMap<Long, JournalChipSlot>()
+            }
+            val chipPreviousTucks = remember(chipLayoutZoom, chipHeightPx, chipDensity.density) {
+                HashMap<Long, Long>()
+            }
             val chipIndexById = orderedChipMarkers.mapIndexed { index, marker ->
                 marker.entryId to index
             }.toMap()
