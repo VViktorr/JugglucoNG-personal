@@ -11,6 +11,9 @@
     <item name="windowNoTitle">true</item>
     <item name="android:windowContentOverlay">@null</item>
     <item name="android:fontFamily">@font/ibm_plex_sans_var</item>
+    <!-- Compose draws its own light and dark schemes. A device-wide force dark (MIUI's dark
+         mode for apps, the Override force-dark developer option) would invert them a second
+         time: dark labels on light pills come out light on light. -->
     <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     <item name="android:textViewStyle">@style/MyTextViewStyle</item>
      <item name="android:textAppearanceButton">@style/textAppearanceButton</item>
@@ -46,4 +49,5 @@
 
 
 </resources>
+
 
