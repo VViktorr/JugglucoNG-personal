@@ -2081,11 +2081,11 @@ internal fun JournalFoodCompositionDetails(
         }
         Surface(
             color = color.copy(alpha = 0.10f),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.padding(6.dp),
+                modifier = Modifier.padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
