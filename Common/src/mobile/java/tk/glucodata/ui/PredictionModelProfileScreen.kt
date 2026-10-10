@@ -2,6 +2,7 @@
 
 package tk.glucodata.ui
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +35,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,9 +63,9 @@ fun PredictionModelProfileScreen(
     navController: NavController,
     viewModel: DashboardViewModel
 ) {
-    val profile by viewModel.predictionModelProfile.collectAsState()
-    val unit by viewModel.unit.collectAsState()
-    val doseTargetMgDl by viewModel.predictionDoseTargetMgDl.collectAsState()
+    val profile by viewModel.predictionModelProfile.collectAsStateWithLifecycle()
+    val unit by viewModel.unit.collectAsStateWithLifecycle()
+    val doseTargetMgDl by viewModel.predictionDoseTargetMgDl.collectAsStateWithLifecycle()
     val isMmol = GlucoseFormatter.isMmol(unit)
     var timePickerRequest by remember { mutableStateOf<ProfileTimePickerRequest?>(null) }
     var pendingDeleteStart by remember { mutableStateOf<Int?>(null) }
