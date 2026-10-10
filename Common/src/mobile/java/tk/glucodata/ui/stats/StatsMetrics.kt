@@ -515,6 +515,8 @@ internal fun metricSpec(
     val lowWord = stringResource(R.string.low_range)
     val highWord = stringResource(R.string.high_range)
     val inRangeWord = stringResource(R.string.in_range)
+    val onTargetWord = stringResource(R.string.stats_finding_on_target)
+    val belowTargetWord = stringResource(R.string.report_below_target)
     val steadyWord = stringResource(R.string.gvi_good)
     val middlingWord = stringResource(R.string.gvi_moderate)
     val swingyWord = stringResource(R.string.gvi_poor)
@@ -550,7 +552,7 @@ internal fun metricSpec(
     return when (metric) {
         StatsMetric.TIME_IN_RANGE -> spec(
             value = String.format(Locale.getDefault(), "%.0f%%", summary.tir.inRangePercent),
-            status = if (summary.tir.inRangePercent >= 70f) steadyWord else middlingWord,
+            status = if (summary.tir.inRangePercent >= 70f) onTargetWord else belowTargetWord,
             meta = "$rangeWord $targetRange",
             tone = tirHeatColor(summary.tir.inRangePercent)
         )
@@ -602,7 +604,7 @@ internal fun metricSpec(
             val bounds = "${formatMgDl(low, unit)}–${formatMgDl(high, unit)}"
             spec(
                 value = String.format(Locale.getDefault(), "%.0f%%", summary.tightRangePercent),
-                status = if (summary.tightRangePercent >= 50f) steadyWord else middlingWord,
+                status = if (summary.tightRangePercent >= 50f) onTargetWord else belowTargetWord,
                 meta = bounds,
                 tone = when {
                     summary.tightRangePercent >= 50f -> TirInRangeColor
@@ -674,7 +676,7 @@ internal fun metricSpec(
 
         StatsMetric.COVERAGE -> spec(
             value = String.format(Locale.getDefault(), "%.0f%%", summary.coverage.percent),
-            status = if (summary.coverage.percent >= 85f) steadyWord else middlingWord,
+            status = if (summary.coverage.percent >= 85f) onTargetWord else belowTargetWord,
             meta = stringResource(R.string.stats_metric_readings, summary.coverage.readingCount),
             tone = when {
                 summary.coverage.percent >= 85f -> TirInRangeColor
