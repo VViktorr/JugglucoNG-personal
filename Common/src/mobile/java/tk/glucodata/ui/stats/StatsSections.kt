@@ -492,7 +492,6 @@ private fun EpisodeStatLine(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
-            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
     }
