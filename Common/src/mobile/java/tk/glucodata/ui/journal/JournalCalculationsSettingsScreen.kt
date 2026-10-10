@@ -1,5 +1,6 @@
 package tk.glucodata.ui.journal
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -36,7 +37,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -71,18 +71,18 @@ fun JournalCalculationsSettingsScreen(
     navController: NavController,
     viewModel: DashboardViewModel
 ) {
-    val journalEnabled by viewModel.journalEnabled.collectAsState()
-    val predictionModelProfile by viewModel.predictionModelProfile.collectAsState()
-    val journalFoodMacrosEnabled by viewModel.journalFoodMacrosEnabled.collectAsState()
-    val journalEiobDisplayEnabled by viewModel.journalEiobDisplayEnabled.collectAsState()
-    val journalBodyWeightKg by viewModel.journalBodyWeightKg.collectAsState()
+    val journalEnabled by viewModel.journalEnabled.collectAsStateWithLifecycle()
+    val predictionModelProfile by viewModel.predictionModelProfile.collectAsStateWithLifecycle()
+    val journalFoodMacrosEnabled by viewModel.journalFoodMacrosEnabled.collectAsStateWithLifecycle()
+    val journalEiobDisplayEnabled by viewModel.journalEiobDisplayEnabled.collectAsStateWithLifecycle()
+    val journalBodyWeightKg by viewModel.journalBodyWeightKg.collectAsStateWithLifecycle()
     var showBodyWeightDialog by rememberSaveable { mutableStateOf(false) }
     var bodyWeightText by rememberSaveable(journalBodyWeightKg) {
         mutableStateOf(journalBodyWeightKg?.let { String.format(java.util.Locale.US, "%.1f", it) }.orEmpty())
     }
-    val stateDoseHintEnabled by viewModel.stateDoseHintEnabled.collectAsState()
-    val stateDoseHintCorrectInRange by viewModel.stateDoseHintCorrectInRange.collectAsState()
-    val stateDoseHintHorizonMinutes by viewModel.stateDoseHintHorizonMinutes.collectAsState()
+    val stateDoseHintEnabled by viewModel.stateDoseHintEnabled.collectAsStateWithLifecycle()
+    val stateDoseHintCorrectInRange by viewModel.stateDoseHintCorrectInRange.collectAsStateWithLifecycle()
+    val stateDoseHintHorizonMinutes by viewModel.stateDoseHintHorizonMinutes.collectAsStateWithLifecycle()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
