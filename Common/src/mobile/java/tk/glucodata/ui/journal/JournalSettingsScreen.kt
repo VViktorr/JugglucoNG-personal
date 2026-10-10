@@ -125,6 +125,8 @@ import tk.glucodata.data.journal.builtInJournalCurve
 import tk.glucodata.data.journal.normalizeJournalCurvePoints
 import tk.glucodata.data.journal.serializeJournalCurve
 import tk.glucodata.ui.alerts.AddCustomAlertButton
+import tk.glucodata.ui.components.IconTile
+import tk.glucodata.ui.components.IconTileDefaults
 import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.ColorSwatchButton
@@ -471,20 +473,11 @@ private fun JournalIntelligenceRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Surface(
-            modifier = Modifier.size(44.dp),
-            color = iconTint.copy(alpha = if (checked) 0.22f else 0.10f),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+        IconTile(
+            icon = icon,
+            tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
+            containerColor = IconTileDefaults.toggleContainerColor(iconTint, checked),
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
