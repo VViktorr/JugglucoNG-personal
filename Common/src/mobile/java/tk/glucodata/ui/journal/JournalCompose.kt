@@ -2107,9 +2107,8 @@ internal fun JournalFoodCompositionDetails(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                    textStyle = MaterialTheme.typography.titleLarge.copy(
+                    textStyle = MaterialTheme.typography.titleLargeEmphasized.copy(
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     ),
                     modifier = Modifier
@@ -3298,9 +3297,8 @@ private fun JournalStepperField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                        textStyle = MaterialTheme.typography.titleLarge.copy(
+                        textStyle = MaterialTheme.typography.titleLargeEmphasized.copy(
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.Center
                         ),
                         singleLine = true,
