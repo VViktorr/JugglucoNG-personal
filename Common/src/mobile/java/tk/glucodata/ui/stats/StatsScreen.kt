@@ -1082,36 +1082,12 @@ private data class PdfStylePreviewPalette(
 
 private fun resolvePdfStylePreviewPalette(
     style: StatsReportExporter.PdfVisualStyle
-): PdfStylePreviewPalette = when (style) {
-    StatsReportExporter.PdfVisualStyle.CURRENT -> PdfStylePreviewPalette(
-        paper = Color(0xFFF5F8FD),
-        stripe = Color(0xFF1A52B0),
-        accent = Color(0xFFD65F3F),
-        text = Color(0xFF1B2637)
-    )
-    StatsReportExporter.PdfVisualStyle.MINIMAL_SWISS -> PdfStylePreviewPalette(
-        paper = Color(0xFFFAFBFD),
-        stripe = Color(0xFF181818),
-        accent = Color(0xFFBB2025),
-        text = Color(0xFF21252C)
-    )
-    StatsReportExporter.PdfVisualStyle.MEDICAL_JOURNAL -> PdfStylePreviewPalette(
-        paper = Color(0xFFF8F6F1),
-        stripe = Color(0xFF295789),
-        accent = Color(0xFF774935),
-        text = Color(0xFF30353F)
-    )
-    StatsReportExporter.PdfVisualStyle.PREMIUM_DARK_INK -> PdfStylePreviewPalette(
-        paper = Color(0xFF1A202B),
-        stripe = Color(0xFF7FABFF),
-        accent = Color(0xFFDB9E6E),
-        text = Color(0xFFE8EDF6)
-    )
-    StatsReportExporter.PdfVisualStyle.ELEGANT_TYPOGRAPHY -> PdfStylePreviewPalette(
-        paper = Color(0xFFFCFBF9),
-        stripe = Color(0xFF56448B),
-        accent = Color(0xFFB07F57),
-        text = Color(0xFF413952)
+): PdfStylePreviewPalette = StatsReportExporter.swatch(style).let {
+    PdfStylePreviewPalette(
+        paper = Color(it.paper),
+        stripe = Color(it.primary),
+        accent = Color(it.secondary),
+        text = Color(it.text)
     )
 }
 
