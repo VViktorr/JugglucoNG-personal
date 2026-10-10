@@ -3672,6 +3672,9 @@ fun InteractiveGlucoseChart(
                 }
             } else emptyList()
             var nextUnplacedChipIndex by remember(expandedJournalChipId) { mutableStateOf(0) }
+            // An item can enter or leave the unplaced set as the chart is panned.
+            // Keep the selection index within the current set before opening an entry.
+            val unplacedCount = unplacedExpandedIds.size
             fun isChipVisible(markerId: Long): Boolean {
                 val placement = chipPlacementById[markerId] ?: return false
                 val group = chipGroupById[markerId]
@@ -3748,8 +3751,8 @@ fun InteractiveGlucoseChart(
                         ) {
                             // The front cycles through entries that could not find a clear
                             // spot, so a crowded pile never makes those entries unreachable.
-                            val id = unplacedExpandedIds[nextUnplacedChipIndex % unplacedExpandedIds.size]
-                            nextUnplacedChipIndex++
+                            val id = unplacedExpandedIds[nextUnplacedChipIndex % unplacedCount]
+                            nextUnplacedChipIndex = (nextUnplacedChipIndex + 1) % unplacedCount
                             onJournalMarkerClick?.invoke(id)
                         } else {
                             expandedJournalChipId = null
