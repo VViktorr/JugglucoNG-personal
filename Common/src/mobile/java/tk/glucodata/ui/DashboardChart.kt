@@ -3485,7 +3485,16 @@ fun InteractiveGlucoseChart(
             val chipTextMeasurer = rememberTextMeasurer()
             val chipDensity = LocalDensity.current
             val chipTextMaxWidthPx = with(chipDensity) { 88.dp.toPx() }
-            val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp + 28.dp).toPx() }
+            val chipChromeWidthPx = with(chipDensity) { (8.dp + 14.dp + 6.dp + 8.dp).toPx() }
+            // Reserve space for the largest possible pile counter before placement.
+            val chipCounterWidthPx = if (visibleOverlayMarkers.size > 1) {
+                with(chipDensity) { 4.dp.toPx() } +
+                    chipTextMeasurer.measure(
+                        "+${visibleOverlayMarkers.size - 1}",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    ).size.width + 1f
+            } else 0f
             val chipHeightPx = maxOf(
                 chipTextMeasurer.measure("0", style = chipTextStyle, maxLines = 1).size.height.toFloat(),
                 with(chipDensity) { 14.dp.toPx() }
@@ -3500,7 +3509,7 @@ fun InteractiveGlucoseChart(
                 val label = marker.detailText.ifBlank { marker.title.take(10) }
                 marker.entryId to (
                     chipChromeWidthPx +
-                        measuredChipTextWidth(label) + 1f
+                        measuredChipTextWidth(label) + chipCounterWidthPx + 1f
                     )
             }
             val chipLayoutSpec = JournalChipLayout.Spec(
