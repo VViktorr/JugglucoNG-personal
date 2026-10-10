@@ -1852,11 +1852,33 @@ public class SensorBluetooth {
                     ;
                 }
                 ;
+                if (doLog && cb instanceof Libre2GattCallback) {
+                    Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
+                            + " stage=nfc-reset-begin"
+                            + " callbackDataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " nfcStreamptr=0x" + Long.toHexString(streamptr)
+                            + " activeAddress=" + cb.mActiveDeviceAddress);
+                }
+                final long oldDataptr = cb.dataptr;
                 cb.resetdataptr();
+                if (doLog && cb instanceof Libre2GattCallback) {
+                    Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
+                            + " stage=nfc-reset-dataptr"
+                            + " oldDataptr=0x" + Long.toHexString(oldDataptr)
+                            + " newDataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " sameNativeSensor=" + Natives.sameSensor(streamptr, cb.dataptr)
+                            + " activeAddress=" + cb.mActiveDeviceAddress);
+                }
                 cb.sensorstartmsec = Natives.getSensorStartmsec(cb.dataptr);
                 cb.setPause(false);
                 // NFC created a separate stream wrapper for the same native record.
                 Natives.freedataptr(streamptr);
+                if (doLog && cb instanceof Libre2GattCallback) {
+                    Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
+                            + " stage=nfc-reset-connect"
+                            + " dataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " sensorStartMs=" + cb.sensorstartmsec);
+                }
                 return checkandconnect(cb, 0);
             }
         }
@@ -1886,7 +1908,21 @@ public class SensorBluetooth {
                 }
                 ;
                 SuperGattCallback cb = gattcallbacks.get(i);
+                final long oldDataptr = cb.dataptr;
+                if (doLog && cb instanceof Libre2GattCallback) {
+                    Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
+                            + " stage=manual-reset-begin"
+                            + " oldDataptr=0x" + Long.toHexString(oldDataptr)
+                            + " activeAddress=" + cb.mActiveDeviceAddress);
+                }
                 ptrptr[0] = cb.resetdataptr();
+                if (doLog && cb instanceof Libre2GattCallback) {
+                    Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
+                            + " stage=manual-reset-connect"
+                            + " oldDataptr=0x" + Long.toHexString(oldDataptr)
+                            + " newDataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " activeAddress=" + cb.mActiveDeviceAddress);
+                }
                 return checkandconnect(cb, 0);
             }
         }
