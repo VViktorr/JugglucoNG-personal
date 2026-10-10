@@ -1673,8 +1673,7 @@ private fun CalibrationTransferAction(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     color = if (isDestructive) contentColor else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
