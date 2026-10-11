@@ -119,8 +119,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.lerp
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.abs
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.Applic
@@ -136,20 +135,10 @@ import tk.glucodata.ui.util.AdaptiveContentWidthClass
 import tk.glucodata.ui.util.adaptiveContentWidthClass
 import tk.glucodata.ui.util.rememberAdaptiveWindowMetrics
 
-private data class TrendCornerWeights(
-    val topStart: Float,
-    val topEnd: Float,
-    val bottomEnd: Float,
-    val bottomStart: Float
-)
-
 private data class GlucoseHeroTone(
     val tint: Color,
     val blendFraction: Float
 )
-
-private fun lerpFloat(start: Float, end: Float, fraction: Float): Float =
-    start + (end - start) * fraction.coerceIn(0f, 1f)
 
 private fun fallbackLowThreshold(isMmol: Boolean): Float = GlucoseRangeColors.defaultLow(isMmol)
 
@@ -183,32 +172,10 @@ private fun glucoseHeroTone(
     GlucoseHeroTone(tint = Color(tone.tintArgb), blendFraction = tone.blendFraction)
 }
 
-private fun trendCornerWeightsFromVelocity(velocity: Float): TrendCornerWeights {
-    val angleDeg = (-velocity * 25f).coerceIn(-90f, 90f)
-    val angleRad = Math.toRadians(angleDeg.toDouble())
-    val dirX = cos(angleRad).toFloat()
-    val dirY = sin(angleRad).toFloat()
-
-    fun cornerRoundWeight(cornerX: Float, cornerY: Float): Float {
-        val dot = ((dirX * cornerX + dirY * cornerY) * 0.70710677f).coerceIn(-1f, 1f)
-        return if (dot >= 0f) {
-            // Toward direction: sharper as dot increases.
-            lerpFloat(0.88f, 0.08f, dot)
-        } else {
-            // Opposite side: extra rounded.
-            lerpFloat(0.88f, 1f, -dot)
-        }
-    }
-
-    return TrendCornerWeights(
-        topStart = cornerRoundWeight(-1f, -1f),
-        topEnd = cornerRoundWeight(1f, -1f),
-        bottomEnd = cornerRoundWeight(1f, 1f),
-        bottomStart = cornerRoundWeight(-1f, 1f)
-    )
+private fun trendRightCornerRadius(velocity: Float): Dp {
+    val strength = if (velocity.isFinite()) (abs(velocity) / 3.6f).coerceIn(0f, 1f) else 0f
+    return lerp(8.dp, 36.dp, strength)
 }
-
-private fun directionalRadius(weight: Float, min: Dp, max: Dp): Dp = lerp(min, max, weight.coerceIn(0f, 1f))
 
 private const val CalibrationDeleteSwipeThresholdFraction = 0.4f
 
@@ -310,23 +277,19 @@ fun DashboardCombinedHeader(
     }
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val isLandscape = adaptiveMetrics.isLandscape
-    val cornerWeights = remember(trendResult.velocity) { trendCornerWeightsFromVelocity(trendResult.velocity) }
     val cornerAnimSpec = spring<Dp>(
         dampingRatio = Spring.DampingRatioLowBouncy,
         stiffness = Spring.StiffnessLow
     )
 
     val heroTopStart = 16.dp
-    val heroTopEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topEnd, 8.dp, 24.dp),
+    val heroRightRadius by animateDpAsState(
+        targetValue = trendRightCornerRadius(trendResult.velocity),
         animationSpec = cornerAnimSpec,
-        label = "HeroTopEndRadius"
+        label = "HeroRightRadius"
     )
-    val heroBottomEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomEnd, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroBottomEndRadius"
-    )
+    val heroTopEnd = heroRightRadius
+    val heroBottomEnd = heroRightRadius
     val heroBottomStart = 16.dp
 
     val sensorTopStart = 16.dp
