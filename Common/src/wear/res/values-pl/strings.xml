@@ -30,6 +30,6 @@
     <string name="white_style_name">Styl biały</string>
     <string name="title_activity_watch_face_config">Konfiguracja</string>
     <string name="wear_journal_pending">Oczekiwanie na telefon</string>
-    <string name="wear_multi_sensor_complication">Wartości wielu czujników</string>
-    <string name="wear_multi_sensor_arrow_complication">Wartości wielu czujników + trendy</string>
+    <string name="wear_multi_sensor_complication">Wartości wielu czujników (tekstowa / obrazkowa)</string>
+    <string name="wear_multi_sensor_arrow_complication">Wartości wielu czujników + trendy (tekstowa / obrazkowa)</string>
 </resources>

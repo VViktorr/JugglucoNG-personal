@@ -119,6 +119,7 @@
 
             android:icon="@drawable/arrowblackwhite"
             android:label="@string/glucosearrowcomplicationlabel"
+            android:description="@string/wear_complication_image_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -137,6 +138,7 @@
 
             android:icon="@drawable/arrowblackwhite"
             android:label="@string/glucosechartcomplicationlabel"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -155,6 +157,7 @@
 
             android:icon="@drawable/arrowblackwhite"
             android:label="@string/glucosechartvaluecomplicationlabel"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -173,6 +176,7 @@
 
             android:icon="@drawable/arrowblackwhite"
             android:label="@string/glucosechartvaluearrowcomplicationlabel"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -191,6 +195,7 @@
 
             android:icon="@drawable/arrowblackwhite"
             android:label="@string/glucosechartfullcomplicationlabel"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -208,6 +213,7 @@
             android:exported="true"
             android:icon="@drawable/valuemgdl"
             android:label="@string/wear_multi_sensor_complication"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -222,6 +228,7 @@
             android:exported="true"
             android:icon="@drawable/valuemgdl"
             android:label="@string/wear_multi_sensor_arrow_complication"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -237,6 +244,7 @@
 
             android:icon="@drawable/valuemgdl"
             android:label="@string/glucosenumbercomplicationlabel"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -254,6 +262,7 @@
 
             android:icon="@drawable/valuearrow"
             android:label="@string/glucosearrowvaluecomplicationlabel"
+            android:description="@string/wear_complication_value_arrow_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -272,6 +281,7 @@
 
             android:icon="@drawable/arrowtime"
             android:label="@string/glucosearrowiconcomplicationlabel"
+            android:description="@string/wear_complication_image_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -289,6 +299,7 @@
 
             android:icon="@drawable/number"
             android:label="@string/glucosevalueiconcomplicationlabel"
+            android:description="@string/wear_complication_mixed_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
@@ -306,6 +317,7 @@
 
             android:icon="@drawable/shorttext"
             android:label="@string/glucoseshortcomplicationlabel"
+            android:description="@string/wear_complication_value_arrow_description"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />

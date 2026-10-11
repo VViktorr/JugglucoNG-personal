@@ -353,9 +353,9 @@
  <string name="hour12">12h</string>
 <string name="complications">Komplikacje</string>
     <string name="colors_style_setting_description">Kolor tarczy zegarka</string>
-   <string name="glucosenumbercomplicationlabel">Wartość glukozy</string>
-   <string name="glucosearrowcomplicationlabel">Strzałka glukozy</string>
-   <string name="glucosearrowvaluecomplicationlabel">Wartość + strzałka</string>
+   <string name="glucosenumbercomplicationlabel">Wartość glukozy (tekstowa / obrazkowa)</string>
+   <string name="glucosearrowcomplicationlabel">Strzałka glukozy (obrazkowa)</string>
+   <string name="glucosearrowvaluecomplicationlabel">Wartość + strzałka (tekstowa / obrazkowa)</string>
    <string name="text">Tekst</string>
    <string name="arrow">Strzałka</string>
    <string name="notalldata">OSTRZEŻENIE: Opcja &quot;Odbieraj&quot; nie jest włączona bez wysyłania wszystkich danych.</string>
@@ -2721,7 +2721,7 @@
     <string name="wear_prediction_title">Prognoza</string>
     <string name="wear_prediction_on">Włączona — ustawiana w telefonie</string>
     <string name="wear_prediction_off">Wyłączona — ustawiana w telefonie</string>
-    <string name="glucosechartcomplicationlabel">Wykres glukozy</string>
+    <string name="glucosechartcomplicationlabel">Wykres glukozy (tekstowa / obrazkowa)</string>
     <string name="wear_chart_complication">Wykres glukozy</string>
     <string name="wear_exchange_title">Wymiana danych</string>
     <string name="exchange_toggle_libreview">LibreView</string>
@@ -2733,9 +2733,9 @@
     <string name="exchange_toggle_patched_libre">Patched Libre</string>
     <string name="exchange_toggle_glucodata">GlucoDataHandler / AAPS</string>
     <string name="exchange_toggle_separate">Osobno na zegarku</string>
-    <string name="glucosechartvaluecomplicationlabel">Wykres + wartość</string>
-    <string name="glucosechartvaluearrowcomplicationlabel">Wykres + wartość + strzałka</string>
-    <string name="glucosechartfullcomplicationlabel">Wykres + wartość + strzałka + czas</string>
+    <string name="glucosechartvaluecomplicationlabel">Wykres + wartość (tekstowa / obrazkowa)</string>
+    <string name="glucosechartvaluearrowcomplicationlabel">Wykres + wartość + strzałka (tekstowa / obrazkowa)</string>
+    <string name="glucosechartfullcomplicationlabel">Wykres + wartość + strzałka + czas (tekstowa / obrazkowa)</string>
     <string name="sensor_vendor_abbott">Abbott</string>
     <string name="sensor_vendor_sibionics">Sibionics</string>
     <string name="sensor_vendor_dexcom">Dexcom</string>
@@ -3059,9 +3059,9 @@
     <string name="chart_scale_limits_title">Limity skali wykresu</string>
     <string name="chart_scale_limits_description">Najniższa i najwyższa rysowana wartość, także przy automatycznej skali. Przesuwaj pionowo po wartościach z lewej strony, aby zmienić skalę.</string>
     <string name="tts_missed_readings">Brak odczytów</string>
-    <string name="glucosevalueiconcomplicationlabel">Glukoza (mała)</string>
-    <string name="glucosearrowiconcomplicationlabel">Strzałka trendu (mała)</string>
-    <string name="glucoseshortcomplicationlabel">Glukoza + trend (małe)</string>
+    <string name="glucosevalueiconcomplicationlabel">Glukoza (mała) (tekstowa / obrazkowa)</string>
+    <string name="glucosearrowiconcomplicationlabel">Strzałka trendu (mała) (obrazkowa)</string>
+    <string name="glucoseshortcomplicationlabel">Glukoza + trend (małe) (tekstowa / obrazkowa)</string>
     <string name="scantranstitle">Zeskanuj kod Data Matrix NADAJNIKA</string>
     <string name="scantransmessage">Kod Data Matrix czujnika Sibionics 2 został zeskanowany. \nTeraz zeskanuj kod Data Matrix nadajnika.</string>
     <string name="mirrorscansucces">Połączenie zostało dodane do menu po lewej stronie → Lustro.</string>
@@ -3142,4 +3142,7 @@
     <string name="notification_trend_rising_fast">Szybki wzrost</string>
     <string name="notification_trend_falling">Trend spadkowy</string>
     <string name="notification_trend_falling_fast">Szybki spadek</string>
+    <string name="wear_complication_mixed_description">Komplikacja tekstowa lub obrazkowa, zależnie od pola na tarczy. Układ tekstu ustala tarcza zegarka.</string>
+    <string name="wear_complication_image_description">Komplikacja obrazkowa. Elementy są rysowane przez aplikację.</string>
+    <string name="wear_complication_value_arrow_description">Wariant obrazkowy: strzałka nad wartością glukozy. Wariant tekstowy: wartość i strzałka w tekście; rozmieszczenie ustala tarcza zegarka.</string>
 </resources>
