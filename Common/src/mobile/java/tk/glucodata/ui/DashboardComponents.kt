@@ -317,7 +317,7 @@ fun DashboardCombinedHeader(
     )
 
     val heroTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 22.dp, 52.dp),
+        targetValue = directionalRadius(cornerWeights.topStart, 8.dp, 24.dp),
         animationSpec = cornerAnimSpec,
         label = "HeroTopStartRadius"
     )
@@ -332,7 +332,7 @@ fun DashboardCombinedHeader(
         label = "HeroBottomEndRadius"
     )
     val heroBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 22.dp, 46.dp),
+        targetValue = directionalRadius(cornerWeights.bottomStart, 8.dp, 24.dp),
         animationSpec = cornerAnimSpec,
         label = "HeroBottomStartRadius"
     )
