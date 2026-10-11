@@ -1284,13 +1284,16 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         return "";
     }
 
-    public long resetdataptr() {
+    public synchronized long resetdataptr() {
         if (constatchange[1] < constatchange[0]) {
             constatchange[1] = System.currentTimeMillis();
             constatstatusstr = "resetdataptr";
         }
-        Natives.freedataptr(dataptr);
+        // Detach transport before freeing the pointer used by its callbacks.
         close();
+        final long previousDataptr = dataptr;
+        dataptr = 0L;
+        Natives.freedataptr(previousDataptr);
         dataptr = Natives.getdataptr(SerialNumber);
         mActiveDeviceAddress = Natives.getDeviceAddress(dataptr, true);
         return dataptr;

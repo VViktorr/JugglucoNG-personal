@@ -1244,27 +1244,39 @@ public class SensorBluetooth {
     /** Keep mirrored sensor records visible without claiming their physical transmitter. */
     public static void blockLocalCloneConnection(String sensorId) {
         if (sensorId == null || sensorId.isEmpty()) return;
+        final ArrayList<SuperGattCallback> blocked = new ArrayList<>();
         synchronized (gattcallbacks) {
             for (SuperGattCallback callback : gattcallbacks) {
                 if (SensorIdentity.matches(callback.SerialNumber, sensorId)) {
-                    callback.setPause(true);
-                    callback.closeGattTransport();
+                    callback.stop = true;
+                    blocked.add(callback);
                 }
             }
+        }
+        // Callbacks resolve the roster while holding their own monitor.
+        // Never acquire that monitor while holding the roster monitor.
+        for (SuperGattCallback callback : blocked) {
+            callback.setPause(true);
+            callback.closeGattTransport();
         }
     }
 
     public static void retireCloneSensor(String sensorId) {
         if (sensorId == null || sensorId.isEmpty()) return;
+        final ArrayList<SuperGattCallback> retired = new ArrayList<>();
         synchronized (gattcallbacks) {
             for (int index = gattcallbacks.size() - 1; index >= 0; index--) {
                 SuperGattCallback callback = gattcallbacks.get(index);
                 if (SensorIdentity.matches(callback.SerialNumber, sensorId)) {
-                    callback.free();
+                    callback.stop = true;
+                    retired.add(callback);
                     gattcallbacks.remove(index);
                 }
             }
             Natives.setmaxsensors(gattcallbacks.size());
+        }
+        for (SuperGattCallback callback : retired) {
+            callback.free();
         }
         final String current = SensorIdentity.resolveMainSensor();
         if (SensorIdentity.matches(current, sensorId)) {
@@ -1526,6 +1538,8 @@ public class SensorBluetooth {
             blueone = null;
             return false;
         }
+        final ArrayList<SuperGattCallback> retired = new ArrayList<>();
+        try {
         // Clone disable can retire managed callbacks from the UI thread while a
         // native sync asks us to rebuild this same roster. Take the native and
         // managed snapshots under the same monitor as comparison and mutation;
@@ -1593,7 +1607,9 @@ public class SensorBluetooth {
                     ;
                 }
                 ;
-                gattcallbacks.get(weg).free();
+                final SuperGattCallback removed = gattcallbacks.get(weg);
+                removed.stop = true;
+                retired.add(removed);
                 gattcallbacks.remove(weg);
                 rehomeCurrentSensorAfterRemoval(removedSerial, allDevs);
             }
@@ -1639,6 +1655,12 @@ public class SensorBluetooth {
                         }
                     }
                 }
+            }
+        }
+        } finally {
+            // Freeing takes the callback monitor; release the roster first.
+            for (SuperGattCallback callback : retired) {
+                callback.free();
             }
         }
 
