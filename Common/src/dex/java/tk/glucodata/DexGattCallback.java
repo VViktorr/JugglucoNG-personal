@@ -170,16 +170,17 @@ private static PowerManager.WakeLock getwakelock() {
       }
 private PowerManager.WakeLock wakelock=null;
 
-private void getlock() {
+private synchronized void getlock() {
+    releaselock();
     wakelock=getwakelock();
     wakelock.acquire();
     {if(doLog) {Log.i(LOG_ID,"getlock");};};
     }
-private void releaselock() {
+private synchronized void releaselock() {
     var lock=wakelock;
     if(lock!=null) {
         wakelock=null;
-        lock.release();
+        Applic.releasewakelock(lock);
         {if(doLog) {Log.i(LOG_ID,"releaselock");};};
         }
    } 
@@ -399,65 +400,77 @@ private int connectionTimeouts=0;
     }
 
 
-private void sendcerts() {
+private long certificateSendGeneration = 0L;
+private synchronized void sendcerts() {
+    if (stop || !connected || mBluetoothGatt == null || dataptr == 0L) return;
     if (packet == null || packet.length == 0) {
         Log.e(LOG_ID, "No Dexcom certificate/challenge packet to send");
         disconnect();
         return;
     }
-    Applic.scheduler.schedule(this::sendcertthread, 0, TimeUnit.MILLISECONDS);
-   }
+    final BluetoothGatt sendingGatt = mBluetoothGatt;
+    final byte[] sendingPacket = packet;
+    final int sendingPhase = phase;
+    final long generation = ++certificateSendGeneration;
+    Applic.scheduler.schedule(
+            () -> sendcertthread(sendingGatt, sendingPacket, sendingPhase, generation),
+            0, TimeUnit.MILLISECONDS);
+}
 
 //private String ownDeviceName;
 private boolean newcertificates=false;
-private void sendcertthread() {
-   for(startpacket=0; startpacket <packet.length;) {
+private boolean isCurrentCertificateSend(BluetoothGatt gatt, byte[] data, int expectedPhase, long generation) {
+    return !stop && connected && dataptr != 0L && mBluetoothGatt == gatt
+            && packet == data && phase == expectedPhase && certificateSendGeneration == generation;
+}
+private void sendcertthread(BluetoothGatt sendingGatt, byte[] sendingPacket, int sendingPhase, long generation) {
+    for (int offset = 0; offset < sendingPacket.length;) {
         sleep(40);
-        var oldstart = startpacket;
-        startpacket += 20;
-        if(startpacket > packet.length) startpacket = packet.length;
-        {if(doLog) {Log.i(LOG_ID,"writenext until "+startpacket);};};
-        if(!write(3, Arrays.copyOfRange(packet, oldstart, startpacket))) {
-            if(!connected)
-                return;
-            startpacket = oldstart;
-          }
-      }
-    if(phase >= Round1 && phase < Round3) {
-       certinbufiter = 0;
-       sleep(40);
-       cmd(mBluetoothGatt, phase++);
-        return;
-    } else {
-        switch(++phase) {
-           case SendKeyChallengeOut: {
-               final byte[] sendchal={0x0d, 0x00, 0x02};
-               if(!write(1, sendchal)) {
-                  sleep(2);
-                  write(1, sendchal);
-                  }
-               return;
-              }
-           case RequestAuth: {
-               newcertificates=true;
-               sleep(40);
-               requestAuth();
-               return;
+        synchronized (this) {
+            if (!isCurrentCertificateSend(sendingGatt, sendingPacket, sendingPhase, generation)) return;
+            final int next = Math.min(offset + 20, sendingPacket.length);
+            if (write(3, Arrays.copyOfRange(sendingPacket, offset, next))) {
+                offset = next;
+                startpacket = offset;
             }
-          case SendCertificate2: {
-             sleep(40);
-             askcertificate(SendCertificate2);
-             return;
-             }
-          case  SendKeyChallenge: {
-               sleep(40);
+        }
+    }
+    synchronized (this) {
+        if (!isCurrentCertificateSend(sendingGatt, sendingPacket, sendingPhase, generation)) return;
+        if (phase >= Round1 && phase < Round3) {
+            certinbufiter = 0;
+            sleep(40);
+            cmd(sendingGatt, phase++);
+            return;
+        }
+        switch (++phase) {
+            case SendKeyChallengeOut: {
+                final byte[] sendchal = {0x0d, 0x00, 0x02};
+                if (!write(1, sendchal)) {
+                    sleep(2);
+                    write(1, sendchal);
+                }
+                return;
+            }
+            case RequestAuth: {
+                newcertificates = true;
+                sleep(40);
+                requestAuth();
+                return;
+            }
+            case SendCertificate2: {
+                sleep(40);
+                askcertificate(SendCertificate2);
+                return;
+            }
+            case SendKeyChallenge: {
+                sleep(40);
                 sendkeychallenge();
                 return;
-                }
-          }
-
+            }
+        }
     }
-      }
+}
     @Override
     public void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int status) {
 //        {if(doLog) {Log.d(LOG_ID, bluetoothGatt.getDevice().getAddress() + " onCharacteristicWrite, status:" + status + " UUID:" + bluetoothGattCharacteristic.getUuid().toString());};};
@@ -671,19 +684,21 @@ private boolean removedBond=false;
         }
     }
 
-private void tryer(Supplier<Boolean> worked) {
-            if(worked.get())
-                return;
-            Applic.scheduler.schedule(() -> { 
-                 for(int i=0;i<16;i++) {
-                      if(!connected) {
-                           {if(doLog) {Log.i(LOG_ID,"tryer stops not connected");};};
-                          return;
-                          }
-                      if(worked.get()) return; 
-                      sleep(20) ;
-                     } }, 20, TimeUnit.MILLISECONDS);
+private synchronized void tryer(Supplier<Boolean> worked) {
+    if (stop || !connected || mBluetoothGatt == null) return;
+    final BluetoothGatt retryGatt = mBluetoothGatt;
+    final int retryPhase = phase;
+    if (worked.get()) return;
+    Applic.scheduler.schedule(() -> {
+        for (int i = 0; i < 16; i++) {
+            synchronized (this) {
+                if (stop || !connected || mBluetoothGatt != retryGatt || phase != retryPhase) return;
+                if (worked.get()) return;
             }
+            sleep(20);
+        }
+    }, 20, TimeUnit.MILLISECONDS);
+}
 private    void getdatacmd() {
     {if(doLog) {Log.i(LOG_ID,"getdatacmd");};};
      wrotepass[0] = System.currentTimeMillis();
@@ -800,8 +815,14 @@ private    void getdata(byte[] value) {
                     }
                 }
                 handleGlucoseResult(res, newtime);
-                Applic.scheduler.schedule(()->{
-                  if(connected) askbackfill();}, 10, TimeUnit.MILLISECONDS);
+                final BluetoothGatt readingGatt = mBluetoothGatt;
+                Applic.scheduler.schedule(() -> {
+                    synchronized (this) {
+                        if (!stop && connected && dataptr != 0L && mBluetoothGatt == readingGatt) {
+                            askbackfill();
+                        }
+                    }
+                }, 10, TimeUnit.MILLISECONDS);
 //                datatime=timmsec;
                 datatime=newtime;
                 if(savename) saveDeviceName();
@@ -981,7 +1002,9 @@ private    void getdata(byte[] value) {
         return writer(mBluetoothGatt, nr, data);
     }
 
-    private boolean writer(BluetoothGatt mBluetoothGatt, int nr, byte[] data) {
+    private synchronized boolean writer(BluetoothGatt mBluetoothGatt, int nr, byte[] data) {
+        if (stop || mBluetoothGatt == null || mBluetoothGatt != this.mBluetoothGatt
+                || nr < 0 || nr >= charact.length || charact[nr] == null || data == null) return false;
         final var cha = charact[nr];
 
         if (!cha.setValue(data)) {
@@ -1053,14 +1076,20 @@ private void resetconnect() {
    var gatt=mBluetoothGatt;
    if(nonNull(gatt)) {
       for(final BluetoothGattCharacteristic ch : charact) {
-          disablenotification(gatt, ch);
+          if (ch != null) disablenotification(gatt, ch);
           }
       }
    }
 @Override
-public void close() {
-   resetconnect();
-   super.close();
+public synchronized void close() {
+   ++certificateSendGeneration;
+   connected = false;
+   try {
+       resetconnect();
+   } finally {
+       try { super.close(); }
+       finally { releaselock(); }
+   }
    }
 
 
