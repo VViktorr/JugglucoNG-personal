@@ -89,4 +89,11 @@ object MobileHistoryRepositoryBridge : HistoryRepositoryBridge {
         startTimeMs: Long,
         isMmol: Boolean,
     ): List<GlucosePoint> = HistoryRepository.getHistoryForNotificationForSensor(sensorSerial, startTimeMs, isMmol)
+
+    override fun getMergedDisplayHistoryForWidget(
+        preferredSerial: String?,
+        startTimeMs: Long,
+        isMmol: Boolean,
+    ): List<GlucosePoint> =
+        HistoryRepository.getMergedDisplayHistoryForWidget(preferredSerial, startTimeMs, isMmol)
 }

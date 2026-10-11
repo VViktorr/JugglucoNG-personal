@@ -1,5 +1,7 @@
 package tk.glucodata
 
+import java.util.TreeMap
+
 object WidgetDisplaySource {
     const val CHART_WINDOW_MS = 6L * 60L * 60L * 1000L
 
@@ -48,12 +50,60 @@ object WidgetDisplaySource {
     ): List<GlucosePoint> {
         val activeSensorSerial = current?.sensorId ?: resolveActiveSensorSerial()
         val startTimeMs = (System.currentTimeMillis() - historyWindowMs).coerceAtLeast(0L)
+        val isMmol = Applic.unit == 1
         val baseHistory = try {
-            NotificationHistorySource.getDisplayHistory(startTimeMs, Applic.unit == 1, activeSensorSerial)
+            // On the phone use the same merged multi-sensor timeline as the
+            // dashboard chart. Falling back to the old per-sensor source keeps
+            // this shared class working on Wear, where the Room bridge is absent.
+            HistoryRepositoryAccess.getMergedDisplayHistoryForWidget(
+                activeSensorSerial,
+                startTimeMs,
+                isMmol
+            ) ?: NotificationHistorySource.getDisplayHistory(
+                startTimeMs,
+                isMmol,
+                activeSensorSerial
+            )
         } catch (_: Throwable) {
             emptyList()
         }
-        return DisplayTrendSource.augmentHistory(baseHistory, current, activeSensorSerial, startTimeMs)
+
+        // Home-screen widgets can be asked to render while the Room/display timeline still
+        // has holes even though Libre's native history already contains the missing slots.
+        // Supplement only missing minutes: recorded/display points always win, so this never
+        // rewrites a minute the dashboard has already resolved or crosses a sensor handover.
+        val nativeSupplement = try {
+            NotificationHistorySource.getNativeDisplayHistoryForWidget(
+                startTimeMs,
+                isMmol,
+                activeSensorSerial
+            )
+        } catch (_: Throwable) {
+            emptyList()
+        }
+        val history = mergeNativeSupplement(baseHistory, nativeSupplement)
+        return DisplayTrendSource.augmentHistory(history, current, activeSensorSerial, startTimeMs)
+    }
+
+    private fun mergeNativeSupplement(
+        displayHistory: List<GlucosePoint>,
+        nativeHistory: List<GlucosePoint>
+    ): List<GlucosePoint> {
+        if (nativeHistory.isEmpty()) return displayHistory
+        if (displayHistory.isEmpty()) return nativeHistory.sortedBy { it.timestamp }
+
+        val byMinute = TreeMap<Long, GlucosePoint>()
+        fun minute(timestamp: Long) = timestamp / 60_000L
+
+        // Native first, then display history overwrites the same minute. The display record
+        // may contain sealed values/view mode and sensor ownership that native storage lacks.
+        nativeHistory.forEach { point ->
+            if (point.timestamp > 0L) byMinute[minute(point.timestamp)] = point
+        }
+        displayHistory.forEach { point ->
+            if (point.timestamp > 0L) byMinute[minute(point.timestamp)] = point
+        }
+        return byMinute.values.sortedBy { it.timestamp }
     }
 
     @JvmStatic

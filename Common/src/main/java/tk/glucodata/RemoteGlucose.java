@@ -52,6 +52,7 @@ import static tk.glucodata.NumberView.minhourstr;
 import static tk.glucodata.R.id.arrowandvalue;
 
 import java.text.DateFormat;
+import org.json.JSONObject;
 import java.util.Date;
 
 class RemoteGlucose {
@@ -67,6 +68,10 @@ class RemoteGlucose {
    final private int timesize;
 
    RemoteGlucose(float gl, float notwidth, float xper, int whiteonblack, boolean givetime) {
+      this(gl, notwidth, 0.0f, xper, whiteonblack, givetime);
+   }
+
+   RemoteGlucose(float gl, float notwidth, float requestedHeight, float xper, int whiteonblack, boolean givetime) {
 
       glucosesize = gl;
       glucosePaint = new Paint();
@@ -74,7 +79,6 @@ class RemoteGlucose {
       glucosePaint.setTextAlign(Paint.Align.LEFT);
       float notheight = glucosesize * 0.8f;
       notglucosex = (int) (notwidth * xper);
-      density = notheight / 54.0f;
 
       if (givetime) {
          Rect bounds = new Rect();
@@ -86,12 +90,19 @@ class RemoteGlucose {
       } else {
          timeHeight = timesize = 0;
       }
+      final boolean usesRequestedHeight = requestedHeight > 0.0f;
+      if (usesRequestedHeight)
+         notheight = requestedHeight;
       glucosePaint.setTextSize(glucosesize);
       if (notwidth <= 0.0f)
          notwidth = 1.0f;
       if (notheight <= 0.0f)
          notheight = 1.0f;
-      glucoseBitmap = Bitmap.createBitmap((int) notwidth, (int) notheight, Bitmap.Config.ARGB_8888);
+      density = usesRequestedHeight
+            ? Math.max(0.5f, Math.min(notwidth / 200.0f, notheight / 54.0f))
+            : notheight / 54.0f;
+      glucoseBitmap = Bitmap.createBitmap(Math.max(1, Math.round(notwidth)),
+            Math.max(1, Math.round(notheight)), Bitmap.Config.ARGB_8888);
       canvas = new Canvas(glucoseBitmap);
 
       {
@@ -137,26 +148,95 @@ class RemoteGlucose {
       return baseForegroundColor;
    }
 
-   private void applyWidgetTypeface(Paint paint) {
-      try {
-         var prefs = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
-         boolean useSystemFont = prefs.getInt("notification_font_family", 0) == 1;
-         int fontWeight = prefs.getInt("notification_font_weight", 400);
+   private void drawWidgetBackground() {
+      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      String mode = basicWidgetString("background", "TRANSPARENT");
+      if ("TRANSPARENT".equals(mode)) return;
+      int opacity = Math.max(0, Math.min(100, basicWidgetInt("opacity", 92)));
+      if (opacity == 0) return;
+      int baseColor = LEGACY_WIDGET_DIM_COLOR;
+      if ("SURFACE".equals(mode)) {
+         boolean night = (Applic.app.getResources().getConfiguration().uiMode
+               & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+               == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+         baseColor = night ? 0xFF1C1B1F : 0xFFF7F2FA;
+      } else if ("RANGE".equals(mode)) {
+         baseColor = baseForegroundColor;
+      }
+      Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      backgroundPaint.setColor(Color.argb(
+            Math.round(opacity * 255f / 100f),
+            Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor)));
+      float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
+      float radiusDp = Math.max(0, Math.min(24, basicWidgetInt("cornerRadiusDp", 0)));
+      float radius = radiusDp * Math.max(1.0f, displayDensity);
+      canvas.drawRoundRect(0.0f, 0.0f, canvas.getWidth(), canvas.getHeight(),
+            radius, radius, backgroundPaint);
+   }
 
+   private JSONObject basicWidgetConfig() {
+      try {
+         var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
+         var raw = prefs.getString("BASIC", null);
+         return raw == null ? null : new JSONObject(raw);
+      } catch (Throwable t) {
+         return null;
+      }
+   }
+
+   private int basicWidgetInt(String key, int fallback) {
+      try {
+         var json = basicWidgetConfig();
+         return json == null ? fallback : json.optInt(key, fallback);
+      } catch (Throwable t) {
+         return fallback;
+      }
+   }
+
+   private boolean basicWidgetBoolean(String key, boolean fallback) {
+      try {
+         var json = basicWidgetConfig();
+         return json == null ? fallback : json.optBoolean(key, fallback);
+      } catch (Throwable t) {
+         return fallback;
+      }
+   }
+
+   private String basicWidgetString(String key, String fallback) {
+      try {
+         var json = basicWidgetConfig();
+         return json == null ? fallback : json.optString(key, fallback);
+      } catch (Throwable t) {
+         return fallback;
+      }
+   }
+
+   private void applyWidgetTypeface(Paint paint, boolean primary) {
+      try {
+         var legacy = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
+         boolean legacySystem = legacy.getInt("notification_font_family", 0) == 1;
+         int legacyWeight = legacy.getInt("notification_font_weight", 400);
+         String family = basicWidgetString("fontFamily", legacySystem ? "SYSTEM" : "IBM_PLEX");
+         int legacyConfiguredWeight = basicWidgetInt("fontWeight", legacyWeight);
+         int fontWeight = Math.max(300, Math.min(700,
+               basicWidgetInt(primary ? "primaryFontWeight" : "secondaryFontWeight", legacyConfiguredWeight)));
+         boolean useSystemFont = "SYSTEM".equals(family);
+
+         android.graphics.Typeface tf;
          if (useSystemFont) {
-            String familyName = fontWeight >= 500 ? "google-sans-medium" : "google-sans";
-            android.graphics.Typeface tf = android.graphics.Typeface.create(familyName, android.graphics.Typeface.NORMAL);
-            if (android.os.Build.VERSION.SDK_INT >= 28) {
-               tf = android.graphics.Typeface.create(tf, fontWeight, false);
-            }
-            paint.setTypeface(tf);
+            tf = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL);
          } else {
-            android.graphics.Typeface tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app,
-                  R.font.ibm_plex_sans_var);
-            paint.setTypeface(tf);
-            if (android.os.Build.VERSION.SDK_INT >= 26) {
-               paint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
+            tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app, R.font.ibm_plex_sans_var);
+            if (tf == null) {
+               tf = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL);
             }
+         }
+         if (android.os.Build.VERSION.SDK_INT >= 28) {
+            tf = android.graphics.Typeface.create(tf, fontWeight, false);
+         }
+         paint.setTypeface(tf);
+         if (!useSystemFont && android.os.Build.VERSION.SDK_INT >= 26) {
+            paint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
          }
       } catch (Throwable t) {
       }
@@ -172,24 +252,27 @@ class RemoteGlucose {
       // Keep the legacy widget on its fixed legacy foreground instead of
       // following notification/system light-dark theme flips.
       final int glucoseColor = baseForegroundColor;
-      final float useglsize = glucosesize;
+      final float useglsize = glucosesize * basicWidgetInt("glucoseScale", 100) / 100.0f;
+      final float detailScale = basicWidgetInt("detailScale", 100) / 100.0f;
       final float usedensity = density;
       final int canvasWidth = canvas.getWidth();
       final int canvasHeight = canvas.getHeight();
       float rate = snapshot.getRate();
 
-      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      drawWidgetBackground();
       glucosePaint.setColor(glucoseColor);
-      applyWidgetTypeface(glucosePaint);
+      applyWidgetTypeface(glucosePaint, true);
 
       // Render the right-side cluster (arrow above small time) so we know its
       // width before placing the value. The cluster is intentionally compact —
       // small arrow paired with a small time label, both right-aligned with a
       // generous offset from the canvas edge.
       final float rightInset = usedensity * 18f;
-      final float reducedTimeSize = timesize * 0.95f;
+      final float reducedTimeSize = timesize * 0.95f * detailScale;
+      final boolean showArrow = basicWidgetBoolean("showArrow", true);
+      final boolean showTime = basicWidgetBoolean("showTime", true);
       Bitmap arrowBitmap = null;
-      if (!isNaN(rate)) {
+      if (showArrow && !isNaN(rate)) {
          try {
             float displayDensity = Applic.app.getResources().getDisplayMetrics().density;
             float arrowScale = Math.max(0.85f, Math.min(2.05f, useglsize / (30f * displayDensity)));
@@ -200,10 +283,79 @@ class RemoteGlucose {
       }
 
       String timestr = minhourstr(snapshot.getTimeMillis());
+
+      // A 1x1 widget is close to square. Give that shape its own composition:
+      // the glucose value uses the center of the whole cell, while trend and age
+      // occupy the corners instead of reserving a permanent right-hand column.
+      final boolean compactSquare = canvasWidth <= canvasHeight * 1.45f;
+      if (compactSquare) {
+         final float compactInset = Math.max(2f, usedensity * 4f);
+         final float compactTimeSize = Math.max(reducedTimeSize,
+               Math.min(canvasWidth, canvasHeight) * 0.12f);
+         final String valueStr = snapshot.getPrimaryStr();
+
+         glucosePaint.setTextAlign(Paint.Align.CENTER);
+         glucosePaint.setTextSize(Math.max(useglsize, canvasHeight * 0.46f));
+         float compactValueSize = glucosePaint.getTextSize();
+         float compactValueWidth = glucosePaint.measureText(valueStr);
+         final float compactMaxWidth = Math.max(1f, canvasWidth - compactInset * 2f);
+         if (compactValueWidth > compactMaxWidth) {
+            compactValueSize *= compactMaxWidth / compactValueWidth;
+            glucosePaint.setTextSize(compactValueSize);
+         }
+         Paint.FontMetrics compactMetrics = glucosePaint.getFontMetrics();
+         final float compactMaxHeight = canvasHeight * 0.58f;
+         final float compactTextHeight = compactMetrics.descent - compactMetrics.ascent;
+         if (compactTextHeight > compactMaxHeight) {
+            compactValueSize *= compactMaxHeight / compactTextHeight;
+            glucosePaint.setTextSize(compactValueSize);
+            compactMetrics = glucosePaint.getFontMetrics();
+         }
+         final float valueCenterY = canvasHeight * 0.50f;
+         final float valueBaseline = valueCenterY
+               - (compactMetrics.ascent + compactMetrics.descent) / 2f;
+         canvas.drawText(valueStr, canvasWidth / 2f, valueBaseline, glucosePaint);
+
+         if (arrowBitmap != null) {
+            final float rawArrowWidth = arrowBitmap.getWidth();
+            final float rawArrowHeight = arrowBitmap.getHeight();
+            final float maxArrowSize = Math.min(canvasWidth, canvasHeight) * 0.28f;
+            final float arrowScaleToFit = Math.min(1f,
+                  maxArrowSize / Math.max(1f, Math.max(rawArrowWidth, rawArrowHeight)));
+            final int drawArrowWidth = Math.max(1, Math.round(rawArrowWidth * arrowScaleToFit));
+            final int drawArrowHeight = Math.max(1, Math.round(rawArrowHeight * arrowScaleToFit));
+            final int arrowRight = Math.round(canvasWidth - compactInset);
+            final int arrowTop = Math.round(compactInset);
+            final Rect dst = new Rect(arrowRight - drawArrowWidth, arrowTop,
+                  arrowRight, arrowTop + drawArrowHeight);
+            canvas.drawBitmap(arrowBitmap, null, dst, null);
+         } else if (showArrow && !isNaN(rate)) {
+            drawarrow(canvas, glucosePaint, usedensity, rate,
+                  canvasWidth - compactInset * 3f, compactInset * 3f);
+         }
+
+         if (showTime) {
+         glucosePaint.setTextSize(compactTimeSize);
+         applyWidgetTypeface(glucosePaint, false);
+         glucosePaint.setTextAlign(Paint.Align.CENTER);
+         glucosePaint.setAlpha(200);
+         Paint.FontMetrics compactTimeMetrics = glucosePaint.getFontMetrics();
+         final float timeBaseline = canvasHeight - compactInset - compactTimeMetrics.descent;
+         canvas.drawText(timestr, canvasWidth / 2f, timeBaseline, glucosePaint);
+         glucosePaint.setAlpha(255);
+         glucosePaint.setTextAlign(Paint.Align.LEFT);
+         }
+
+         canvas.setBitmap(glucoseBitmap);
+         remoteViews.setImageViewBitmap(arrowandvalue, glucoseBitmap);
+         return remoteViews;
+      }
+
       glucosePaint.setTextSize(reducedTimeSize);
+      applyWidgetTypeface(glucosePaint, false);
       Rect timeBounds = new Rect();
       glucosePaint.getTextBounds(timestr, 0, timestr.length(), timeBounds);
-      float timeWidth = timeBounds.width();
+      float timeWidth = showTime ? timeBounds.width() : 0f;
 
       float arrowWidth = arrowBitmap != null ? arrowBitmap.getWidth() : 0f;
       float arrowHeight = arrowBitmap != null ? arrowBitmap.getHeight() : 0f;
@@ -219,6 +371,7 @@ class RemoteGlucose {
       final float valueClusterGap = useglsize * 0.18f;
       final float maxValueWidth = (canvasWidth - rightInset - clusterWidth - valueClusterGap) - leftInset;
       glucosePaint.setTextSize(useglsize);
+      applyWidgetTypeface(glucosePaint, true);
       float effectiveSize = useglsize;
       float valueWidth = glucosePaint.measureText(valueStr);
       if (maxValueWidth > 0 && valueWidth > maxValueWidth) {
@@ -243,17 +396,20 @@ class RemoteGlucose {
       if (arrowBitmap != null) {
          float arrowLeft = clusterCenterX - arrowWidth / 2f;
          canvas.drawBitmap(arrowBitmap, arrowLeft, clusterTop, null);
-      } else if (!isNaN(rate)) {
+      } else if (showArrow && !isNaN(rate)) {
          drawarrow(canvas, glucosePaint, usedensity, rate, clusterCenterX, clusterTop + arrowHeight / 2f);
       }
 
+      if (showTime) {
       glucosePaint.setTextSize(reducedTimeSize);
+      applyWidgetTypeface(glucosePaint, false);
       glucosePaint.setTextAlign(Paint.Align.CENTER);
       glucosePaint.setAlpha(200);
       float timeBaseline = clusterTop + arrowHeight + clusterGap + reducedTimeSize * 0.65f;
       canvas.drawText(timestr, clusterCenterX, timeBaseline, glucosePaint);
       glucosePaint.setAlpha(255);
       glucosePaint.setTextAlign(Paint.Align.LEFT);
+      }
 
       canvas.setBitmap(glucoseBitmap);
       remoteViews.setImageViewBitmap(arrowandvalue, glucoseBitmap);

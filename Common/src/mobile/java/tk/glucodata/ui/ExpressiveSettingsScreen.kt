@@ -300,6 +300,15 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/display-colors") }
                 )
 
+                SettingsItem(
+                    title = stringResource(R.string.widget_settings_title),
+                    subtitle = stringResource(R.string.widget_settings_subtitle),
+                    icon = Icons.Default.Layers,
+                    iconTint = glucoseColor,
+                    position = CardPosition.MIDDLE,
+                    onClick = { navController.navigate("settings/widgets") }
+                )
+
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.manual_calibration),
                     subtitle = "$calibrationModeLabel · ${

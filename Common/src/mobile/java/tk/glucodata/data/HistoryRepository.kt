@@ -364,6 +364,36 @@ class HistoryRepository(context: Context = Applic.app) {
                     }
             }
         }
+
+        /**
+         * Blocking source for home widgets. Unlike the older per-sensor bridge,
+         * this is the exact merged multi-sensor timeline used by the dashboard
+         * chart, so a sensor swap does not truncate the widget at the handover.
+         */
+        @JvmStatic
+        fun getMergedDisplayHistoryForWidget(
+            preferredSerial: String?,
+            startTime: Long,
+            isMmol: Boolean
+        ): List<tk.glucodata.GlucosePoint> {
+            return kotlinx.coroutines.runBlocking {
+                HistoryRepository()
+                    .loadMergedWindow(
+                        preferredSerial = preferredSerial,
+                        startTime = startTime,
+                        endTime = System.currentTimeMillis(),
+                        allowProvisional = false
+                    )
+                    .inDisplayUnit(isMmol)
+                    .map { p ->
+                        tk.glucodata.GlucosePoint(p.timestamp, p.value, p.rawValue).also { out ->
+                            out.sealedDisplayValue = p.sealedDisplayValue ?: Float.NaN
+                            out.sealedDisplayViewMode = p.sealedDisplayViewMode ?: -1
+                            out.sensorSerial = p.sensorSerial
+                        }
+                    }
+            }
+        }
         
         /**
          * Blocking ownership for shared/main renderers, so the notification
