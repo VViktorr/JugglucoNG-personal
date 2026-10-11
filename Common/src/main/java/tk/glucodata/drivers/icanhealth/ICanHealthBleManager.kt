@@ -29,6 +29,7 @@ import java.util.ArrayDeque
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.math.abs
 import kotlin.math.round
@@ -84,6 +85,7 @@ class ICanHealthBleManager(
         // Live timestamps are allowed to sit a hair ahead of the clock we compare them against;
         // the anchor is sampled a few milliseconds after `now` on a busy handler thread.
         private const val MAX_LIVE_TIMESTAMP_FUTURE_SKEW_MS = 5_000L
+        private const val MAX_LIVE_TIMESTAMP_LAG_MS = 10 * 60 * 1000L
         private const val RECENT_GLUCOSE_WINDOW_SIZE = 24
         private const val NATIVE_MIRROR_STREAM_WINDOW_SEC = 15L * 24L * 60L * 60L
         private const val HISTORY_SYNC_STATUS_STEP = 500
@@ -228,6 +230,10 @@ class ICanHealthBleManager(
     private val pendingHistoryBatch = LinkedHashMap<Int, PendingHistoryReading>()
     private val recentLiveGlucoseMgdl = ArrayDeque<Float>(RECENT_GLUCOSE_WINDOW_SIZE)
     private val rejectedOnboardingAddresses = CopyOnWriteArraySet<String>()
+    // The address the onboarding scan picked by name or advert, as opposed to one the user or the
+    // registry supplied. Only a guess like that may be dropped for not being a CGM.
+    @Volatile private var onboardingScanPickedAddress: String? = null
+    private val nonCgmCandidateStrikes = ConcurrentHashMap<String, Int>()
 
     private var provisionalSensorIdForAdoption: String? =
         serial.takeIf { ICanHealthConstants.isProvisionalSensorId(it) }
@@ -1131,6 +1137,10 @@ class ICanHealthBleManager(
         if (knownAddress != null) {
             return address != null && address.equals(knownAddress, ignoreCase = true)
         }
+        return notePickedByOnboardingScan(candidateAddress, matchesUnaddressedName(trimmedName))
+    }
+
+    private fun matchesUnaddressedName(trimmedName: String): Boolean {
         val expectedDisplayName = mygetDeviceName().trim().takeIf { it.isNotEmpty() }
         if (expectedDisplayName != null && trimmedName.equals(expectedDisplayName, ignoreCase = true)) {
             return true
@@ -1143,6 +1153,13 @@ class ICanHealthBleManager(
             return true
         }
         return ICanHealthConstants.isICanHealthDevice(trimmedName)
+    }
+
+    private fun notePickedByOnboardingScan(address: String?, matched: Boolean): Boolean {
+        if (matched && address != null) {
+            onboardingScanPickedAddress = address
+        }
+        return matched
     }
 
     override fun matchScanResult(result: ScanResult): Boolean {
@@ -1160,7 +1177,7 @@ class ICanHealthBleManager(
         val carriesCgmServiceData = record.serviceData
             ?.keys
             ?.any { it.uuid == ICanHealthConstants.CGM_SERVICE } == true
-        return advertisesCgmService || carriesCgmServiceData
+        return notePickedByOnboardingScan(address, advertisesCgmService || carriesCgmServiceData)
     }
 
     override fun reconnect(now: Long): Boolean {
@@ -1361,9 +1378,13 @@ class ICanHealthBleManager(
 
         if (charMeasurement == null) {
             Log.e(TAG, "CGM measurement characteristic missing")
+            if (rejectNonCgmOnboardingCandidate(gatt)) {
+                return
+            }
             gatt.disconnect()
             return
         }
+        gatt.device?.address?.trim()?.uppercase(Locale.US)?.let { nonCgmCandidateStrikes.remove(it) }
 
         setUiStatus(UiStatusKind.PREPARING)
         if (charSpecificOps != null) {
@@ -1559,15 +1580,48 @@ class ICanHealthBleManager(
         finishGattOp()
     }
 
+    private fun isAwaitingOnboardingIdentity(): Boolean =
+        provisionalSensorIdForAdoption != null || ICanHealthConstants.isProvisionalSensorId(SerialNumber)
+
+    /**
+     * Onboarding found this peripheral by name or advert, and its GATT table says it is not a CGM
+     * (the Anytime `SN91…` serial-shaped name passes the loose iCan name check). Without this the
+     * driver reconnected to it every 8 s forever and never looked at another candidate. Only an
+     * address the onboarding scan picked qualifies, and only after
+     * [ICanHealthConstants.NON_CGM_CANDIDATE_REJECT_STRIKES] consecutive conclusive discoveries.
+     */
+    private fun rejectNonCgmOnboardingCandidate(gatt: BluetoothGatt): Boolean {
+        if (!isAwaitingOnboardingIdentity()) {
+            return false
+        }
+        val address = gatt.device?.address?.trim()?.uppercase(Locale.US) ?: return false
+        if (!address.equals(onboardingScanPickedAddress, ignoreCase = true)) {
+            return false
+        }
+        val services = runCatching { gatt.services.map { it.uuid } }.getOrDefault(emptyList())
+        if (!ICanHealthConstants.isConclusivelyNotCgm(services)) {
+            nonCgmCandidateStrikes.remove(address)
+            return false
+        }
+        val strikes = (nonCgmCandidateStrikes[address] ?: 0) + 1
+        if (strikes < ICanHealthConstants.NON_CGM_CANDIDATE_REJECT_STRIKES) {
+            nonCgmCandidateStrikes[address] = strikes
+            Log.w(TAG, "iCan candidate address=$address has no CGM service ($strikes/${ICanHealthConstants.NON_CGM_CANDIDATE_REJECT_STRIKES}); checking once more")
+            return false
+        }
+        nonCgmCandidateStrikes.remove(address)
+        Log.w(TAG, "Rejected iCan candidate address=$address: no CGM service on ${services.size} services")
+        dropOnboardingCandidate(address)
+        return true
+    }
+
     private fun rejectMismatchedOnboardingCandidate(
         gatt: BluetoothGatt,
         rawSerial: String,
         resolvedSerial: String,
     ): Boolean {
         val expectedOnboardingSn = onboardingDeviceSn ?: return false
-        val isAwaitingIdentity = provisionalSensorIdForAdoption != null ||
-            ICanHealthConstants.isProvisionalSensorId(SerialNumber)
-        if (!isAwaitingIdentity) {
+        if (!isAwaitingOnboardingIdentity()) {
             return false
         }
         val identityMatches =
@@ -1579,16 +1633,22 @@ class ICanHealthBleManager(
         }
 
         val address = gatt.device?.address?.trim()?.uppercase(Locale.US)
-        if (address != null) {
-            rejectedOnboardingAddresses.add(address)
-        }
         Log.w(
             TAG,
             "Rejected iCan candidate address=${address ?: "unknown"}: " +
                 "onboarding=${ICanHealthConstants.onboardingIdentityPrefix(expectedOnboardingSn)} " +
                 "device=$resolvedSerial"
         )
+        dropOnboardingCandidate(address)
+        return true
+    }
 
+    /** Forget a wrong onboarding candidate and go back to scanning for the next one. */
+    private fun dropOnboardingCandidate(address: String?) {
+        if (address != null) {
+            rejectedOnboardingAddresses.add(address)
+        }
+        onboardingScanPickedAddress = null
         rawSerialFromDevice = null
         serialFromDevice = null
         close()
@@ -1601,7 +1661,6 @@ class ICanHealthBleManager(
                 SensorBluetooth.startscan()
             }
         }, 250L)
-        return true
     }
 
     override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
@@ -2022,6 +2081,24 @@ class ICanHealthBleManager(
         )
         if (resolved != null) {
             if (resolved <= fallbackNowMs) {
+                if (ICanHealthConstants.isStaleLiveTimestamp(
+                        sequenceNumber = sequenceNumber,
+                        currentSequenceNumber = currentSequenceNumber,
+                        resolvedMs = resolved,
+                        nowMs = fallbackNowMs,
+                        maxLagMs = MAX_LIVE_TIMESTAMP_LAG_MS,
+                    )) {
+                    // A live measurement was taken moments ago. A candidate far behind the wall
+                    // clock means the persisted covered edge is skewed, and every later reading
+                    // would be extrapolated from it and stored just as late.
+                    Log.w(
+                        TAG,
+                        "Live seq=$sequenceNumber resolved to $resolved, ${(fallbackNowMs - resolved) / 60000L}min " +
+                            "behind now=$fallbackNowMs; stamping it now and dropping the persisted covered edge"
+                    )
+                    invalidatePersistedCoveredEdge("live timestamp lags the wall clock")
+                    return fallbackNowMs
+                }
                 return resolved
             }
             // The anchor is read a moment after `now`, so a candidate can land a few milliseconds
@@ -3213,12 +3290,21 @@ class ICanHealthBleManager(
             currentSequenceNumber >= persistedCoveredSequence) {
             val deltaMinutes = currentSequenceNumber - persistedCoveredSequence
             val persistedAnchorTimeMs = persistedCoveredTimestampMs + deltaMinutes.toLong() * SEQUENCE_UNIT_MS
-            if (isPlausibleHistoryAnchor(persistedAnchorTimeMs, fallbackNowMs)) {
+            // The plausibility window is hours wide, so an edge that is merely an hour off
+            // passes it and then re-seeds itself with every reading. The counter read is a
+            // fresh wall-clock fix for currentSequenceNumber; the edge must agree with it.
+            val divergentFromCounter = ICanHealthConstants.isAnchorDivergentFromObservedSequence(
+                anchorMs = persistedAnchorTimeMs,
+                sequenceObservedAtMs = currentSequenceObservedAtMs,
+                toleranceMs = MAX_LIVE_TIMESTAMP_LAG_MS,
+            )
+            if (!divergentFromCounter && isPlausibleHistoryAnchor(persistedAnchorTimeMs, fallbackNowMs)) {
                 return persistedAnchorTimeMs
             }
             invalidatePersistedCoveredEdge(
                 "persisted seq=$persistedCoveredSequence time=$persistedCoveredTimestampMs " +
-                    "reconstructed anchor=$persistedAnchorTimeMs current=$currentSequenceNumber now=$fallbackNowMs"
+                    "reconstructed anchor=$persistedAnchorTimeMs current=$currentSequenceNumber now=$fallbackNowMs " +
+                    "counterObservedAt=$currentSequenceObservedAtMs divergent=$divergentFromCounter"
             )
         }
         return when {
@@ -3323,6 +3409,7 @@ class ICanHealthBleManager(
         if (!shouldUpdate) {
             return
         }
+        logd(TAG) { "Covered edge seq=$sequenceNumber time=$timestampMs (was seq=$persistedCoveredSequence time=$persistedCoveredTimestampMs)" }
         persistedCoveredSequence = sequenceNumber
         persistedCoveredTimestampMs = timestampMs
         persistedCoveredEdgeLoaded = true

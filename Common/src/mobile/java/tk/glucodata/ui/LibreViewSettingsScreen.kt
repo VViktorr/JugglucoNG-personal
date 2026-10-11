@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Key
@@ -33,7 +32,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +52,7 @@ import kotlinx.coroutines.launch
 import tk.glucodata.Libre3NfcSettings
 import tk.glucodata.Natives
 import tk.glucodata.R
+import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
@@ -91,12 +90,10 @@ fun LibreViewSettingsScreen(navController: NavController) {
     var isSendingNow by remember { mutableStateOf(false) }
     var isResendingData by remember { mutableStateOf(false) }
     var isFetchingAccountId by remember { mutableStateOf(false) }
-    var isReregisteringLibre2 by remember { mutableStateOf(false) }
     val hasCredentials = email.isNotBlank() && password.isNotBlank()
     val sendingNowText = stringResource(R.string.sending_now)
     val requestingAccountIdText = stringResource(R.string.requesting_account_id)
     val resendTriggeredText = stringResource(R.string.resend_triggered)
-    val reregisteringLibre2Text = stringResource(R.string.libreview_reregistering_libre2_device)
     val accountIdTimeoutText = stringResource(R.string.libre_setup_account_id_timeout)
     val accountIdObtainedText = stringResource(R.string.libre_setup_account_id_obtained)
     val manualText = stringResource(R.string.manual)
@@ -174,17 +171,13 @@ fun LibreViewSettingsScreen(navController: NavController) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.libreview_settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.cancel))
-                    }
-                }
+            AppTopBar(
+                title = stringResource(R.string.libreview_settings_title),
+                onNavigateBack = { navController.popBackStack() },
             )
         }
     ) { padding ->
-        val isBusy = isSendingNow || isResendingData || isFetchingAccountId || isReregisteringLibre2
+        val isBusy = isSendingNow || isResendingData || isFetchingAccountId
         val canSendData = isActive && !isBusy
         Column(
             modifier = Modifier
@@ -232,13 +225,13 @@ fun LibreViewSettingsScreen(navController: NavController) {
 
             if (isManualAccountId) {
                 Card(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         OutlinedTextField(
@@ -431,48 +424,6 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.libreview_get_account_id))
             }
 
-            OutlinedButton(
-                onClick = {
-                    saveLibreViewSettings()
-                    tk.glucodata.Libreview.clearStatus()
-                    statusText = reregisteringLibre2Text
-                    isReregisteringLibre2 = true
-                    tk.glucodata.Libreview.requestLibre2DeviceReregistration()
-                    coroutineScope.launch {
-                        var elapsed = 0
-                        var latestStatus = ""
-                        while (elapsed < 30_000) {
-                            delay(500)
-                            elapsed += 500
-                            latestStatus = tk.glucodata.Libreview.getStatus()
-                            refreshAccountIdState()
-                            if (latestStatus.isNotEmpty()) {
-                                statusText = latestStatus
-                                if (latestStatus.contains("AccountID", ignoreCase = true) ||
-                                    isTerminalStatus(latestStatus)) {
-                                    break
-                                }
-                            }
-                        }
-                        if (latestStatus.isEmpty() && statusText == reregisteringLibre2Text) {
-                            statusText = accountIdTimeoutText
-                        }
-                        isReregisteringLibre2 = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isActive && hasCredentials && !isBusy
-            ) {
-                if (isReregisteringLibre2) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.size(8.dp))
-                } else {
-                    Icon(Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.size(8.dp))
-                }
-                Text(stringResource(R.string.libreview_reregister_libre2_device))
-            }
-
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingsSwitchItem(
                     title = stringResource(R.string.libreview_russia),
@@ -517,14 +468,14 @@ private fun LibreViewStatusCard(
     statusText: String
 ) {
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = if (accountId > 0L) {
@@ -532,9 +483,7 @@ private fun LibreViewStatusCard(
                 } else {
                     stringResource(R.string.libreview_account_missing_desc)
                 },
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
+                style = MaterialTheme.typography.titleSmallEmphasized,)
 
             if (accountId > 0L) {
                 Text(
@@ -543,31 +492,6 @@ private fun LibreViewStatusCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            Text(
-                text = stringResource(
-                    R.string.libreview_region_value,
-                    tk.glucodata.Libreview.getConfiguredCountryCode()
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(
-                    R.string.libreview_uom_value,
-                    tk.glucodata.Libreview.getConfiguredUom()
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(
-                    R.string.libreview_model_value,
-                    tk.glucodata.Libreview.getConfiguredModelName()
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
             if (statusText.isNotEmpty()) {
                 Text(

@@ -553,22 +553,20 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         }
         val overlayChartPoints = DisplayTrendSource.augmentHistory(chartPoints, resolvedDisplay, activeSensorSerial, startT)
         currentChartAnchorFraction = estimateChartAnchorFraction(overlayChartPoints, startT, endT)
-        val staleReadingMillis = if (resolvedDisplay == null && overlayChartPoints.isNotEmpty()) {
-            overlayChartPoints[overlayChartPoints.size - 1].timestamp
-        } else 0L
         val hasCalibration = tk.glucodata.NightscoutCalibration.hasCalibrationForViewMode(activeSensorSerial, viewMode)
 
         if (resolvedDisplay != null) {
             time = resolvedDisplay.timeMillis
             glvalue = resolvedDisplay.primaryValue
             valStr = if (showSecondary) resolvedDisplay.fullFormatted else resolvedDisplay.primaryStr
+        } else if (overlayChartPoints.isNotEmpty()) {
+            val p = overlayChartPoints[overlayChartPoints.size - 1]
+            glvalue = p.value
+            valStr = if (isMmol) String.format(Locale.getDefault(), "%.1f", glvalue)
+            else String.format(Locale.getDefault(), "%.0f", glvalue)
         }
 
-        val displayRate = if (resolvedDisplay != null) {
-            DisplayTrendSource.resolveArrowRate(overlayChartPoints, resolvedDisplay, viewMode, isMmol)
-        } else {
-            Float.NaN
-        }
+        val displayRate = DisplayTrendSource.resolveArrowRate(overlayChartPoints, resolvedDisplay, viewMode, isMmol)
 
         val glucoseColor = NotificationChartDrawer.getGlucoseColor(this, glvalue, isMmol)
         val peerCurrents = NotificationMultiSensorSource.peerCurrents(
@@ -619,7 +617,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
 
         // Pass combined scale to arrow
         val arrowImg = view.findViewById<ImageView>(R.id.notification_arrow)
-        if (showArrow && resolvedDisplay != null && !inlineMultiArrows) {
+        if (showArrow && !inlineMultiArrows) {
             val arrowBitmap = NotificationChartDrawer.drawArrow(
                 this,
                 displayRate,
@@ -681,11 +679,9 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
             // Apply Scaling
             statusView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f * textScale)
 
-            if (staleReadingMillis > 0L) {
-                statusView.text = getString(R.string.nonewvalue) +
-                    java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
-                        .format(java.util.Date(staleReadingMillis))
-                statusView.visibility = View.VISIBLE
+            if (statusText.isNotEmpty()) {
+                statusView.visibility = View.GONE
+                statusView.text = statusText
             } else {
                 statusView.visibility = View.GONE
             }

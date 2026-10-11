@@ -178,7 +178,7 @@ fun QRCodeImage(content: String, size: Int, modifier: Modifier = Modifier) {
     bitmap?.let {
         androidx.compose.foundation.Image(
             bitmap = it.asImageBitmap(),
-            contentDescription = "QR Code",
+            contentDescription = stringResource(R.string.qr_code),
             modifier = modifier,
             filterQuality = FilterQuality.None
         )
@@ -896,7 +896,7 @@ fun MirrorConnectionCard(
     ) {
         Column {
             Row(
-                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 14.dp),
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -976,7 +976,7 @@ fun MirrorConnectionCard(
                                 enabled = cardTestState != ConnTestState.TESTING,
                                 colors = ButtonDefaults.textButtonColors(
                                     contentColor = when (cardTestState) {
-                                        ConnTestState.SUCCESS -> Color(0xFF4CAF50)
+                                        ConnTestState.SUCCESS -> StatusPalette.success()
                                         ConnTestState.FAILURE -> MaterialTheme.colorScheme.error
                                         else -> MaterialTheme.colorScheme.primary
                                     }
@@ -1021,8 +1021,8 @@ private fun CloneConnectionDiagnostics(mirror: MirrorItemData) {
     }
 
     Column(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         CloneDiagnosticRow(stringResource(R.string.mirror_route), route)
         CloneDiagnosticRow(stringResource(R.string.clone_signaling), signaling)
@@ -1422,9 +1422,9 @@ fun MirrorEditSheet(pos: Int, sheetState: SheetState, onDismiss: () -> Unit) {
                     when (testState) {
                         ConnTestState.SUCCESS -> {
                             Icon(Icons.Filled.CheckCircle, contentDescription = null,
-                                tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
+                                tint = StatusPalette.success(), modifier = Modifier.size(24.dp))
                             Text(stringResource(R.string.status_connected),
-                                color = Color(0xFF4CAF50),
+                                color = StatusPalette.success(),
                                 style = MaterialTheme.typography.bodyMedium)
                         }
                         ConnTestState.FAILURE -> {

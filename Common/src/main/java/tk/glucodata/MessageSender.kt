@@ -743,11 +743,13 @@ public fun sendDatawithInt(ident: Int, data: ByteArray) {
                     return
                 }
             val netinfo: ByteArray?
-            // watchHasSensor is transport/status telemetry: the watch reports
-            // 1 only after a real local GATT plus accepted local reading, and
-            // -1 otherwise. Receiving /netinfo must never arm/disarm physical
-            // sensor BLE; explicit /bluetooth plus SensorOwnershipRuntime own
-            // that decision.
+            // watchHasSensor: 1 = watch owns the sensor, -1 = it does not,
+            // 0 = keep whatever was persisted. The watch must never claim the
+            // sensor unless it actually holds a live BLE connection: the phone
+            // reacts to watchsensor=1 by setting nobluetooth=true and
+            // sendstream=false (netinfo.cpp), i.e. it drops its own sensor AND
+            // stops feeding the watch. A stale persisted flag (0) therefore
+            // strands both devices with no data.
             netinfo = if(isWearable) { Natives.getmynetinfo(sender.localnode, true, WearSensorClaim.netInfoValue(),true,0) } else { Natives.getmynetinfo(id, false, 0, isGalaxy(othernode),0) }
             if(netinfo == null) {
                 Log.e(LOG_ID,"netinfo=null")

@@ -407,6 +407,36 @@ object ICanHealthConstants {
     }
 
     /**
+     * True when an edge-derived time for the sensor's current sequence disagrees with the moment
+     * that sequence was actually read. No observation yet means nothing to compare against.
+     */
+    internal fun isAnchorDivergentFromObservedSequence(
+        anchorMs: Long,
+        sequenceObservedAtMs: Long,
+        toleranceMs: Long,
+    ): Boolean {
+        if (sequenceObservedAtMs <= 0L) {
+            return false
+        }
+        return abs(anchorMs - sequenceObservedAtMs) > toleranceMs.coerceAtLeast(0L)
+    }
+
+    /**
+     * True when a measurement that has just arrived resolved to a time far behind the wall clock.
+     * Only the newest sequence qualifies: a lower one may be a legitimately delayed record.
+     */
+    internal fun isStaleLiveTimestamp(
+        sequenceNumber: Int,
+        currentSequenceNumber: Int,
+        resolvedMs: Long,
+        nowMs: Long,
+        maxLagMs: Long,
+    ): Boolean {
+        val isNewestSequence = currentSequenceNumber < 0 || sequenceNumber >= currentSequenceNumber
+        return isNewestSequence && nowMs - resolvedMs > maxLagMs
+    }
+
+    /**
      * True while a parsed session start still explains the sensor's own sequence counter.
      *
      * The counter ticks once a minute from session start, so `sessionStart + sequence` must land
@@ -582,6 +612,31 @@ object ICanHealthConstants {
         if (KNOWN_PREFIXES.any { trimmed.startsWith(it) }) return true
         return isLikelyPersistedSensorName(trimmed)
     }
+
+    // ---- Onboarding candidate verification ----
+
+    /** Generic Access and Generic Attribute: every BLE peripheral has them, so they say nothing. */
+    private val GENERIC_GATT_SERVICES: Set<UUID> = setOf(
+        UUID.fromString("00001800-0000-1000-8000-00805f9b34fb"),
+        UUID.fromString("00001801-0000-1000-8000-00805f9b34fb"),
+    )
+
+    /**
+     * Consecutive connections that must show [isConclusivelyNotCgm] before onboarding drops an
+     * address it found by name. One is not enough: a stale or partial discovery on a real sensor
+     * looks the same once, and a rejected address stays hidden until the onboarding SN changes.
+     */
+    const val NON_CGM_CANDIDATE_REJECT_STRIKES = 2
+
+    /**
+     * True when a discovered GATT table is populated beyond the generic services and still has no
+     * CGM service, i.e. the peripheral answered and it is not a CGM. Name matching stays broad on
+     * purpose (rebrands and unknown naming schemes); this is what lets onboarding move past a
+     * non-CGM it picked by name instead of reconnecting to it forever.
+     */
+    @JvmStatic
+    fun isConclusivelyNotCgm(serviceUuids: Collection<UUID>): Boolean =
+        CGM_SERVICE !in serviceUuids && serviceUuids.any { it !in GENERIC_GATT_SERVICES }
 
     @JvmStatic
     fun isLikelyPersistedSensorName(name: String?): Boolean {

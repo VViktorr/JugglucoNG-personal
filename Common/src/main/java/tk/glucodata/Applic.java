@@ -949,8 +949,6 @@ public class Applic extends Application implements androidx.work.Configuration.P
             CloneIceNetworkConfigStore.prepareForNativeStartup(this);
             if (!numio.setlibrary(this))
                 return false;
-            if (!isWearable)
-                Natives.initLibreCountryFromLocale();
             // ICE connections can be created by startup services before the
             // settings screen exists, so restore user-selected endpoints as
             // soon as the native library and persisted backup hosts are ready.

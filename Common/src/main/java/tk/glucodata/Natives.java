@@ -718,6 +718,8 @@ public class Natives {
         public static native void closedynlib();
 
         public static native strGlucose lastglucose();
+        /** Latest valid stream reading for this sensor only; never falls back to a peer. */
+        public static native strGlucose lastglucoseForSensor(String sensorName);
 
         public static native long[] getGlucoseHistory(long starttime);
 
@@ -1211,37 +1213,6 @@ public class Natives {
 
         public static native void setLibreCountry(int val);
 
-        public static native void initLibreCountryIfUnset(int val);
-
-        public static native void resetLibre2ViewAuth();
-
-        public static int libreCountryIndex(String countryCode) {
-                if (countryCode == null)
-                        return -1;
-                switch (countryCode.trim().toUpperCase(java.util.Locale.ROOT)) {
-                        case "GB":
-                        case "UK":
-                                return 0;
-                        case "FR":
-                                return 1;
-                        case "NL":
-                                return 2;
-                        case "PL":
-                                return 3;
-                        case "RU":
-                                return 4;
-                        default:
-                                return -1;
-                }
-        }
-
-        public static void initLibreCountryFromLocale() {
-                int country = libreCountryIndex(java.util.Locale.getDefault().getCountry());
-                if (country < 0)
-                        country = getunit() == 1 ? 0 : 1;
-                initLibreCountryIfUnset(country);
-        }
-
         public static native void setinterval(int val);
 
         public static native int getinterval();
@@ -1590,6 +1561,19 @@ public class Natives {
 
         public static native long accuProcessData(long dataptr, byte[] value, long mmsec);
 
+        // CareSens Air (cpp/air/java.cpp)
+        public static native long airProcessData(long dataptr, byte[] value, long[] msecptr);
+
+        public static native int airGetLast(long dataptr);
+
+        public static native boolean airSaveSensorInfo(long dataptr, byte[] value);
+
+        public static native boolean airSaveSensorInfo2(long dataptr, byte[] value);
+
+        public static native void airSaveStartSensor(long dataptr, float eapp, float vref, int elapsedSecs);
+
+        public static native byte[] airGetPin(long dataptr);
+
         /**
          * Pass as {@code trendByte} when the AiDex frame carried no trend field — the direct F003
          * live frame does not, only the 0x11 broadcast sample does. Native stores NaN for the rate
@@ -1708,7 +1692,9 @@ public class Natives {
                         float high = (type == 1) ? threshold : alarmhigh();
                         boolean lowEnabled = (type == 0) ? enabled : hasalarmlow();
                         boolean highEnabled = (type == 1) ? enabled : hasalarmhigh();
-                        boolean availableEnabled = (type == 2) ? enabled : hasvaluealarm();
+                        // Legacy "value available" is intentionally disabled in NG Compose.
+                        // Never preserve or re-arm it while syncing other alerts.
+                        boolean availableEnabled = false;
                         boolean lossEnabled = (type == 4) ? enabled : hasalarmloss();
 
                         setalarms(low, high, lowEnabled, highEnabled, availableEnabled, lossEnabled);

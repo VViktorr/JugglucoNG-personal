@@ -548,13 +548,10 @@ LOGGER("timeleft=%d\n",timeleft);
         decltype(auto) reshist=res->history();
 extern bool saveSputnik_PG2(const jniHistory &hist,time_t nutime,int nuid,const nfcdata  *nfcptr, SensorGlucoseData &save) ;
         saveSputnik_PG2(reshist,newnu,gid, data, *hist);
-        /*
-         * Keep the NFC one-minute trend ring in trends.dat via saveglucose().
-         * Do not append those raw-only points to polls.dat: polls.dat is also
-         * the Libre 2 live-stream cursor, so putting scan-ahead ids there can
-         * make valid BLE frames look like duplicates until the stream catches up.
-         * getGlucoseHistory* exports the saved trend ring directly instead.
-         */
+extern int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) ;
+        /*The patch also holds the 16 one-minute samples before the scan; recover the ones
+          the BLE stream missed instead of leaving them in trends.dat.*/
+        saveScanTrend(data,newnu,gid, *hist);
         sensor *senso=sensors->getsensor(sensorindex);
         if(newnu<(nutime-60*3)) {
 //            lastscan=nullptr;

@@ -3,12 +3,25 @@ package tk.glucodata
 import android.content.Context
 
 /**
- * Legacy automatic-routing preference.
+ * "Whichever device can reach the sensor reads it."
  *
- * In companion mode the phone is the only device allowed to read the physical
- * sensor. The watch receives mirrored glucose over Wear OS and must stay off the
- * sensor even when the phone is unreachable. Direct sensor on watch remains the
- * only explicit opt-in that may arm local sensor Bluetooth on Wear OS.
+ * [SensorOwnershipRuntime] has always been able to arbitrate this: each device
+ * announces whether it holds a sensor, and stands down when the other one is the
+ * one getting readings. What was missing was the watch ever being in a position
+ * to take part. Its Bluetooth is armed only by the phone's explicit "Direct
+ * sensor on watch" handover, so until the user performed that handover the watch
+ * never scanned, and the arbitration had exactly one candidate.
+ *
+ * This switch arms the watch without assigning the sensor to it. The watch scans
+ * and connects only when the arbitration says the phone is not reading — so the
+ * phone keeps the sensor whenever it can reach it, and the watch picks it up
+ * when the phone cannot, in either direction and without the user touching
+ * anything.
+ *
+ * It is deliberately independent of the direct-sensor handover: with both on,
+ * the watch is the assigned owner and the phone still takes the sensor back the
+ * moment the watch stops being reachable, rather than waiting out the peer
+ * silence timeout.
  */
 object AutoSensorSwitch {
     private const val LOG_ID = "AutoSensorSwitch"
@@ -46,30 +59,31 @@ object AutoSensorSwitch {
     }
 
     /**
-     * A stale mirrored automatic-switch preference must not re-arm sensor
-     * Bluetooth on the watch after restart. Direct mode owns the only exception.
+     * Re-arms the watch after the app restarts, next to
+     * [WearSensorClaim.restoreOnStart]. Without this the setting survives but
+     * the scanning it enables does not, which is the failure mode direct mode
+     * already had: the switch reads "on" and nothing is listening.
      */
     @JvmStatic
     fun restoreOnStart() {
-        if (!Applic.isWearable || WearSensorClaim.isDirectRequested()) return
-        if (isEnabled()) {
-            Log.i(LOG_ID, "automatic sensor switching ignored on watch; companion mode stays phone-only")
-        }
-        applyRadioState(false)
+        if (!Applic.isWearable || !isEnabled()) return
+        Log.i(LOG_ID, "re-arming automatic sensor switching after restart")
+        applyRadioState(true)
     }
 
     /**
-     * Automatic switching never arms the watch radio. A watch in explicit
-     * Direct sensor mode is managed by [WearSensorClaim] and is left untouched;
-     * every other watch is kept in companion-only mode.
+     * Arming is watch-only. The phone's Bluetooth is driven by its own sensors
+     * and by the handover protocol, and must not be switched off here: turning
+     * this setting off means "stop taking the sensor automatically", not "stop
+     * reading the sensors you own".
      */
     private fun applyRadioState(enabled: Boolean) {
-        if (!Applic.isWearable || WearSensorClaim.isDirectRequested()) return
+        if (!Applic.isWearable) return
+        // A watch that is the assigned direct owner keeps scanning regardless;
+        // WearSensorClaim owns that case and must not be undone here.
+        if (!enabled && WearSensorClaim.isDirectRequested()) return
         val context = MainActivity.thisone ?: Applic.app ?: return
-        if (enabled) {
-            Log.i(LOG_ID, "ignoring automatic sensor switching on watch; Direct sensor mode is required")
-        }
-        runCatching { Applic.setbluetooth(context, false) }
-            .onFailure { Log.stack(LOG_ID, "setbluetooth(false)", it) }
+        runCatching { Applic.setbluetooth(context, enabled) }
+            .onFailure { Log.stack(LOG_ID, "setbluetooth($enabled)", it) }
     }
 }

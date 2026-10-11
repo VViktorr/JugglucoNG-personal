@@ -3,6 +3,7 @@
 package tk.glucodata.ui.journal
 
 import android.view.HapticFeedbackConstants
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,10 +46,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import tk.glucodata.ui.FontScaleCap
 import tk.glucodata.R
 import tk.glucodata.RemoteIobSnapshot
 import tk.glucodata.UiRefreshBus
@@ -215,55 +216,57 @@ fun JournalScreen(
                             .fillMaxWidth()
                             .height(if (showTitle) 324.dp else 348.dp)
                     ) {
-                        DashboardChartSection(
-                            modifier = Modifier.matchParentSize(),
-                            appChartRangeColors = chartRangeColors,
-                            glucoseHistory = sortedHistory,
-                            dataBounds = timelineExtents?.let { ChartDataBounds(it.earliestMs, it.latestMs) },
-                            onVisibleRangeChanged = onVisibleRangeChanged,
-                            journalMarkers = markers,
-                            graphSmoothingMinutes = graphSmoothingMinutes,
-                            collapseSmoothedData = collapseSmoothedData,
-                            previewWindowMode = previewWindowMode,
-                            graphLow = graphLow,
-                            graphHigh = graphHigh,
-                            targetLow = targetLow,
-                            targetHigh = targetHigh,
-                            unit = unit,
-                            viewMode = viewMode,
-                            calibrations = calibrations,
-                            onTimeRangeSelected = { selectedChartRange = it },
-                            selectedTimeRange = selectedChartRange,
-                            isExpanded = false,
-                            expandedProgress = 0f,
-                            onToggleExpanded = null,
-                            onPointClick = {
-                                clearChartAction()
-                                onPointClick?.invoke(it)
-                            },
-                            onCalibrationClick = null,
-                            onTimelineTap = { suggestion ->
-                                if (chartActionTimestamp != null && !suggestion.forceMenu) {
+                        FontScaleCap {
+                            DashboardChartSection(
+                                modifier = Modifier.matchParentSize(),
+                                appChartRangeColors = chartRangeColors,
+                                glucoseHistory = sortedHistory,
+                                dataBounds = timelineExtents?.let { ChartDataBounds(it.earliestMs, it.latestMs) },
+                                onVisibleRangeChanged = onVisibleRangeChanged,
+                                journalMarkers = markers,
+                                graphSmoothingMinutes = graphSmoothingMinutes,
+                                collapseSmoothedData = collapseSmoothedData,
+                                previewWindowMode = previewWindowMode,
+                                graphLow = graphLow,
+                                graphHigh = graphHigh,
+                                targetLow = targetLow,
+                                targetHigh = targetHigh,
+                                unit = unit,
+                                viewMode = viewMode,
+                                calibrations = calibrations,
+                                onTimeRangeSelected = { selectedChartRange = it },
+                                selectedTimeRange = selectedChartRange,
+                                isExpanded = false,
+                                expandedProgress = 0f,
+                                onToggleExpanded = null,
+                                onPointClick = {
                                     clearChartAction()
-                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                } else {
-                                    chartActionTimestamp = suggestion.timestamp
-                                    chartActionDisplayValue = suggestion.suggestedDisplayGlucose
-                                    chartActionAmountFraction = suggestion.normalizedYFraction
-                                    view.performHapticFeedback(
-                                        if (suggestion.forceMenu) HapticFeedbackConstants.LONG_PRESS
-                                        else HapticFeedbackConstants.CLOCK_TICK
-                                    )
-                                }
-                            },
-                            journalActionTimestamp = chartActionTimestamp,
-                            journalActionDisplayValue = chartActionDisplayValue,
-                            onDismissJournalAction = { clearChartAction() },
-                            onJournalMarkerClick = { entryId ->
-                                entriesById[entryId]?.let { onJournalEntryClick?.invoke(it) }
-                            },
-                            onViewportSnapshotChanged = { viewportSnapshot = it }
-                        )
+                                    onPointClick?.invoke(it)
+                                },
+                                onCalibrationClick = null,
+                                onTimelineTap = { suggestion ->
+                                    if (chartActionTimestamp != null && !suggestion.forceMenu) {
+                                        clearChartAction()
+                                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                    } else {
+                                        chartActionTimestamp = suggestion.timestamp
+                                        chartActionDisplayValue = suggestion.suggestedDisplayGlucose
+                                        chartActionAmountFraction = suggestion.normalizedYFraction
+                                        view.performHapticFeedback(
+                                            if (suggestion.forceMenu) HapticFeedbackConstants.LONG_PRESS
+                                            else HapticFeedbackConstants.CLOCK_TICK
+                                        )
+                                    }
+                                },
+                                journalActionTimestamp = chartActionTimestamp,
+                                journalActionDisplayValue = chartActionDisplayValue,
+                                onDismissJournalAction = { clearChartAction() },
+                                onJournalMarkerClick = { entryId ->
+                                    entriesById[entryId]?.let { onJournalEntryClick?.invoke(it) }
+                                },
+                                onViewportSnapshotChanged = { viewportSnapshot = it }
+                            )
+                        }
 
                         chartActionTimestamp?.let { actionTimestamp ->
                             JournalFloatingActionMenu(
@@ -328,11 +331,10 @@ fun JournalScreen(
                             text = section.label,
                             modifier = Modifier.padding(
                                 start = 16.dp,
-                                top = if (sectionIndex == 0) 12.dp else 18.dp,
+                                top = if (sectionIndex == 0) 12.dp else 16.dp,
                                 bottom = 8.dp
                             ),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleSmallEmphasized,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -439,7 +441,7 @@ private fun JournalHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 22.dp),
+            .padding(bottom = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -500,7 +502,7 @@ private fun JournalMetricsPanel(
     // Mirrors the dashboard chip and every outbound surface. A received or
     // cleared Clone snapshot updates immediately; the ticker retires stale
     // remote state on its own.
-    val iobRefreshRevision by UiRefreshBus.revision.collectAsState(initial = 0L)
+    val iobRefreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val remoteInsulin = remember(nowMillis, iobRefreshRevision) {
         RemoteIobSnapshot.fresh(nowMillis)
     }
@@ -589,14 +591,14 @@ private fun JournalMetricsPanel(
             activeInsulin?.let { summary ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = journalTypeSelectedContainerColor(
                         JournalEntryType.INSULIN,
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     ).copy(alpha = 0.68f)
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
@@ -685,7 +687,7 @@ private fun JournalMetricCard(
         onClick = onClick ?: {},
         enabled = onClick != null,
         modifier = modifier.heightIn(min = 74.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = journalTypeSelectedContainerColor(
             type,
             MaterialTheme.colorScheme.surfaceContainerHighest
@@ -694,9 +696,9 @@ private fun JournalMetricCard(
         shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Surface(
                 modifier = Modifier.size(34.dp),
@@ -722,8 +724,7 @@ private fun JournalMetricCard(
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMediumEmphasized.copy(fontFeatureSettings = "tnum"),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

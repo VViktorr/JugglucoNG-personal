@@ -180,7 +180,6 @@ class DashboardViewModel(
         // arrive far faster than the dashboard can usefully redraw. Matches the
         // 1 s gate GlucoseUpdateBroadcaster already applies to the same signal.
         private const val DASHBOARD_DATA_REFRESH_COALESCE_MS = 1_000L
-        private const val SENSOR_STATUS_REFRESH_MS = 30_000L
         const val HISTORY_RECOVERY_TOLERANCE_MS = 5L * 60L * 1000L
         const val HISTORY_RECOVERY_TAIL_TOLERANCE_MS = 2L * 60L * 1000L
         const val DASHBOARD_PEER_HISTORY_WINDOW_MS = 72L * 60L * 60L * 1000L
@@ -280,6 +279,9 @@ class DashboardViewModel(
 
     private val _broadcastComputedTrend = MutableStateFlow(false)
     val broadcastComputedTrend = _broadcastComputedTrend.asStateFlow()
+
+    private val _xdripReportAsLibre2 = MutableStateFlow(false)
+    val xdripReportAsLibre2 = _xdripReportAsLibre2.asStateFlow()
 
     /**
      * The chart's line: every sensor that covers the visible window, merged.
@@ -593,7 +595,6 @@ class DashboardViewModel(
     private var multiSensorHistoryJob: Job? = null
     private var timelineExtentsJob: Job? = null
     private var uiRefreshJob: Job? = null
-    private var sensorStatusClockJob: Job? = null
     private var journalEntriesJob: Job? = null
     private var journalPresetsJob: Job? = null
     private var journalFoodsJob: Job? = null
@@ -664,7 +665,6 @@ class DashboardViewModel(
         refreshData()
         if (collectionMode != CollectionMode.INACTIVE) {
             ensureUiRefreshCollection()
-            ensureSensorStatusClock()
             ensureCurrentReadingCollection()
             startHistoryCollectionForMode(collectionMode)
             viewModelScope.launch {
@@ -682,7 +682,6 @@ class DashboardViewModel(
             CollectionMode.FULL_HISTORY -> {
                 refreshData()
                 ensureUiRefreshCollection()
-                ensureSensorStatusClock()
                 ensureCurrentReadingCollection()
                 startHistoryCollectionForMode(mode)
                 viewModelScope.launch {
@@ -728,16 +727,6 @@ class DashboardViewModel(
 
         if (shouldPreferHistoryRecovery) {
             requestHistoryRecoverySync(serial, reason = "ui_recovery")
-        }
-    }
-
-    private fun ensureSensorStatusClock() {
-        if (sensorStatusClockJob?.isActive == true) return
-        sensorStatusClockJob = viewModelScope.launch {
-            while (true) {
-                delay(SENSOR_STATUS_REFRESH_MS)
-                refreshSensorSnapshot()
-            }
         }
     }
 
@@ -924,6 +913,7 @@ class DashboardViewModel(
         _patchedLibreBroadcastEnabled.value = Natives.getlibrelinkused()
         _glucodataBroadcastEnabled.value = Natives.getJugglucobroadcast()
         _broadcastComputedTrend.value = prefs.getBoolean(tk.glucodata.BroadcastTrendRate.PREF_KEY, false)
+        _xdripReportAsLibre2.value = prefs.getBoolean(tk.glucodata.XdripReportAsLibre2.PREF_KEY, false)
 
         _hasLowAlarm.value = Natives.hasalarmlow()
         _lowAlarmThreshold.value = Natives.alarmlow()
@@ -1582,8 +1572,6 @@ class DashboardViewModel(
         currentSensorTailJob = null
         uiRefreshJob?.cancel()
         uiRefreshJob = null
-        sensorStatusClockJob?.cancel()
-        sensorStatusClockJob = null
         activeHistoryMode = null
         activeHistoryStartTimeMs = null
         // Jobs stop, values stay: the rows keep their last paint while hidden
@@ -1709,6 +1697,13 @@ class DashboardViewModel(
         val prefs = context.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
         prefs.edit().putBoolean(tk.glucodata.BroadcastTrendRate.PREF_KEY, enabled).apply()
         _broadcastComputedTrend.value = enabled
+    }
+
+    fun setXdripReportAsLibre2(enabled: Boolean) {
+        val context = tk.glucodata.Applic.app
+        val prefs = context.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(tk.glucodata.XdripReportAsLibre2.PREF_KEY, enabled).apply()
+        _xdripReportAsLibre2.value = enabled
     }
 
     fun toggleGlucodataBroadcast(enabled: Boolean) {

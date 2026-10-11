@@ -29,38 +29,12 @@ internal fun resolveSensorOwnershipIntent(
     companionEnabled: Boolean,
     directRequested: Boolean,
     assignedToWatch: Boolean,
-    autoSwitchEnabled: Boolean = false,
 ): SensorOwnershipPolicy.Intent = when {
-    // Explicit direct mode always wins: the watch is the preferred BLE owner.
     isWearable && directRequested -> SensorOwnershipPolicy.Intent.PREFER
-
-    // Wear companion mode is phone-only. Losing the phone never authorizes
-    // the watch to open its own sensor GATT; only an explicit Direct sensor
-    // request above may do that.
-    isWearable -> SensorOwnershipPolicy.Intent.NEVER
-
-    // An explicit "Direct sensor on watch" request makes the phone yield.
+    isWearable -> SensorOwnershipPolicy.Intent.TAKE
     companionEnabled && assignedToWatch -> SensorOwnershipPolicy.Intent.YIELD
-
-    // /sync2/own stays informational in ordinary companion mode. Automatic
-    // switching must never make the phone surrender its live sensor connection;
-    // only an explicit Direct sensor on watch assignment above may do that.
-    // Keep the branch explicit so the persisted preference cannot silently
-    // change ownership semantics again.
-    autoSwitchEnabled -> SensorOwnershipPolicy.Intent.PREFER
-
-    // Default companion mode is deliberately phone-owned. PREFER prevents a
-    // transient or stale watch report from making the phone surrender its BLE link.
-    else -> SensorOwnershipPolicy.Intent.PREFER
+    else -> SensorOwnershipPolicy.Intent.TAKE
 }
-
-internal fun resolveLocalConnectionBlocked(
-    isWearable: Boolean,
-    directRequested: Boolean,
-    autoSwitchEnabled: Boolean,
-    released: Boolean,
-): Boolean =
-    released || (isWearable && !directRequested)
 
 /**
  * Whether the other device should be treated as gone rather than merely quiet.
@@ -354,23 +328,11 @@ object SensorOwnershipRuntime {
         return releaseState.isReleased(target)
     }
 
-    /**
-     * Hard gate consulted at every route to connectGatt.
-     *
-     * A released sensor is always blocked. On Wear OS the watch may receive
-     * glucose from the phone but may not connect to the physical sensor unless
-     * the user explicitly requested Direct sensor on watch. Losing the phone or
-     * enabling the legacy automatic-switch setting does not relax this gate.
-     */
+    /** Hard gate consulted at every route to connectGatt while the peer owns it. */
     @JvmStatic
     fun blocksLocalConnection(serial: String?): Boolean {
         val target = serial?.trim()?.takeIf { SensorIdentity.isUsableSensorId(it) } ?: return false
-        return resolveLocalConnectionBlocked(
-            isWearable = Applic.isWearable,
-            directRequested = Applic.isWearable && WearSensorClaim.isDirectRequested(),
-            autoSwitchEnabled = autoSwitchEnabled(),
-            released = releaseState.isReleased(target),
-        )
+        return releaseState.isReleased(target)
     }
 
     /** Phone UI state for the deliberate gap and the subsequent watch-owned stream. */
@@ -416,25 +378,6 @@ object SensorOwnershipRuntime {
                 reconcile()
                 UiRefreshBus.requestStatusRefresh()
             }.onFailure { Log.stack(LOG_ID, "companion enabled=$enabled", it) }
-        }
-    }
-
-    /**
-     * The phone UI changed an explicit Direct-sensor assignment.
-     *
-     * Reconcile immediately instead of waiting for the minute ownership tick:
-     * enabling Direct opens the bounded yield window now, and disabling it
-     * resumes a released phone sensor now. /netinfo is intentionally not part
-     * of this ownership transition.
-     */
-    @JvmStatic
-    fun onRoutingRequestChanged() {
-        if (Applic.isWearable) return
-        executor.execute {
-            runCatching {
-                reconcile()
-                UiRefreshBus.requestStatusRefresh()
-            }.onFailure { Log.stack(LOG_ID, "routing request changed", it) }
         }
     }
 
@@ -678,7 +621,7 @@ object SensorOwnershipRuntime {
         sensors().forEach { serial ->
             val id = key(serial)
             val peer = if (companionEnabled && !peerGone) confirmedPeerReportFor(serial, now) else null
-            val intent = intentFor(serial, companionEnabled, autoSwitch)
+            val intent = intentFor(serial, companionEnabled)
             val shouldRead = SensorOwnershipPolicy.shouldReadLocally(
                 isPhone = !Applic.isWearable,
                 intent = intent,
@@ -705,22 +648,17 @@ object SensorOwnershipRuntime {
     /**
      * What this device should do with a sensor.
      *
-     * With Direct sensor mode off, the phone is the fixed BLE owner and the
-     * watch is a companion only. The legacy automatic-switch preference does
-     * not change that ownership rule. Direct sensor mode explicitly assigns
-     * ownership to the watch and makes the phone yield.
+     * The watch always takes what it can: with no assignment it only ends up
+     * reading a sensor the phone has stopped reading, which is the automatic
+     * "whichever device can reach it" behaviour. The phone stands aside only
+     * where the user has actually assigned the sensor to the watch.
      */
-    private fun intentFor(
-        serial: String,
-        companionEnabled: Boolean,
-        autoSwitchEnabled: Boolean,
-    ): SensorOwnershipPolicy.Intent =
+    private fun intentFor(serial: String, companionEnabled: Boolean): SensorOwnershipPolicy.Intent =
         resolveSensorOwnershipIntent(
             isWearable = Applic.isWearable,
             companionEnabled = companionEnabled,
             directRequested = Applic.isWearable && WearSensorClaim.isDirectRequested(),
             assignedToWatch = !Applic.isWearable && assignedToWatch(serial),
-            autoSwitchEnabled = autoSwitchEnabled,
         )
 
     /**

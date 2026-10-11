@@ -63,7 +63,7 @@ internal object GlucoseComplicationData {
             timeMillis = snapshot.timeMillis,
             rate = snapshot.rate,
             index = snapshot.index,
-            sensorId = snapshot.sensorId ?: sensor,
+            sensorId = snapshot.sensorId,
         )
     }
 
@@ -99,7 +99,7 @@ internal object GlucoseComplicationData {
             timeMillis = resolved.timeMillis,
             rate = resolved.rate,
             index = resolved.index,
-            sensorId = resolved.sensorId ?: sensor,
+            sensorId = resolved.sensorId,
         )
     }
 
@@ -117,34 +117,6 @@ internal object GlucoseComplicationData {
         )
     }
 
-    /**
-     * Text equivalent of the app's drawn trend arrow.
-     *
-     * Some watch faces render only a complication's text and deliberately omit
-     * its optional image. Providers that promise a trend therefore must carry
-     * the trend in text as well, or the arrow disappears on those faces.
-     * Unknown/non-finite rate is not called flat: it has no glyph.
-     */
-    fun trendArrowText(rate: Float): String {
-        if (!rate.isFinite()) return ""
-        val rotation = -tk.glucodata.TrendArrowAngle.rotationDegrees(rate)
-        return when {
-            rate > 2f -> "↑↑"
-            rotation >= 67.5f -> "↑"
-            rotation >= 22.5f -> "↗"
-            rate < -2f -> "↓↓"
-            rotation <= -67.5f -> "↓"
-            rotation <= -22.5f -> "↘"
-            else -> "→"
-        }
-    }
-
-    fun valueWithArrowText(reading: Reading?): String {
-        val value = reading?.text ?: return noValueText()
-        val arrow = trendArrowText(reading.rate)
-        return if (arrow.isEmpty()) value else "$value $arrow"
-    }
-
     /** The reading's own time, for the forms that show when it was taken. */
     fun readingTimeText(reading: Reading?): String? {
         val at = reading?.timeMillis?.takeIf { it > 0L } ?: return null
@@ -160,11 +132,9 @@ internal object GlucoseComplicationData {
         icon: Icon? = null,
         /** Shown above the value by faces that render a title. */
         title: String? = null,
-        /** Put the trend in required text, not only in an optional image. */
-        withArrow: Boolean = false,
     ): ShortTextComplicationData {
         val builder = ShortTextComplicationData.Builder(
-            text = text(if (withArrow) valueWithArrowText(reading) else reading?.text ?: noValueText()),
+            text = text(reading?.text ?: noValueText()),
             contentDescription = text(contentDescription),
         ).setTapAction(tapAction)
         title?.let { builder.setTitle(text(it)) }
@@ -188,11 +158,9 @@ internal object GlucoseComplicationData {
         tapAction: PendingIntent = tapAction(),
         icon: Icon? = null,
         title: String? = null,
-        /** Put the trend in required text, not only in an optional image. */
-        withArrow: Boolean = false,
     ): LongTextComplicationData {
         val builder = LongTextComplicationData.Builder(
-            text = text(if (withArrow) valueWithArrowText(reading) else reading?.text ?: noValueText()),
+            text = text(reading?.text ?: noValueText()),
             contentDescription = text(contentDescription),
         ).setTapAction(tapAction)
         title?.let { builder.setTitle(text(it)) }
@@ -208,8 +176,6 @@ internal object GlucoseComplicationData {
         contentDescription: String,
         tapAction: PendingIntent = tapAction(),
         icon: Icon? = null,
-        /** Put the trend in the ranged complication's text when requested. */
-        withArrow: Boolean = false,
     ): RangedValueComplicationData {
         val builder = if (reading == null || !reading.value.isFinite() || reading.value <= 0.0f) {
             RangedValueComplicationData.Builder(
@@ -226,7 +192,7 @@ internal object GlucoseComplicationData {
                 max = thresholds.veryHigh,
                 contentDescription = text(contentDescription),
             )
-                .setText(text(if (withArrow) valueWithArrowText(reading) else reading.text))
+                .setText(text(reading.text))
                 .setColorRamp(
                     ColorRamp(
                         intArrayOf(

@@ -489,6 +489,9 @@ static jint sensorKindForUi(const SensorGlucoseData *sens) {
   if (sens->isAccuChek()) {
     return 0x20;
   }
+  if (sens->isAir()) {
+    return careSensAirKind;
+  }
   if (sens->isAiDex()) {
     return 0x30;
   }
@@ -779,6 +782,10 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(getdataptr)(JNIEnv *env, jclass cl,
             LOGGER("getdataptr(%.*s) AccuChek\n", (int)sensor.length(),
                    sensor.data());
             candidate = new accustream(sensorindex, sens);
+          } else if (sens->isAir()) {
+            LOGGER("getdataptr(%.*s) Air\n", (int)sensor.length(),
+                   sensor.data());
+            candidate = new airstream(sensorindex, sens);
           } else if (sens->isAiDex()) {
             LOGGER("getdataptr(%.*s) AiDex\n", (int)sensor.length(),
                    sensor.data());
@@ -1056,17 +1063,20 @@ fromjava(getSensorUiSnapshot)(JNIEnv *env, jclass cl, jstring jsensor) {
     return nullptr;
   }
   const auto *info = sens->getinfo();
-  const jlong values[5]{
+  // [5] is the managed driver family: the kind in [0] is Libre 2 by
+  // elimination for every shell a Kotlin driver writes into.
+  const jlong values[6]{
       static_cast<jlong>(sensorKindForUi(sens)),
       static_cast<jlong>(info ? info->viewMode : 0),
       static_cast<jlong>(sens->getstarttime()) * 1000LL,
       static_cast<jlong>(sens->expectedEndTime()) * 1000LL,
-      static_cast<jlong>(sens->officialendtime()) * 1000LL};
-  jlongArray result = env->NewLongArray(5);
+      static_cast<jlong>(sens->officialendtime()) * 1000LL,
+      static_cast<jlong>(info ? info->managedFamily : 0)};
+  jlongArray result = env->NewLongArray(6);
   if (!result) {
     return nullptr;
   }
-  env->SetLongArrayRegion(result, 0, 5, values);
+  env->SetLongArrayRegion(result, 0, 6, values);
   return result;
 }
 extern "C" JNIEXPORT jstring JNICALL fromjava(getsensortext)(JNIEnv *envin,
@@ -1950,62 +1960,19 @@ static void appendStoredHistory(const SensorGlucoseData *hist, jlong starttime,
   }
 }
 
-static bool plausibleNfcTrendRaw(uint16_t raw) {
-  // Same plausibility window used by Glucose::valid()/the old saveScanTrend().
-  return raw > 380 && raw < 5020;
-}
-
 static void appendScanHistory(const SensorGlucoseData *hist, jlong starttime,
                               HistorySamples &samples) {
   const auto scans = hist->getScandata();
-  const bool includeNfcTrend = hist->isLibre2();
-  constexpr int nfcTrendCount = 16;
-
-  for (size_t scanIndex = 0; scanIndex < scans.size(); ++scanIndex) {
-    const auto &item = scans[scanIndex];
-    if (!item.valid())
+  for (const auto &item : scans) {
+    if (!item.valid() || item.t <= starttime)
       continue;
 
-    if (item.t > starttime) {
-      const double cali = calibrateNow(hist, item);
-      const jlong valAuto =
-          !isnan(cali) ? (jlong)(cali * 10) : (jlong)item.g * 10;
+    const double cali = calibrateNow(hist, item);
+    const jlong valAuto = !isnan(cali) ? (jlong)(cali * 10) : (jlong)item.g * 10;
 
-      // Scans are newer than periodic history. Preserve a raw trend value that
-      // may already have been supplied by a later overlapping NFC scan.
-      samples[item.t].first = valAuto;
-    }
-
-    if (!includeNfcTrend)
-      continue;
-
-    /*
-     * Libre 2 NFC stores the preceding 16 one-minute raw samples in trends.dat.
-     * Export the first 15 directly to Room history instead of appending them to
-     * polls.dat. polls.dat is the live BLE stream cursor; letting scan history
-     * advance it can make subsequent physical readings look like duplicates.
-     * The newest trend entry is intentionally omitted because the scan itself
-     * supplies that minute's algorithm value.
-     */
-    const auto &trendValues = hist->gettrendsbuf(static_cast<int>(scanIndex));
-    for (int i = 0; i < nfcTrendCount - 1; ++i) {
-      const uint16_t raw = trendValues[i];
-      if (!plausibleNfcTrendRaw(raw))
-        continue;
-
-      const int minutesBack = nfcTrendCount - 1 - i;
-      const uint32_t secondsBack = static_cast<uint32_t>(minutesBack * 60);
-      if (item.t <= secondsBack)
-        continue;
-
-      const jlong trendTime = static_cast<jlong>(item.t - secondsBack);
-      if (trendTime <= starttime)
-        continue;
-
-      // trends.dat carries the same raw unit HistorySamples exposes
-      // (mg/dL x 10). BLE polls, appended afterwards, still win collisions.
-      samples[trendTime].second = static_cast<jlong>(raw);
-    }
+    // Scans have no dedicated raw lane like rawpolls.dat. Assignment is
+    // intentional: a scan is a newer source than the periodic history point.
+    samples[item.t] = {valAuto, 0};
   }
 }
 
@@ -2163,22 +2130,7 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
   data_t::deleteex(bluedata);
   //    delete newstate;
   if (algres == ALGDUP_VALUE) {
-    /*
-     * The frame itself was valid; only its current glucose was already present
-     * in polls (for example because WearSync2 mirrored the peer's last reading
-     * just before this device took Libre 2 back).
-     *
-     * processBlue() has nevertheless advanced the Abbott stream state in
-     * newstate. Dropping that state leaves the parser one frame behind, so every
-     * following notification can reproduce the same already-stored id forever:
-     * GATT stays healthy and 20/18/8 packets arrive each minute, but Juggluco's
-     * displayed reading never advances.
-     *
-     * Keep the new parser state while still returning the duplicate sentinel so
-     * Java does not publish the same glucose twice. The next physical frame can
-     * then advance to its new id normally.
-     */
-    sdata->setstate(newstate);
+    delete newstate;
     return 1LL;
   }
   if (algres) {
@@ -2367,6 +2319,8 @@ extern "C" JNIEXPORT jobjectArray JNICALL fromjava(activeSensors)(JNIEnv *env,
   std::vector<std::string> names;
   names.reserve(active.size());
   for (const int index : active) {
+    if (sensors->sensorDirectoryMissing(index))
+      continue;
     const char *name = sensors->shortsensorname_chars(index);
     if (name)
       names.emplace_back(name);
@@ -2380,6 +2334,8 @@ extern "C" JNIEXPORT jobjectArray JNICALL fromjava(activeSensors)(JNIEnv *env,
   std::vector<std::string> names;
   names.reserve(active.size());
   for (const int index : active) {
+    if (sensors->sensorDirectoryMissing(index))
+      continue;
     const SensorGlucoseData *sens = sensors->getSensorData(index);
     const char *name = sensors->shortsensorname_chars(index);
     if (sens && !sens->isLibre3() && name)

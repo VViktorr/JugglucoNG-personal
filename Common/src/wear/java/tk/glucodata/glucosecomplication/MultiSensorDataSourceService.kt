@@ -22,6 +22,7 @@ import tk.glucodata.Applic
 import tk.glucodata.Notify
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
+import tk.glucodata.TrendArrowAngle
 import tk.glucodata.ui.WearSensorSelection
 import java.time.Instant
 
@@ -51,10 +52,16 @@ internal fun multiSensorValues(
 
 internal fun multiSensorText(values: List<MultiSensorValue>, arrows: Boolean): String =
     values.joinToString(" · ") { value ->
-        val arrow = if (arrows) {
-            value.reading?.let { GlucoseComplicationData.trendArrowText(it.rate) }.orEmpty()
-        } else {
-            ""
+        val rate = value.reading?.rate
+        val rotation = rate?.let { -TrendArrowAngle.rotationDegrees(it) } ?: 0f
+        val arrow = if (!arrows || rate == null || !rate.isFinite()) "" else when {
+            rate > 2f -> "↑↑"
+            rotation >= 67.5f -> "↑"
+            rotation >= 22.5f -> "↗"
+            rate < -2f -> "↓↓"
+            rotation <= -67.5f -> "↓"
+            rotation <= -22.5f -> "↘"
+            else -> "→"
         }
         value.text + arrow
     }
