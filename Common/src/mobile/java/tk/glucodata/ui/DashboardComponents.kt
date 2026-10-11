@@ -997,7 +997,7 @@ fun DashboardCombinedHeader(
                         heroOwnsAwaitingStatus = heroOwnsAwaitingStatus,
                     )
                     val mainText = if (showingStatus) sensorStatus else lifecycleText
-                    if (mainText.isNotEmpty()) {
+                    if (mainText.isNotEmpty() || sensorEndTimeMs > 0L) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                              // Text First
@@ -1007,8 +1007,9 @@ fun DashboardCombinedHeader(
                                 color = sensorContentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = if (!showingStatus &&
-                                    (showRemainingHours || showLifecycleCalendar)
+                                modifier = if ((showingStatus && sensorEndTimeMs > 0L) ||
+                                    (sensorEndTimeMs <= 0L && !showingStatus &&
+                                        (showRemainingHours || showLifecycleCalendar))
                                 ) {
                                     Modifier.weight(1f, fill = false)
                                 } else {
@@ -1038,22 +1039,25 @@ fun DashboardCombinedHeader(
                                       )
                                  }
                              }
+                             if (sensorEndTimeMs > 0L) {
+                                 Spacer(modifier = Modifier.width(12.dp))
+                                 val expiryText = remember(sensorEndTimeMs) {
+                                     java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                         .format(java.util.Date(sensorEndTimeMs))
+                                 }
+                                 Text(
+                                     text = expiryText,
+                                     style = MaterialTheme.typography.labelMedium,
+                                     color = sensorContentColor.copy(alpha = 0.85f),
+                                     maxLines = 1,
+                                     softWrap = false,
+                                     overflow = TextOverflow.Ellipsis,
+                                     modifier = Modifier.weight(1f)
+                                 )
+                             }
                          }
                      }
-                    if (sensorEndTimeMs > 0L) {
-                        val expiryText = remember(sensorEndTimeMs) {
-                            java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
-                                .format(java.util.Date(sensorEndTimeMs))
-                        }
-                        Text(
-                            text = expiryText,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = sensorContentColor.copy(alpha = 0.85f),
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+
                 }
             }
         }
