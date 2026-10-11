@@ -82,7 +82,7 @@ private  final void info(String in) {
     {if(doLog) {Log.i(LOG_ID,SerialNumber +": "+ in);};};
     }
 @Override
-void free() {
+synchronized void free() {
     super.free();
     {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"free");};};
     cancelalarm();
@@ -564,7 +564,8 @@ private void logevent(byte[] value) {
             return;
     lastEventReceived=last;
     }
-private void init() {
+private synchronized void init() {
+    if (stop) return;
     var exportedKAuth = Natives.getLibre3kAuth(sensorptr);
     if(!isPreAuthorized) {
         if(exportedKAuth!=null) {

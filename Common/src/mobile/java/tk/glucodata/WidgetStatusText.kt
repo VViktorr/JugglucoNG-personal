@@ -41,6 +41,7 @@ object WidgetStatusText {
 
         val dataPtr = runCatching { Natives.getdataptr(serial) }.getOrDefault(0L)
         if (dataPtr != 0L) {
+            try {
             val kind = runCatching { Natives.getLibreVersion(dataPtr) }.getOrDefault(-1)
             val start = runCatching { Natives.getSensorStartmsec(dataPtr) }.getOrDefault(0L)
             val warmupMinutes = runCatching {
@@ -56,6 +57,10 @@ object WidgetStatusText {
                         .coerceAtLeast(1)
                     return context.getString(R.string.status_ready_in_minutes, minutes)
                 }
+            }
+            } finally {
+                runCatching { Natives.freedataptr(dataPtr) }
+                    .onFailure { Log.stack("WidgetStatusText", "free sensor status pointer", it) }
             }
         }
 
