@@ -641,7 +641,8 @@ class ICanHealthBleManager(
             runCatching { Natives.finishfromSensorptr(sensorPtr) }
                 .onFailure { Log.stack(TAG, "terminateManagedSensor(finishfromSensorptr)", it) }
         }
-        dataptr = 0L
+        // SensorBluetooth.sensorEnded() frees the owning stream wrapper after
+        // callback retirement. Keep it reachable until that shared cleanup runs.
         runCatching { close() }
             .onFailure { Log.stack(TAG, "terminateManagedSensor(close)", it) }
         Applic.app?.let { context ->
