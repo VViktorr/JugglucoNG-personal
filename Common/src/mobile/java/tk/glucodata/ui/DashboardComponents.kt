@@ -316,11 +316,7 @@ fun DashboardCombinedHeader(
         stiffness = Spring.StiffnessLow
     )
 
-    val heroTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroTopStartRadius"
-    )
+    val heroTopStart = 16.dp
     val heroTopEnd by animateDpAsState(
         targetValue = directionalRadius(cornerWeights.topEnd, 8.dp, 24.dp),
         animationSpec = cornerAnimSpec,
@@ -331,32 +327,12 @@ fun DashboardCombinedHeader(
         animationSpec = cornerAnimSpec,
         label = "HeroBottomEndRadius"
     )
-    val heroBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroBottomStartRadius"
-    )
+    val heroBottomStart = 16.dp
 
-    val sensorTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorTopStartRadius"
-    )
-    val sensorTopEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topEnd, 20.dp, 46.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorTopEndRadius"
-    )
-    val sensorBottomEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomEnd, 22.dp, 52.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorBottomEndRadius"
-    )
-    val sensorBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorBottomStartRadius"
-    )
+    val sensorTopStart = 16.dp
+    val sensorTopEnd = 16.dp
+    val sensorBottomEnd = 16.dp
+    val sensorBottomStart = 16.dp
 
     // 1. Resolve Values using shared logic (with calibration if active)
     val refreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
