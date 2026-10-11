@@ -32,4 +32,6 @@
     <string name="wear_journal_pending">Oczekiwanie na telefon</string>
     <string name="wear_multi_sensor_complication">Wartości wielu czujników (tekstowa / obrazkowa)</string>
     <string name="wear_multi_sensor_arrow_complication">Wartości wielu czujników + trendy (tekstowa / obrazkowa)</string>
+    <string name="wear_arrow_above_value_label">Strzałka nad wartością (tekstowa)</string>
+    <string name="wear_arrow_above_value_description">Strzałka trendu w tytule, glukoza w głównym tekście. Tarcza zegarka musi wyświetlać tytuł; jego położenie zależy od tarczy.</string>
 </resources>

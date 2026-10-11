@@ -32,13 +32,11 @@ internal object GlucoseComplicationData {
         val sensorId: String? = null,
     )
 
-    /** Keep the trend visible even on faces that omit complication images. */
-    fun withTrend(reading: Reading?): Reading? {
-        reading ?: return null
-        val rate = reading.rate
-        if (!rate.isFinite()) return reading
+    /** The same text arrow for inline and title-based complications. */
+    fun trendText(rate: Float): String? {
+        if (!rate.isFinite()) return null
         val rotation = -tk.glucodata.TrendArrowAngle.rotationDegrees(rate)
-        val arrow = when {
+        return when {
             rate > 2f -> "↑↑"
             rotation >= 67.5f -> "↑"
             rotation >= 22.5f -> "↗"
@@ -47,6 +45,12 @@ internal object GlucoseComplicationData {
             rotation <= -22.5f -> "↘"
             else -> "→"
         }
+    }
+
+    /** Keep the trend visible even on faces that omit complication images. */
+    fun withTrend(reading: Reading?): Reading? {
+        reading ?: return null
+        val arrow = trendText(reading.rate) ?: return reading
         return reading.copy(text = reading.text + arrow)
     }
 

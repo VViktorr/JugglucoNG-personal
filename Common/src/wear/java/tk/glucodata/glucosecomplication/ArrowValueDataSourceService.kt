@@ -242,6 +242,7 @@ fun getview(type: ComplicationType):WearComplicationValue {
 
         public fun update() {
             complicationDataSourceUpdateRequester.requestUpdateAll()
+            ArrowAboveValueDataSourceService.update()
         }
     }
 }
