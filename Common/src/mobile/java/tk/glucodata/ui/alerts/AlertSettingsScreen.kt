@@ -158,6 +158,7 @@ fun AlertSettingsScreen(
         listOf(
             AlertType.MISSED_READING,
             AlertType.LOSS,
+            AlertType.AVAILABLE,
             AlertType.SENSOR_EXPIRY
         )
     }
