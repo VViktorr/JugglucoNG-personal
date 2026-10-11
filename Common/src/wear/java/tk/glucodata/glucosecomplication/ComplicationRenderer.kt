@@ -293,7 +293,7 @@ internal object ComplicationRenderer {
         return bmp
     }
 
-    /** Value with the arrow beside it, for the wider compact slots. */
+    /** Arrow above the value, shared by image complications and their previews. */
     @JvmOverloads
     fun valueWithArrowBitmap(
         size: Int,
@@ -307,15 +307,18 @@ internal object ComplicationRenderer {
         val (bmp, canvas) = bitmap(size, size)
         val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
         val content = size - inset * 2f
-        // Value on top, arrow beneath: side by side in a round slot leaves both
-        // small, because the pair has to fit the slot's width at its narrowest.
-        val valueHeight = content * 0.58f
-        drawFittedText(canvas, text, color, inset, inset, content, valueHeight)
+        // Stack the arrow above the larger value so both remain readable in
+        // round slots. Keep a small gap between the two drawing boxes.
         val arrowBox = content * 0.40f
         drawArrow(
             canvas, arrowBox, arrowBox, rate, color,
             inset + (content - arrowBox) / 2f,
-            inset + content - arrowBox,
+            inset,
+        )
+        val valueHeight = content * 0.58f
+        drawFittedText(
+            canvas, text, color, inset, inset + content - valueHeight,
+            content, valueHeight,
         )
         return bmp
     }
