@@ -315,7 +315,7 @@ struct dexbackfill {
   [[nodiscard]] int getpredictedmgdL() const { return 0; }
   [[nodiscard]] int getindex() const { return secsSinceStart / DEXSECONDS; }
   [[nodiscard]] bool usable() const {
-    return type == 0x6 || type == 0x7 || type == 0xe;
+    return secsSinceStart >= 0 && (type == 0x6 || type == 0x7 || type == 0xe);
   }
   [[nodiscard]] uint32_t gettime(const uint32_t sensorstarttime) const {
     return sensorstarttime + secsSinceStart;
@@ -330,18 +330,18 @@ void showdata(const uint32_t sensorstart) const {
 
   float getRateofChange() const { return (float)trend / 10.0f; }
 
-  void save(SensorGlucoseData *sens, uint32_t wastime, int index) const {
+  bool save(SensorGlucoseData *sens, uint32_t wastime, int index) const {
     const auto rate = getRateofChange();
-    sens->savepollallIDs<DEXSECONDS>(wastime, index, mgdL,
+    return sens->savepollallIDs<DEXSECONDS>(wastime, index, mgdL,
                                      rate2changeindex(rate), rate);
   }
-  void backfill(SensorGlucoseData *sens) const {
+  bool backfill(SensorGlucoseData *sens) const {
     auto id = getindex();
     LOGGER("secsSinceStart=%d index=%d\n", secsSinceStart, id);
     const auto starttime = sens->getstarttime();
     const auto wastime = gettime(starttime);
-    if (id < sens->maxstreampos()) {
-      save(sens, wastime, id);
+    if (id >= 0 && id < sens->maxstreampos() && sens->validPollIndex(id)) {
+      if (!save(sens, wastime, id)) return false;
       if (id < sens->getbroadcastfrom())
         sens->setbroadcastfrom(id);
       sens->backstream(id);
@@ -349,13 +349,16 @@ void showdata(const uint32_t sensorstart) const {
             backup->wakebackup(Backup::wakestream);
             }*/
       sens->fastupdatelifecount(id);
+      return true;
     } else {
       LOGGER("ERROR id=%d\n", id);
     }
+    return false;
   }
 } __attribute__((packed));
 extern "C" JNIEXPORT jboolean JNICALL fromjava(dexbackfill)(
     JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray bluetoothdata) {
+  if (!dataptr || !bluetoothdata) return false;
   const auto arlen = envin->GetArrayLength(bluetoothdata);
   if (arlen < sizeof(struct dexbackfill)) {
     LOGGER("dexbackffill: too small %d<%d\n", arlen,
@@ -364,13 +367,15 @@ extern "C" JNIEXPORT jboolean JNICALL fromjava(dexbackfill)(
   }
   dexcomstream *sdata = reinterpret_cast<dexcomstream *>(dataptr);
   SensorGlucoseData *sens = sdata->hist;
+  if (!sens) return false;
   const CritAr bluedata(envin, bluetoothdata);
+  if (!bluedata.data()) return false;
   const dexbackfill *back = reinterpret_cast<decltype(back)>(bluedata.data());
   if (!back->usable()) {
     LOGAR("dexbackfill unusable");
     return false;
   }
-  back->backfill(sens);
+  if (!back->backfill(sens)) return false;
   LOGAR("dexbackfill saved");
   return true;
 }
@@ -422,6 +427,7 @@ extern "C" JNIEXPORT jboolean JNICALL fromjava(dexPutPubKey)(
 template <typename T> jbyteArray getjbyteArray(JNIEnv *env, const T &cont) {
   static_assert(sizeof(cont[0]) == sizeof(jbyte));
   jbyteArray uit = env->NewByteArray(cont.size());
+  if (!uit) return nullptr;
   env->SetByteArrayRegion(uit, 0, cont.size(),
                           reinterpret_cast<const jbyte *>(cont.data()));
   return uit;
@@ -473,10 +479,16 @@ extern std::array<uint8_t, 64> getchallenge(std::span<const uint8_t> input);
 extern "C" JNIEXPORT jbyteArray JNICALL
 fromjava(dexChallenger)(JNIEnv *envin, jclass cl, jbyteArray jdata) {
   LOGAR("dexChallenger");
+  if (!jdata) return nullptr;
   const auto arlen = envin->GetArrayLength(jdata);
+  if (arlen < 18) {
+    LOGAR("dexChallenger: truncated challenge");
+    return nullptr;
+  }
   //  const CritAr  bytes(envin,jdata);
   const uint8_t *bytes =
       (const uint8_t *)envin->GetPrimitiveArrayCritical(jdata, nullptr);
+  if (!bytes) return nullptr;
   auto chall = getchallenge(std::span<const uint8_t>(bytes, arlen));
   envin->ReleasePrimitiveArrayCritical(jdata, (jbyte *)bytes, JNI_ABORT);
   return getjbyteArray(envin, chall);

@@ -400,6 +400,11 @@ private int connectionTimeouts=0;
 
 
 private void sendcerts() {
+    if (packet == null || packet.length == 0) {
+        Log.e(LOG_ID, "No Dexcom certificate/challenge packet to send");
+        disconnect();
+        return;
+    }
     Applic.scheduler.schedule(this::sendcertthread, 0, TimeUnit.MILLISECONDS);
    }
 
