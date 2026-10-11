@@ -199,6 +199,12 @@ public class Libre2GattCallback extends SuperGattCallback {
                 + " activeAddress=" + mActiveDeviceAddress);
     }
 
+    synchronized void diagnoseResetContext(String stage, long previousDataptr, String extra) {
+        libre2Diag(stage, mBluetoothGatt, "oldDataptr=0x" + Long.toHexString(previousDataptr)
+                + " activeAddress=" + mActiveDeviceAddress
+                + (extra == null ? "" : " " + extra));
+    }
+
     @Override
     public synchronized long resetdataptr() {
         cancelRecovery("native stream reload");
@@ -601,6 +607,7 @@ private   boolean failedbefore=false;
                         } 
             else success = false;
 			if (!success) {
+                libre2Diag("notification-enable-failed", bluetoothGatt, "writeQueued=false");
 				wrotepass[1] = tim;
 				handshake = "Enabling notification failed";
 				{if(doLog) {Log.i(LOG_ID, SerialNumber + " onCharacteristicWrite:  enabling notification failed");};};
@@ -1052,10 +1059,54 @@ public synchronized void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int stat
 
 @Override
 public boolean matchDeviceName(String deviceName,String address) {
-	if(deviceName==null||!deviceName.startsWith("ABBOTT")) {
+	if(deviceName==null) {
+		if(doLog) {Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address + " name=null accepted=false reason=no-name");};
 		return false;
 		}
-	return SerialNumber.equals(deviceName.substring(6));
+	if(!deviceName.startsWith("ABBOTT")) {
+		if(doLog) {Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address + " name=" + deviceName + " accepted=false reason=name-prefix");};
+		return false;
+		}
+	final String advertisedSerial=deviceName.substring(6);
+	final boolean accepted=SerialNumber.equals(advertisedSerial);
+	if(doLog) {
+		Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+				+ " name=" + deviceName + " advertisedSerial=" + advertisedSerial
+				+ " accepted=" + accepted + " reason=" + (accepted?"name-match":"serial-mismatch"));
+		}
+	return accepted;
+	}
+
+@Override
+public boolean matchScanResult(android.bluetooth.le.ScanResult result) {
+	if(result==null) {
+		if(doLog) {Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " accepted=false reason=null-scan-result");};
+		return false;
+		}
+	final android.bluetooth.le.ScanRecord record=result.getScanRecord();
+	final BluetoothDevice device=result.getDevice();
+	final String address=device==null?null:device.getAddress();
+	final String name=record==null?null:record.getDeviceName();
+	boolean serviceFde3=false;
+	if(record!=null) {
+		final java.util.List<android.os.ParcelUuid> services=record.getServiceUuids();
+		if(services!=null) {
+			for(android.os.ParcelUuid service:services) {
+				if(service!=null && mADCCustomServiceUUID.equals(service.getUuid())) {
+					serviceFde3=true;
+					break;
+					}
+				}
+			}
+		}
+	if(doLog) {
+		Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+				+ " name=" + name + " serviceFDE3=" + serviceFde3
+				+ " accepted=false reason=metadata-only-upstream-name-match");
+		}
+	// Diagnostic only: keep upstream matching semantics. Libre 2 is still
+	// accepted by its remembered address or ABBOTT<serial> local name.
+	return false;
 	}
 @Override
 void free() {

@@ -57,12 +57,21 @@ const int uselen=std::min(history::num,len);
 const int histmaxpos=save.maxpos();
 int lastgood=std::max(prevend,pos)-1;
 int firstchanged=-1;
+int validCount=0;
+int writtenCount=0;
+int skippedQualityCount=0;
+int skippedStreamedCount=0;
+int skippedExistingCount=0;
+int skippedRangeCount=0;
+LOGGER("NFC_DIAG history-begin len=%d uselen=%d nuid=%d nutime=%lu prevend=%d firstpos=%d mininterval=%d\n",
+    len, uselen, nuid, static_cast<unsigned long>(nutime), prevend, pos, mininterval);
 LOGGER("saveSputnik_PG2 uselen=%d prevend=%d firstpos=%d\n",uselen,prevend,pos);
     for(int i=0;i<uselen;i++) {
 	GlucoseValue gluv=hist.get(i);
 	const int id=gluv.getId();
 	const int topos=int(round(id/(double)mininterval));
 	if(topos<0||topos>=histmaxpos) {
+		++skippedRangeCount;
 		LOGGER("GLU: savehistory pos %d out of 0..%d\n",topos,histmaxpos);
 		continue;
 		}
@@ -70,9 +79,11 @@ LOGGER("saveSputnik_PG2 uselen=%d prevend=%d firstpos=%d\n",uselen,prevend,pos);
 		lastgood=std::max(lastgood,topos);
 	const int value=gluv.getValue();
 	if(gluv.getQuality()||value<=38||value>=502) {
+		++skippedQualityCount;
 		LOGGER("GLU: savehistory skip %d quality=%d value=%d\n",topos,gluv.getQuality(),value);
 		continue;
 		}
+	++validCount;
 	Glucose *item=save.getglucose(topos);
 	if(item->valid()) {
 		if(item->isStreamed()) {
@@ -80,10 +91,13 @@ LOGGER("saveSputnik_PG2 uselen=%d prevend=%d firstpos=%d\n",uselen,prevend,pos);
 			time_t tim=item->gettime();
 			LOGGER("already streamed %d %.1f %s",item->getid(),(float)item->getmgdL()/convfactordL,ctime(&tim));
 #endif
+			++skippedStreamedCount;
 			continue;
 			}
-		if(topos<prevend)  /*Already written by an earlier scan.*/
+		if(topos<prevend) { /*Already written by an earlier scan.*/
+			++skippedExistingCount;
 			continue;
+			}
 		}
 	const uint16_t gv=10*value;//Same unit as raw
 	const uint32_t was=nutime-(nuid-id)*60;
@@ -93,12 +107,16 @@ LOGGER("saveSputnik_PG2 uselen=%d prevend=%d firstpos=%d\n",uselen,prevend,pos);
 	item->glu[2]&=~0x4000;	/*Scan-sourced: keep the streamed flag truthful.*/
 	if(firstchanged<0||topos<firstchanged)
 		firstchanged=topos;
+	++writtenCount;
 #ifndef NOLOG
 	time_t tim=item->gettime();
 	LOGGER("add %d %.1f %s",item->getid(),(float) item->getmgdL()/convfactordL,ctime(&tim));
 #endif
     	}
 save.setendScanhistory(lastgood+1);
+LOGGER("NFC_DIAG history-end valid=%d written=%d skipQuality=%d skipStreamed=%d skipExisting=%d skipRange=%d firstChanged=%d lastGood=%d endScanHistory=%d\n",
+    validCount, writtenCount, skippedQualityCount, skippedStreamedCount,
+    skippedExistingCount, skippedRangeCount, firstchanged, lastgood, lastgood+1);
 if(save.getStreamendhistory()) {
 	if(firstchanged!=-1) {
 		int maxint=backup->getupdatedata()->sendnr;

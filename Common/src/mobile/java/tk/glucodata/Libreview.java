@@ -26,6 +26,13 @@ import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
+import java.util.concurrent.atomic.AtomicLong;
+import java.net.InetAddress;
+import android.net.NetworkCapabilities;
+import android.net.Network;
+import android.net.ConnectivityManager;
+import android.os.SystemClock;
+import android.os.PowerManager;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.View;
@@ -94,6 +101,86 @@ import static tk.glucodata.util.getlocale;
 
 public class Libreview  {
    private static final String LOG_ID="Libreview";
+   private static final AtomicLong LIBREVIEW_REQUEST_SEQ = new AtomicLong();
+
+   private static String libreViewNetworkState() {
+      try {
+         final Context context = Applic.app;
+         if (context == null)
+            return "context=null";
+         final ConnectivityManager cm =
+               (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+         if (cm == null)
+            return "connectivity=null";
+         final Network network = cm.getActiveNetwork();
+         final NetworkCapabilities caps = network == null ? null : cm.getNetworkCapabilities(network);
+         final StringBuilder out = new StringBuilder(160);
+         out.append("active=").append(network != null);
+         out.append(" metered=").append(cm.isActiveNetworkMetered());
+         if (caps == null) {
+            out.append(" caps=null");
+         } else {
+            out.append(" internet=").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET));
+            out.append(" validated=").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED));
+            out.append(" wifi=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
+            out.append(" cellular=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR));
+            out.append(" ethernet=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+            out.append(" vpn=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN));
+         }
+         final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+         if (pm != null) {
+            out.append(" powerSave=").append(pm.isPowerSaveMode());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+               out.append(" deviceIdle=").append(pm.isDeviceIdleMode());
+            out.append(" interactive=").append(pm.isInteractive());
+         }
+         return out.toString();
+      } catch (Throwable th) {
+         return "network-state-error=" + th.getClass().getSimpleName() + ":" + String.valueOf(th.getMessage());
+      }
+   }
+
+   private static String libreViewDnsState(String host) {
+      if (host == null || host.isEmpty())
+         return "dns=host-empty";
+      try {
+         final long start = SystemClock.elapsedRealtime();
+         final InetAddress[] addresses = InetAddress.getAllByName(host);
+         final long took = SystemClock.elapsedRealtime() - start;
+         final StringBuilder out = new StringBuilder("dns=");
+         for (int i = 0; i < addresses.length; i++) {
+            if (i > 0) out.append(',');
+            out.append(addresses[i].getHostAddress());
+         }
+         out.append(" dnsMs=").append(took);
+         return out.toString();
+      } catch (Throwable th) {
+         return "dnsError=" + th.getClass().getSimpleName() + ":" + String.valueOf(th.getMessage());
+      }
+   }
+
+   private static void logLibreViewFailure(
+         long requestId,
+         String host,
+         String stage,
+         long startedElapsed,
+         Throwable th
+   ) {
+      final long elapsed = SystemClock.elapsedRealtime() - startedElapsed;
+      final String error = th == null
+            ? "none"
+            : th.getClass().getName() + ":" + String.valueOf(th.getMessage());
+      Log.e(LOG_ID,
+            "LIBREVIEW_NET request=" + requestId +
+            " stage=" + stage +
+            " elapsedMs=" + elapsed +
+            " host=" + host +
+            " error=" + error +
+            " " + libreViewNetworkState() +
+            " " + libreViewDnsState(host));
+   }
+
+
 private static String getputtext(String sensorid,String usertoken,String gateway) {
  return "{\"DomainData\":\"{\\\"activeSensor\\\":\\\""+sensorid+"\\\"}\",\"UserToken\":\""+usertoken +"\",\"Domain\":\"Libreview\",\"GatewayType\":\""+gateway+"\"}";
  }
@@ -231,7 +318,7 @@ static boolean postgetauth(boolean libre3) {
       Log.e(LOG_ID, "postgetauth: skipping — empty credentials (login=" + (login != null ? login.length() : "null") + " chars, pass=" + (password != null && !"null".equals(password) ? "set" : "empty") + ")");
       return false;
    }
-   {if(doLog) {Log.i(LOG_ID,"postgetauth "+login+" "+password);};};
+   {if(doLog) {Log.i(LOG_ID,"postgetauth login=**** password=****");};};
 
    var loc= Locale.getDefault();
    String language=loc.getLanguage()+'-'+loc.getCountry();
@@ -275,7 +362,7 @@ static boolean postgetauth(boolean libre3) {
 
          }
       byte[] textbytes=getauthtext.getBytes();
-      {if(doLog) {Log.i(LOG_ID,"postauth: "+getauthtext);};};
+      {if(doLog) {Log.i(LOG_ID,"postauth: credentials=**** payloadBytes="+textbytes.length+" libre3="+libre3+" setDevice="+setdevice);};};
           urlConnection.setRequestProperty( "Content-Length", Integer.toString( textbytes.length ));
 
    //   {if(doLog) {Log.i(LOG_ID,getauthtext);};};
@@ -359,7 +446,7 @@ static boolean postgetauth(boolean libre3) {
             urlConnection2.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             String notneeded="{\"UserToken\":\""+usertoken+"\",\"Domain\":\"Libreview\",\"GatewayType\":\"FSLibreLink.Android\"}";
             byte[] notneedbytes=notneeded.getBytes();
-            {if(doLog) {Log.i(LOG_ID,"postauth: "+notneeded);};};
+            {if(doLog) {Log.i(LOG_ID,"postauth account-info: UserToken=**** payloadBytes="+notneedbytes.length);};};
                 urlConnection2.setRequestProperty( "Content-Length", Integer.toString( notneedbytes.length ));
             OutputStream outputPost2 = new BufferedOutputStream(urlConnection2.getOutputStream());
             outputPost2.write(notneedbytes);
@@ -398,87 +485,137 @@ static boolean postmeasurements(boolean libre3,byte[] measurementdata) {
    String nowstr=datestr(System.currentTimeMillis());
    if(librestatus==nothing||librestatus==success)
       librestatus=nowstr+" start posting";
-   try {
+
    for(int i=0;i<3;i++) {
-      final String baseurl=getlibrebaseurl(libre3);
-      URL url = new URL(baseurl+"/api/measurements");
-      HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-      urlConnection.setConnectTimeout(10000);
-      urlConnection.setReadTimeout(60000);
-      urlConnection.setRequestMethod("POST");
-      urlConnection.setDoOutput(true);
-      urlConnection.setRequestProperty("Content-Type", "application/json");
-          urlConnection.setRequestProperty( "Content-Length", Integer.toString( measurementdata.length ));
-      if(libre3) {
-         urlConnection.setRequestProperty("Platform","Android");
-         urlConnection.setRequestProperty("Version","3.3.0");
-         urlConnection.setRequestProperty("Abbott-ADC-App-Platform","Android/"+((Object) Build.VERSION.RELEASE) +"/FSL3/3.3.0.9092");
- 
-         var loc= Locale.getDefault();
-         String language=loc.getLanguage()+'-'+loc.getCountry();
-         urlConnection.setRequestProperty("Accept-Language",language);
-         final String newYuApiKey=getnewYuApiKey(libre3);
-         urlConnection.setRequestProperty("x-api-key", newYuApiKey);
-         final String usertoken=Natives.getlibreUserToken(libre3);
-         urlConnection.setRequestProperty("x-newyu-token",usertoken); 
+      HttpURLConnection urlConnection = null;
+      final long requestId = LIBREVIEW_REQUEST_SEQ.incrementAndGet();
+      final long startedElapsed = SystemClock.elapsedRealtime();
+      String stage = "prepare";
+      String host = "";
+      try {
+         final String baseurl=getlibrebaseurl(libre3);
+         URL url = new URL(baseurl+"/api/measurements");
+         host = url.getHost();
+         if(doLog) {
+            Log.i(LOG_ID,
+                  "LIBREVIEW_NET request="+requestId+
+                  " start libre3="+libre3+
+                  " bytes="+measurementdata.length+
+                  " host="+host+
+                  " "+libreViewNetworkState());
          }
-      OutputStream outputPost = new BufferedOutputStream(urlConnection.getOutputStream());
-      outputPost.write(measurementdata);
-      outputPost.flush();
-      outputPost.close();
-      final int code=urlConnection.getResponseCode();
-      if(code==HTTP_OK) {
-         JSONObject object = readJSONObject(urlConnection);
-         int status=object.getInt("status");
-         if(status!=0) {
-            Log.e(LOG_ID,"Post with status "+status);
-            String reason=object.getString("reason");
-            if(status==20) {
-               if("wrongDeviceInToken".equals(reason)) {
-                  switch(i) {
-                     case 0:{
-                        if(!postgetauth(libre3)) {
-                           if(!libreconfig(libre3,false))
-                              return false;
-                           i=1;
+
+         stage = "open";
+         urlConnection = (HttpURLConnection) url.openConnection();
+         urlConnection.setConnectTimeout(10000);
+         urlConnection.setReadTimeout(60000);
+         urlConnection.setRequestMethod("POST");
+         urlConnection.setDoOutput(true);
+         urlConnection.setRequestProperty("Content-Type", "application/json");
+         urlConnection.setRequestProperty("Content-Length", Integer.toString(measurementdata.length));
+         if(libre3) {
+            urlConnection.setRequestProperty("Platform","Android");
+            urlConnection.setRequestProperty("Version","3.3.0");
+            urlConnection.setRequestProperty("Abbott-ADC-App-Platform","Android/"+((Object) Build.VERSION.RELEASE) +"/FSL3/3.3.0.9092");
+
+            var loc= Locale.getDefault();
+            String language=loc.getLanguage()+'-'+loc.getCountry();
+            urlConnection.setRequestProperty("Accept-Language",language);
+            final String newYuApiKey=getnewYuApiKey(libre3);
+            urlConnection.setRequestProperty("x-api-key", newYuApiKey);
+            final String usertoken=Natives.getlibreUserToken(libre3);
+            urlConnection.setRequestProperty("x-newyu-token",usertoken);
+         }
+
+         stage = "write";
+         final long writeStart = SystemClock.elapsedRealtime();
+         try (OutputStream outputPost = new BufferedOutputStream(urlConnection.getOutputStream())) {
+            outputPost.write(measurementdata);
+            outputPost.flush();
+         }
+         final long writeMs = SystemClock.elapsedRealtime() - writeStart;
+
+         stage = "response";
+         final long responseStart = SystemClock.elapsedRealtime();
+         final int code=urlConnection.getResponseCode();
+         final long responseMs = SystemClock.elapsedRealtime() - responseStart;
+         if(doLog) {
+            Log.i(LOG_ID,
+                  "LIBREVIEW_NET request="+requestId+
+                  " response code="+code+
+                  " writeMs="+writeMs+
+                  " responseMs="+responseMs+
+                  " totalMs="+(SystemClock.elapsedRealtime()-startedElapsed)+
+                  " host="+host+
+                  " "+libreViewNetworkState());
+         }
+
+         if(code==HTTP_OK) {
+            stage = "read-json";
+            JSONObject object = readJSONObject(urlConnection);
+            int status=object.getInt("status");
+            if(status!=0) {
+               Log.e(LOG_ID,"Post with status "+status);
+               String reason=object.getString("reason");
+               if(status==20) {
+                  if("wrongDeviceInToken".equals(reason)) {
+                     switch(i) {
+                        case 0:{
+                           if(!postgetauth(libre3)) {
+                              if(!libreconfig(libre3,false))
+                                 return false;
+                              i=1;
                            }
                         };break;
-                     case 1: {
-                        if(!libreconfig(libre3,false))
-                           return false;
+                        case 1: {
+                           if(!libreconfig(libre3,false))
+                              return false;
                         };break;
-                     default: {
-                        librestatus="postmeasurements2 status="+code+" reason="+reason;
-                        return false;
+                        default: {
+                           librestatus="postmeasurements2 status="+code+" reason="+reason;
+                           return false;
                         }
-
                      }
-//                  return postmeasurements(libre3,measurementdata);
-                  continue;
+                     continue;
                   }
                }
-            librestatus="postmeasurements status="+code+" reason="+reason;
-            return false;
+               librestatus="postmeasurements status="+code+" reason="+reason;
+               return false;
             }
-         posttime=nowstr;
-         librestatus=success;
-         return true;
+            posttime=nowstr;
+            librestatus=success;
+            return true;
          }
-      else {
-         librestatus="postmeasurements ResponseCode="+code;
-         {if(doLog) {Log.i(LOG_ID,librestatus);};};
-         return false;
+         else {
+            librestatus="postmeasurements ResponseCode="+code;
+            Log.e(LOG_ID,
+                  "LIBREVIEW_NET request="+requestId+
+                  " httpFailure code="+code+
+                  " totalMs="+(SystemClock.elapsedRealtime()-startedElapsed)+
+                  " host="+host+
+                  " "+libreViewNetworkState());
+            return false;
          }
-         }
-      return false;
-       }
-   catch(Throwable th) {
-      final String posterror="postmeasurements\n"+stackline(th);
-      librestatus=posterror;
-      Log.e(LOG_ID,posterror);
-      return false;
       }
- }
+      catch(Throwable th) {
+         logLibreViewFailure(requestId,host,stage,startedElapsed,th);
+         final String posterror="postmeasurements stage="+stage+
+               " request="+requestId+"\n"+stackline(th);
+         librestatus=posterror;
+         Log.e(LOG_ID,posterror);
+         return false;
+      }
+      finally {
+         if(urlConnection!=null) {
+            try {
+               urlConnection.disconnect();
+            } catch(Throwable ignored) {}
+         }
+      }
+   }
+   return false;
+}
+
  /*TODO: where:
         try {
            ProviderInstaller.installIfNeeded(Applic.app);
@@ -978,6 +1115,7 @@ public static void  config(MainActivity act, View settingsview,CheckBox sendto,b
 
 
 }
+
 
 
 

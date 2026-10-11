@@ -1249,6 +1249,8 @@ static jlong getalarmonly(const uint32_t mgL, float drate,
                                                                       hist->waiting
                                                                   ? isAgain
                                                                   : 0))))))));
+  LOGGER("mgL=%u, high=%d, low=%d res=%" PRId64 "\n",
+         mgL, settings->highAlarm(mgL), settings->lowAlarm(mgL), res);
   return res;
 }
 int getalarmcode(const uint32_t mgL, float drate, SensorGlucoseData *hist) {
@@ -2808,3 +2810,4 @@ fromjava(optionStreamHistory)(JNIEnv *env, jclass cl, jlong dataptr) {
   return !sensorptr->useLibre2rootcheck();
 #endif
 }
+
