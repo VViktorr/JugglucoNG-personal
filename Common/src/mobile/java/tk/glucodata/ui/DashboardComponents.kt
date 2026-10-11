@@ -877,7 +877,7 @@ fun DashboardCombinedHeader(
             ) {
                 val showRemainingHours = sensorHoursRemaining in 0L..24L
                 val lifecycleText = if (showRemainingHours) "$sensorHoursRemaining" + "h" else daysRemaining
-                val lifecycleStyle = MaterialTheme.typography.labelLarge
+                val lifecycleStyle = if (stackBars) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge
                 val lifecycleTextMeasurer = rememberTextMeasurer()
                 val lifecycleTextWidthPx = remember(lifecycleText, lifecycleStyle) {
                     lifecycleTextMeasurer.measure(
@@ -928,9 +928,11 @@ fun DashboardCombinedHeader(
                             noiseLevel = trendResult.noiseLevel,
                             readingMillis = if (showReadingAge) primaryReadingMillis else null,
                             contentColor = sensorContentColor,
+                            readingAgeStyle = if (stackBars) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+                            readingAgeIconSize = if (stackBars) 16.dp else 14.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = if (stackBars) 2.dp else 4.dp)
                         )
                     }
                     
@@ -942,12 +944,12 @@ fun DashboardCombinedHeader(
                                     transport = cloneTransport,
                                     showLabel = true,
                                     tint = sensorContentColor.copy(alpha = 0.7f),
-                                    textStyle = MaterialTheme.typography.labelMedium,
+                                    textStyle = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                                 )
                             } else {
                                 Text(
                                     text = sensorDisplayName,
-                                    style = MaterialTheme.typography.labelMedium, // M3 Standard
+                                    style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                                     color = sensorContentColor.copy(alpha = 0.7f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -995,12 +997,12 @@ fun DashboardCombinedHeader(
                     )
                     val mainText = if (showingStatus) sensorStatus else lifecycleText
                     if (mainText.isNotEmpty() || sensorEndTimeMs > 0L) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(if (stackBars) 2.dp else 4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                              // Text First
                              Text(
                                 text = mainText,
-                                style = MaterialTheme.typography.labelLarge,
+                                style = lifecycleStyle,
                                 color = sensorContentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -1044,7 +1046,7 @@ fun DashboardCombinedHeader(
                                  }
                                  Text(
                                      text = expiryText,
-                                     style = MaterialTheme.typography.labelMedium,
+                                     style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                                      color = sensorContentColor.copy(alpha = 0.85f),
                                      maxLines = 1,
                                      softWrap = false,
@@ -2229,7 +2231,9 @@ private fun SignalQualityAndReadingAgeRow(
     noiseLevel: Float,
     readingMillis: Long?,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readingAgeStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    readingAgeIconSize: androidx.compose.ui.unit.Dp = 12.dp
 ) {
     val density = LocalDensity.current
     val gapPx = with(density) { SIGNAL_AGE_GAP.roundToPx() }
@@ -2276,6 +2280,8 @@ private fun SignalQualityAndReadingAgeRow(
                     readingMillis = readingMillis,
                     iconTint = contentColor.copy(alpha = 0.55f),
                     textColor = contentColor.copy(alpha = 0.75f),
+                    textStyle = readingAgeStyle,
+                    iconSize = readingAgeIconSize,
                     modifier = Modifier.layoutId(SIGNAL_AGE_COUNTER_ID)
                 )
             }
