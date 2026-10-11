@@ -89,6 +89,25 @@ public class Libre2GattCallback extends SuperGattCallback {
 	private long diagServicesAtMs = 0L;
 	private long diagPassWriteAtMs = 0L;
 	private long diagDescriptorAtMs = 0L;
+	// Monotonic callback-local generation for the native Libre2 stream wrapper.
+	// The allocator may reuse the same dataptr address after resetdataptr(), so the
+	// pointer alone cannot prove whether the wrapper was rebuilt.
+	private long diagNativeStreamGeneration = 1L;
+
+	long diagNativeStreamGeneration() {
+		return diagNativeStreamGeneration;
+	}
+
+	@Override
+	public long resetdataptr() {
+		final long oldDataptr = dataptr;
+		final long newDataptr = super.resetdataptr();
+		diagNativeStreamGeneration++;
+		libre2Diag("native-stream-reloaded", null,
+				"oldDataptr=0x" + Long.toHexString(oldDataptr)
+				+ " newDataptr=0x" + Long.toHexString(newDataptr));
+		return newDataptr;
+	}
 
 	private String diagGatt(BluetoothGatt gatt) {
 		return gatt == null ? "null" : Integer.toHexString(System.identityHashCode(gatt));
@@ -106,6 +125,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 				+ " stage=" + stage
 				+ " gatt=" + diagGatt(gatt)
 				+ " dataptr=0x" + Long.toHexString(dataptr)
+				+ " nativeStreamGen=" + diagNativeStreamGeneration
 				+ " sensorgen=" + sensorgen
 				+ " conphase=" + conphase
 				+ " connected=" + connected
