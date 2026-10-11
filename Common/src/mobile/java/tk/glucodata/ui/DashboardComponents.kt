@@ -871,7 +871,7 @@ fun DashboardCombinedHeader(
                             readingAgeIconSize = if (stackBars) 16.dp else 14.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = if (stackBars) 2.dp else 4.dp)
+                                .padding(bottom = if (stackBars || sensorEndTimeMs > 0L) 2.dp else 4.dp)
                         )
                     }
                     
@@ -935,8 +935,8 @@ fun DashboardCombinedHeader(
                         heroOwnsAwaitingStatus = heroOwnsAwaitingStatus,
                     )
                     val mainText = if (showingStatus) sensorStatus else lifecycleText
-                    if (mainText.isNotEmpty() || sensorEndTimeMs > 0L) {
-                        Spacer(modifier = Modifier.height(if (stackBars) 2.dp else 4.dp))
+                    if (mainText.isNotEmpty() || (stackBars && sensorEndTimeMs > 0L)) {
+                        Spacer(modifier = Modifier.height(if (stackBars || sensorEndTimeMs > 0L) 2.dp else 4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                              // Text First
                              Text(
@@ -945,8 +945,8 @@ fun DashboardCombinedHeader(
                                 color = sensorContentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = if ((showingStatus && sensorEndTimeMs > 0L) ||
-                                    (sensorEndTimeMs <= 0L && !showingStatus &&
+                                modifier = if ((showingStatus && stackBars && sensorEndTimeMs > 0L) ||
+                                    ((!stackBars || sensorEndTimeMs <= 0L) && !showingStatus &&
                                         (showRemainingHours || showLifecycleCalendar))
                                 ) {
                                     Modifier.weight(1f, fill = false)
@@ -977,7 +977,7 @@ fun DashboardCombinedHeader(
                                       )
                                  }
                              }
-                             if (sensorEndTimeMs > 0L) {
+                             if (stackBars && sensorEndTimeMs > 0L) {
                                  Spacer(modifier = Modifier.width(12.dp))
                                  val expiryText = remember(sensorEndTimeMs) {
                                      java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
@@ -994,6 +994,22 @@ fun DashboardCombinedHeader(
                                  )
                              }
                          }
+                     }
+                     if (!stackBars && sensorEndTimeMs > 0L) {
+                         Spacer(modifier = Modifier.height(2.dp))
+                         val expiryText = remember(sensorEndTimeMs) {
+                             java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                 .format(java.util.Date(sensorEndTimeMs))
+                         }
+                         Text(
+                             text = expiryText,
+                             style = MaterialTheme.typography.labelMedium,
+                             color = sensorContentColor.copy(alpha = 0.85f),
+                             maxLines = 1,
+                             softWrap = false,
+                             overflow = TextOverflow.Ellipsis,
+                             modifier = Modifier.fillMaxWidth()
+                         )
                      }
 
                 }
