@@ -120,15 +120,21 @@ public class SensorBluetooth {
 
     static void othersworking(SuperGattCallback current, long timmsec) {
         if (blueone == null) return;
-        // Recovery can overlap sensor removal or Bluetooth shutdown.
-        // Snapshot under the roster monitor, then reconnect outside it.
-        final var gatts = mygatts();
-        if (gatts.size() > 1) {
+        // A glucose callback may hold its own monitor. Recover peers after
+        // returning from it, so two sensors cannot acquire each other's monitors.
+        Applic.scheduler.execute(() -> {
+            if (blueone == null) return;
+            final var gatts = mygatts();
             for (var g : gatts) {
-                if (g != current && !g.stop)
-                    g.shouldreconnect(timmsec);
+                if (g != current && !g.stop) {
+                    try {
+                        g.shouldreconnect(timmsec);
+                    } catch (Throwable error) {
+                        Log.stack(LOG_ID, "othersworking " + g.SerialNumber, error);
+                    }
+                }
             }
-        }
+        });
     }
 
     private boolean connectToAllActiveDevices(long delayMillis) {
