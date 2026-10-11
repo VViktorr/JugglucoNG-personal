@@ -58,6 +58,8 @@ object WearSync2 {
     private val calibrationWireRevision = AtomicLong(0L)
     private val lastDeepServeMs = AtomicLong(0L)
     private val removalTombstones = ConcurrentHashMap<String, Long>()
+    // Accessed only on the sync executor; history replay must not move current values backwards.
+    private val lastExchangeTimes = HashMap<String, Long>()
 
     // ---- phone side ----
 
@@ -130,6 +132,7 @@ object WearSync2 {
                 // can no longer be related back to SIBI:P225043JMV safely.
                 val removedWasCurrent = SensorIdentity.matches(SensorIdentity.resolveMainSensor(), serial)
                 removalTombstones[removalKey(serial)] = System.currentTimeMillis()
+                lastExchangeTimes.remove(removalKey(serial))
                 tk.glucodata.drivers.ManagedSensorIdentityRegistry.removePersistedSensor(Applic.app, serial)
                 // removePersistedSensor finishes the managed driver's native
                 // mirror. Remove any live callback as well, then reconcile so
@@ -334,7 +337,6 @@ object WearSync2 {
         return MessageSender.sendSyncMessageAwait(WearMessagePath.SYNC2_CHUNK, buf.array())
     }
 
-
     /** Canonical storage name, so an alias cannot create a parallel record. */
     private fun existingSensorNameFor(serial: String): String? =
         SensorIdentity.canonicalSensorId(serial)
@@ -418,7 +420,8 @@ object WearSync2 {
             runCatching {
                 val nowSec = System.currentTimeMillis() / 1000L
                 val horizonStart = nowSec - BACKFILL_HORIZON_SEC
-                val lastSec = runCatching { Natives.lastglucosetime() }.getOrDefault(0L)
+                // JNI reports milliseconds; the sync2 request carries epoch seconds.
+                val lastSec = runCatching { Natives.lastglucosetime() / 1000L }.getOrDefault(0L)
                 val fromSec = if (deep || lastSec <= 0L) {
                     horizonStart
                 } else {
@@ -448,11 +451,18 @@ object WearSync2 {
                 if (!Applic.isWearable && !wearCompanionEnabled()) {
                     return@runCatching
                 }
-                val buf = ByteBuffer.wrap(data ?: return@execute)
+                val payload = data ?: return@execute
+                if (payload.size < 5) return@execute
+                val buf = ByteBuffer.wrap(payload)
                 if (buf.get().toInt() != VERSION) return@execute
                 val final = buf.get().toInt() and 1 != 0
                 val count = buf.short.toInt() and 0xFFFF
                 val serialLen = buf.get().toInt() and 0xFF
+                // Validate the entire frame before creating a native sensor shell.
+                if (buf.remaining() != serialLen + count * 16) {
+                    Log.w(LOG_ID, "ignored malformed sync2 chunk: count=$count serialLen=$serialLen")
+                    return@execute
+                }
                 val serialBytes = ByteArray(serialLen); buf.get(serialBytes)
                 val wireSerial = String(serialBytes, Charsets.UTF_8)
                 if (wireSerial.isEmpty() || count <= 0) return@execute
@@ -472,10 +482,8 @@ object WearSync2 {
                     if (doLog) Log.i(LOG_ID, "ignored chunk for $serial: this device is reading it")
                     return@execute
                 }
-                // Libre 2's Abbott BLE IDs are not elapsed minutes. Importing
-                // minute-derived IDs into its phone polls advances the live BLE
-                // cursor and rejects real readings when ownership returns.
-                // The phone keeps synced data in Room; Wear needs native history.
+                // Phone Libre 2 history belongs in Room; minute-based native imports
+                // must not alter Abbott's BLE cursor or seed authentication state.
                 val mirrorNative = Applic.isWearable || !isLibre2NativeSensor(serial)
                 var written = 0
                 var earliest = 0L
@@ -506,6 +514,9 @@ object WearSync2 {
                     raws[written] = rawMgdl
                     written++
                 }
+                if (written > 0 && !mirrorNative && doLog) {
+                    Log.i(LOG_ID, "skipping native mirror for Libre2 on phone: serial=$serial written=$written")
+                }
                 if (written > 0 && mirrorNative) {
                     // One JNI call for the chunk. Per reading, the native side
                     // re-seeded direct-stream state (stat + read + alloc), logged a
@@ -530,7 +541,7 @@ object WearSync2 {
                         values.copyOf(written),
                         raws.copyOf(written),
                     )
-                    val newest = written - 1
+                    val newest = (0 until written).maxByOrNull { stamps[it] } ?: return@runCatching
                     HistorySyncAccess.storeCurrentReadingAsync(
                         stamps[newest],
                         values[newest],
@@ -581,6 +592,14 @@ object WearSync2 {
     ) {
         if (Applic.isWearable || timestampMs <= 0L || !valueMgdl.isFinite() || valueMgdl <= 0f) return
         runCatching {
+            val mainSensor = SensorIdentity.resolveLiveMainSensor(serial)
+            if (!mainSensor.isNullOrBlank() && !SensorIdentity.matches(serial, mainSensor)) {
+                return@runCatching
+            }
+            val key = removalKey(serial)
+            if (!RealtimeReadingPolicy.shouldDispatch(timestampMs, lastExchangeTimes[key] ?: 0L, 0L)) {
+                return@runCatching
+            }
             val isMmol = Applic.unit == 1
             val displayValue =
                 if (isMmol) (valueMgdl / MGDL_PER_MMOL).toFloat() else valueMgdl
@@ -595,8 +614,8 @@ object WearSync2 {
             }.getOrDefault(Float.NaN).takeIf { it.isFinite() } ?: 0f
             val primaryText = String.format(Applic.usedlocale, Notify.pureglucoseformat, displayValue)
             val sensorStartMs = runCatching {
-                val ptr = Natives.getdataptr(serial)
-                if (ptr != 0L) Natives.getSensorStartmsec(ptr) else 0L
+                // Read metadata without allocating an owning native stream wrapper.
+                Natives.getSensorUiSnapshot(serial)?.getOrNull(2) ?: 0L
             }.getOrDefault(0L)
             SuperGattCallback.emitExchangeOutputs(
                 serial,
@@ -613,6 +632,7 @@ object WearSync2 {
                 // Came from the peer; sending it straight back would echo.
                 false,
             )
+            lastExchangeTimes[key] = maxOf(timestampMs, lastExchangeTimes[key] ?: 0L)
         }.onFailure { Log.stack(LOG_ID, "emitExchangeOutputsForSyncedReading", it) }
     }
 
