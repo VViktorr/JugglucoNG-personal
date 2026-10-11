@@ -58,7 +58,7 @@ object WearSync2 {
     private val calibrationWireRevision = AtomicLong(0L)
     private val lastDeepServeMs = AtomicLong(0L)
     private val removalTombstones = ConcurrentHashMap<String, Long>()
-    // Accessed only on the sync executor; history replay must not resend a current value.
+    // Accessed only on the sync executor; history replay must not move current values backwards.
     private val lastExchangeTimes = HashMap<String, Long>()
 
     // ---- phone side ----
@@ -591,7 +591,9 @@ object WearSync2 {
                 return@runCatching
             }
             val key = removalKey(serial)
-            if (timestampMs <= (lastExchangeTimes[key] ?: 0L)) return@runCatching
+            if (!RealtimeReadingPolicy.shouldDispatch(timestampMs, lastExchangeTimes[key] ?: 0L, 0L)) {
+                return@runCatching
+            }
             val isMmol = Applic.unit == 1
             val displayValue =
                 if (isMmol) (valueMgdl / MGDL_PER_MMOL).toFloat() else valueMgdl
@@ -624,7 +626,7 @@ object WearSync2 {
                 // Came from the peer; sending it straight back would echo.
                 false,
             )
-            lastExchangeTimes[key] = timestampMs
+            lastExchangeTimes[key] = maxOf(timestampMs, lastExchangeTimes[key] ?: 0L)
         }.onFailure { Log.stack(LOG_ID, "emitExchangeOutputsForSyncedReading", it) }
     }
 
