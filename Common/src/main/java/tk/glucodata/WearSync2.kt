@@ -58,6 +58,8 @@ object WearSync2 {
     private val calibrationWireRevision = AtomicLong(0L)
     private val lastDeepServeMs = AtomicLong(0L)
     private val removalTombstones = ConcurrentHashMap<String, Long>()
+    // Accessed only on the sync executor; history replay must not resend a current value.
+    private val lastExchangeTimes = HashMap<String, Long>()
 
     // ---- phone side ----
 
@@ -130,6 +132,7 @@ object WearSync2 {
                 // can no longer be related back to SIBI:P225043JMV safely.
                 val removedWasCurrent = SensorIdentity.matches(SensorIdentity.resolveMainSensor(), serial)
                 removalTombstones[removalKey(serial)] = System.currentTimeMillis()
+                lastExchangeTimes.remove(removalKey(serial))
                 tk.glucodata.drivers.ManagedSensorIdentityRegistry.removePersistedSensor(Applic.app, serial)
                 // removePersistedSensor finishes the managed driver's native
                 // mirror. Remove any live callback as well, then reconcile so
@@ -442,11 +445,18 @@ object WearSync2 {
                 if (!Applic.isWearable && !wearCompanionEnabled()) {
                     return@runCatching
                 }
-                val buf = ByteBuffer.wrap(data ?: return@execute)
+                val payload = data ?: return@execute
+                if (payload.size < 5) return@execute
+                val buf = ByteBuffer.wrap(payload)
                 if (buf.get().toInt() != VERSION) return@execute
                 val final = buf.get().toInt() and 1 != 0
                 val count = buf.short.toInt() and 0xFFFF
                 val serialLen = buf.get().toInt() and 0xFF
+                // Validate the entire frame before creating a native sensor shell.
+                if (buf.remaining() != serialLen + count * 16) {
+                    Log.w(LOG_ID, "ignored malformed sync2 chunk: count=$count serialLen=$serialLen")
+                    return@execute
+                }
                 val serialBytes = ByteArray(serialLen); buf.get(serialBytes)
                 val wireSerial = String(serialBytes, Charsets.UTF_8)
                 if (wireSerial.isEmpty() || count <= 0) return@execute
@@ -525,7 +535,7 @@ object WearSync2 {
                         values.copyOf(written),
                         raws.copyOf(written),
                     )
-                    val newest = written - 1
+                    val newest = (0 until written).maxByOrNull { stamps[it] } ?: return@runCatching
                     HistorySyncAccess.storeCurrentReadingAsync(
                         stamps[newest],
                         values[newest],
@@ -576,6 +586,12 @@ object WearSync2 {
     ) {
         if (Applic.isWearable || timestampMs <= 0L || !valueMgdl.isFinite() || valueMgdl <= 0f) return
         runCatching {
+            val mainSensor = SensorIdentity.resolveLiveMainSensor(serial)
+            if (!mainSensor.isNullOrBlank() && !SensorIdentity.matches(serial, mainSensor)) {
+                return@runCatching
+            }
+            val key = removalKey(serial)
+            if (timestampMs <= (lastExchangeTimes[key] ?: 0L)) return@runCatching
             val isMmol = Applic.unit == 1
             val displayValue =
                 if (isMmol) (valueMgdl / MGDL_PER_MMOL).toFloat() else valueMgdl
@@ -608,6 +624,7 @@ object WearSync2 {
                 // Came from the peer; sending it straight back would echo.
                 false,
             )
+            lastExchangeTimes[key] = timestampMs
         }.onFailure { Log.stack(LOG_ID, "emitExchangeOutputsForSyncedReading", it) }
     }
 
