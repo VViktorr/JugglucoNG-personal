@@ -41,7 +41,7 @@ class SuperGattCallback {
     static boolean doLog=false, isWearable=false, autoconnect=false;
     static String LOG_ID="test";
     static final Object app=new Object();
-    boolean stop=false, connectPending=false, ownership=false;
+    boolean retired=false, stop=false, connectPending=false, ownership=false;
     long dataptr=1L, foundtime=0L, connectTime=0L, reconnectGeneration=0L;
     String SerialNumber="synthetic", mActiveDeviceAddress="synthetic", mDeviceName;
     final Object gattLock=new Object();

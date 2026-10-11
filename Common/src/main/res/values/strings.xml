@@ -3255,4 +3255,10 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="cgm_readiness_open_battery_usage_action">Open battery usage</string>
     <string name="widget_clock_detail_size_value">Date and glucose details size: %1$d%%</string>
     <string name="widget_clock_glucose_size_value">Clock and glucose size: %1$d%%</string>
+    <string name="dashboard_bars_section">Dashboard cards</string>
+    <string name="dashboard_bars_stacked_title">Stack sensor and glucose cards</string>
+    <string name="dashboard_bars_stacked_desc">Sensor above glucose.</string>
+    <string name="dashboard_bars_ratio_title">Adjust card proportions</string>
+    <string name="dashboard_bars_ratio_desc">Choose the glucose card width when the cards are side by side.</string>
+    <string name="dashboard_bars_ratio_value">Glucose %1$d%% · Sensor %2$d%%</string>
 </resources>

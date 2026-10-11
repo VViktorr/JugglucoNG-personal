@@ -402,6 +402,10 @@ fun DashboardScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val activeSensorList by viewModel.activeSensorList.collectAsStateWithLifecycle()
     val sensorHoursRemaining by viewModel.sensorHoursRemaining.collectAsStateWithLifecycle()
+    val sensorEndTimeMs by viewModel.sensorEndTimeMs.collectAsStateWithLifecycle()
+    val dashboardBarsStacked by viewModel.dashboardBarsStacked.collectAsStateWithLifecycle()
+    val dashboardBarsCustomRatio by viewModel.dashboardBarsCustomRatio.collectAsStateWithLifecycle()
+    val dashboardGlucoseWidthPercent by viewModel.dashboardGlucoseWidthPercent.collectAsStateWithLifecycle()
     val currentDay by viewModel.currentDay.collectAsStateWithLifecycle()
     val predictionCalibrationRefresh by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsStateWithLifecycle()
@@ -1453,6 +1457,9 @@ fun DashboardScreen(
                                 sensorStatus = sensorStatus,
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
+                                sensorEndTimeMs = sensorEndTimeMs,
+                                stackBars = dashboardBarsStacked,
+                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast
@@ -1767,6 +1774,9 @@ fun DashboardScreen(
                                 sensorStatus = sensorStatus,
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
+                                sensorEndTimeMs = sensorEndTimeMs,
+                                stackBars = dashboardBarsStacked,
+                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast

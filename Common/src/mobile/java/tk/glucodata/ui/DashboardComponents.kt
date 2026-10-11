@@ -242,6 +242,9 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    sensorEndTimeMs: Long = 0L,
+    stackBars: Boolean = false,
+    glucoseWidthPercent: Int = 70,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -554,32 +557,25 @@ fun DashboardCombinedHeader(
                     else -> 28.dp
                 }
                 val resolvedEndPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 12.dp else 16.dp
-                // Multi-sensor mode: the value + chip are scaled down (so they
-                // read as a balanced cluster), and the hero CARD is pinned to the
-                // single-sensor content height (heroContentMinHeight below) so it
-                // never grows or shrinks — the scaled cluster just centers inside it.
+                // Reserve space for the peer strip within the fixed 80dp card.
                 val isMultiHero = peerReadings.isNotEmpty()
                 val heroMultiSensorScale = if (isMultiHero) 0.74f else 1f
-                // Single-sensor padding defines the target card height. Multi mode
-                // uses a smaller inner padding so the scaled value + chip cluster
-                // fills the SAME pinned height (heroContentMinHeight) below.
                 val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 12.dp
                 val resolvedVerticalPadding = if (isMultiHero) 4.dp else singleVerticalPadding
-                // Full (single-sensor) value style. The card height is pinned to
-                // the MEASURED height of this style (incl. font padding) + padding,
-                // so multi-sensor mode renders at the exact same card height — not
-                // the lineHeight estimate, which understated it and made multi smaller.
-                val fullPrimaryStyle = (
+                // Fit the value typography to the available card height.
+                val unscaledPrimaryStyle = (
                     if (heroWidthClass == AdaptiveContentWidthClass.Compact) MaterialTheme.typography.displayMedium
                     else MaterialTheme.typography.displayLargeExpressive
                 ).copy(fontFeatureSettings = "tnum")
                 val heroTextMeasurer = rememberTextMeasurer()
-                val heroContentMinHeight = remember(fullPrimaryStyle, density, singleVerticalPadding) {
-                    with(density) {
-                        heroTextMeasurer.measure("0,0", style = fullPrimaryStyle, maxLines = 1)
-                            .size.height.toDp()
-                    } + singleVerticalPadding * 2
+                val availableValueHeight = if (isMultiHero) 36.dp else 80.dp - singleVerticalPadding * 2
+                val valueHeight = with(density) {
+                    heroTextMeasurer.measure("0,0", style = unscaledPrimaryStyle, maxLines = 1)
+                        .size.height.toDp()
                 }
+                val fullPrimaryStyle = unscaledPrimaryStyle.scaleForHero(
+                    (availableValueHeight / valueHeight).coerceAtMost(1f)
+                )
                 val resolvedTrendIconSize = (when (heroWidthClass) {
                     AdaptiveContentWidthClass.Compact -> 30.dp
                     AdaptiveContentWidthClass.Medium -> 38.dp
@@ -779,7 +775,6 @@ fun DashboardCombinedHeader(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .heightIn(min = heroContentMinHeight)
                             .padding(
                                 start = resolvedStartPadding,
                                 end = resolvedEndPadding,
@@ -842,11 +837,7 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = if (statusCopy != null) {
-            modifier.heightIn(min = 96.dp)
-        } else {
-            modifier
-        }
+        val stabilizedModifier = modifier.height(80.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
@@ -871,7 +862,7 @@ fun DashboardCombinedHeader(
         var sensorContentWidthPx by remember { mutableStateOf(0) }
         val sensorDensity = LocalDensity.current
         Card(
-            modifier = modifier,
+            modifier = modifier.height(80.dp),
              colors = CardDefaults.cardColors(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
@@ -926,19 +917,10 @@ fun DashboardCombinedHeader(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 12.dp), // Matched Vertical Padding (12dp)
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
-                    // Quiet window: visible while it runs, so nobody forgets it.
-                    if (quietWindowUntilMs > 0L) {
-                        QuietWindowHeaderChip(
-                            untilMs = quietWindowUntilMs,
-                            onClick = onQuietWindowClick,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-
                     // 0. Signal quality (start) and how old the newest reading is (end).
                     // The noise indicator shows as before; only the reading-age
                     // counter is opt-in via Display → Dashboard readouts (off by
@@ -1058,36 +1040,51 @@ fun DashboardCombinedHeader(
                              }
                          }
                      }
+                    if (sensorEndTimeMs > 0L) {
+                        val expiryText = remember(sensorEndTimeMs) {
+                            java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(sensorEndTimeMs))
+                        }
+                        Text(
+                            text = expiryText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = sensorContentColor.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
     }
 
-    if (isLandscape) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            heroCard(Modifier.fillMaxWidth())
-            sensorCard(Modifier.fillMaxWidth())
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        if (stackBars) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                sensorCard(Modifier.fillMaxWidth())
+                heroCard(Modifier.fillMaxWidth())
+            }
+        } else {
+            val glucoseWeight = glucoseWidthPercent.coerceIn(40, 70) / 100f
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                heroCard(Modifier.weight(glucoseWeight))
+                sensorCard(Modifier.weight(1f - glucoseWeight))
+            }
         }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            heroCard(
-                Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight()
-            )
-            sensorCard(
-                Modifier
-                    .weight(0.3f)
-                    .fillMaxHeight()
-            )
+        // Keep the quiet-window action accessible without consuming the compact
+        // sensor card's 80dp budget for name, lifecycle, expiry and signal quality.
+        if (quietWindowUntilMs > 0L) {
+            QuietWindowHeaderChip(untilMs = quietWindowUntilMs, onClick = onQuietWindowClick)
         }
     }
 }

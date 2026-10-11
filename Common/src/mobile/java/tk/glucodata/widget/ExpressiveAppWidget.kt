@@ -93,14 +93,14 @@ class ExpressiveAppWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val initialTick = GlucoseUpdateBroadcaster.tick.value
-        val initialState = withContext(Dispatchers.IO) { loadWidgetState() }
+        val initialState = withContext(Dispatchers.IO) { loadWidgetState(context) }
 
         provideContent {
             GlanceTheme {
                 val tick by GlucoseUpdateBroadcaster.tick.collectAsState()
                 val state by produceState(initialValue = initialState, key1 = tick) {
                     if (tick != initialTick) {
-                        value = withContext(Dispatchers.IO) { loadWidgetState() }
+                        value = withContext(Dispatchers.IO) { loadWidgetState(context) }
                     }
                 }
                 WidgetContent(
@@ -165,8 +165,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         }
     }
 
-    private fun loadWidgetState(): WidgetState {
-        val widgetConfig = WidgetConfigStore.load(tk.glucodata.Applic.app, WidgetSettingsKind.CHART)
+    private fun loadWidgetState(context: Context): WidgetState {
+        val widgetConfig = WidgetConfigStore.load(context, WidgetSettingsKind.CHART)
         val chartWindowMs = widgetConfig.graphHours * 3_600_000L
         val currentDisplay = WidgetDisplaySource.resolveWidgetSnapshot()
         val chartHistory = WidgetDisplaySource.resolveChartHistory(currentDisplay, chartWindowMs)
@@ -175,7 +175,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val viewMode = resolvedDisplay?.viewMode ?: WidgetDisplaySource.resolveViewMode(activeSensorSerial)
         val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
         val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
-        val app = tk.glucodata.Applic.app
+        val app = context.applicationContext
         val weather = if (widgetConfig.showWeather) WidgetWeatherSource.cached(app) else null
         if (widgetConfig.showWeather && WidgetWeatherSource.needsRefresh(app) &&
             weatherRefreshPending.compareAndSet(false, true)) {
