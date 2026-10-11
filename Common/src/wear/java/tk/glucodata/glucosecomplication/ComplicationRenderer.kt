@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Rect
 import android.graphics.Typeface
 import androidx.compose.ui.graphics.toArgb
 import tk.glucodata.Applic
@@ -30,7 +29,7 @@ import kotlin.math.abs
  * same sources the phone and the watch UI use.
  *
  * Sizing note: a SMALL_IMAGE of type PHOTO is drawn edge to edge in its slot,
- * so every bitmap keeps a [CONTENT_INSET] margin. Without it the artwork runs
+ * so every bitmap keeps a type-specific inset margin. Without it the artwork runs
  * into the slot's rim and, in the arrow's case, came out looking enormous.
  */
 internal object ComplicationRenderer {
@@ -51,14 +50,14 @@ internal object ComplicationRenderer {
      * circle needs about 15% off each side, and more than that only makes the
      * artwork small.
      */
-    private const val PHOTO_INSET = 0.11f
+    private const val PHOTO_INSET = 0.15f
 
     /**
      * Margin around an ICON (MonochromaticImage). Faces scale these to the slot
      * themselves rather than cropping, so built-in padding is wasted space —
      * which is why the small arrow and value slots came out tiny.
      */
-    private const val ICON_INSET = 0.03f
+    private const val ICON_INSET = 0.02f
 
     /**
      * Icons are tinted by the watch face, so their own colour is only a mask.
@@ -67,8 +66,9 @@ internal object ComplicationRenderer {
      */
     const val ICON_TINT = 0xFFFFFFFF.toInt()
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val bounds = Rect()
+    // Each data-source request may render concurrently on a different thread.
+    private val threadPaint = ThreadLocal.withInitial { Paint(Paint.ANTI_ALIAS_FLAG) }
+    private val paint: Paint get() = threadPaint.get()
 
     private fun neutral(): Int = 0xFFE3E2DE.toInt()
 
@@ -171,6 +171,9 @@ internal object ComplicationRenderer {
         paint.color = color
         paint.alpha = 0xB4
         paint.textSize = textSize
+        val availableWidth = width * (1f - PHOTO_INSET * 2f)
+        val measured = paint.measureText(text)
+        if (measured > availableWidth) paint.textSize *= availableWidth / measured
         canvas.drawText(text, width / 2f, baselineY, paint)
     }
 
@@ -198,6 +201,7 @@ internal object ComplicationRenderer {
         offsetX: Float = 0f,
         offsetY: Float = 0f,
     ) {
+        if (!rateMgdlPerMin.isFinite()) return
         val cx = offsetX + width / 2f
         val cy = offsetY + height / 2f
         val span = minOf(width, height)
@@ -305,9 +309,9 @@ internal object ComplicationRenderer {
         val content = size - inset * 2f
         // Value on top, arrow beneath: side by side in a round slot leaves both
         // small, because the pair has to fit the slot's width at its narrowest.
-        val valueHeight = content * 0.60f
+        val valueHeight = content * 0.58f
         drawFittedText(canvas, text, color, inset, inset, content, valueHeight)
-        val arrowBox = content * 0.34f
+        val arrowBox = content * 0.40f
         drawArrow(
             canvas, arrowBox, arrowBox, rate, color,
             inset + (content - arrowBox) / 2f,

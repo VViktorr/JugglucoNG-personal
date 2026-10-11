@@ -144,7 +144,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="LARGE_IMAGE,SMALL_IMAGE,LONG_TEXT" />
+                android:value="LARGE_IMAGE,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />
@@ -162,7 +162,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="LARGE_IMAGE,SMALL_IMAGE,LONG_TEXT" />
+                android:value="LARGE_IMAGE,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />
@@ -180,7 +180,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="LARGE_IMAGE,SMALL_IMAGE,LONG_TEXT" />
+                android:value="LARGE_IMAGE,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />
@@ -198,7 +198,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="LARGE_IMAGE,SMALL_IMAGE,LONG_TEXT" />
+                android:value="LARGE_IMAGE,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />
@@ -261,7 +261,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="LARGE_IMAGE,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT,RANGED_VALUE" />
+                android:value="ICON,LARGE_IMAGE,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT,RANGED_VALUE" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />
@@ -313,7 +313,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="SHORT_TEXT,LONG_TEXT,RANGED_VALUE"/>
+                android:value="ICON,SMALL_IMAGE,SHORT_TEXT,LONG_TEXT,RANGED_VALUE"/>
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="0" />

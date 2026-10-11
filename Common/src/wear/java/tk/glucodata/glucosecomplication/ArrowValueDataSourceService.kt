@@ -92,6 +92,7 @@ fun getview(type: ComplicationType):WearComplicationValue {
                     )).build(), contentDescription = PlainComplicationText.Builder("Glucose+arrow").build()
                 ).setTapAction(null).build()
 			    }  */
+            MONOCHROMATIC_IMAGE -> imageData(reading, tapAction)
             PHOTO_IMAGE -> {
                 Log.i(LOG_ID,"getPreviewData PHOTO_IMAGE")
                 val preview = GlucoseComplicationData.previewReading()
@@ -105,22 +106,19 @@ fun getview(type: ComplicationType):WearComplicationValue {
                 ).setTapAction(tapAction).build()
             } 
             SHORT_TEXT -> GlucoseComplicationData.shortValueData(
-                reading,
+                GlucoseComplicationData.withTrend(reading),
                 "Glucose+arrow",
                 tapAction,
-                arrowIcon(reading),
             )
             LONG_TEXT -> GlucoseComplicationData.longTextData(
-                reading,
+                GlucoseComplicationData.withTrend(reading),
                 "Glucose+arrow",
                 tapAction,
-                arrowIcon(reading),
             )
             RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                reading,
+                GlucoseComplicationData.withTrend(reading),
                 "Glucose+arrow",
                 tapAction,
-                arrowIcon(reading),
             )
             SMALL_IMAGE ->
             //ComplicationType.SMALL_IMAGE -> 
@@ -152,28 +150,26 @@ fun getview(type: ComplicationType):WearComplicationValue {
         val complicationPendingIntent = GlucoseComplicationData.tapAction()
     val type=        request.complicationType
       val glucose = GlucoseComplicationData.currentReading()
+      if (type == MONOCHROMATIC_IMAGE) return imageData(glucose, complicationPendingIntent)
       if (type == SHORT_TEXT) {
           return GlucoseComplicationData.shortValueData(
-              glucose,
+              GlucoseComplicationData.withTrend(glucose),
               "Glucose Arrow+Value",
               complicationPendingIntent,
-              glucose?.let { arrowIcon(it) },
           )
       }
       if (type == LONG_TEXT) {
           return GlucoseComplicationData.longTextData(
-              glucose,
+              GlucoseComplicationData.withTrend(glucose),
               "Glucose Arrow+Value",
               complicationPendingIntent,
-              glucose?.let { arrowIcon(it) },
           )
       }
       if (type == RANGED_VALUE) {
           return GlucoseComplicationData.rangedValueData(
-              glucose,
+              GlucoseComplicationData.withTrend(glucose),
               "Glucose Arrow+Value",
               complicationPendingIntent,
-              glucose?.let { arrowIcon(it) },
           )
       }
       val bitmap=
@@ -206,6 +202,22 @@ fun getview(type: ComplicationType):WearComplicationValue {
 			    }
             }
 
+    }
+
+    private fun imageData(
+        reading: GlucoseComplicationData.Reading?,
+        tapAction: android.app.PendingIntent,
+    ): ComplicationData {
+        val bitmap = reading?.let {
+            ComplicationRenderer.valueWithArrowBitmap(
+                VALUE_ARROW_PX, it.text, it.value, it.rate, it.isMmol,
+                ComplicationRenderer.ICON_TINT, icon = true,
+            )
+        } ?: ComplicationRenderer.noValueBitmap(VALUE_ARROW_PX)
+        return MonochromaticImageComplicationData.Builder(
+            MonochromaticImage.Builder(Icon.createWithBitmap(bitmap)).build(),
+            PlainComplicationText.Builder("Glucose+arrow").build(),
+        ).setTapAction(tapAction).build()
     }
 
     /**
