@@ -119,7 +119,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.lerp
-import kotlin.math.abs
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.Applic
@@ -172,9 +171,14 @@ private fun glucoseHeroTone(
     GlucoseHeroTone(tint = Color(tone.tintArgb), blendFraction = tone.blendFraction)
 }
 
-private fun trendRightCornerRadius(velocity: Float): Dp {
-    val strength = if (velocity.isFinite()) (abs(velocity) / 3.6f).coerceIn(0f, 1f) else 0f
-    return lerp(8.dp, 36.dp, strength)
+private fun trendRightCornerRadius(velocity: Float, top: Boolean): Dp {
+    val directionalVelocity = if (top) -velocity else velocity
+    val strength = if (directionalVelocity.isFinite()) {
+        (directionalVelocity / 3.6f).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    return lerp(16.dp, 40.dp, strength)
 }
 
 private const val CalibrationDeleteSwipeThresholdFraction = 0.4f
@@ -283,13 +287,19 @@ fun DashboardCombinedHeader(
     )
 
     val heroTopStart = 16.dp
-    val heroRightRadius by animateDpAsState(
-        targetValue = trendRightCornerRadius(trendResult.velocity),
+    val heroTopEndAnimated by animateDpAsState(
+        targetValue = trendRightCornerRadius(trendResult.velocity, top = true),
         animationSpec = cornerAnimSpec,
-        label = "HeroRightRadius"
+        label = "HeroTopEndRadius"
     )
-    val heroTopEnd = heroRightRadius
-    val heroBottomEnd = heroRightRadius
+    val heroBottomEndAnimated by animateDpAsState(
+        targetValue = trendRightCornerRadius(trendResult.velocity, top = false),
+        animationSpec = cornerAnimSpec,
+        label = "HeroBottomEndRadius"
+    )
+    // Keep spring overshoot inside the bounds of the 80dp card.
+    val heroTopEnd = heroTopEndAnimated.coerceIn(16.dp, 40.dp)
+    val heroBottomEnd = heroBottomEndAnimated.coerceIn(16.dp, 40.dp)
     val heroBottomStart = 16.dp
 
     val sensorTopStart = 16.dp
