@@ -491,6 +491,9 @@ fromjava(dexChallenger)(JNIEnv *envin, jclass cl, jbyteArray jdata) {
   if (!bytes) return nullptr;
   auto chall = getchallenge(std::span<const uint8_t>(bytes, arlen));
   envin->ReleasePrimitiveArrayCritical(jdata, (jbyte *)bytes, JNI_ABORT);
+  // Both ECDSA integers cannot be zero in a valid signature.
+  if (std::all_of(chall.begin(), chall.end(), [](uint8_t value) { return value == 0; }))
+    return nullptr;
   return getjbyteArray(envin, chall);
 }
 

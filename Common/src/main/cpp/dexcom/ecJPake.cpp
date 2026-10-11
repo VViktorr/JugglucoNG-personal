@@ -632,13 +632,27 @@ static EC_KEY * getKeyC() {
    return keys;
    }
 std::array<uint8_t,64> getchallenge(std::span<const uint8_t> input) {
-  std::array<uint8_t,72> sign;
+  if (input.size() < 18) return {};
+  std::array<uint8_t,72> sign{};
    auto key=getKeyC();
-  assert(ECDSA_size(key)==sign.size());
+  if (!key || ECDSA_size(key) > sign.size()) return {};
   auto hash= sha256(input.data()+2, 16);
   showhex("digest: ",hash.data(),hash.size());
   unsigned int len= sign.size();
-  ECDSA_sign(0, (const uint8_t *)hash.data(), hash.size(), sign.data(), &len, key);
+  if (ECDSA_sign(0, (const uint8_t *)hash.data(), hash.size(), sign.data(), &len, key) != 1) {
+    LOGAR("getchallenge: signing failed");
+    return {};
+  }
+  // ECDSA returns DER integers. Check the lengths before indexing or copying.
+  if (len < 8 || len > sign.size() || sign[0] != 0x30 || sign[1] != len - 2
+      || sign[2] != 0x02 || sign[3] == 0 || sign[3] > 33
+      || static_cast<unsigned int>(sign[3]) + 6 > len
+      || sign[sign[3] + 4] != 0x02 || sign[sign[3] + 5] == 0
+      || sign[sign[3] + 5] > 33
+      || static_cast<unsigned int>(sign[3]) + sign[sign[3] + 5] + 6 != len) {
+    LOGAR("getchallenge: invalid signature encoding");
+    return {};
+  }
   showhex("Signature: ",sign.data(),len);
   std::array<uint8_t,64> uit{};
   int end1=sign[3];
