@@ -3261,4 +3261,9 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="dashboard_bars_ratio_title">Adjust card proportions</string>
     <string name="dashboard_bars_ratio_desc">Choose the glucose card width when the cards are side by side.</string>
     <string name="dashboard_bars_ratio_value">Glucose %1$d%% · Sensor %2$d%%</string>
+    <string name="libreview_reregistering_libre2_device">Re-registering Libre 2 device…</string>
+    <string name="libreview_reregister_libre2_device">Re-register Libre 2 device</string>
+    <string name="libreview_region_value">LibreView region: %1$s</string>
+    <string name="libreview_uom_value">Units sent to LibreView: %1$s</string>
+    <string name="libreview_model_value">LibreView app model: %1$s</string>
 </resources>

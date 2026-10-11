@@ -78,6 +78,7 @@ jobs:
         run: |
           python3 tools/test-libre2-connect.py
           python3 tools/test-sensor-lifecycle.py
+          python3 tools/test-libreview-config.py
 
       - name: Run both flavours' debug unit suites
         run: |

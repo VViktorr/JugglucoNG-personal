@@ -3051,4 +3051,9 @@
     <string name="dashboard_bars_ratio_title">Dostosuj proporcje belek</string>
     <string name="dashboard_bars_ratio_desc">Ustaw szerokość belki glukozy, gdy belki są obok siebie.</string>
     <string name="dashboard_bars_ratio_value">Glukoza %1$d%% · Czujnik %2$d%%</string>
+    <string name="libreview_reregistering_libre2_device">Ponowna rejestracja urządzenia Libre 2…</string>
+    <string name="libreview_reregister_libre2_device">Zarejestruj ponownie urządzenie Libre 2</string>
+    <string name="libreview_region_value">Region LibreView: %1$s</string>
+    <string name="libreview_uom_value">Jednostki wysyłane do LibreView: %1$s</string>
+    <string name="libreview_model_value">Model aplikacji LibreView: %1$s</string>
 </resources>

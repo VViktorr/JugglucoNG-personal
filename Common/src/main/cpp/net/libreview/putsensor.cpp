@@ -53,7 +53,7 @@ int endpos=sprintf(puttext,puttextstart,
 	int endlen=sizeof(puttextend)-1;
 	memcpy(puttext+endpos,puttextend,endlen);
 	endpos+=endlen;
-	logwriter(puttext,endpos);
+	LOGGER("LibreView sensor registration bytes=%d body=****\n", endpos);
 	jbyteArray uit=env->NewByteArray(endpos);
         env->SetByteArrayRegion(uit, 0, endpos,(const jbyte *)puttext);
 	return uit;
@@ -76,7 +76,7 @@ jbyteArray getlibre2puttext(JNIEnv *env, const char *sensorname) {
 	constexpr const int endlen=sizeof(putlibre2end)-1;
 	memcpy(puttext+endpos, putlibre2end,endlen);
 	endpos+=endlen;
-	logwriter(puttext,endpos);
+	LOGGER("LibreView sensor registration bytes=%d body=****\n", endpos);
 	jbyteArray uit=env->NewByteArray(endpos);
         env->SetByteArrayRegion(uit, 0, endpos,(const jbyte *)puttext);
 	return uit;
