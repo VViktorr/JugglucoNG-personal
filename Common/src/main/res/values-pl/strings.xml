@@ -3056,4 +3056,6 @@
     <string name="libreview_region_value">Region LibreView: %1$s</string>
     <string name="libreview_uom_value">Jednostki wysyłane do LibreView: %1$s</string>
     <string name="libreview_model_value">Model aplikacji LibreView: %1$s</string>
+    <string name="chart_scale_limits_title">Limity skali wykresu</string>
+    <string name="chart_scale_limits_description">Najniższa i najwyższa rysowana wartość, także przy automatycznej skali. Przesuwaj pionowo po wartościach z lewej strony, aby zmienić skalę.</string>
 </resources>

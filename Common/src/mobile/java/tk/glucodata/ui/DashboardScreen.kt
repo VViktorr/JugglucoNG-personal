@@ -1617,9 +1617,8 @@ fun DashboardScreen(
                     }
                 }
 
-                // Right pane: the chart really is the whole pane in landscape, so it is
-                // drawn full-bleed (expandedProgress = 1) rather than as an inset card
-                // floating inside its own container. Pinned metrics ride underneath it.
+                // Landscape keeps the journal card styling; expansion still controls
+                // the plot viewport and pinned metrics underneath it.
                 Column(
                     modifier = Modifier
                         .weight(0.75f)
@@ -1627,7 +1626,7 @@ fun DashboardScreen(
                         // The scaffold only consumes the top inset, so the bottom one has
                         // to be taken here or the strip sits under the gesture bar.
                         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                        .padding(top = 8.dp, bottom = 8.dp)
+                        .padding(top = 8.dp, bottom = 8.dp, end = 16.dp)
                 ) {
                         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                             key(sensorName) {
@@ -1858,7 +1857,7 @@ fun DashboardScreen(
                     // top state shows ~3-4 rows, middle shows ~1-2, fullscreen hides the list.
                     val chartItemHeightTarget = (boundedCollapsedChartItemHeight + chartHeightBoostDp)
                         .coerceIn(boundedCollapsedChartItemHeight, boundedFullscreenChartItemHeight)
-                    val animatedChartHorizontalPadding = collapsedChartHorizontalPadding * animatedCollapse
+                    val chartHorizontalPadding = collapsedChartHorizontalPadding
                     val animatedChartItemHeight by animateDpAsState(
                                 targetValue = chartItemHeightTarget,
                                 animationSpec = spring(
@@ -1869,7 +1868,7 @@ fun DashboardScreen(
                                 )
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = animatedChartHorizontalPadding.coerceAtLeast(0.dp))
+                            .padding(horizontal = chartHorizontalPadding.coerceAtLeast(0.dp))
                     ) {
                         Box(
                             modifier = Modifier
