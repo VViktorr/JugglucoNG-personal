@@ -9,7 +9,7 @@ class CritArBase {
 public:
    CritArBase(JNIEnv *env,jarray jar):env(env),jar(jar), ar((T*)env->GetPrimitiveArrayCritical(jar, nullptr)) {};
    ~CritArBase()  {
-      env->ReleasePrimitiveArrayCritical(jar,ar,save );
+      if (ar) env->ReleasePrimitiveArrayCritical(jar,ar,save );
       };
    const T *data() const  {	
       return ar;

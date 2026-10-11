@@ -511,8 +511,9 @@ fromjava(dex8AES)(JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray jdata,
       reinterpret_cast<dexcomstream *>(dataptr)->hist;
   if (!sens || !sens->getinfo()) return false;
   const CritAr bytes(envin, jdata);
+  if (!bytes.data()) return false;
   CritArSave out(envin, jout);
-  if (!bytes.data() || !out.data()) return false;
+  if (!out.data()) return false;
   return encrypt8AES(sens->getinfo()->sharedKey.data(),
                      reinterpret_cast<const unsigned char *>(bytes.data()) +
                          startdat,
