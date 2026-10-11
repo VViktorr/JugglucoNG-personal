@@ -119,10 +119,13 @@ public class SensorBluetooth {
     }
 
     static void othersworking(SuperGattCallback current, long timmsec) {
-        final var gatts = blueone.gattcallbacks;
+        if (blueone == null) return;
+        // Recovery can overlap sensor removal or Bluetooth shutdown.
+        // Snapshot under the roster monitor, then reconnect outside it.
+        final var gatts = mygatts();
         if (gatts.size() > 1) {
             for (var g : gatts) {
-                if (g != current)
+                if (g != current && !g.stop)
                     g.shouldreconnect(timmsec);
             }
         }
