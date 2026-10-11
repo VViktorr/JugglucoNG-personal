@@ -763,7 +763,11 @@ object CurrentDisplaySource {
             runCatching {
                 val dataptr = Natives.getdataptr(sensorName)
                 if (dataptr != 0L) {
-                    Natives.setViewMode(dataptr, normalized)
+                    try {
+                        Natives.setViewMode(dataptr, normalized)
+                    } finally {
+                        Natives.freedataptr(dataptr)
+                    }
                 }
             }
         }

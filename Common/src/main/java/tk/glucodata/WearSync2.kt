@@ -418,7 +418,8 @@ object WearSync2 {
             runCatching {
                 val nowSec = System.currentTimeMillis() / 1000L
                 val horizonStart = nowSec - BACKFILL_HORIZON_SEC
-                val lastSec = runCatching { Natives.lastglucosetime() }.getOrDefault(0L)
+                // JNI reports milliseconds; the sync2 request carries epoch seconds.
+                val lastSec = runCatching { Natives.lastglucosetime() / 1000L }.getOrDefault(0L)
                 val fromSec = if (deep || lastSec <= 0L) {
                     horizonStart
                 } else {
@@ -589,8 +590,8 @@ object WearSync2 {
             }.getOrDefault(Float.NaN).takeIf { it.isFinite() } ?: 0f
             val primaryText = String.format(Applic.usedlocale, Notify.pureglucoseformat, displayValue)
             val sensorStartMs = runCatching {
-                val ptr = Natives.getdataptr(serial)
-                if (ptr != 0L) Natives.getSensorStartmsec(ptr) else 0L
+                // Read metadata without allocating an owning native stream wrapper.
+                Natives.getSensorUiSnapshot(serial)?.getOrNull(2) ?: 0L
             }.getOrDefault(0L)
             SuperGattCallback.emitExchangeOutputs(
                 serial,
