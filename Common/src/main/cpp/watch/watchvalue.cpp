@@ -44,7 +44,7 @@ extern void resetnetwork();
 static void keepnet(uint32_t wastime,uint32_t nu,int minutes) {
     const bool fromother=backup&&networkpresent&&settings->data()->nobluetooth ;
     if(fromother) {
-        const uint32_t age=nu-wastime;
+        const uint32_t age = nu > wastime ? nu - wastime : 0;
         const int requestage=minutes*108;
         if(age>requestage) {
             static uint32_t nextwake=0;
@@ -66,10 +66,12 @@ static void keepnet(uint32_t wastime,uint32_t nu,int minutes) {
 
 extern std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) ;
 std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
+   if (!sensors) return {nullptr, -1};
+   const auto active = usedsensorssnapshot();
    uint32_t mintime=0;
    const SensorGlucoseData *take=nullptr;
    int pos=-1;
-   const int total=usedsensors.size();
+   const int total=static_cast<int>(active.size());
    int  minutes=15;
 
    // Multi-sensor fix: Prefer the user-selected main sensor (infoblockptr()->current)
@@ -82,8 +84,9 @@ std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
    const uint32_t maxStaleAge = 10 * 60; // 10 minutes — if main sensor data is older, fall back
 
     for(int i=0;i<total ;i++) {
-        const int index=usedsensors[i];
+        const int index=active[i];
         const SensorGlucoseData *hist=sensors->getSensorData(index);
+        if (!hist) continue;
         const int hiermin=hist->streaminterval();
         if(hiermin<minutes)
             minutes=hiermin;
