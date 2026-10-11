@@ -273,14 +273,10 @@ fun DashboardCombinedHeader(
     val glucoseBaseContainerColor = MaterialTheme.colorScheme.primaryContainer
     val glucoseContentColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-    // Sensor: Surface Variant (Tonal) vs Tertiary Container (Expiring)
-    // FIX: Replaced fragile string matching (failed in Dutch, false positive in English for "1 days in use")
-    // with robust progress-based logic. >90% progress (approx <1.4 days left) triggers Expiring state.
-    val isExpiring = sensorProgress > 0.90f
-    // FIX: User reported "Silly" contrast in Dark Mode with surfaceVariant (too bright/green).
-    // Switched to primaryContainer to match the Glucose Card (Left) for a cohesive dark look.
-    val sensorContainerColor = if (isExpiring) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) // Darker variant
-    val sensorContentColor = if (isExpiring) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+    // The remaining lifetime uses the glucose card tone; elapsed time is grey.
+    val sensorContainerColor = glucoseBaseContainerColor
+    val sensorContentColor = glucoseContentColor
+    val sensorAgedColor = MaterialTheme.colorScheme.surfaceVariant
 
     // Advanced Trend
     val trendResult = remember(history, latestPoint, currentSnapshot) {
@@ -899,19 +895,20 @@ fun DashboardCombinedHeader(
                 // whole screen, not the real space inside this card.
                 val showLifecycleCalendar = sensorContentWidthPx == 0 ||
                     lifecycleTextWidthPx + lifecycleCalendarChromePx <= sensorContentWidthPx
-                // Dynamic Fill Layer
+                // At activation the entire bar matches the glucose card. As the sensor
+                // ages, neutral grey advances from the right edge toward the left.
                 if (sensorProgress > 0f) {
-                    val fillColor = when {
-                        sensorProgress > 0.95f -> MaterialTheme.colorScheme.error
-                        sensorProgress > 0.80f -> MaterialTheme.colorScheme.tertiary
-                        else -> StatusPalette.sensorLifeFill
-                    }
                     Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(sensorProgress)
-                            .background(fillColor.copy(alpha = 0.25f)) // Slightly increased opacity for visibility
-                    )
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(sensorProgress.coerceIn(0f, 1f))
+                                .background(sensorAgedColor)
+                        )
+                    }
                 }
 
                 Column(
