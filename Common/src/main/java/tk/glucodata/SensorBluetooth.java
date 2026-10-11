@@ -1857,6 +1857,7 @@ public class SensorBluetooth {
                             + " stage=nfc-reset-begin"
                             + " callbackDataptr=0x" + Long.toHexString(cb.dataptr)
                             + " nfcStreamptr=0x" + Long.toHexString(streamptr)
+                            + " nativeStreamGen=" + ((Libre2GattCallback) cb).diagNativeStreamGeneration()
                             + " activeAddress=" + cb.mActiveDeviceAddress);
                 }
                 final long oldDataptr = cb.dataptr;
@@ -1866,6 +1867,7 @@ public class SensorBluetooth {
                             + " stage=nfc-reset-dataptr"
                             + " oldDataptr=0x" + Long.toHexString(oldDataptr)
                             + " newDataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " nativeStreamGen=" + ((Libre2GattCallback) cb).diagNativeStreamGeneration()
                             + " sameNativeSensor=" + Natives.sameSensor(streamptr, cb.dataptr)
                             + " activeAddress=" + cb.mActiveDeviceAddress);
                 }
@@ -1877,6 +1879,7 @@ public class SensorBluetooth {
                     Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
                             + " stage=nfc-reset-connect"
                             + " dataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " nativeStreamGen=" + ((Libre2GattCallback) cb).diagNativeStreamGeneration()
                             + " sensorStartMs=" + cb.sensorstartmsec);
                 }
                 return checkandconnect(cb, 0);
@@ -1894,7 +1897,7 @@ public class SensorBluetooth {
         return false;
     }
 
-    private boolean resetDevicer(String str, long[] ptrptr) {
+    private boolean resetDevicer(String str, long[] ptrptr, String resetSource) {
         if (str == null) {
             ptrptr[0] = 0L;
             return false;
@@ -1911,16 +1914,18 @@ public class SensorBluetooth {
                 final long oldDataptr = cb.dataptr;
                 if (doLog && cb instanceof Libre2GattCallback) {
                     Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
-                            + " stage=manual-reset-begin"
+                            + " stage=" + resetSource + "-reset-begin"
                             + " oldDataptr=0x" + Long.toHexString(oldDataptr)
+                            + " nativeStreamGen=" + ((Libre2GattCallback) cb).diagNativeStreamGeneration()
                             + " activeAddress=" + cb.mActiveDeviceAddress);
                 }
                 ptrptr[0] = cb.resetdataptr();
                 if (doLog && cb instanceof Libre2GattCallback) {
                     Log.i(LOG_ID, "LIBRE2_DIAG serial=" + cb.SerialNumber
-                            + " stage=manual-reset-connect"
+                            + " stage=" + resetSource + "-reset-connect"
                             + " oldDataptr=0x" + Long.toHexString(oldDataptr)
                             + " newDataptr=0x" + Long.toHexString(cb.dataptr)
+                            + " nativeStreamGen=" + ((Libre2GattCallback) cb).diagNativeStreamGeneration()
                             + " activeAddress=" + cb.mActiveDeviceAddress);
                 }
                 return checkandconnect(cb, 0);
@@ -1940,13 +1945,21 @@ public class SensorBluetooth {
     }
 
     static public boolean resetDevice(String str) {
+        return resetDeviceWithSource(str, "manual");
+    }
+
+    static public boolean resetDeviceFromNfc(String str) {
+        return resetDeviceWithSource(str, "nfc");
+    }
+
+    static private boolean resetDeviceWithSource(String str, String resetSource) {
         long[] ptrptr = { 0L };
-        var ret = resetDevicePtr(str, ptrptr);
+        var ret = resetDevicePtr(str, ptrptr, resetSource);
         SuperGattCallback.glucosealarms.setLossAlarm();
         return ret;
     }
 
-    static private boolean resetDevicePtr(String str, long[] ptrptr) {
+    static private boolean resetDevicePtr(String str, long[] ptrptr, String resetSource) {
         {
             if (doLog) {
                 Log.v(LOG_ID, "resetDevice(" + str + ")");
@@ -1961,7 +1974,7 @@ public class SensorBluetooth {
         if (blueone == null) {
             blueone = new tk.glucodata.SensorBluetooth();
         }
-        return blueone.resetDevicer(str, ptrptr);
+        return blueone.resetDevicer(str, ptrptr, resetSource);
     }
 
     static public void goscan() {
