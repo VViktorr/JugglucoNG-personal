@@ -499,10 +499,20 @@ extern bool encrypt8AES(const uint8_t *keybytes, const uint8_t *data,
 extern "C" JNIEXPORT jboolean JNICALL
 fromjava(dex8AES)(JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray jdata,
                   jint startdat, jbyteArray jout, jint startout) {
+  if (!dataptr || !jdata || !jout || startdat < 0 || startout < 0) return false;
+  const jsize inputLength = envin->GetArrayLength(jdata);
+  const jsize outputLength = envin->GetArrayLength(jout);
+  if (inputLength < 8 || outputLength < 8 || startdat > inputLength - 8
+      || startout > outputLength - 8) {
+    LOGAR("dex8AES: buffer does not contain an eight-byte block");
+    return false;
+  }
   const SensorGlucoseData *sens =
       reinterpret_cast<dexcomstream *>(dataptr)->hist;
+  if (!sens || !sens->getinfo()) return false;
   const CritAr bytes(envin, jdata);
   CritArSave out(envin, jout);
+  if (!bytes.data() || !out.data()) return false;
   return encrypt8AES(sens->getinfo()->sharedKey.data(),
                      reinterpret_cast<const unsigned char *>(bytes.data()) +
                          startdat,

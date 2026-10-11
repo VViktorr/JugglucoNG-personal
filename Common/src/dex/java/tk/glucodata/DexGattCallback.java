@@ -107,7 +107,8 @@ private void docmd0(BluetoothGatt bluetoothGatt) {
    }
     @SuppressLint("MissingPermission")
     @Override // android.bluetooth.BluetoothGattCallback
-    public void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
+    public synchronized void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
+        if (stop || bluetoothGatt == null || bluetoothGatt != mBluetoothGatt) return;
         super.onDescriptorWrite(bluetoothGatt, bluetoothGattDescriptor, status);
         BluetoothGattCharacteristic characteristic = bluetoothGattDescriptor.getCharacteristic();
         if (doLog) {
@@ -146,11 +147,16 @@ private void docmd0(BluetoothGatt bluetoothGatt) {
             }
         } else {
             byte[] value = bluetoothGattDescriptor.getValue();
-            var mess = "onDescriptorWrite failed "+value[0];
+            var mess = "onDescriptorWrite failed " +
+                    (value != null && value.length > 0 ? Byte.toString(value[0]) : "empty descriptor");
             handshake = mess;
             wrotepass[1] = System.currentTimeMillis();
             Log.e(LOG_ID, mess);
-            enableGattDescriptor(bluetoothGatt,  characteristic ,value);
+            if (value != null && value.length > 0) {
+                enableGattDescriptor(bluetoothGatt, characteristic, value);
+            } else {
+                disconnect();
+            }
              }
 //            disconnect();
     }
@@ -183,7 +189,8 @@ private boolean connected=false;
 private int connectionTimeouts=0;
     @SuppressLint("MissingPermission")
     @Override
-    public void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
+    public synchronized void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
+        if (!acceptConnectionAttemptCallback(bluetoothGatt, newState)) return;
         noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
         if (stop) {
             releaselock();
@@ -379,7 +386,8 @@ private int connectionTimeouts=0;
 
 
     @Override // android.bluetooth.BluetoothGattCallback
-    public void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
+    public synchronized void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
+        if (stop || bluetoothGatt == null || bluetoothGatt != mBluetoothGatt) return;
         {if(doLog) {Log.i(LOG_ID, "BLE onServicesDiscovered invoked, status: " + status);};};
         if (status == GATT_SUCCESS) {
                 if(!discover(bluetoothGatt)) 
@@ -545,12 +553,17 @@ private boolean removedBond=false;
            }
         switch (phase) {
             case RequestAuth: { 
+                if (value.length < 17) {
+                    Log.e(LOG_ID, "Ignoring truncated Dexcom authentication challenge");
+                    disconnect();
+                    return;
+                }
                 byte[] aes = new byte[8];
                 {if(doLog){Log.showbytes("random8 ", random8);};}
                 boolean aesSu = Natives.dex8AES(dataptr, random8, 0, aes, 0);
                 {if(doLog){Log.showbytes("dex8AES ", aes);};}
                 {if(doLog){Log.showbytes("value ", value);};}
-                boolean verified = equalpart(aes, value, 1);
+                boolean verified = aesSu && equalpart(aes, value, 1);
                 {if(doLog) {Log.i(LOG_ID,  SerialNumber +" "+ mActiveDeviceAddress + " dex8AES =" + aesSu + (verified ? " verified" : " not verified"));};};
                if(!verified) {
                   handshake = "dex8AES different";
@@ -571,7 +584,11 @@ private boolean removedBond=false;
                   }  
                 ++phase; //          state = ChallengeReply;
                 byte[] dataaes = new byte[9];
-                Natives.dex8AES(dataptr, value, 9, dataaes, 1);
+                if (!Natives.dex8AES(dataptr, value, 9, dataaes, 1)) {
+                    Log.e(LOG_ID, "Unable to encode Dexcom challenge reply");
+                    disconnect();
+                    return;
+                }
                 dataaes[0] = 0x04;
                 {if(doLog){Log.showbytes("dex8AES data ", dataaes);};}
                 tryer(()-> write(1, dataaes));
@@ -684,6 +701,13 @@ private    void getdatacmd() {
     }
 
     void getcert(byte[] value) {
+        if (certinbuf == null || value == null || certinbufiter < 0
+                || certinbufiter > certinbuf.length
+                || value.length > certinbuf.length - certinbufiter) {
+            Log.e(LOG_ID, "Ignoring certificate fragment outside the active certificate buffer");
+            disconnect();
+            return;
+        }
         System.arraycopy(value, 0, certinbuf, certinbufiter, value.length);
         certinbufiter += value.length;
         {if(doLog) {Log.i(LOG_ID,"getcert +"+value.length+"="+certinbufiter);};};
@@ -794,7 +818,9 @@ private    void getdata(byte[] value) {
     }
 
     @Override // android.bluetooth.BluetoothGattCallback
-    public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic bluetoothGattCharacteristic, @NonNull byte[] value) {
+    public synchronized void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic bluetoothGattCharacteristic, @NonNull byte[] value) {
+        if (stop || gatt == null || gatt != mBluetoothGatt || dataptr == 0L) return;
+        if (value == null || value.length == 0) return;
         if(doLog)
             {if(doLog){Log.showbytes("DexGattCallback onCharacteristicChanged UUID: " + bluetoothGattCharacteristic.getUuid().toString(), value);};}
         if (bluetoothGattCharacteristic.equals(charact[2])) {
@@ -812,7 +838,7 @@ private    void getdata(byte[] value) {
     }
 
     @Override // android.bluetooth.BluetoothGattCallback
-    public void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
+    public synchronized void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
         {if(doLog) {Log.i(LOG_ID, "onCharacteristicChanged/2");};};
         onCharacteristicChanged(bluetoothGatt, bluetoothGattCharacteristic, bluetoothGattCharacteristic.getValue());
     }
@@ -825,7 +851,7 @@ private    void getdata(byte[] value) {
 
 
     @Override
-    public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+    public synchronized void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
         {if(doLog) {Log.i(LOG_ID, "onReadRemoteRssi(BluetoothGatt," + rssi + "," + status + (status == GATT_SUCCESS ? " SUCCESS" : " FAILURE"));};};
         if (status == GATT_SUCCESS) {
             readrssi = rssi;
@@ -878,7 +904,7 @@ private    void getdata(byte[] value) {
     }
 
     @Override
-    public void free() {
+    public synchronized void free() {
         releaselock();
         cancelalarm();
         unbond();
