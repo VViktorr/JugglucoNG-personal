@@ -1085,14 +1085,15 @@ class ICanHealthBleManager(
         }
     }
 
+    @Synchronized
     override fun resetdataptr(): Long {
+        close()
         val previousDataptr = dataptr
+        dataptr = 0L
         if (previousDataptr != 0L) {
             runCatching { Natives.freedataptr(previousDataptr) }
                 .onFailure { Log.stack(TAG, "resetdataptr(freedataptr)", it) }
         }
-        close()
-        dataptr = 0L
         return 0L
     }
 
@@ -1183,7 +1184,9 @@ class ICanHealthBleManager(
         return connectDevice(0)
     }
 
+    @Synchronized
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+        if (!acceptConnectionAttemptCallback(gatt, newState)) return
         noteFirstGattCallback("onConnectionStateChange", gatt)
         super.onConnectionStateChange(gatt, status, newState)
         if (stop) return
@@ -1305,7 +1308,9 @@ class ICanHealthBleManager(
         }
     }
 
+    @Synchronized
     override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+        if (stop || gatt !== mBluetoothGatt) return
         negotiatedMtu = mtu
         awaitingMtuNegotiation = false
         handler.removeCallbacks(mtuRequestTimeoutRunnable)
@@ -1332,7 +1337,9 @@ class ICanHealthBleManager(
         }
     }
 
+    @Synchronized
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+        if (stop || gatt !== mBluetoothGatt) return
         if (status != BluetoothGatt.GATT_SUCCESS) {
             serviceDiscoveryStarted = false
             Log.e(TAG, "Service discovery failed status=$status")
@@ -1380,7 +1387,9 @@ class ICanHealthBleManager(
     }
 
     @Deprecated("Deprecated in Java")
+    @Synchronized
     override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+        if (stop || gatt !== mBluetoothGatt) return
         val data = characteristic.value ?: return
         Log.i(TAG, "WIRE rx notify ${shortUuid(characteristic.uuid)} ${data.toHexString()}")
         when (characteristic.uuid) {
@@ -1424,11 +1433,13 @@ class ICanHealthBleManager(
     }
 
     @Deprecated("Deprecated in Java")
+    @Synchronized
     override fun onCharacteristicRead(
         gatt: BluetoothGatt,
         characteristic: BluetoothGattCharacteristic,
         status: Int,
     ) {
+        if (stop || gatt !== mBluetoothGatt) return
         if (status != BluetoothGatt.GATT_SUCCESS) {
             Log.w(TAG, "Read failed for ${characteristic.uuid} status=$status")
             if (characteristic.uuid == ICanHealthConstants.CGM_STATUS && awaitingFreshStatusForHistoryBackfill) {
@@ -1605,7 +1616,9 @@ class ICanHealthBleManager(
         return true
     }
 
+    @Synchronized
     override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+        if (stop || gatt !== mBluetoothGatt) return
         if (status != BluetoothGatt.GATT_SUCCESS) {
             Log.w(TAG, "Descriptor write failed for ${descriptor.characteristic?.uuid} status=$status")
         }
@@ -1613,11 +1626,13 @@ class ICanHealthBleManager(
     }
 
     @Deprecated("Deprecated in Java")
+    @Synchronized
     override fun onCharacteristicWrite(
         gatt: BluetoothGatt,
         characteristic: BluetoothGattCharacteristic,
         status: Int,
     ) {
+        if (stop || gatt !== mBluetoothGatt) return
         if (status != BluetoothGatt.GATT_SUCCESS) {
             Log.w(TAG, "Write failed for ${characteristic.uuid} status=$status")
         }
