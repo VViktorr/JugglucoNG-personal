@@ -107,16 +107,17 @@ void free() {
         else
             init();
     }
-private final void checkBluetoothGatt(BluetoothGatt bluetoothGatt) {
+private final boolean checkBluetoothGatt(BluetoothGatt bluetoothGatt) {
     if(doLog) {
         if(bluetoothGatt!=mBluetoothGatt) {
             {if(doLog) {Log.i(LOG_ID,SerialNumber+" bluetoothGatt!=mBluetoothGatt"+(bluetoothGatt==null?" bluetoothGatt==null":(mBluetoothGatt==null?" mBluetoothGatt==null":"")));};};
             }
         }
+    return bluetoothGatt != null && bluetoothGatt == mBluetoothGatt && !stop;
     }
     @Override 
-    public void onCharacteristicRead(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
-        checkBluetoothGatt(bluetoothGatt);
+    public synchronized void onCharacteristicRead(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
+        if (!checkBluetoothGatt(bluetoothGatt)) return;
         if (bluetoothGattCharacteristic.getUuid().equals(LIBRE3_CHAR_PATCH_STATUS)) {
             //    libre3BLESensor.access$700(libre3BLESensor.this, bluetoothGattCharacteristic);
             {if(doLog){showbytes(LOG_ID + " "+SerialNumber+" onCharacteristicRead " + bluetoothGattCharacteristic.getUuid().toString(), bluetoothGattCharacteristic.getValue());};}
@@ -124,8 +125,8 @@ private final void checkBluetoothGatt(BluetoothGatt bluetoothGatt) {
     }
 
     @Override 
-    public void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
-        checkBluetoothGatt(bluetoothGatt);
+    public synchronized void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
+        if (!checkBluetoothGatt(bluetoothGatt)) return;
         oncharwrite(bluetoothGattCharacteristic);
         var value = bluetoothGattCharacteristic.getValue();
         {if(doLog){showbytes(LOG_ID + " "+SerialNumber+" onCharacteristicWrite " + bluetoothGattCharacteristic.getUuid().toString(), value);};}
@@ -145,7 +146,7 @@ private boolean connected=false;
     public synchronized void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
         if (!acceptConnectionAttemptCallback(bluetoothGatt, newState)) return;
         noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
-        checkBluetoothGatt(bluetoothGatt);
+        if (!checkBluetoothGatt(bluetoothGatt)) return;
 
 
         if(stop) {
@@ -205,8 +206,8 @@ private boolean connected=false;
 
 
         @Override 
-        public void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
-        checkBluetoothGatt(bluetoothGatt);
+        public synchronized void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
+        if (!checkBluetoothGatt(bluetoothGatt)) return;
            // libre3BLESensor.access$1900(libre3blesensor, characteristic, status);
         {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+ "onDescriptorWrite status="+status);};};
         BluetoothGattCharacteristic characteristic = bluetoothGattDescriptor.getCharacteristic();
@@ -219,7 +220,8 @@ private boolean connected=false;
         }
 
         @Override // android.bluetooth.BluetoothGattCallback
-        public void onReadRemoteRssi(BluetoothGatt bluetoothGatt, int rssi, int status) {
+        public synchronized void onReadRemoteRssi(BluetoothGatt bluetoothGatt, int rssi, int status) {
+            if (!checkBluetoothGatt(bluetoothGatt)) return;
             if (status != GATT_SUCCESS) {
                 Log.e(LOG_ID, SerialNumber + ": "+ "Error reading RSSI, error " + status);
                 rssi = 999;
@@ -227,7 +229,6 @@ private boolean connected=false;
         readrssi=rssi;
         if(shouldenablegattCharCommandResponse) {
             Log.i(LOG_ID,"onReadRemoteRssi "+rssi+" ablegattCharCommandResponse");
-            checkBluetoothGatt(bluetoothGatt);
             enablegattCharCommandResponse();
             shouldenablegattCharCommandResponse=false;
             }
@@ -237,8 +238,8 @@ private boolean connected=false;
         }
 
         @Override // android.bluetooth.BluetoothGattCallback
-     public void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
-      checkBluetoothGatt(bluetoothGatt);
+     public synchronized void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
+      if (!checkBluetoothGatt(bluetoothGatt)) return;
           {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+ "onServicesDiscovered status="+status);};};
           if (status == GATT_SUCCESS) {
                 if(!getservices()) {
@@ -443,9 +444,9 @@ private    void save_history(byte[] value) {
         Natives.saveLibre3History(this.sensorptr, olddec);
     }
 @Override 
-public void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
+public synchronized void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
 
-        checkBluetoothGatt(bluetoothGatt);
+        if (!checkBluetoothGatt(bluetoothGatt)) return;
     onCharacteristicChanged33(bluetoothGatt, bluetoothGattCharacteristic, bluetoothGattCharacteristic.getValue());
     }
 static final private String charglucosedata= "CHAR_GLUCOSE_DATA".intern();
@@ -458,9 +459,13 @@ private  void logcharacter(UUID uuid,String str,byte[] value) {
             {if(doLog){showbytes(LOG_ID+ " "+SerialNumber +" onCharacteristicChanged  "+uuid.toString()+" "+str, value);};}
         }
 private void onCharacteristicChanged33(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
+       if (value == null) return;
        var wakelock=    Applic.usewakelock?(((PowerManager) app.getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Juggluco::Libre3")):null;
-       if(wakelock!=null)
-           wakelock.acquire();
+       try {
+           if (wakelock != null) {
+               wakelock.setReferenceCounted(false);
+               wakelock.acquire(Applic.GLUCOSE_WAKELOCK_TIMEOUT_MS);
+           }
             UUID uuid = characteristic.getUuid();
 //      {if(doLog){      showbytes(LOG_ID+" onCharacteristicChanged Start "+uuid.toString(), value);};}
             if(uuid.equals(LIBRE3_CHAR_GLUCOSE_DATA)) {
@@ -502,8 +507,9 @@ private void onCharacteristicChanged33(BluetoothGatt gatt, BluetoothGattCharacte
          dodisconnect(mBluetoothGatt);
          disconnected(1042);
             }
-       if(wakelock!=null)
-        wakelock.release();
+       } finally {
+           Applic.releasewakelock(wakelock);
+       }
     {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"onCharacteristicChanged end");};};
         }
 
