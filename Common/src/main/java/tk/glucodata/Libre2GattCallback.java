@@ -192,6 +192,15 @@ public class Libre2GattCallback extends SuperGattCallback {
 	private long diagServicesAtMs = 0L;
 	private long diagPassWriteAtMs = 0L;
 	private long diagDescriptorAtMs = 0L;
+	// Monotonic callback-local generation for the native Libre2 stream wrapper.
+	// The allocator may reuse the same dataptr address after resetdataptr(), so the
+	// pointer alone cannot prove whether the wrapper was rebuilt.
+	private long diagNativeStreamGeneration = 1L;
+
+	long diagNativeStreamGeneration() {
+		return diagNativeStreamGeneration;
+	}
+
 
 	private String diagGatt(BluetoothGatt gatt) {
 		return gatt == null ? "null" : Integer.toHexString(System.identityHashCode(gatt));
@@ -209,6 +218,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 				+ " stage=" + stage
 				+ " gatt=" + diagGatt(gatt)
 				+ " dataptr=0x" + Long.toHexString(dataptr)
+				+ " nativeStreamGen=" + diagNativeStreamGeneration
 				+ " sensorgen=" + sensorgen
 				+ " conphase=" + conphase
 				+ " connected=" + connected
@@ -309,7 +319,13 @@ public class Libre2GattCallback extends SuperGattCallback {
 		cancelHardRecovery();
 		cancelDisconnectDeadline();
 		cancelGattWatchdog();
-		return super.resetdataptr();
+		final long oldDataptr = dataptr;
+		final long newDataptr = super.resetdataptr();
+		diagNativeStreamGeneration++;
+		libre2Diag("native-stream-reloaded", null,
+				"oldDataptr=0x" + Long.toHexString(oldDataptr)
+				+ " newDataptr=0x" + Long.toHexString(newDataptr));
+		return newDataptr;
 	}
 
 	@SuppressLint("MissingPermission")
@@ -317,7 +333,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 		if(stop || dataptr == 0L || isWearable || hardRecoveryInProgress
 				|| CloneSensorRegistry.isCloneSensor(SerialNumber)
 				|| SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)) return;
-		libre2Diag("hard-recovery-begin", mBluetoothGatt, "reason=" + reason);
+		libre2Diag("hard-recovery-begin", mBluetoothGatt, "reason=" + reason + " failedSinceMs=" + failedHandshakeSinceMs);
 		// Pause cancels ordinary connection tasks before the reset and cooldown.
 		setPause(true);
 		hardRecoveryInProgress = true;
@@ -469,7 +485,9 @@ private PendingIntent onalarm=null;
 				setConStatus(status);
 				constatchange[1] = tim;
 				if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-					libre2Diag("disconnected", bluetoothGatt, "status=" + status);
+					libre2Diag("disconnected", bluetoothGatt, "status=" + status
+							+ " justenablednotification=" + justenablednotification
+							+ " failedbefore=" + failedbefore);
 					if(failedHandshakeNeedsRecovery(status, tim)) {
 						hardRecoverGatt("repeated incomplete handshake status=" + status);
 						return;
@@ -1169,5 +1187,6 @@ public void setGattOptions(BluetoothGatt gatt) {
         } */
 
 }
+
 
 

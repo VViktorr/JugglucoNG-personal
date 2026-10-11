@@ -106,7 +106,7 @@ public class ScanNfcV {
             ;
         }
         ;
-        if (SensorBluetooth.resetDevice(sensorident))
+        if (SensorBluetooth.resetDeviceFromNfc(sensorident))
             askpermission = true;
         return true;
     }
@@ -648,3 +648,4 @@ public class ScanNfcV {
         }
     }
 }
+

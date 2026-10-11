@@ -376,7 +376,7 @@ static boolean postgetauth(boolean libre3) {
       Log.e(LOG_ID, "postgetauth: skipping — empty credentials (login=" + (login != null ? login.length() : "null") + " chars, pass=" + (password != null && !"null".equals(password) ? "set" : "empty") + ")");
       return false;
    }
-   {if(doLog) {Log.i(LOG_ID,"postgetauth "+login+" "+password);};};
+   {if(doLog) {Log.i(LOG_ID,"postgetauth login=**** password=****");};};
 
    var loc= Locale.getDefault();
    String language=loc.getLanguage()+'-'+loc.getCountry();
@@ -421,7 +421,7 @@ static boolean postgetauth(boolean libre3) {
 
          }
       byte[] textbytes=getauthtext.getBytes();
-      {if(doLog) {Log.i(LOG_ID,"postauth: "+getauthtext);};};
+      {if(doLog) {Log.i(LOG_ID,"postauth: credentials=**** payloadBytes="+textbytes.length+" libre3="+libre3+" setDevice="+setdevice);};};
           urlConnection.setRequestProperty( "Content-Length", Integer.toString( textbytes.length ));
 
    //   {if(doLog) {Log.i(LOG_ID,getauthtext);};};
@@ -508,7 +508,7 @@ static boolean postgetauth(boolean libre3) {
             urlConnection2.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             String notneeded="{\"UserToken\":\""+usertoken+"\",\"Domain\":\"Libreview\",\"GatewayType\":\"FSLibreLink.Android\"}";
             byte[] notneedbytes=notneeded.getBytes();
-            {if(doLog) {Log.i(LOG_ID,"postauth: "+notneeded);};};
+            {if(doLog) {Log.i(LOG_ID,"postauth account-info: UserToken=**** payloadBytes="+notneedbytes.length);};};
                 urlConnection2.setRequestProperty( "Content-Length", Integer.toString( notneedbytes.length ));
             OutputStream outputPost2 = new BufferedOutputStream(urlConnection2.getOutputStream());
             outputPost2.write(notneedbytes);
@@ -1178,6 +1178,7 @@ public static void  config(MainActivity act, View settingsview,CheckBox sendto,b
 
 
 }
+
 
 
 
