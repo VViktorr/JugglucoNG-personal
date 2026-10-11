@@ -56,6 +56,8 @@ jobs:
           persist-credentials: false
       - name: Check UI guardrail counts against the baseline
         run: python3 scripts/ui-guardrails.py
+      - name: Check resource structure, format arguments and Polish translations
+        run: python3 tools/check-translations.py --require-locale pl
 
   unit-tests:
     name: JVM unit tests

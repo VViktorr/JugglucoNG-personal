@@ -20,4 +20,16 @@
     <string name="wear_calibration_edit">Edytuj kalibrację</string>
     <string name="wear_journal_delete">Usuń</string>
     <string name="wear_sensor_forget">Zapomnij czujnik</string>
+    <string name="colors_style_setting">@string/colors</string>
+    <string name="ambient_style_name">Styl w trybie czuwania</string>
+    <string name="red_style_name">Styl czerwony</string>
+    <string name="green_style_name">Styl zielony</string>
+    <string name="blue_style_name">Styl niebieski</string>
+    <string name="gray_style_name">Styl szary</string>
+    <string name="yellow_style_name">Styl żółty</string>
+    <string name="white_style_name">Styl biały</string>
+    <string name="title_activity_watch_face_config">Konfiguracja</string>
+    <string name="wear_journal_pending">Oczekiwanie na telefon</string>
+    <string name="wear_multi_sensor_complication">Wartości wielu czujników</string>
+    <string name="wear_multi_sensor_arrow_complication">Wartości wielu czujników + trendy</string>
 </resources>
