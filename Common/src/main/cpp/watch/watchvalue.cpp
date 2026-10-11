@@ -123,7 +123,7 @@ std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
     }
 
 extern "C" JNIEXPORT jlong  JNICALL   fromjava(lastglucosetime)(JNIEnv *env, jclass cl) {
-    const auto [hist,index]=getlaststream(maxwatchage);
+    const auto [hist,index]=getlaststream(static_cast<uint32_t>(time(nullptr)));
     if(hist) 
         return hist->lastValidStream()->t*1000LL;
         
@@ -141,7 +141,7 @@ extern float threshold(float drate);
 extern double     calibrateNow(const SensorGlucoseData *sens,const ScanData &value);
 static jobject lastGlucoseForHistory(JNIEnv *env, const SensorGlucoseData *hist, int index) {
     if(!hist)  {
-        LOGSTRINGTAG("getlaststream(maxwatchage)=null\n");
+        LOGSTRINGTAG("getlaststream(now)=null\n");
         return nullptr;
         }
     const ScanData *poll=hist->lastValidStream();
@@ -185,7 +185,7 @@ static jobject lastGlucoseForHistory(JNIEnv *env, const SensorGlucoseData *hist,
        }
 
 extern "C" JNIEXPORT jobject JNICALL fromjava(lastglucose)(JNIEnv *env, jclass cl) {
-    const auto [hist,index]=getlaststream(maxwatchage);
+    const auto [hist,index]=getlaststream(static_cast<uint32_t>(time(nullptr)));
     return lastGlucoseForHistory(env, hist, index);
 }
 
