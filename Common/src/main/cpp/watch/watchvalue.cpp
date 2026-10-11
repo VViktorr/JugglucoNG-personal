@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <stdio.h>
+#include <time.h>
 #include <jni.h>
 #include "SensorGlucoseData.hpp"
 #include "sensoren.hpp"
@@ -123,7 +124,7 @@ std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
     }
 
 extern "C" JNIEXPORT jlong  JNICALL   fromjava(lastglucosetime)(JNIEnv *env, jclass cl) {
-    const auto [hist,index]=getlaststream(maxwatchage);
+    const auto [hist,index]=getlaststream(static_cast<uint32_t>(time(nullptr)));
     if(hist) 
         return hist->lastValidStream()->t*1000LL;
         
@@ -185,7 +186,7 @@ static jobject lastGlucoseForHistory(JNIEnv *env, const SensorGlucoseData *hist,
        }
 
 extern "C" JNIEXPORT jobject JNICALL fromjava(lastglucose)(JNIEnv *env, jclass cl) {
-    const auto [hist,index]=getlaststream(maxwatchage);
+    const auto [hist,index]=getlaststream(static_cast<uint32_t>(time(nullptr)));
     return lastGlucoseForHistory(env, hist, index);
 }
 

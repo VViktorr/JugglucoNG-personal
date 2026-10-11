@@ -74,6 +74,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      - name: Replay sensor lifecycle regression checks
+        run: |
+          python3 tools/test-libre2-connect.py
+          python3 tools/test-sensor-lifecycle.py
+
       - name: Run both flavours' debug unit suites
         run: |
           ./gradlew \

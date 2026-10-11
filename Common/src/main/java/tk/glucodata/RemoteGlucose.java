@@ -60,6 +60,7 @@ class RemoteGlucose {
    final private Bitmap glucoseBitmap;
    final private Canvas canvas;
    final private Paint glucosePaint;
+   private static final int LEGACY_WIDGET_DIM_COLOR = Color.argb(128, 0, 0, 0);
    final private int baseForegroundColor;
    final private float density;
    final private float glucosesize;

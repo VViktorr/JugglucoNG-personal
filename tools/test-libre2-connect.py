@@ -69,7 +69,7 @@ class SuperGattCallback {
     static boolean doLog=false, isWearable=false, autoconnect=true;
     static final int GATT_SUCCESS=0;
     static final String LOG_ID="test";
-    boolean stop, connectPending;
+    boolean retired, stop, connectPending;
     long dataptr=1L, foundtime, connectTime, showtime=60_000L;
     long[] charcha={0L,0L}, constatchange={0L,0L}, wrotepass={0L,0L};
     String SerialNumber="synthetic", mActiveDeviceAddress="fake", mDeviceName, handshake, constatstatusstr;
