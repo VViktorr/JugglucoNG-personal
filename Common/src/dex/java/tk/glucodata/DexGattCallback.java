@@ -402,7 +402,7 @@ private int connectionTimeouts=0;
 
 private long certificateSendGeneration = 0L;
 private synchronized void sendcerts() {
-    if (stop || !connected || mBluetoothGatt == null || dataptr == 0L) return;
+    if (stop || mBluetoothGatt == null || dataptr == 0L) return;
     if (packet == null || packet.length == 0) {
         Log.e(LOG_ID, "No Dexcom certificate/challenge packet to send");
         disconnect();
@@ -420,7 +420,7 @@ private synchronized void sendcerts() {
 //private String ownDeviceName;
 private boolean newcertificates=false;
 private boolean isCurrentCertificateSend(BluetoothGatt gatt, byte[] data, int expectedPhase, long generation) {
-    return !stop && connected && dataptr != 0L && mBluetoothGatt == gatt
+    return !stop && dataptr != 0L && mBluetoothGatt == gatt
             && packet == data && phase == expectedPhase && certificateSendGeneration == generation;
 }
 private void sendcertthread(BluetoothGatt sendingGatt, byte[] sendingPacket, int sendingPhase, long generation) {
@@ -685,7 +685,7 @@ private boolean removedBond=false;
     }
 
 private synchronized void tryer(Supplier<Boolean> worked) {
-    if (stop || !connected || mBluetoothGatt == null) return;
+    if (stop || mBluetoothGatt == null) return;
     final BluetoothGatt retryGatt = mBluetoothGatt;
     final int retryPhase = phase;
     if (worked.get()) return;
@@ -945,7 +945,8 @@ private    void getdata(byte[] value) {
     }
 
     @Override
-    public void bonded() {
+    public synchronized void bonded() {
+        if (stop || mActiveBluetoothDevice == null) return;
         final var bondstate = mActiveBluetoothDevice.getBondState();
         switch(bondstate) {
             case BluetoothDevice.BOND_BONDING: {
@@ -987,12 +988,16 @@ private    void getdata(byte[] value) {
                 {if(doLog) {Log.i(LOG_ID,"bonded");};};
                 getdatacmd();
                 if(!has_service) {
-                    Applic.RunOnUiThread(() -> {
-                        if (!mBluetoothGatt.discoverServices()) {
-                            Log.e(LOG_ID, "bonded(): bluetoothGatt.discoverServices()  failed");
-                            disconnect();
+                    final BluetoothGatt bondGatt = mBluetoothGatt;
+                    if (bondGatt != null) Applic.RunOnUiThread(() -> {
+                        synchronized (this) {
+                            if (stop || mBluetoothGatt != bondGatt) return;
+                            if (!bondGatt.discoverServices()) {
+                                Log.e(LOG_ID, "bonded(): bluetoothGatt.discoverServices()  failed");
+                                disconnect();
+                            }
                         }
-                        });
+                    });
                     }
                 };break;
         }
