@@ -61,6 +61,20 @@ object WearSync2 {
     // Accessed only on the sync executor; history replay must not move current values backwards.
     private val lastExchangeTimes = HashMap<String, Long>()
 
+    // Coalesce the UI work of a backfill only on the watch. Persistence still processes
+    // every chunk; a completed transfer forces the newest state through immediately.
+    private val syncedUiRefresh by lazy {
+        LeadingTrailingRefresh(
+            intervalMs = 1_000L,
+            clock = android.os.SystemClock::elapsedRealtime,
+            schedule = { delay, task ->
+                val future = Applic.scheduler.schedule({ task() }, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+                LeadingTrailingRefresh.Cancellation { future.cancel(false) }
+            },
+            action = { UiRefreshBus.requestDataRefresh() },
+        )
+    }
+
     // ---- phone side ----
 
     /** Called from the reading dispatch path; throttled tail push. */
@@ -564,7 +578,8 @@ object WearSync2 {
                     // still gets off a dead sensor after a swap ("No data"
                     // with fresh chunks landing in the new one).
                     WearSensorSelectionSync.alignCurrentSensor(fallback = serial)
-                    UiRefreshBus.requestDataRefresh()
+                    if (Applic.isWearable) syncedUiRefresh.request(force = final)
+                    else UiRefreshBus.requestDataRefresh()
                 }
                 if (doLog) Log.i(LOG_ID, "ingested $written/$count triples for $serial final=$final")
             }.onFailure { Log.stack(LOG_ID, "onChunk", it) }
