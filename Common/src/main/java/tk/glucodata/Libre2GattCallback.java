@@ -23,6 +23,7 @@ package tk.glucodata;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -74,6 +75,10 @@ public class Libre2GattCallback extends SuperGattCallback {
     private long diagAttempt;
     private long diagConnectedAtMs = -1L, diagServicesAtMs = -1L, diagPassWriteAtMs = -1L, diagDescriptorAtMs = -1L;
     private long diagNativeStreamGeneration = 1L;
+    private long diagLastPacketAtMs = -1L;
+    private long diagLastCloseAtMs = -1L;
+    private long diagConnectRequestAtMs = -1L;
+    private long diagConnectedSinceMs = -1L;
 
     private final GattConnectDeadline<BluetoothGatt> streamDeadline = new GattConnectDeadline<>(
             this, (task, delay) -> {
@@ -99,10 +104,25 @@ public class Libre2GattCallback extends SuperGattCallback {
                 + " dataptr=0x" + Long.toHexString(dataptr) + " nativeStreamGen=" + diagNativeStreamGeneration
                 + " sensorgen=" + sensorgen + " conphase=" + conphase + " connected=" + connected
                 + " pack1=" + pack1 + " pack2=" + pack2 + " paused=" + stop + " recovery=" + recoveryInProgress
+                + " connectedDurationMs=" + (diagConnectedSinceMs < 0L ? -1L : now - diagConnectedSinceMs)
+                + " lastPacketAgeMs=" + (diagLastPacketAtMs < 0L ? -1L : now - diagLastPacketAtMs)
+                + " lastCloseAgeMs=" + (diagLastCloseAtMs < 0L ? -1L : now - diagLastCloseAtMs)
+                + " fromConnectRequestMs=" + (diagConnectRequestAtMs < 0L ? -1L : now - diagConnectRequestAtMs)
+                + " adapterState=" + bluetoothAdapterState()
                 + " fromConnectMs=" + (diagConnectedAtMs < 0L ? -1L : now - diagConnectedAtMs)
                 + " fromServicesMs=" + (diagServicesAtMs < 0L ? -1L : now - diagServicesAtMs)
                 + " fromPassWriteMs=" + (diagPassWriteAtMs < 0L ? -1L : now - diagPassWriteAtMs)
                 + (extra == null ? "" : " " + extra));
+    }
+
+    @SuppressLint("MissingPermission")
+    private String bluetoothAdapterState() {
+        try {
+            final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            return adapter == null ? "UNAVAILABLE" : Integer.toString(adapter.getState());
+        } catch (SecurityException e) {
+            return "NO_PERMISSION";
+        }
     }
 
     private void watchStream(BluetoothGatt gatt) {
@@ -119,6 +139,7 @@ public class Libre2GattCallback extends SuperGattCallback {
     // RSSI, fragments and handshake callbacks never extend this deadline.
     private void markPacketReceived() {
         failedHandshakeSinceMs = -1L;
+        diagLastPacketAtMs = android.os.SystemClock.elapsedRealtime();
         libre2Diag("complete-packet", mBluetoothGatt,
                 "descriptorAgoMs=" + (diagDescriptorAtMs < 0L ? -1L : android.os.SystemClock.elapsedRealtime() - diagDescriptorAtMs));
         watchStream(mBluetoothGatt);
@@ -164,7 +185,11 @@ public class Libre2GattCallback extends SuperGattCallback {
             recoveryWakeLock.setReferenceCounted(false);
             recoveryWakeLock.acquire(15_000L);
             try { super.disconnect(); }
-            finally { closeGattTransport(); }
+            finally {
+                libre2Diag("hard-recovery-close", mBluetoothGatt, "reason=" + reason);
+                diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
+                closeGattTransport();
+            }
             Natives.resetbluetooth(dataptr);
             // Keep user pause untouched; all reconnect entry points see recoveryInProgress.
             recoveryDueMs = android.os.SystemClock.elapsedRealtime() + HARD_RECOVERY_DELAY_MS;
@@ -261,6 +286,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 		cancelDisconnectDeadline();
 		resetConnectionState();
 		// Retire the reference before close(), so late callbacks cannot affect its replacement.
+        libre2Diag("gatt-close-before-retry", gatt, "reconnectDelayMs=" + delay);
+        diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
 		closeGattTransport();
 		connectDevice(delay);
 	}
@@ -272,6 +299,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 		reconnectDelayMillis = delayMillis;
 		if (disconnectingGatt == gatt) return;
 		disconnectingGatt = gatt;
+        libre2Diag("disconnect-request", gatt, "reconnectDelayMs=" + delayMillis);
 		endBLEHandler();
 		// Android can omit DISCONNECTED. Repeated recovery requests must not extend this wait.
 		disconnectDeadline.arm(gatt, 2_000L);
@@ -304,6 +332,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 		}
 		cancelDisconnectDeadline();
 		resetConnectionState();
+        diagConnectRequestAtMs = android.os.SystemClock.elapsedRealtime();
+        libre2Diag("connect-request", null, "delayMs=" + delayMillis);
 		return super.connectDevice(delayMillis);
 	}
 
@@ -426,6 +456,7 @@ private boolean connected=false;
 				connected = true;
                 ++diagAttempt;
                 diagConnectedAtMs = android.os.SystemClock.elapsedRealtime();
+                diagConnectedSinceMs = diagConnectedAtMs;
                 diagServicesAtMs = diagPassWriteAtMs = diagDescriptorAtMs = -1L;
                 libre2Diag("connected", bluetoothGatt, "status=" + status);
                 releaseRecoveryWakeLock();
@@ -442,7 +473,8 @@ private boolean connected=false;
 				constatchange[1] = tim;
 				if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     streamDeadline.cancel();
-                    libre2Diag("disconnected", bluetoothGatt, "status=" + status + " justenablednotification=" + justenablednotification + " failedbefore=" + failedbefore);
+                    libre2Diag("disconnected", bluetoothGatt, "status=" + status + " newState=" + newState + " justenablednotification=" + justenablednotification + " failedbefore=" + failedbefore);
+                    diagConnectedSinceMs = -1L;
                     if (failedHandshakeNeedsRecovery(status)) {
                         hardRecoverGatt("repeated incomplete handshake status=" + status);
                         return;
@@ -1045,6 +1077,8 @@ private void endBLEHandler() {
          disablenotification(gatt,BLELogincharacteristic);
          disablenotification(gatt, CompositeRawDatacharacteristic) ;
          }
+        libre2Diag("gatt-close", gatt, "reason=close");
+        diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
 		super.close();
 		resetConnectionState();
 		}
