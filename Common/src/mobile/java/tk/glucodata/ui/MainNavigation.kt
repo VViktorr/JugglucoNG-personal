@@ -947,6 +947,12 @@ private fun NavGraphBuilder.appDestinations(
         )
     }
     composable("settings") { ExpressiveSettingsScreen(navController, themeMode, onThemeChanged, dashboardViewModel) }
+    composable("settings/category/{category}") { entry ->
+        ExpressiveSettingsScreen(
+            navController, themeMode, onThemeChanged, dashboardViewModel,
+            category = entry.arguments?.getString("category"),
+        )
+    }
     composable("settings/nightscout") { NightscoutSettingsScreen(navController) }
     composable("settings/libreview") { LibreViewSettingsScreen(navController) }
     composable("settings/mq-account") { MQAccountSettingsScreen(navController) }
