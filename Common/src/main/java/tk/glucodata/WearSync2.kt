@@ -283,7 +283,9 @@ object WearSync2 {
         val points = runCatching {
             NotificationHistorySource.getRawHistory(fromSec * 1000L, serial)
         }.getOrDefault(emptyList())
-            .filter { it.timestamp > 0L && GlucoseValuePlausibility.isPlausibleMgdl(it.value) }
+            .filter {
+                it.timestamp > 0L && WearHistoryLanes.hasValue(it.value, it.rawValue)
+            }
             .sortedBy { it.timestamp }
         if (points.isEmpty()) return
         // Preserve the source precision on the wire. The earlier display-unit
@@ -294,10 +296,8 @@ object WearSync2 {
         val triples = LongArray(points.size * 3)
         points.forEachIndexed { i, point ->
             triples[i * 3] = point.timestamp / 1000L
-            triples[i * 3 + 1] = wireValue(point.value)
-            triples[i * 3 + 2] = point.rawValue
-                .takeIf { GlucoseValuePlausibility.isPlausibleMgdl(it) }
-                ?.let { wireValue(it) } ?: 0L
+            triples[i * 3 + 1] = wireValue(WearHistoryLanes.validMgdl(point.value))
+            triples[i * 3 + 2] = wireValue(WearHistoryLanes.validMgdl(point.rawValue))
         }
         val total = points.size
         var index = 0
@@ -510,7 +510,9 @@ object WearSync2 {
                     val t = buf.long
                     val auto10 = buf.int
                     val raw10 = buf.int
-                    if (t <= 0L || auto10 <= 0) continue
+                    val autoMgdl = WearHistoryLanes.validMgdl(auto10 / 10f)
+                    val rawMgdl = WearHistoryLanes.validMgdl(raw10 / 10f)
+                    if (t <= 0L || (autoMgdl <= 0f && rawMgdl <= 0f)) continue
                     if (earliest == 0L) {
                         earliest = t
                         // Native scale contract (g.cpp addGlucoseStreamInternal):
@@ -520,11 +522,10 @@ object WearSync2 {
                             Natives.ensureSensorShell(serial, (t - 3600L).coerceAtLeast(1L))
                         }
                     }
-                    val rawMgdl = if (raw10 > 0) raw10 / 10f else 0f
                     nativeSecs[written] = t
-                    nativeValues[written] = auto10 / 100f
+                    nativeValues[written] = autoMgdl / 10f
                     stamps[written] = t * 1000L
-                    values[written] = auto10 / 10f
+                    values[written] = autoMgdl
                     raws[written] = rawMgdl
                     written++
                 }

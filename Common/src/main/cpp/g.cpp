@@ -1476,7 +1476,7 @@ static bool storeGlucoseStreamSample(SensorGlucoseData *hist, const char *sensor
   int lifeCount = 0;
   if (start > 0 && timestamp >= start)
     lifeCount = (timestamp - start) / 60;
-  const uint16_t mgVal = (uint16_t)(glucose * 10.0f);
+  uint16_t mgVal = (uint16_t)(glucose * 10.0f);
 
   if (!hist->validPollIndex(lifeCount)) {
     // Capacity failures remain loud even for a bulk reconciliation: unlike a
@@ -1492,7 +1492,18 @@ static bool storeGlucoseStreamSample(SensorGlucoseData *hist, const char *sensor
   uint16_t preservedTemp = 0;
   const ScanData *pollsbuf = hist->getPollsData();
   const bool fillsPollGap = pollsbuf && pollsbuf[lifeCount].g <= 0;
-  if (hist->hasStreamID(lifeCount)) {
+  const ScanData *existing = pollsbuf && pollsbuf[lifeCount].id == lifeCount &&
+                                     pollsbuf[lifeCount].t > 0
+                                 ? &pollsbuf[lifeCount] : nullptr;
+  // Raw-only history must not erase Auto or attach an old Auto value to a
+  // newer timestamp. Missing lanes can be combined only for the same sample.
+  if (mgVal == 0 && rawGlucose > 0.0f && existing && existing->g > 0) {
+    if (existing->t != timestamp)
+      return false;
+    mgVal = existing->g;
+  }
+  if (hist->hasStreamID(lifeCount) ||
+      (existing && existing->t == timestamp)) {
     const RawData *rawbuf = hist->getRawPollsData();
     if (rawbuf)
       preservedRaw = rawbuf[lifeCount].raw;
@@ -1503,8 +1514,9 @@ static bool storeGlucoseStreamSample(SensorGlucoseData *hist, const char *sensor
   if (overwriteTemp && temperatureC > 0.0f)
     preservedTemp = static_cast<uint16_t>(temperatureC * 10.0f);
 
-  const float change = derivechangeforsample(hist->getPollsData(), 0, lifeCount,
-                                             mgVal, timestamp);
+  const float change = mgVal > 0
+      ? derivechangeforsample(hist->getPollsData(), 0, lifeCount, mgVal, timestamp)
+      : NAN;
   const bool stored = quiet
                           ? hist->savepollallIDsQuiet<60>(
                                 timestamp, lifeCount, mgVal, 0, change,

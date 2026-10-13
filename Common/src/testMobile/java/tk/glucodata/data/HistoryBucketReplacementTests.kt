@@ -136,4 +136,23 @@ class HistoryBucketReplacementTests {
         assertEquals(1000, collapsed.size)
         assertEquals(110f, collapsed.last().value, 0f)
     }
+
+    @Test
+    fun singleLiveAutoOnlyWriteDoesNotEraseRecordedRawInTheSameMinute() {
+        val complete = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = null)
+        val incoming = complete.copy(timestamp = 60_050_000L, value = 112f, rawValue = 0f, rate = 0f)
+        assertEquals(listOf(complete), HistoryBucketReplacement.retainBestReadings(
+            listOf(complete), listOf(incoming), 60_000L))
+    }
+
+    @Test
+    fun singleLiveAutoUpdateAtTheSameTimePreservesRecordedRaw() {
+        val complete = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = null)
+        val incoming = complete.copy(value = 112f, rawValue = 0f, rate = 0f)
+        assertEquals(listOf(complete.copy(value = 112f, rate = 0f)),
+            HistoryBucketReplacement.retainBestReadings(
+                listOf(complete), listOf(incoming), 60_000L))
+    }
 }

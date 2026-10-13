@@ -693,43 +693,13 @@ class HistoryRepository(context: Context = Applic.app) {
             source = source,
         )
         reportIfFutureTimestamp(serial, timestamp, writer = "storeReading")
-        withContext(Dispatchers.IO) {
-            try {
-                if (dao.isReadingDeleted(serial, timestamp) > 0) {
-                    Log.d(TAG, "Skipped tombstoned reading for $serial at $timestamp")
-                    return@withContext
-                }
-                database.withTransaction {
-                    val bucketStart = (timestamp / SENSOR_MINUTE_BUCKET_MS) * SENSOR_MINUTE_BUCKET_MS
-                    val existing = dao.getSensorReadingsInTimeRange(
-                        sensorSerial = serial,
-                        startTimeInclusive = bucketStart,
-                        endTimeExclusive = bucketStart + SENSOR_MINUTE_BUCKET_MS,
-                    ).firstOrNull { it.timestamp == timestamp }
-                    deleteSensorRowsInBucketRanges(
-                        sensorSerial = serial,
-                        bucketDurationMs = SENSOR_MINUTE_BUCKET_MS,
-                        bucketRanges = listOf(
-                            HistoryBucketReplacement.BucketRange(
-                                firstBucketId = timestamp / SENSOR_MINUTE_BUCKET_MS,
-                                lastBucketId = timestamp / SENSOR_MINUTE_BUCKET_MS
-                            )
-                        )
-                    )
-                    dao.insert(
-                        reading.copy(
-                            source = HistorySourceProvenance.stableSource(existing?.source, reading.source),
-                            firstStoredAt = HistorySourceProvenance.stableFirstStoredAt(
-                                existing?.firstStoredAt,
-                                reading.firstStoredAt,
-                            ),
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error storing reading", e)
-            }
-        }
+        // A live write overlaps the same minute as NFC/native/Wear backfill.
+        // Use the same lane-preserving transaction as batched history writes.
+        storeReadingsReplacingSensorBuckets(
+            sensorSerial = serial,
+            readings = listOf(reading),
+            bucketDurationMs = SENSOR_MINUTE_BUCKET_MS,
+        )
     }
 
     private fun resolveSensorViewMode(sensorSerial: String): Int {
