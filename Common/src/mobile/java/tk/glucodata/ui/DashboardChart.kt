@@ -4105,14 +4105,15 @@ fun InteractiveGlucoseChart(
                 }
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 12.dp, top = 12.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(end = 2.dp, top = 2.dp)
                         .widthIn(max = activeInsulinMaxWidth)
                         .zIndex(1.6f)
                         .clip(activeInsulinShape)
                         .clickable(enabled = summary != null || activeCarbsGrams != null) { isActiveInsulinExpanded = !isActiveInsulinExpanded },
                     shape = activeInsulinShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
@@ -4134,7 +4135,7 @@ fun InteractiveGlucoseChart(
                                     Text(
                                         text = stringResource(R.string.dashboard_eiob_full, eiobValue),
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                     )
                                 }
                             } else {
@@ -4151,7 +4152,7 @@ fun InteractiveGlucoseChart(
                                         Text(
                                             text = stringResource(R.string.dashboard_eiob_short, eiobValue),
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                             maxLines = 1
                                         )
                                     }
@@ -4177,7 +4178,7 @@ fun InteractiveGlucoseChart(
                             Text(
                                 text = doseHintLabel,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                 maxLines = if (isActiveInsulinExpanded) 2 else 1
                             )
                         } else if (remainingLabel != null && !isActiveInsulinExpanded) {
@@ -4185,14 +4186,14 @@ fun InteractiveGlucoseChart(
                                 Icon(
                                     imageVector = Icons.Default.AccessTime,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = remainingLabel,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                     maxLines = 1
                                 )
                             }
@@ -4206,7 +4207,7 @@ fun InteractiveGlucoseChart(
                                     summary.weightedActivityPercent
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                             )
                             summary.activeUntil?.let { activeUntil ->
                                 Text(
@@ -4216,14 +4217,14 @@ fun InteractiveGlucoseChart(
                                             .format(java.util.Date(activeUntil))
                                     ),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                             if (activeInsulinFromRemote) {
                                 Text(
                                     text = stringResource(R.string.journal_iob_source_remote),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                         }
@@ -4706,8 +4707,8 @@ fun InteractiveGlucoseChart(
                     transformOrigin = TransformOrigin(1f, 0f)
                 ),
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp)
+                    .align(Alignment.TopStart)
+                    .padding(top = 16.dp, start = 16.dp)
             ) {
                 Box(
                     modifier = Modifier
