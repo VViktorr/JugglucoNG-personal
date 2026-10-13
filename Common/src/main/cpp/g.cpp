@@ -1958,7 +1958,11 @@ static void appendStoredHistory(const SensorGlucoseData *hist, jlong starttime,
     if (!item->valid() || item->gettime() <= starttime)
       continue;
 
-    samples[item->gettime()] = {(jlong)item->getsputnik(), 0};
+    // Stored NFC history uses tenths of mg/dL for both lanes. Zero and
+    // invalid raw values mean unavailable; never substitute Auto for Raw.
+    const uint16_t raw = item->getraw();
+    const jlong valRaw = raw >= 380 && raw <= 5020 ? (jlong)raw : 0;
+    samples[item->gettime()] = {(jlong)item->getsputnik(), valRaw};
   }
 }
 

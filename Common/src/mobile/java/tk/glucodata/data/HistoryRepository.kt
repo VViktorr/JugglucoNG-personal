@@ -838,7 +838,12 @@ class HistoryRepository(context: Context = Applic.app) {
                             endTimeExclusive = endTimeExclusive,
                         ).forEach { existing -> existingProvenance[existing.timestamp] = existing }
                     }
-                    val readingsWithStableSources = collapsedReadings.map { incoming ->
+                    val retainedReadings = HistoryBucketReplacement.retainBestReadings(
+                        existingReadings = existingProvenance.values.toList(),
+                        incomingReadings = collapsedReadings,
+                        bucketDurationMs = bucketDurationMs,
+                    )
+                    val readingsWithStableSources = retainedReadings.map { incoming ->
                         val existing = existingProvenance[incoming.timestamp]
                         incoming.copy(
                             source = HistorySourceProvenance.stableSource(

@@ -948,51 +948,43 @@ public class SensorBluetooth {
         }
     }
 
-    private synchronized void removeDevice(String str) {
-        // Use SensorIdentity.matches() instead of strict String.equals so that
-        // disconnect/forget works regardless of which form of the serial the UI
-        // passes in: provisional ICN- alias, 11-char short tail, 16-char
-        // canonical, or 24-char vendor-padded form. Strict equality previously
-        // logged "didn't remove" whenever any of those forms didn't byte-match
-        // the live gattcallbacks SerialNumber, leaving stale gatts in the list.
-        for (int i = 0; i < gattcallbacks.size(); i++) {
-            var gatt = gattcallbacks.get(i);
-            if (callbackMatchesSensorId(gatt, str)) {
-                final String removedSerial = gatt.SerialNumber;
-                {
-                    if (doLog) {
-                        Log.i(LOG_ID, "removeDevice " + removedSerial);
+    private void removeDevice(String str) {
+        final ArrayList<SuperGattCallback> retired = new ArrayList<>();
+        try {
+            // Only retire/detach under the roster monitor. free() takes the callback
+            // monitor, whose owner can call scanStarter() or mygatts().
+            synchronized (gattcallbacks) {
+                for (int i = 0; i < gattcallbacks.size(); i++) {
+                    SuperGattCallback gatt = gattcallbacks.get(i);
+                    if (!callbackMatchesSensorId(gatt, str)) {
+                        gatt.stopHealth = false;
+                        continue;
                     }
-                    ;
+                    final String removedSerial = gatt.SerialNumber;
+                    if (doLog) Log.i(LOG_ID, "removeDevice " + removedSerial);
+                    gatt.retire();
+                    gattcallbacks.remove(i);
+                    retired.add(gatt);
+                    Natives.setmaxsensors(gattcallbacks.size());
+                    removePersistedManagedSensor(str);
+                    if (removedSerial != null && !removedSerial.equals(str)) {
+                        removePersistedManagedSensor(removedSerial);
+                    }
+                    rehomeCurrentSensorAfterRemoval(str);
+                    if (removedSerial != null && !removedSerial.equals(str)) {
+                        rehomeCurrentSensorAfterRemoval(removedSerial);
+                    }
+                    for (; i < gattcallbacks.size(); ++i) {
+                        gattcallbacks.get(i).stopHealth = false;
+                    }
+                    return;
                 }
-                ;
-                gatt.free();
-                gattcallbacks.remove(i);
-                rehomeCurrentSensorAfterRemoval(str);
-                if (removedSerial != null && !removedSerial.equals(str)) {
-                    rehomeCurrentSensorAfterRemoval(removedSerial);
-                }
-                Natives.setmaxsensors(gattcallbacks.size());
-                removePersistedManagedSensor(str);
-                if (removedSerial != null && !removedSerial.equals(str)) {
-                    removePersistedManagedSensor(removedSerial);
-                }
-                for (; i < gattcallbacks.size(); ++i) {
-                    gatt = gattcallbacks.get(i);
-                    gatt.stopHealth = false;
-                }
-                return;
-            } else {
-                gatt.stopHealth = false;
+                if (doLog) Log.i(LOG_ID, "removeDevice: didn't remove" + str);
             }
+        } finally {
+            // Do not hold either this or gattcallbacks while waiting for callbacks.
+            freeRetiredCallbacks(retired);
         }
-        {
-            if (doLog) {
-                Log.i(LOG_ID, "removeDevice: didn't remove" + str);
-            }
-            ;
-        }
-        ;
     }
 
     private static void removePersistedManagedSensor(String serial) {
@@ -1018,18 +1010,20 @@ public class SensorBluetooth {
     }
 
     private void removeDevices() {
-        {
-            if (doLog) {
-                Log.i(LOG_ID, "removeDevices()");
+        final ArrayList<SuperGattCallback> retired = new ArrayList<>();
+        try {
+            synchronized (gattcallbacks) {
+                if (doLog) Log.i(LOG_ID, "removeDevices()");
+                for (SuperGattCallback callback : gattcallbacks) {
+                    callback.retire();
+                    retired.add(callback);
+                }
+                gattcallbacks.clear();
+                Natives.setmaxsensors(0);
             }
-            ;
+        } finally {
+            freeRetiredCallbacks(retired);
         }
-        ;
-        for (int i = 0; i < gattcallbacks.size(); i++) {
-            gattcallbacks.get(i).free();
-        }
-        gattcallbacks.clear();
-        Natives.setmaxsensors(0);
     }
 
     private void destruct() {
