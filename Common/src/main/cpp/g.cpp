@@ -2011,6 +2011,25 @@ static void appendPollHistory(const SensorGlucoseData *hist, jlong starttime,
   }
 }
 
+static void appendNfcRawHistory(const SensorGlucoseData *hist, jlong starttime,
+                                HistorySamples &samples) {
+  const auto rawHistory = hist->getNfcRawHistory();
+  if (rawHistory.empty()) return;
+  std::map<int32_t, uint32_t> pollTimes;
+  for (const auto &poll : hist->getPolldata()) {
+    if (poll.id >= 0 && poll.t > 1598911200u && poll.t < 2145909600u)
+      pollTimes.emplace(poll.id, poll.t);
+  }
+  for (const auto &row : rawHistory) {
+    const auto found = pollTimes.find(row.id);
+    const jlong time = found == pollTimes.end() ? row.time : found->second;
+    if (time <= starttime) continue;
+    auto &value = samples[time];
+    // Never manufacture Auto from Raw, and never overwrite a real BLE raw value.
+    if (value.second <= 0) value.second = row.rawMgdlTimes10;
+  }
+}
+
 static jlongArray historySamplesToJava(JNIEnv *env,
                                        const HistorySamples &samples) {
   if (samples.empty())
@@ -2045,6 +2064,7 @@ fromjava(getGlucoseHistory)(JNIEnv *env, jclass cl, jlong starttime) {
   appendStoredHistory(hist, starttime, samples);
   appendScanHistory(hist, starttime, samples);
   appendPollHistory(hist, starttime, samples);
+  appendNfcRawHistory(hist, starttime, samples);
   return historySamplesToJava(env, samples);
 }
 
@@ -2079,6 +2099,7 @@ extern "C" JNIEXPORT jlongArray JNICALL fromjava(getGlucoseHistoryForSensor)(
   appendStoredHistory(hist, starttime, samples);
   appendScanHistory(hist, starttime, samples);
   appendPollHistory(hist, starttime, samples);
+  appendNfcRawHistory(hist, starttime, samples);
   return historySamplesToJava(env, samples);
 }
 

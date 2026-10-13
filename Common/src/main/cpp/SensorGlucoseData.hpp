@@ -21,6 +21,7 @@
 // #ifndef GLUCOSEHISTORY_H
 // #define GLUCOSEHISTORY_H
 #pragma once
+#include "NfcRawHistory.hpp"
 // #include <filesystem>
 
 #include <errno.h>
@@ -236,6 +237,14 @@ class SensorGlucoseData {
   string sensordir;
   // inline static  const string basedir{FILEDIR};
 public:
+  NfcRawHistory::Result saveNfcRawHistory(const std::vector<NfcRawSample> &rows) const {
+    return NfcRawHistory(sensordir + "/nfc-raw-history.dat").append(rows);
+  }
+  std::vector<NfcRawSample> getNfcRawHistory() const {
+    if (!isLibre2()) return {};
+    return NfcRawHistory(sensordir + "/nfc-raw-history.dat").snapshot();
+  }
+
   struct updatestate {
     uint32_t scanstart;
     uint32_t histstart;

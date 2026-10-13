@@ -149,44 +149,46 @@ extern int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlu
    with a real algorithm value, and a raw-only poll at the same second would displace it
    in getGlucoseHistory(). */
 int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) {
-	if(!nfcptr)
-		return 0;
-	int added=0,skipped=0;
-	for(int i=0;i<trend::num-1;i++) {
-		const uint16_t raw=nfcptr->gettrendglucose(i);
-		if(!raw)	/*Ring buffer not filled yet.*/
-			continue;
-		/*Same plausibility window Glucose::valid() applies to this unit.*/
-		if(raw<=380||raw>=5020) {
-			LOGGER("GLU: scantrend implausible raw=%hu\n",raw);
-			continue;
-			}
-		const int minutesback=trend::num-1-i;
-		const int id=nuid-minutesback;
-		if(id<0)
-			continue;
-		if(!save.validPollIndex(save.pollcount())) {
-			LOGGER("GLU: scantrend poll store full at %d\n",save.pollcount());
-			break;
-			}
-		const time_t was=nutime-minutesback*60;
-		/*rawpolls holds mmol/L x 10, see compactRawMgdl() in g.cpp.*/
-		const int rawpoll=(int)lround(raw/convfactordL);
-		/*savepoll() refuses anything at or before the newest stored id, so minutes the
-		  BLE stream already delivered keep their algorithm value untouched.*/
-		if(save.savepoll(was,id,0,0,NAN,rawpoll)) {
-			++added;
-			LOGGER("scantrend add %d %.1f raw %s",id,raw/convfactor,ctime(&was));
-			}
-		else
-			++skipped;
-		}
-	LOGGER("saveScanTrend added=%d already known=%d\n",added,skipped);
-	return added;
-	}
+    if(!nfcptr) return 0;
+    std::vector<NfcRawSample> rows;
+    rows.reserve(trend::num-1);
+    int invalid=0;
+    const auto polls=save.getPolldata();
+    for(int i=0;i<trend::num-1;i++) {
+        const uint16_t raw=nfcptr->gettrendglucose(i);
+        if(!raw) continue;
+        const int minutesback=trend::num-1-i;
+        const int64_t wideId=static_cast<int64_t>(nuid)-minutesback;
+        if(wideId<0||wideId>=maxminutes) { ++invalid; continue; }
+        const int id=static_cast<int>(wideId);
+        int64_t timestamp=static_cast<int64_t>(nutime)-minutesback*60;
+        // NFC scans and BLE receipt times can differ by most of a minute. A nearby
+        // measured BLE sample anchors this sensor-life minute without moving its cursor.
+        int closest=31;
+        for(const auto &poll:polls) {
+            if(!poll.valid(0)) continue;
+            const int64_t distance=std::abs(static_cast<int64_t>(id)-poll.id);
+            if(distance<closest) {
+                closest=static_cast<int>(distance);
+                timestamp=static_cast<int64_t>(poll.t)+(static_cast<int64_t>(id)-poll.id)*60;
+            }
+        }
+        if(id<0||id>=maxminutes||timestamp<=1598911200LL||timestamp>=2145909600LL) {
+            ++invalid;
+            continue;
+        }
+        const NfcRawSample row{static_cast<uint32_t>(timestamp),id,raw};
+        if(!NfcRawHistory::valid(row)) { ++invalid; continue; }
+        rows.push_back(row);
+    }
+    // Do not use savepoll(): its duplicate guard protects the live BLE/parser cursor.
+    // This separate file is keyed by sensor-life minute, not by the last BLE id.
+    const auto result=save.saveNfcRawHistory(rows);
+    LOGGER("NFC_DIAG trend-history added=%zu known=%zu invalid=%d persisted=%d\n",
+           result.added,result.known,invalid,result.persisted?1:0);
+    return static_cast<int>(result.added);
+}
 
-extern std::vector<int> usedsensors;
-extern void setusedsensors();
 void setstartedwithStreamhistory() {
 	if(SensorGlucoseData *sens=sensors->getSensorData()) {
 		if(sens->isLibre2()&&!sens->getinfo()->startedwithStreamhistory) {
