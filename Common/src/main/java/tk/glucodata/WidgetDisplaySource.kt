@@ -112,10 +112,16 @@ object WidgetDisplaySource {
         historyPoints: List<GlucosePoint>,
         sensorSerial: String? = current?.sensorId
     ): CurrentDisplaySource.Snapshot? {
+        val now = System.currentTimeMillis()
         if (current != null) {
-            return current
+            return current.takeIf {
+                it.timeMillis > 0L && kotlin.math.abs(now - it.timeMillis) <= Notify.glucosetimeout
+            }
         }
         val targetTimeMillis = historyPoints.lastOrNull()?.timestamp ?: return null
+        // Keep old points on the chart without promoting them to today's number.
+        if (targetTimeMillis <= 0L ||
+                kotlin.math.abs(now - targetTimeMillis) > Notify.glucosetimeout) return null
         val viewMode = resolveViewMode(sensorSerial)
         return CurrentDisplaySource.resolveFromLive(
             liveValueText = null,
@@ -129,7 +135,9 @@ object WidgetDisplaySource {
             recentPoints = historyPoints,
             viewMode = viewMode,
             isMmol = Applic.unit == 1
-        )
+        )?.takeIf {
+            it.timeMillis > 0L && kotlin.math.abs(now - it.timeMillis) <= Notify.glucosetimeout
+        }
     }
 
     @JvmStatic
@@ -150,3 +158,4 @@ object WidgetDisplaySource {
         return NightscoutCalibration.hasCalibrationForViewMode(sensorSerial, viewMode)
     }
 }
+

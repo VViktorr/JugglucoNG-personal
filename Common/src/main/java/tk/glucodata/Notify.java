@@ -4853,13 +4853,10 @@ public class Notify {
     private Notification makeStaleReadingNotification(CurrentDisplaySource.Snapshot stale) {
         final long actualMillis = stale != null ? stale.getTimeMillis() : 0L;
         final String status = staleMessage(actualMillis);
-        final CharSequence retainedValue = stale != null && stale.getFullFormatted() != null
-                ? stale.getFullFormatted()
-                : (stale != null ? stale.getPrimaryStr() : "");
         final Notification.Builder builder = mkbuilder(GLUCOSENOTIFICATION);
         builder.setSmallIcon(R.drawable.novalue).setOnlyAlertOnce(true)
                 .setContentTitle(status)
-                .setContentText(retainedValue != null ? retainedValue.toString() : "")
+                .setContentText("")
                 .setOngoing(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setVisibility(VISIBILITY_PUBLIC);
