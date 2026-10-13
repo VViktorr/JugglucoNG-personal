@@ -4710,6 +4710,13 @@ public class Notify {
      * }
      */
     void oldnotification(long time) {
+        if (!isWearable) {
+            // A legacy loss timer can arrive after a fresh BLE/NFC value. Resolve the
+            // displayed reading through the normal freshness/publication gate.
+            if (doLog) Log.i(LOG_ID, "oldnotification: reconcile ongoing reading legacyTime=" + time);
+            scheduleVisualNotificationRefresh();
+            return;
+        }
         final String tformat = timef.format(time);
         String message = Applic.getContext().getString(R.string.nonewvalue) + tformat;
         placelargenotification(R.drawable.novalue, message, GLUCOSENOTIFICATION, true);
