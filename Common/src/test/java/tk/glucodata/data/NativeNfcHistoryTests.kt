@@ -23,7 +23,7 @@ class NativeNfcHistoryTests {
     fun nfcFillsMissingRawHistoryWithoutChangingTheBleCursorOrAlgorithmValues() {
         val saveSource = repositoryFile("Common/src/main/cpp/share/savehistory.cpp").readText()
         val saveStart = saveSource.indexOf("\nint saveScanTrend(")
-        val saveEnd = saveSource.indexOf("\nvoid setstartedwithStreamhistory()", saveStart)
+        val saveEnd = saveSource.indexOf("\nextern bool addStreamHistory(", saveStart)
         assertTrue("Locate the production NFC trend save", saveStart >= 0 && saveEnd > saveStart)
         val nativeSource = repositoryFile("Common/src/main/cpp/g.cpp").readText()
         val exportStart = nativeSource.indexOf("static bool rawOnlyPollValid(")

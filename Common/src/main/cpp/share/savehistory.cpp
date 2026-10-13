@@ -189,6 +189,9 @@ int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseDat
     return static_cast<int>(result.added);
 }
 
+extern std::vector<int> usedsensors;
+extern void setusedsensors();
+
 void setstartedwithStreamhistory() {
 	if(SensorGlucoseData *sens=sensors->getSensorData()) {
 		if(sens->isLibre2()&&!sens->getinfo()->startedwithStreamhistory) {

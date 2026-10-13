@@ -27,6 +27,8 @@ struct SensorGlucoseData {
     int cursorWrites = 0;
     double pollinterval = 60.220;
     bool libre2 = true;
+    struct Info { int startedwithStreamhistory = 0; int endhistory = 0; } info {};
+    Info *getinfo() { return &info; }
     bool isLibre2() const { return libre2; }
     const std::vector<ScanData> &getPolldata() const { return polls; }
     uint16_t getRawForPoll(const ScanData *poll) const { return poll->raw; }
@@ -41,8 +43,27 @@ struct SensorGlucoseData {
 static double calibrateNow(const SensorGlucoseData *, const ScanData &) { return NAN; }
 #define LOGGER(...) ((void)0)
 
+struct Sensors {
+    std::vector<SensorGlucoseData *> active;
+    SensorGlucoseData *getSensorData() { return active.empty() ? nullptr : active.front(); }
+    SensorGlucoseData *getSensorData(int index) { return active.at(index); }
+};
+struct Settings {
+    struct Data { bool streamHistLib = false; } value;
+    Data *data() { return &value; }
+};
+static Sensors *sensors;
+static Settings *settings;
+
 // PRODUCTION_NFC_SAVE
 // PRODUCTION_EXPORTERS
+
+// Definitions follow the production consumers: their extern declarations must exist.
+std::vector<int> usedsensors;
+void setusedsensors() {
+    usedsensors.clear();
+    for (size_t i = 0; i < sensors->active.size(); ++i) usedsensors.push_back(i);
+}
 
 int main() {
     char directory[] = "juggluco-nfc-test-XXXXXX";
@@ -60,6 +81,19 @@ int main() {
         {latest, 9988, 112, 0}
     }};
     const auto before = sensor.polls;
+    SensorGlucoseData lifecycleSecond {std::string(directory) + "/lifecycle.dat", {}};
+    sensor.info.endhistory = 7;
+    lifecycleSecond.info.endhistory = 11;
+    Sensors lifecycleSensors {{&sensor, &lifecycleSecond}};
+    Settings lifecycleSettings;
+    sensors = &lifecycleSensors;
+    settings = &lifecycleSettings;
+    setstartedwithStreamhistory();
+    assert(settings->data()->streamHistLib);
+    assert(sensor.info.startedwithStreamhistory == 7 && lifecycleSecond.info.startedwithStreamhistory == 11);
+    setendedwithStreamhistory();
+    assert(!settings->data()->streamHistLib);
+    assert(sensor.info.startedwithStreamhistory == 0 && lifecycleSecond.info.startedwithStreamhistory == 0);
     nfcdata scan;
     std::fill(std::begin(scan.raw), std::end(scan.raw), 1000);
     assert(saveScanTrend(&scan, 1791875359, 9988, sensor) == 15);
