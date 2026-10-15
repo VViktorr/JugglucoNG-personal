@@ -3145,4 +3145,7 @@
     <string name="wear_complication_mixed_description">Komplikacja tekstowa lub obrazkowa, zależnie od pola na tarczy. Układ tekstu ustala tarcza zegarka.</string>
     <string name="wear_complication_image_description">Komplikacja obrazkowa. Elementy są rysowane przez aplikację.</string>
     <string name="wear_complication_value_arrow_description">Wariant obrazkowy: strzałka nad wartością glukozy. Wariant tekstowy: wartość i strzałka w tekście; rozmieszczenie ustala tarcza zegarka.</string>
+    <string name="alert_sound_volume">Głośność dźwięku alarmu</string>
+    <string name="voice_chime_title">Sygnał przed glukozą</string>
+    <string name="voice_chime_desc">Najpierw krótki dźwięk, aby zdążyć się wsłuchać w wartość</string>
 </resources>

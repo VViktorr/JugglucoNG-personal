@@ -248,6 +248,7 @@ internal fun shouldEnableApplyToAll(
 
 internal fun AlertConfig.sameMasterDraft(other: AlertConfig): Boolean {
     return soundEnabled == other.soundEnabled &&
+        soundVolumePercent == other.soundVolumePercent &&
         vibrationEnabled == other.vibrationEnabled &&
         flashEnabled == other.flashEnabled &&
         deliveryMode == other.deliveryMode &&
