@@ -28,6 +28,24 @@ class CustomGlucoseNotificationTests {
         CustomGlucoseNotification.values(app, expanded, "5,7", 0xffeeeeee.toInt(), 0xffcccccc.toInt(),
             0xffaaaaaa.toInt(), peers, rate, 0xffff0000.toInt(), true, scale, weight, systemFont, false, enabled, 1f, "", true)
 
+    @Test fun statusWrapsInCollapsedAndExpandedViewsWithoutEllipsis() {
+        val status = "Brak nowej wartości glukozy od godziny 08:24"
+        val builder = Notification.Builder(app, "status-test")
+        CustomGlucoseNotification.applyStatus(builder, app, status)
+        val notification = builder.build()
+        for (views in listOf(notification.contentView, notification.bigContentView)) {
+            val text = views.apply(app, null).findViewById<TextView>(R.id.notification_status)
+            val width = (160 * app.resources.displayMetrics.density).toInt()
+            text.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            text.layout(0, 0, text.measuredWidth, text.measuredHeight)
+            assertEquals(status, text.text.toString())
+            assertTrue("Long status must wrap", text.lineCount > 1)
+            assertTrue("All status lines must fit", text.lineCount <= text.maxLines)
+            assertNull(text.ellipsize)
+        }
+    }
+
     @Test fun nativeReadoutSurvivesParcelAndRestrictedHostWithoutBitmapValues() {
         val parcel = Parcel.obtain()
         try {
