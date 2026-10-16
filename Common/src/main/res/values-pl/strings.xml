@@ -3168,4 +3168,6 @@
     <string name="switchtowatch">Przełącz</string>
     <string name="widget_text_size_value">Bazowy rozmiar tekstu: %1$d%%</string>
     <string name="delete_confirm">Usuń</string>
+    <string name="alert_profile_label">Profil alarmu</string>
+    <string name="alert_delivery_method_label">Sposób powiadamiania</string>
 </resources>

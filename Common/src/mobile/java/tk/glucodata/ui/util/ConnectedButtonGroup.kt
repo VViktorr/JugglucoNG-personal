@@ -1,6 +1,8 @@
 package tk.glucodata.ui.util
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -72,6 +74,9 @@ fun <T> ConnectedButtonGroup(
     selectedContainerColorFor: ((T) -> Color)? = null,
     selectedContentColorFor: ((T) -> Color)? = null,
     iconTint: ((T, Boolean) -> Color)? = null,
+    selectedBorder: BorderStroke? = null,
+    unselectedBorder: BorderStroke? = null,
+    pillShapeForAll: Boolean = false,
 ) {
     Row(
         modifier = modifier
@@ -107,6 +112,11 @@ fun <T> ConnectedButtonGroup(
                     .weight(1f)
                     .height(itemHeight),
                 shapes = when {
+                    pillShapeForAll -> ToggleButtonDefaults.shapesFor(itemHeight).copy(
+                        shape = RoundedCornerShape(50),
+                        pressedShape = RoundedCornerShape(50),
+                        checkedShape = RoundedCornerShape(50)
+                    )
                     options.size == 1 -> ToggleButtonDefaults.shapesFor(itemHeight)
                     index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                     index == options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
@@ -120,6 +130,7 @@ fun <T> ConnectedButtonGroup(
                     checkedContentColor = contentColor
                 ),
                 elevation = null,
+                border = if (isSelected) selectedBorder else unselectedBorder,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 var availableWidthPx by remember(option) { mutableIntStateOf(0) }
@@ -177,13 +188,14 @@ fun <T> ConnectedButtonGroup(
                         Text(
                             text = labelText(option),
                             style = labelTextStyle,
+                            color = contentColor,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
                     } else if (!iconOnly) {
-                        androidx.compose.material3.ProvideTextStyle(value = labelTextStyle) {
+                        androidx.compose.material3.ProvideTextStyle(value = labelTextStyle.copy(color = contentColor)) {
                             label(option)
                         }
                     }

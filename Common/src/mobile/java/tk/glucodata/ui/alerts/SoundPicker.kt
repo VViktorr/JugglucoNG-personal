@@ -315,7 +315,7 @@ fun SoundPicker(
                 stopSound()
                 onDismiss()
             },
-            shapes = ButtonDefaults.shapes(),
+            shapes = alertButtonShapes(),
             contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
