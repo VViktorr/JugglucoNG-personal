@@ -1,0 +1,85 @@
+name: Personal Wear OS APK
+run-name: Wear OS APK from ${{ github.ref_name }} at ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main2]
+    paths: ['.github/workflows/personal-wear-apk.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-wear-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Wear OS release APK (ARM32 + ARM64)
+    if: github.repository == 'VViktorr/JugglucoNG-personal'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android toolchain
+        run: scripts/dist/install-sdk.sh
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Restore and verify pinned sensor libraries
+        run: scripts/restore-build-inputs.sh
+      # Personal build uses this repository's existing fallback signing key.
+      # It does not use or claim the upstream production signing identity.
+      - name: Assemble Wear OS release
+        run: >-
+          ./gradlew :Common:assembleWearRelease
+          -PjugglucoAbi=arm64-v8a,armeabi-v7a
+          --no-daemon --no-configuration-cache --max-workers=1 --stacktrace
+      - name: Verify and stage APK
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import subprocess
+          import zipfile
+
+          apks = list(Path('Common/build/outputs/apk/wear/release').glob('*.apk'))
+          if len(apks) != 1:
+              raise SystemExit(f'Expected one Wear OS release APK, got {len(apks)}')
+          apk = apks[0]
+          signer = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0/apksigner'
+          subprocess.run([str(signer), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
+          inventory = json.loads(Path('scripts/dist/build-inputs.json').read_text())
+          with zipfile.ZipFile(apk) as archive:
+              for spec in inventory['files']:
+                  relative = spec['path'].split('/jniLibs/')[1]
+                  if relative.split('/')[0] in {'arm64-v8a', 'armeabi-v7a'}:
+                      payload = archive.read('lib/' + relative)
+                      if hashlib.sha256(payload).hexdigest() != spec['sha256']:
+                          raise SystemExit(f'Packaged sensor library mismatch: {relative}')
+          out = Path('build/personal-wear-apk')
+          out.mkdir(parents=True, exist_ok=True)
+          staged = out / f'JugglucoNG-main2-wear-arm-{os.environ["GITHUB_SHA"][:8]}.apk'
+          shutil.copy2(apk, staged)
+          digest = hashlib.sha256(staged.read_bytes()).hexdigest()
+          (out / 'SHA256SUMS.txt').write_text(f'{digest}  {staged.name}\n')
+          (out / 'build-info.json').write_text(json.dumps({
+              'sha': os.environ['GITHUB_SHA'], 'branch': os.environ['GITHUB_REF_NAME'],
+              'abis': ['arm64-v8a', 'armeabi-v7a'], 'variant': 'wearRelease',
+              'signing': 'repository fallback key', 'sha256': digest
+          }, indent=2) + '\n')
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: JugglucoNG-main2-wear-arm-${{ github.sha }}
+          path: build/personal-wear-apk/
+          if-no-files-found: error
+          retention-days: 14
