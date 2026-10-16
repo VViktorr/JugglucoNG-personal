@@ -58,6 +58,22 @@ object WearSync2 {
     private val calibrationWireRevision = AtomicLong(0L)
     private val lastDeepServeMs = AtomicLong(0L)
     private val removalTombstones = ConcurrentHashMap<String, Long>()
+    // Accessed only on the sync executor; history replay must not move current values backwards.
+    private val lastExchangeTimes = HashMap<String, Long>()
+
+    // Coalesce the UI work of a backfill only on the watch. Persistence still processes
+    // every chunk; a completed transfer forces the newest state through immediately.
+    private val syncedUiRefresh by lazy {
+        LeadingTrailingRefresh(
+            intervalMs = 1_000L,
+            clock = android.os.SystemClock::elapsedRealtime,
+            schedule = { delay, task ->
+                val future = Applic.scheduler.schedule({ task() }, delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+                LeadingTrailingRefresh.Cancellation { future.cancel(false) }
+            },
+            action = { UiRefreshBus.requestDataRefresh() },
+        )
+    }
 
     // ---- phone side ----
 
@@ -130,6 +146,7 @@ object WearSync2 {
                 // can no longer be related back to SIBI:P225043JMV safely.
                 val removedWasCurrent = SensorIdentity.matches(SensorIdentity.resolveMainSensor(), serial)
                 removalTombstones[removalKey(serial)] = System.currentTimeMillis()
+                lastExchangeTimes.remove(removalKey(serial))
                 tk.glucodata.drivers.ManagedSensorIdentityRegistry.removePersistedSensor(Applic.app, serial)
                 // removePersistedSensor finishes the managed driver's native
                 // mirror. Remove any live callback as well, then reconcile so
@@ -266,7 +283,9 @@ object WearSync2 {
         val points = runCatching {
             NotificationHistorySource.getRawHistory(fromSec * 1000L, serial)
         }.getOrDefault(emptyList())
-            .filter { it.timestamp > 0L && GlucoseValuePlausibility.isPlausibleMgdl(it.value) }
+            .filter {
+                it.timestamp > 0L && WearHistoryLanes.hasValue(it.value, it.rawValue)
+            }
             .sortedBy { it.timestamp }
         if (points.isEmpty()) return
         // Preserve the source precision on the wire. The earlier display-unit
@@ -277,10 +296,8 @@ object WearSync2 {
         val triples = LongArray(points.size * 3)
         points.forEachIndexed { i, point ->
             triples[i * 3] = point.timestamp / 1000L
-            triples[i * 3 + 1] = wireValue(point.value)
-            triples[i * 3 + 2] = point.rawValue
-                .takeIf { GlucoseValuePlausibility.isPlausibleMgdl(it) }
-                ?.let { wireValue(it) } ?: 0L
+            triples[i * 3 + 1] = wireValue(WearHistoryLanes.validMgdl(point.value))
+            triples[i * 3 + 2] = wireValue(WearHistoryLanes.validMgdl(point.rawValue))
         }
         val total = points.size
         var index = 0
@@ -333,7 +350,6 @@ object WearSync2 {
         }
         return MessageSender.sendSyncMessageAwait(WearMessagePath.SYNC2_CHUNK, buf.array())
     }
-
 
     /** Canonical storage name, so an alias cannot create a parallel record. */
     private fun existingSensorNameFor(serial: String): String? =
@@ -418,7 +434,8 @@ object WearSync2 {
             runCatching {
                 val nowSec = System.currentTimeMillis() / 1000L
                 val horizonStart = nowSec - BACKFILL_HORIZON_SEC
-                val lastSec = runCatching { Natives.lastglucosetime() }.getOrDefault(0L)
+                // JNI reports milliseconds; the sync2 request carries epoch seconds.
+                val lastSec = runCatching { Natives.lastglucosetime() / 1000L }.getOrDefault(0L)
                 val fromSec = if (deep || lastSec <= 0L) {
                     horizonStart
                 } else {
@@ -448,11 +465,18 @@ object WearSync2 {
                 if (!Applic.isWearable && !wearCompanionEnabled()) {
                     return@runCatching
                 }
-                val buf = ByteBuffer.wrap(data ?: return@execute)
+                val payload = data ?: return@execute
+                if (payload.size < 5) return@execute
+                val buf = ByteBuffer.wrap(payload)
                 if (buf.get().toInt() != VERSION) return@execute
                 val final = buf.get().toInt() and 1 != 0
                 val count = buf.short.toInt() and 0xFFFF
                 val serialLen = buf.get().toInt() and 0xFF
+                // Validate the entire frame before creating a native sensor shell.
+                if (buf.remaining() != serialLen + count * 16) {
+                    Log.w(LOG_ID, "ignored malformed sync2 chunk: count=$count serialLen=$serialLen")
+                    return@execute
+                }
                 val serialBytes = ByteArray(serialLen); buf.get(serialBytes)
                 val wireSerial = String(serialBytes, Charsets.UTF_8)
                 if (wireSerial.isEmpty() || count <= 0) return@execute
@@ -488,7 +512,9 @@ object WearSync2 {
                     val t = buf.long
                     val auto10 = buf.int
                     val raw10 = buf.int
-                    if (t <= 0L || auto10 <= 0) continue
+                    val autoMgdl = WearHistoryLanes.validMgdl(auto10 / 10f)
+                    val rawMgdl = WearHistoryLanes.validMgdl(raw10 / 10f)
+                    if (t <= 0L || (autoMgdl <= 0f && rawMgdl <= 0f)) continue
                     if (earliest == 0L) {
                         earliest = t
                         // Native scale contract (g.cpp addGlucoseStreamInternal):
@@ -498,13 +524,15 @@ object WearSync2 {
                             Natives.ensureSensorShell(serial, (t - 3600L).coerceAtLeast(1L))
                         }
                     }
-                    val rawMgdl = if (raw10 > 0) raw10 / 10f else 0f
                     nativeSecs[written] = t
-                    nativeValues[written] = auto10 / 100f
+                    nativeValues[written] = autoMgdl / 10f
                     stamps[written] = t * 1000L
-                    values[written] = auto10 / 10f
+                    values[written] = autoMgdl
                     raws[written] = rawMgdl
                     written++
+                }
+                if (written > 0 && !mirrorNative && doLog) {
+                    Log.i(LOG_ID, "skipping native mirror for Libre2 on phone: serial=$serial written=$written")
                 }
                 if (written > 0 && mirrorNative) {
                     // One JNI call for the chunk. Per reading, the native side
@@ -530,7 +558,7 @@ object WearSync2 {
                         values.copyOf(written),
                         raws.copyOf(written),
                     )
-                    val newest = written - 1
+                    val newest = (0 until written).maxByOrNull { stamps[it] } ?: return@runCatching
                     HistorySyncAccess.storeCurrentReadingAsync(
                         stamps[newest],
                         values[newest],
@@ -553,7 +581,8 @@ object WearSync2 {
                     // still gets off a dead sensor after a swap ("No data"
                     // with fresh chunks landing in the new one).
                     WearSensorSelectionSync.alignCurrentSensor(fallback = serial)
-                    UiRefreshBus.requestDataRefresh()
+                    if (Applic.isWearable) syncedUiRefresh.request(force = final)
+                    else UiRefreshBus.requestDataRefresh()
                 }
                 if (doLog) Log.i(LOG_ID, "ingested $written/$count triples for $serial final=$final")
             }.onFailure { Log.stack(LOG_ID, "onChunk", it) }
@@ -581,6 +610,14 @@ object WearSync2 {
     ) {
         if (Applic.isWearable || timestampMs <= 0L || !valueMgdl.isFinite() || valueMgdl <= 0f) return
         runCatching {
+            val mainSensor = SensorIdentity.resolveLiveMainSensor(serial)
+            if (!mainSensor.isNullOrBlank() && !SensorIdentity.matches(serial, mainSensor)) {
+                return@runCatching
+            }
+            val key = removalKey(serial)
+            if (!RealtimeReadingPolicy.shouldDispatch(timestampMs, lastExchangeTimes[key] ?: 0L, 0L)) {
+                return@runCatching
+            }
             val isMmol = Applic.unit == 1
             val displayValue =
                 if (isMmol) (valueMgdl / MGDL_PER_MMOL).toFloat() else valueMgdl
@@ -595,8 +632,8 @@ object WearSync2 {
             }.getOrDefault(Float.NaN).takeIf { it.isFinite() } ?: 0f
             val primaryText = String.format(Applic.usedlocale, Notify.pureglucoseformat, displayValue)
             val sensorStartMs = runCatching {
-                val ptr = Natives.getdataptr(serial)
-                if (ptr != 0L) Natives.getSensorStartmsec(ptr) else 0L
+                // Read metadata without allocating an owning native stream wrapper.
+                Natives.getSensorUiSnapshot(serial)?.getOrNull(2) ?: 0L
             }.getOrDefault(0L)
             SuperGattCallback.emitExchangeOutputs(
                 serial,
@@ -613,6 +650,7 @@ object WearSync2 {
                 // Came from the peer; sending it straight back would echo.
                 false,
             )
+            lastExchangeTimes[key] = maxOf(timestampMs, lastExchangeTimes[key] ?: 0L)
         }.onFailure { Log.stack(LOG_ID, "emitExchangeOutputsForSyncedReading", it) }
     }
 

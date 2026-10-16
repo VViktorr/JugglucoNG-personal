@@ -26,6 +26,11 @@ import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
+import android.os.PowerManager;
+import android.os.SystemClock;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.View;
@@ -47,11 +52,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import androidx.annotation.Keep;
 import tk.glucodata.settings.LibreNumbers;
@@ -94,6 +101,190 @@ import static tk.glucodata.util.getlocale;
 
 public class Libreview  {
    private static final String LOG_ID="Libreview";
+   private static final String LIBRE_COUNTRY_PREFS = "libreview_country_state";
+   private static final String LIBRE_COUNTRY_ACCOUNT_KEY = "account_country_applied_id";
+   private static final String LIBRE_FORCE_LIBRE2_DEVICE_KEY = "force_libre2_device_registration_once";
+   private static final AtomicLong LIBREVIEW_REQUEST_SEQ = new AtomicLong();
+
+   private static String libreViewNetworkState() {
+      try {
+         final Context context = Applic.app;
+         if (context == null)
+            return "context=null";
+         final ConnectivityManager cm =
+               (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+         if (cm == null)
+            return "connectivity=null";
+         final Network network = cm.getActiveNetwork();
+         final NetworkCapabilities caps = network == null ? null : cm.getNetworkCapabilities(network);
+         final StringBuilder out = new StringBuilder(160);
+         out.append("active=").append(network != null);
+         out.append(" metered=").append(cm.isActiveNetworkMetered());
+         if (caps == null) {
+            out.append(" caps=null");
+         } else {
+            out.append(" internet=").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET));
+            out.append(" validated=").append(caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED));
+            out.append(" wifi=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
+            out.append(" cellular=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR));
+            out.append(" ethernet=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+            out.append(" vpn=").append(caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN));
+         }
+         final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+         if (pm != null) {
+            out.append(" powerSave=").append(pm.isPowerSaveMode());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+               out.append(" deviceIdle=").append(pm.isDeviceIdleMode());
+            out.append(" interactive=").append(pm.isInteractive());
+         }
+         return out.toString();
+      } catch (Throwable th) {
+         return "network-state-error=" + th.getClass().getSimpleName() + ":" + String.valueOf(th.getMessage());
+      }
+   }
+
+   private static String libreViewDnsState(String host) {
+      if (host == null || host.isEmpty())
+         return "dns=host-empty";
+      try {
+         final long start = SystemClock.elapsedRealtime();
+         final InetAddress[] addresses = InetAddress.getAllByName(host);
+         final long took = SystemClock.elapsedRealtime() - start;
+         final StringBuilder out = new StringBuilder("dns=");
+         for (int i = 0; i < addresses.length; i++) {
+            if (i > 0) out.append(',');
+            out.append(addresses[i].getHostAddress());
+         }
+         out.append(" dnsMs=").append(took);
+         return out.toString();
+      } catch (Throwable th) {
+         return "dnsError=" + th.getClass().getSimpleName() + ":" + String.valueOf(th.getMessage());
+      }
+   }
+
+   private static void logLibreViewFailure(
+         long requestId,
+         String host,
+         String stage,
+         long startedElapsed,
+         Throwable th
+   ) {
+      final long elapsed = SystemClock.elapsedRealtime() - startedElapsed;
+      final String error = th == null
+            ? "none"
+            : th.getClass().getName() + ":" + String.valueOf(th.getMessage());
+      Log.e(LOG_ID,
+            "LIBREVIEW_NET request=" + requestId +
+            " stage=" + stage +
+            " elapsedMs=" + elapsed +
+            " host=" + host +
+            " error=" + error +
+            " " + libreViewNetworkState() +
+            " " + libreViewDnsState(host));
+   }
+
+
+   private static void applyLibreCountryFromAccountOnce(JSONObject result, String accountId) {
+      if (Applic.app == null || accountId == null || accountId.isEmpty())
+         return;
+      final int country = Natives.libreCountryIndex(result.optString("Country", ""));
+      if (country < 0)
+         return;
+      final var prefs = Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE);
+      if (accountId.equals(prefs.getString(LIBRE_COUNTRY_ACCOUNT_KEY, "")))
+         return;
+      Natives.setLibreCountry(country);
+      prefs.edit().putString(LIBRE_COUNTRY_ACCOUNT_KEY, accountId).apply();
+   }
+
+   private static boolean forceLibre2DeviceRegistrationRequested() {
+      if (Applic.app == null)
+         return false;
+      return Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE)
+            .getBoolean(LIBRE_FORCE_LIBRE2_DEVICE_KEY, false);
+   }
+
+   private static void clearForcedLibre2DeviceRegistration() {
+      if (Applic.app == null)
+         return;
+      Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE)
+            .edit().remove(LIBRE_FORCE_LIBRE2_DEVICE_KEY).apply();
+   }
+
+   public static void requestLibre2DeviceReregistration() {
+      if (Applic.app == null)
+         return;
+      Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(LIBRE_FORCE_LIBRE2_DEVICE_KEY, true).apply();
+      Natives.resetLibre2ViewAuth();
+   }
+
+   public static String getConfiguredCountryCode() {
+      switch (Natives.getLibreCountry()) {
+         case 0: return "GB";
+         case 1: return "FR";
+         case 2: return "NL";
+         case 3: return "PL";
+         case 4: return "RU";
+         default: return "?";
+      }
+   }
+
+   public static String getConfiguredUom() {
+      return Natives.getunit() == 1 ? "mmol/L" : "mg/dL";
+   }
+
+   public static String getConfiguredModelName() {
+      return "com.freestylelibre.app." + getConfiguredCountryCode().toLowerCase(Locale.ROOT);
+   }
+
+   private static final String LIBRE_AUTH_LOCKOUT_UNTIL = "auth_lockout_until";
+   private static final String LIBRE_AUTH_LOCKOUT_LOGIN = "auth_lockout_login";
+
+   private static boolean authCooldownActive(String login) {
+      if (Applic.app == null) return false;
+      final var prefs = Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE);
+      if (!java.util.Objects.equals(login, prefs.getString(LIBRE_AUTH_LOCKOUT_LOGIN, ""))) return false;
+      long remaining = prefs.getLong(LIBRE_AUTH_LOCKOUT_UNTIL, 0L) - System.currentTimeMillis();
+      if (remaining <= 0L) return false;
+      librestatus = "LibreView: account locked (" + ((remaining + 999L) / 1000L) + "s cooldown)";
+      return true;
+   }
+
+   private static void rememberAuthLockout(String login, int seconds) {
+      long duration = Math.max(1L, seconds) * 1000L;
+      if (Applic.app != null) {
+         Applic.app.getSharedPreferences(LIBRE_COUNTRY_PREFS, Context.MODE_PRIVATE).edit()
+               .putString(LIBRE_AUTH_LOCKOUT_LOGIN, login)
+               .putLong(LIBRE_AUTH_LOCKOUT_UNTIL, System.currentTimeMillis() + duration).apply();
+      }
+   }
+
+   private static HttpURLConnection openLibreViewConnection(URL url) throws IOException {
+      final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setConnectTimeout(10000);
+      connection.setReadTimeout(60000);
+      return connection;
+   }
+
+   private static void closeLibreViewConnection(HttpURLConnection connection) {
+      if (connection != null) {
+         try { connection.disconnect(); } catch (Throwable ignored) {}
+      }
+   }
+
+   private static int rateLimitSeconds(HttpURLConnection connection) {
+      try { return Math.max(1, Integer.parseInt(connection.getHeaderField("Retry-After"))); }
+      catch (Throwable ignored) { return 300; }
+   }
+
+   private static byte[] withCurrentLibreToken(boolean libre3, byte[] payload) throws JSONException {
+      // Native creates the payload before an auth retry; both upload formats carry a JSON token.
+      JSONObject body = new JSONObject(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
+      body.put("UserToken", Natives.getlibreUserToken(libre3));
+      return body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+   }
+
 private static String getputtext(String sensorid,String usertoken,String gateway) {
  return "{\"DomainData\":\"{\\\"activeSensor\\\":\\\""+sensorid+"\\\"}\",\"UserToken\":\""+usertoken +"\",\"Domain\":\"Libreview\",\"GatewayType\":\""+gateway+"\"}";
  }
@@ -127,15 +318,18 @@ private static String librestatus=nothing;
 static boolean putsensor(boolean libre3,byte[] textbytes) {
    if(librestatus==nothing||librestatus==success)
       librestatus=datestr(System.currentTimeMillis())+" start putsensor";
+   HttpURLConnection urlConnection = null;
    try {
    for(int i=0;i<3;i++) {
       final String gateway=getlibregateway(libre3);
       final String baseurl=getlibrebaseurl(libre3);
       URL url = new URL(baseurl+"/api/nisperson");
-      HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+      closeLibreViewConnection(urlConnection);
+      urlConnection = openLibreViewConnection(url);
       urlConnection.setDoOutput(true);
           urlConnection.setRequestMethod("PUT");
       urlConnection.setRequestProperty("Content-Type","application/json; charset=UTF-8");
+      textbytes = withCurrentLibreToken(libre3, textbytes);
       String usertoken=Natives.getlibreUserToken(libre3);
       urlConnection.setRequestProperty( "Content-Length", Integer.toString( textbytes.length ));
       OutputStream outputPost = new BufferedOutputStream(urlConnection.getOutputStream());
@@ -145,7 +339,7 @@ static boolean putsensor(boolean libre3,byte[] textbytes) {
        JSONObject object = readJSONObject(urlConnection);
       final int status=object.getInt("status");
       if(status!=0) {
-         String reason=object.getString("reason");
+         String reason=object.optString("reason", "unknown");
          if(status==20) {
             if("wrongDeviceInToken".equals(reason)) {
                switch(i) {
@@ -181,6 +375,9 @@ static boolean putsensor(boolean libre3,byte[] textbytes) {
       Log.e(LOG_ID,librestatus);
       return false;
       }
+      finally {
+         closeLibreViewConnection(urlConnection);
+      }
    }
 static String getlibregateway(boolean libre3) {
    if(libre3)
@@ -188,6 +385,7 @@ static String getlibregateway(boolean libre3) {
    return "FSLibreLink.Android";
    }
 static private boolean gettermversion(String lang) {
+   HttpURLConnection urlConnection = null;
    try {
       if(termsofuseversionurl==null) {
             {if(doLog) {Log.d(LOG_ID, "termsofuseversionurl==null");};};
@@ -196,7 +394,7 @@ static private boolean gettermversion(String lang) {
       String rep=termsofuseversionurl.replace("<locale>",lang);
 
       URL url = new URL(rep);
-      HttpURLConnection  urlConnection = (HttpURLConnection) url.openConnection();
+      urlConnection = openLibreViewConnection(url);
       urlConnection.setRequestMethod("GET");
       final int code=urlConnection.getResponseCode();
       if(code==HTTP_OK) {
@@ -213,9 +411,13 @@ static private boolean gettermversion(String lang) {
       Log.stack(LOG_ID,"gettermversion",th);
       return false;
       }
+      finally {
+         closeLibreViewConnection(urlConnection);
+      }
    }
 
 static boolean postgetauth(boolean libre3) {
+   Natives.initLibreCountryFromLocale();
    String gateway=getlibregateway(libre3);
    String one= Natives.getlibreDeviceID(libre3);
 
@@ -231,17 +433,21 @@ static boolean postgetauth(boolean libre3) {
       Log.e(LOG_ID, "postgetauth: skipping — empty credentials (login=" + (login != null ? login.length() : "null") + " chars, pass=" + (password != null && !"null".equals(password) ? "set" : "empty") + ")");
       return false;
    }
-   {if(doLog) {Log.i(LOG_ID,"postgetauth "+login+" "+password);};};
+   {if(doLog) {Log.i(LOG_ID,"postgetauth login=**** password=****");};};
 
    var loc= Locale.getDefault();
    String language=loc.getLanguage()+'-'+loc.getCountry();
    String culture=language;
-   String setdevice="false";
+   final boolean forceLibre2DeviceRegistration = !libre3 && forceLibre2DeviceRegistrationRequested();
+   if (authCooldownActive(login)) return false;
+   String setdevice=forceLibre2DeviceRegistration ? "true" : "false";
    while(true) {
+      HttpURLConnection urlConnection = null;
+      HttpURLConnection urlConnection2 = null;
       try {
       final String baseurl=getlibrebaseurl(libre3);
       URL url = new URL(baseurl+"/api/nisperson/getauthentication");
-      HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+      urlConnection = openLibreViewConnection(url);
       urlConnection.setRequestMethod("POST");
       urlConnection.setDoOutput(true);
       String getauthtext;
@@ -275,7 +481,7 @@ static boolean postgetauth(boolean libre3) {
 
          }
       byte[] textbytes=getauthtext.getBytes();
-      {if(doLog) {Log.i(LOG_ID,"postauth: "+getauthtext);};};
+      {if(doLog) {Log.i(LOG_ID,"postauth: credentials=**** payloadBytes="+textbytes.length+" libre3="+libre3+" setDevice="+setdevice);};};
           urlConnection.setRequestProperty( "Content-Length", Integer.toString( textbytes.length ));
 
    //   {if(doLog) {Log.i(LOG_ID,getauthtext);};};
@@ -286,6 +492,11 @@ static boolean postgetauth(boolean libre3) {
       final int code=urlConnection.getResponseCode();
       
       {if(doLog) {Log.i(LOG_ID,"ResponseCode="+code);};};
+      if (code == 429) {
+         rememberAuthLockout(login, rateLimitSeconds(urlConnection));
+         authCooldownActive(login);
+         return false;
+      }
       if(code==HTTP_OK) {
          JSONObject object = readJSONObject(urlConnection);
          int status=object.getInt("status");
@@ -306,6 +517,7 @@ static boolean postgetauth(boolean libre3) {
                      }
                   }
                } catch(Throwable ignored) {}
+               rememberAuthLockout(login, lockoutSeconds);
                librestatus = "LibreView: account locked (" + lockoutSeconds + "s cooldown)";
                Log.e(LOG_ID, "postgetauth: account locked (status=429, message=" + message + ", lockout=" + lockoutSeconds + "s) — NOT retrying");
                return false;
@@ -322,7 +534,7 @@ static boolean postgetauth(boolean libre3) {
             String poststatus="postgetauth: status="+status+" reason="+reason;
             Log.e(LOG_ID,poststatus);
             if(status==20) {
-               if("wrongDeviceForUser".equals(reason)) {
+               if("wrongDeviceForUser".equals(reason) && !"true".equals(setdevice)) {
                   setdevice="true";
                   continue;   
                   }
@@ -336,6 +548,9 @@ static boolean postgetauth(boolean libre3) {
          Natives.setlibreUserToken(libre3,usertoken);
          String accountid=result.getString("AccountId");
          setlibreAccountID(accountid);
+         applyLibreCountryFromAccountOnce(result, accountid);
+         if(forceLibre2DeviceRegistration)
+            clearForcedLibre2DeviceRegistration();
          librestatus="Received AccountID";
          if(libre3) {//TODO enkel als send to libreview aanstaat?
             String DateOfBirth=result.getString("DateOfBirth");
@@ -350,7 +565,7 @@ static boolean postgetauth(boolean libre3) {
             }
          else {
             URL url2 = new URL(baseurl+"/api/nisperson/getAccountInfo"); //IS this really needed?
-            HttpURLConnection urlConnection2 = (HttpURLConnection) url2.openConnection();
+            urlConnection2 = openLibreViewConnection(url2);
             urlConnection2.setRequestMethod("POST");
             urlConnection2.setDoOutput(true);
 
@@ -359,7 +574,7 @@ static boolean postgetauth(boolean libre3) {
             urlConnection2.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             String notneeded="{\"UserToken\":\""+usertoken+"\",\"Domain\":\"Libreview\",\"GatewayType\":\"FSLibreLink.Android\"}";
             byte[] notneedbytes=notneeded.getBytes();
-            {if(doLog) {Log.i(LOG_ID,"postauth: "+notneeded);};};
+            {if(doLog) {Log.i(LOG_ID,"postauth account-info: UserToken=**** payloadBytes="+notneedbytes.length);};};
                 urlConnection2.setRequestProperty( "Content-Length", Integer.toString( notneedbytes.length ));
             OutputStream outputPost2 = new BufferedOutputStream(urlConnection2.getOutputStream());
             outputPost2.write(notneedbytes);
@@ -384,6 +599,10 @@ static boolean postgetauth(boolean libre3) {
          Log.e(LOG_ID,librestatus);
          return false;
          }
+      finally {
+         closeLibreViewConnection(urlConnection);
+         closeLibreViewConnection(urlConnection2);
+      }
    }
  }
  /*
@@ -398,87 +617,138 @@ static boolean postmeasurements(boolean libre3,byte[] measurementdata) {
    String nowstr=datestr(System.currentTimeMillis());
    if(librestatus==nothing||librestatus==success)
       librestatus=nowstr+" start posting";
-   try {
+
    for(int i=0;i<3;i++) {
-      final String baseurl=getlibrebaseurl(libre3);
-      URL url = new URL(baseurl+"/api/measurements");
-      HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-      urlConnection.setConnectTimeout(10000);
-      urlConnection.setReadTimeout(60000);
-      urlConnection.setRequestMethod("POST");
-      urlConnection.setDoOutput(true);
-      urlConnection.setRequestProperty("Content-Type", "application/json");
-          urlConnection.setRequestProperty( "Content-Length", Integer.toString( measurementdata.length ));
-      if(libre3) {
-         urlConnection.setRequestProperty("Platform","Android");
-         urlConnection.setRequestProperty("Version","3.3.0");
-         urlConnection.setRequestProperty("Abbott-ADC-App-Platform","Android/"+((Object) Build.VERSION.RELEASE) +"/FSL3/3.3.0.9092");
- 
-         var loc= Locale.getDefault();
-         String language=loc.getLanguage()+'-'+loc.getCountry();
-         urlConnection.setRequestProperty("Accept-Language",language);
-         final String newYuApiKey=getnewYuApiKey(libre3);
-         urlConnection.setRequestProperty("x-api-key", newYuApiKey);
-         final String usertoken=Natives.getlibreUserToken(libre3);
-         urlConnection.setRequestProperty("x-newyu-token",usertoken); 
+      HttpURLConnection urlConnection = null;
+      final long requestId = LIBREVIEW_REQUEST_SEQ.incrementAndGet();
+      final long startedElapsed = SystemClock.elapsedRealtime();
+      String stage = "prepare";
+      String host = "";
+      try {
+         final String baseurl=getlibrebaseurl(libre3);
+         URL url = new URL(baseurl+"/api/measurements");
+         host = url.getHost();
+         measurementdata = withCurrentLibreToken(libre3, measurementdata);
+         if(doLog) {
+            Log.i(LOG_ID,
+                  "LIBREVIEW_NET request="+requestId+
+                  " start libre3="+libre3+
+                  " bytes="+measurementdata.length+
+                  " host="+host+
+                  " "+libreViewNetworkState());
          }
-      OutputStream outputPost = new BufferedOutputStream(urlConnection.getOutputStream());
-      outputPost.write(measurementdata);
-      outputPost.flush();
-      outputPost.close();
-      final int code=urlConnection.getResponseCode();
-      if(code==HTTP_OK) {
-         JSONObject object = readJSONObject(urlConnection);
-         int status=object.getInt("status");
-         if(status!=0) {
-            Log.e(LOG_ID,"Post with status "+status);
-            String reason=object.getString("reason");
-            if(status==20) {
-               if("wrongDeviceInToken".equals(reason)) {
-                  switch(i) {
-                     case 0:{
-                        if(!postgetauth(libre3)) {
-                           if(!libreconfig(libre3,false))
-                              return false;
-                           i=1;
+ 
+         stage = "open";
+         urlConnection = openLibreViewConnection(url);
+         urlConnection.setConnectTimeout(10000);
+         urlConnection.setReadTimeout(60000);
+         urlConnection.setRequestMethod("POST");
+         urlConnection.setDoOutput(true);
+         urlConnection.setRequestProperty("Content-Type", "application/json");
+         urlConnection.setRequestProperty("Content-Length", Integer.toString(measurementdata.length));
+         if(libre3) {
+            urlConnection.setRequestProperty("Platform","Android");
+            urlConnection.setRequestProperty("Version","3.3.0");
+            urlConnection.setRequestProperty("Abbott-ADC-App-Platform","Android/"+((Object) Build.VERSION.RELEASE) +"/FSL3/3.3.0.9092");
+
+            var loc= Locale.getDefault();
+            String language=loc.getLanguage()+'-'+loc.getCountry();
+            urlConnection.setRequestProperty("Accept-Language",language);
+            final String newYuApiKey=getnewYuApiKey(libre3);
+            urlConnection.setRequestProperty("x-api-key", newYuApiKey);
+            final String usertoken=Natives.getlibreUserToken(libre3);
+            urlConnection.setRequestProperty("x-newyu-token",usertoken);
+         }
+
+         stage = "write";
+         final long writeStart = SystemClock.elapsedRealtime();
+         try (OutputStream outputPost = new BufferedOutputStream(urlConnection.getOutputStream())) {
+            outputPost.write(measurementdata);
+            outputPost.flush();
+         }
+         final long writeMs = SystemClock.elapsedRealtime() - writeStart;
+
+         stage = "response";
+         final long responseStart = SystemClock.elapsedRealtime();
+         final int code=urlConnection.getResponseCode();
+         final long responseMs = SystemClock.elapsedRealtime() - responseStart;
+         if(doLog) {
+            Log.i(LOG_ID,
+                  "LIBREVIEW_NET request="+requestId+
+                  " response code="+code+
+                  " writeMs="+writeMs+
+                  " responseMs="+responseMs+
+                  " totalMs="+(SystemClock.elapsedRealtime()-startedElapsed)+
+                  " host="+host+
+                  " "+libreViewNetworkState());
+         }
+
+         if(code==HTTP_OK) {
+            stage = "read-json";
+            JSONObject object = readJSONObject(urlConnection);
+            int status=object.getInt("status");
+            if(status!=0) {
+               Log.e(LOG_ID,"Post with status "+status);
+               String reason=object.optString("reason", "unknown");
+               if(status==20) {
+                  if("wrongDeviceInToken".equals(reason)) {
+                     switch(i) {
+                        case 0:{
+                           if(!postgetauth(libre3)) {
+                              if(!libreconfig(libre3,false))
+                                 return false;
+                              i=1;
                            }
                         };break;
-                     case 1: {
-                        if(!libreconfig(libre3,false))
-                           return false;
+                        case 1: {
+                           if(!libreconfig(libre3,false))
+                              return false;
                         };break;
-                     default: {
-                        librestatus="postmeasurements2 status="+code+" reason="+reason;
-                        return false;
+                        default: {
+                           librestatus="postmeasurements2 status="+code+" reason="+reason;
+                           return false;
                         }
-
                      }
-//                  return postmeasurements(libre3,measurementdata);
-                  continue;
+                     continue;
                   }
                }
-            librestatus="postmeasurements status="+code+" reason="+reason;
-            return false;
+               librestatus="postmeasurements status="+code+" reason="+reason;
+               return false;
             }
-         posttime=nowstr;
-         librestatus=success;
-         return true;
+            posttime=nowstr;
+            librestatus=success;
+            return true;
          }
-      else {
-         librestatus="postmeasurements ResponseCode="+code;
-         {if(doLog) {Log.i(LOG_ID,librestatus);};};
-         return false;
+         else {
+            librestatus="postmeasurements ResponseCode="+code;
+            Log.e(LOG_ID,
+                  "LIBREVIEW_NET request="+requestId+
+                  " httpFailure code="+code+
+                  " totalMs="+(SystemClock.elapsedRealtime()-startedElapsed)+
+                  " host="+host+
+                  " "+libreViewNetworkState());
+            return false;
          }
-         }
-      return false;
-       }
-   catch(Throwable th) {
-      final String posterror="postmeasurements\n"+stackline(th);
-      librestatus=posterror;
-      Log.e(LOG_ID,posterror);
-      return false;
       }
- }
+      catch(Throwable th) {
+         logLibreViewFailure(requestId,host,stage,startedElapsed,th);
+         final String posterror="postmeasurements stage="+stage+
+               " request="+requestId+"\n"+stackline(th);
+         librestatus=posterror;
+         Log.e(LOG_ID,posterror);
+         return false;
+      }
+      finally {
+         if(urlConnection!=null) {
+            try {
+               urlConnection.disconnect();
+            } catch(Throwable ignored) {}
+         }
+      }
+   }
+   return false;
+}
+
  /*TODO: where:
         try {
            ProviderInstaller.installIfNeeded(Applic.app);
@@ -492,10 +762,11 @@ static boolean postmeasurements(boolean libre3,byte[] measurementdata) {
 private static String termsofuseversionurl=null;
 private static final String libre3start="https://fsll3.freestyleserver.com/Payloads/Mobile/FSLibre3/Android/Assets/3.3.0/DE.json";
 private static String  libre3getconfigURL() {
+   HttpURLConnection urlConnection = null;
    try {
 
       URL url = new URL(libre3start);
-      HttpURLConnection  urlConnection = (HttpURLConnection) url.openConnection();
+      urlConnection = openLibreViewConnection(url);
       urlConnection.setRequestMethod("GET");
       final int code=urlConnection.getResponseCode();
       if(code==HTTP_OK) {
@@ -524,6 +795,9 @@ private static String  libre3getconfigURL() {
       Log.e(LOG_ID,librestatus);
       return null;
       }
+      finally {
+         closeLibreViewConnection(urlConnection);
+      }
    }
    /*
 public static void testlibre3() { 
@@ -533,10 +807,13 @@ public static void testlibre3() {
 //https://fsll.freestyleserver.com/Payloads/Mobile/Android/FSLibreLink/Config/FreeStyleLibreLink_Android_2.3_DE_config.json
 @Keep
 public static boolean libreconfig(boolean libre3,boolean restart){
+   Natives.initLibreCountryFromLocale();
+   if (authCooldownActive(getlibreemail())) return false;
    if(restart||librestatus==nothing||librestatus==success)
       librestatus=datestr(System.currentTimeMillis())+" libreconfig";
    {if(doLog) {Log.i(LOG_ID,librestatus);};};
-     try {
+     HttpURLConnection urlConnection = null;
+   try {
         ProviderInstaller.installIfNeeded(Applic.app);
      }
    catch(Throwable th) {
@@ -570,7 +847,7 @@ final String libre210url=urlnames[Natives.getLibreCountry()];
       if(url==null)  {
          return false;
          }
-      HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+      urlConnection = openLibreViewConnection(url);
       urlConnection.setRequestMethod("GET");
 
       final int code=urlConnection.getResponseCode();
@@ -598,6 +875,9 @@ final String libre210url=urlnames[Natives.getLibreCountry()];
 
       Log.e(LOG_ID,librestatus);
       return false;
+      }
+      finally {
+         closeLibreViewConnection(urlConnection);
       }
    }
 
@@ -978,7 +1258,3 @@ public static void  config(MainActivity act, View settingsview,CheckBox sendto,b
 
 
 }
-
-
-
-

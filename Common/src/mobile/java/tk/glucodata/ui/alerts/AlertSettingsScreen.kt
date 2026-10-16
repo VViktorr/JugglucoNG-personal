@@ -157,6 +157,7 @@ fun AlertSettingsScreen(
         listOf(
             AlertType.MISSED_READING,
             AlertType.LOSS,
+            AlertType.AVAILABLE,
             AlertType.SENSOR_EXPIRY
         )
     }
@@ -690,7 +691,7 @@ fun CustomAlertCard(
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
@@ -1007,7 +1008,7 @@ private fun AlertCard(
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = stringResource(config.type.nameResId),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     val subtitle = buildString {

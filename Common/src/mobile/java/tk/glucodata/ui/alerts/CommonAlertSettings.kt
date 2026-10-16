@@ -422,7 +422,7 @@ internal fun AdvancedSectionHeader(expanded: Boolean, onToggle: () -> Unit, modi
         ) {
             Text(
                 stringResource(R.string.advanced),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMediumEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
