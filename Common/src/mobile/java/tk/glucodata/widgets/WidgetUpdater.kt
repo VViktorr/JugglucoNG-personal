@@ -96,8 +96,7 @@ object WidgetUpdater {
         val snapshot=WidgetDataSource.load(context,history)
         val wantsWeather = targets.containsKey(WidgetKind.CLOCK_WEATHER) &&
             configs[WidgetKind.CLOCK_WEATHER]?.showWeather == true
-        val weatherProvider = configs[WidgetKind.CLOCK_WEATHER]?.weatherProvider ?: WidgetWeatherProvider.OPEN_METEO
-        val weather = if (wantsWeather) WidgetWeatherSource.cached(context, weatherProvider) else null
+        val weather = if (wantsWeather) WidgetWeatherSource.cached(context) else null
         val renderer=WidgetRenderer(context)
         val description=renderer.describe(snapshot)
         targets.forEach { (kind,ids) ->
@@ -190,18 +189,18 @@ object WidgetUpdater {
                 } catch(t:Throwable){ Log.stack(LOG_ID,"render $kind $id",t) }
             }
         }
-        if (wantsWeather) scheduleWeatherRefresh(context, weatherProvider)
+        if (wantsWeather) scheduleWeatherRefresh(context)
     }
 
-    private fun scheduleWeatherRefresh(context: Context, provider: WidgetWeatherProvider) {
-        if (!WidgetWeatherSource.needsRefresh(context, provider)) return
+    private fun scheduleWeatherRefresh(context: Context) {
+        if (!WidgetWeatherSource.needsRefresh(context)) return
         if (!weatherPending.compareAndSet(false, true)) return
         val app = context.applicationContext
         weatherExecutor.execute {
             try {
-                val before = WidgetWeatherSource.cached(app, provider)
-                val loaded = WidgetWeatherSource.load(app, provider)
-                if (loaded != null && loaded != before) {
+                val before = WidgetWeatherSource.cached(app)?.observedAt ?: 0L
+                val loaded = WidgetWeatherSource.load(app)
+                if (loaded != null && loaded.observedAt > before) {
                     requestUpdateAll(app)
                 }
             } catch (t: Throwable) {

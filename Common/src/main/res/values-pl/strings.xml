@@ -3168,8 +3168,4 @@
     <string name="switchtowatch">Przełącz</string>
     <string name="widget_text_size_value">Bazowy rozmiar tekstu: %1$d%%</string>
     <string name="delete_confirm">Usuń</string>
-    <string name="widget_weather_source">Źródło danych pogody</string>
-    <string name="widget_weather_source_open_meteo">Open-Meteo</string>
-    <string name="widget_weather_source_imgw">IMGW-PIB</string>
-    <string name="widget_weather_imgw_note">Temperatura powietrza z najbliższej stacji IMGW-PIB w Polsce, do 150 km od udostępnionej lokalizacji. Pomiary starsze niż 3 godziny są ukrywane. To źródło nie udostępnia ikony stanu pogody.</string>
 </resources>

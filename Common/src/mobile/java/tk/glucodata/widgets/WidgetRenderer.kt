@@ -263,8 +263,16 @@ class WidgetRenderer(private val context: Context) {
         val weatherCenterX = (w * 0.44f - c.weatherShiftDp * density)
             .coerceIn(w * 0.27f, w * 0.54f)
         if (c.showWeather && weather != null) {
-            val symbol = weather.symbol
-            val showIcon = c.showWeatherIcon && symbol != null
+            val symbol = when (weather.weatherCode) {
+                0 -> "☀"
+                1, 2 -> "⛅"
+                3 -> "☁"
+                in 45..48 -> "≋"
+                in 51..67, in 80..82 -> "☂"
+                in 71..77, in 85..86 -> "❄"
+                in 95..99 -> "ϟ"
+                else -> "☁"
+            }
 
             val weatherBase = componentScale(c.weatherScale)
             val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt().coerceIn(45, 300)
@@ -274,7 +282,7 @@ class WidgetRenderer(private val context: Context) {
             val gap = 5f * density
 
             var iconW = 0f
-            if (showIcon && symbol != null) {
+            if (c.showWeatherIcon) {
                 val iconPaint = fitText(symbol, iconMaxW, h * 0.44f, foreground, iconScale, c, false)
                 iconW = iconPaint.measureText(symbol)
                 val iconX = weatherCenterX - if (c.showTemperature) w * 0.045f else 0f
@@ -284,7 +292,7 @@ class WidgetRenderer(private val context: Context) {
             if (c.showTemperature) {
                 val temperature = "${weather.temperatureC}°"
                 val tempPaint = fitText(temperature, tempMaxW, h * 0.42f, foreground, tempScale, c, false)
-                val tempX = weatherCenterX + if (showIcon) max(iconW * 0.55f, gap) else 0f
+                val tempX = weatherCenterX + if (c.showWeatherIcon) max(iconW * 0.55f, gap) else 0f
                 canvas.drawText(temperature, tempX, baselineCenter(tempPaint, h * 0.34f), tempPaint)
             }
         }

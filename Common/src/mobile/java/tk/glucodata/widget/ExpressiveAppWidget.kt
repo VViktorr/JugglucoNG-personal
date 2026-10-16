@@ -194,14 +194,14 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
         val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
         val app = context.applicationContext
-        val weather = if (widgetConfig.showWeather) WidgetWeatherSource.cached(app, widgetConfig.weatherProvider) else null
-        if (widgetConfig.showWeather && WidgetWeatherSource.needsRefresh(app, widgetConfig.weatherProvider) &&
+        val weather = if (widgetConfig.showWeather) WidgetWeatherSource.cached(app) else null
+        if (widgetConfig.showWeather && WidgetWeatherSource.needsRefresh(app) &&
             weatherRefreshPending.compareAndSet(false, true)) {
             weatherScope.launch {
                 try {
-                    val previous = WidgetWeatherSource.cached(app, widgetConfig.weatherProvider)
-                    val refreshed = WidgetWeatherSource.load(app, widgetConfig.weatherProvider)
-                    if (refreshed != null && refreshed != previous) {
+                    val previous = WidgetWeatherSource.cached(app)?.observedAt ?: 0L
+                    val refreshed = WidgetWeatherSource.load(app)
+                    if (refreshed != null && refreshed.observedAt > previous) {
                         ExpressiveWidgetReceiver.updateAll(app)
                     }
                 } catch (t: Throwable) {
@@ -419,9 +419,19 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.defaultWeight()
                     )
                     val weatherSymbol = remember(weather, config.showWeather, config.showWeatherIcon) {
-                        if (!config.showWeather || !config.showWeatherIcon) null else weather?.symbol
+                        if (!config.showWeather || !config.showWeatherIcon) null else weather?.let { w ->
+                            when (w.weatherCode) {
+                                0 -> "☀"
+                                1, 2 -> "⛅"
+                                3 -> "☁"
+                                in 45..48 -> "≋"
+                                in 51..67, in 80..82 -> "☂"
+                                in 71..77, in 85..86 -> "❄"
+                                in 95..99 -> "ϟ"
+                                else -> "☁"
+                            }
+                        }
                     }
-
                     val temperatureText = remember(weather, config.showWeather, config.showTemperature) {
                         if (!config.showWeather || !config.showTemperature) null
                         else weather?.let { "${it.temperatureC}°" }

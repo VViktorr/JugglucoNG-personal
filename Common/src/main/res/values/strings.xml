@@ -3294,8 +3294,4 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="widget_sensor_finished">Sensor finished</string>
     <string name="widget_graph_hours">Chart range</string>
     <string name="widget_text_size_value">Base text size: %1$d%%</string>
-    <string name="widget_weather_source">Weather data source</string>
-    <string name="widget_weather_source_open_meteo">Open-Meteo</string>
-    <string name="widget_weather_source_imgw">IMGW-PIB</string>
-    <string name="widget_weather_imgw_note">IMGW-PIB air temperature from the nearest station in Poland within 150 km, using your granted location. Measurements older than 3 hours are hidden. This source does not provide a weather-condition icon.</string>
 </resources>
