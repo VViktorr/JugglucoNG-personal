@@ -65,3 +65,17 @@ Samodzielne testy JVM nie zastępują kompletnych zestawów Android/Robolectric.
 Pełne CI telefonu/Wear/debug/release oraz próby na fizycznym sensorze i zegarku
 pozostają wymagane przed scaleniem. Żaden APK nie został tutaj zweryfikowany
 na urządzeniu. main i main2 nie są aktualizowane przez tę pracę.
+
+## CI pull requesta
+
+PR: https://github.com/VViktorr/JugglucoNG-personal/pull/7
+
+Pierwszy przebieg GitHub Actions potwierdził reguły UI i tłumaczenia. Testy JVM
+i pełna kompilacja zostały uruchomione; ich wynik nie jest jeszcze potwierdzony.
+Kontrakt dystrybucji ujawnił w teście README zależność od zmiennej
+`GITHUB_REPOSITORY` odziedziczonej z prywatnego repozytorium. Izolacja środowiska
+w tym jednym teście naprawia błąd bez zmiany produkcyjnego ograniczenia do
+oficjalnego repozytorium. Po poprawce wszystkie 89 testów przechodzi również
+lokalnie z `GITHUB_REPOSITORY=VViktorr/JugglucoNG-personal`.
+Nowy commit uruchamia ponownie CI; zielony wynik pełnego zestawu Androida nie
+jest warunkiem potwierdzonym w chwili przekazania PR do przeglądu.
