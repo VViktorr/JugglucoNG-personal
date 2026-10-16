@@ -137,39 +137,45 @@ object WidgetUpdater {
                                 val dateIds = intArrayOf(R.id.home_widget_date_300, R.id.home_widget_date_400, R.id.home_widget_date_500, R.id.home_widget_date_600, R.id.home_widget_date_700)
                                 val glucoseIds = intArrayOf(R.id.home_widget_glucose_300, R.id.home_widget_glucose_400, R.id.home_widget_glucose_500, R.id.home_widget_glucose_600, R.id.home_widget_glucose_700)
                                 val detailIds = intArrayOf(R.id.home_widget_detail_300, R.id.home_widget_detail_400, R.id.home_widget_detail_500, R.id.home_widget_detail_600, R.id.home_widget_detail_700)
+                                val staleIds = intArrayOf(R.id.home_widget_stale_300, R.id.home_widget_stale_400, R.id.home_widget_stale_500, R.id.home_widget_stale_600, R.id.home_widget_stale_700)
+                                val staleStatus = !snapshot.hasFreshReading
+                                setViewVisibility(R.id.home_widget_stale_container, if (staleStatus) android.view.View.VISIBLE else android.view.View.GONE)
                                 val detailText = if (!snapshot.hasFreshReading) snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue) else buildList {
                                     if (config.showDelta) snapshot.delta?.let { add(renderer.deltaText(it, snapshot.isMmol)) }
                                     if (config.showUnit) add(snapshot.unitText)
                                     if (config.showTime) snapshot.current?.let { add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis))) }
                                 }.joinToString("  ")
-                                val glucoseText = if (snapshot.hasFreshReading) snapshot.valueText else "—"
+                                val glucoseText = snapshot.valueText
                                 val glucoseColor = if (snapshot.hasFreshReading) renderer.glucoseTextColor(snapshot, config) else textColor
                                 weights.indices.forEach { index ->
                                     val clockId = clockIds[index]
                                     val dateId = dateIds[index]
                                     val detailId = detailIds[index]
                                     val glucoseId = glucoseIds[index]
+                                    val staleId = staleIds[index]
                                     setViewVisibility(clockId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                                    setViewVisibility(glucoseId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                                    setViewVisibility(glucoseId, if (!staleStatus && weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                                     setTextViewText(glucoseId, glucoseText)
                                     setTextViewTextSize(glucoseId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                                     setTextColor(glucoseId, glucoseColor)
                                     setViewVisibility(dateId, if (config.showDate && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                                     setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                                     setTextColor(clockId, textColor)
-                                    setViewVisibility(detailId, if (detailText.isNotBlank() && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                                    setViewVisibility(detailId, if (!staleStatus && detailText.isNotBlank() && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                                     setTextViewText(detailId, detailText)
-                                    val staleStatus = !snapshot.hasFreshReading
-                                    setInt(detailId, "setMaxLines", if (staleStatus) 3 else 1)
-                                    // Keep the wrapped status in its own half beside the date.
+                                    setInt(detailId, "setMaxLines", 1)
+                                    // Reuse the space above the status instead of shrinking its font.
                                     val density = context.resources.displayMetrics.density
                                     val halfWidth = (w * 0.48f * density).roundToInt()
-                                    setViewPadding(detailId, if (staleStatus && config.showDate) halfWidth else 0,
-                                        0, (12f * density).roundToInt(), 0)
+                                    setViewPadding(detailId, 0, 0, (12f * density).roundToInt(), 0)
                                     setViewPadding(dateId, (14f * density).roundToInt(), 0,
                                         if (staleStatus) halfWidth else 0, 0)
-                                    val detailSize = if (staleStatus) min(dateSize, h * 0.42f / 3.6f) else dateSize
-                                    setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, detailSize)
+                                    setViewVisibility(staleId, if (staleStatus && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                                    setTextViewText(staleId, detailText)
+                                    setViewPadding(staleId, halfWidth, 0, (12f * density).roundToInt(), 0)
+                                    setTextViewTextSize(staleId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                                    setTextColor(staleId, textColor)
+                                    setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
                                     setTextColor(detailId, textColor)
                                     setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
                                     setTextColor(dateId, textColor)

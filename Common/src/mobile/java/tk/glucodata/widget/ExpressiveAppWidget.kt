@@ -147,8 +147,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         config: WidgetConfig,
         color: Int,
         weight: Int = config.secondaryFontWeight,
-        wrapWidthPx: Int? = null,
-        maxHeightPx: Int? = null
+        wrapWidthPx: Int? = null
     ): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = sizeSp * context.resources.displayMetrics.scaledDensity
@@ -159,22 +158,16 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             }
         }
         val pad = (3f * context.resources.displayMetrics.density).coerceAtLeast(2f)
-        if (wrapWidthPx != null && maxHeightPx != null) {
+        if (wrapWidthPx != null) {
             val width = wrapWidthPx.coerceAtLeast(1)
             val textWidth = (width - 2 * pad).roundToInt().coerceAtLeast(1)
-            val availableHeight = (maxHeightPx - 2 * pad).coerceAtLeast(1f)
             val textPaint = android.text.TextPaint(paint)
-            fun layout() = android.text.StaticLayout.Builder.obtain(text, 0, text.length, textPaint, textWidth)
+            val wrapped = android.text.StaticLayout.Builder.obtain(text, 0, text.length, textPaint, textWidth)
                 .setAlignment(android.text.Layout.Alignment.ALIGN_OPPOSITE)
                 .setIncludePad(false)
                 .setBreakStrategy(android.text.Layout.BREAK_STRATEGY_SIMPLE)
                 .build()
-            var wrapped = layout()
-            // Reflow first; shrink only if all lines exceed the available header height.
-            while (wrapped.height > availableHeight && textPaint.textSize > 1f) {
-                textPaint.textSize *= 0.9f
-                wrapped = layout()
-            }
+            // Keep the configured font size; the widget gives all wrapped lines their own height.
             return Bitmap.createBitmap(width, (wrapped.height + 2 * pad).roundToInt().coerceAtLeast(1),
                 Bitmap.Config.ARGB_8888).also { bitmap ->
                 val canvas = Canvas(bitmap)
@@ -286,14 +279,39 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             }
         }
 
-        val showChart = history.size >= 2 && size.height >= 144.dp
         val density = context.resources.displayMetrics.density
-        val chartBitmap = remember(history, showChart, size, isMmol, viewMode, hasCalibration, activeSensorSerial, config.graphHours, config.showTargetBand) {
+        val darkSurface = (context.resources.configuration.uiMode and 0x30) == 0x20
+        val primaryTextColor = if (darkSurface) Color.WHITE else 0xFF1D1B20.toInt()
+        val secondaryTextColor = Color.argb(
+            200,
+            Color.red(primaryTextColor),
+            Color.green(primaryTextColor),
+            Color.blue(primaryTextColor)
+        )
+        val fallbackText = remember(dataState, activeSensorSerial) {
+            tk.glucodata.widgets.WidgetDataSource.statusText(context, activeSensorSerial, dataState)
+                ?: context.getString(R.string.novalue)
+        }
+        val fallbackBitmap = remember(
+            valueBitmap, fallbackText, config.fontFamily, secondaryFontWeight,
+            detailScale, secondaryTextColor, size.width
+        ) {
+            if (valueBitmap != null) null else textBitmap(
+                context, fallbackText, 13f * detailScale, config, secondaryTextColor,
+                secondaryFontWeight,
+                wrapWidthPx = ((size.width.value - 28f).coerceAtLeast(1f) * density).roundToInt()
+            )
+        }
+        val fallbackHeightDp = fallbackBitmap?.let { it.height / density } ?: 0f
+        val chartReservedHeightDp = ChartReservedHeightDp + fallbackHeightDp
+        val showChart = history.size >= 2 && size.height >= 144.dp &&
+            (fallbackBitmap == null || size.height.value - chartReservedHeightDp >= 60f)
+        val chartBitmap = remember(history, showChart, size, isMmol, viewMode, hasCalibration, activeSensorSerial, config.graphHours, config.showTargetBand, chartReservedHeightDp) {
             if (!showChart) {
                 null
             } else {
                 val widthPx = (size.width.value.coerceAtLeast(96f) * density).roundToInt()
-                val heightPx = ((size.height.value - ChartReservedHeightDp).coerceAtLeast(60f) * density).roundToInt()
+                val heightPx = ((size.height.value - chartReservedHeightDp).coerceAtLeast(60f) * density).roundToInt()
                 NotificationChartDrawer.drawChart(
                     context,
                     history,
@@ -310,12 +328,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             }
         }
 
-        val fallbackText = remember(dataState, activeSensorSerial) {
-            tk.glucodata.widgets.WidgetDataSource.statusText(context, activeSensorSerial, dataState)
-                ?: context.getString(R.string.novalue)
-        }
-
-        val darkSurface = (context.resources.configuration.uiMode and 0x30) == 0x20
         val bgRgb = when (config.background) {
             tk.glucodata.widgets.WidgetBackground.TRANSPARENT -> null
             tk.glucodata.widgets.WidgetBackground.SURFACE ->
@@ -350,15 +362,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
-                    val primaryTextColor = if (dark) Color.WHITE else 0xFF1D1B20.toInt()
-                    val secondaryTextColor = Color.argb(
-                        200,
-                        Color.red(primaryTextColor),
-                        Color.green(primaryTextColor),
-                        Color.blue(primaryTextColor)
-                    )
-
                     // Use Android's native TextClock instead of painting the current time into
                     // a bitmap. The launcher/system then keeps time and date current even when
                     // Juggluco is not running or no glucose update arrives.
@@ -472,28 +475,20 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                                 )
                             }
                         }
-                    } else {
-                        val fallbackBitmap = remember(
-                            fallbackText,
-                            config.fontFamily,
-                            config.secondaryFontWeight,
-                            config.textScale,
-                            config.detailScale,
-                            secondaryTextColor,
-                            size
-                        ) {
-                            textBitmap(context, fallbackText, 13f * detailScale, config, secondaryTextColor,
-                                secondaryFontWeight,
-                                wrapWidthPx = (size.width.value * 0.40f * density).roundToInt(),
-                                maxHeightPx = ((HeaderHeight.value - 20f) * density).roundToInt())
-                        }
-                        Image(
-                            provider = ImageProvider(fallbackBitmap),
-                            contentDescription = fallbackText,
-                            modifier = GlanceModifier.defaultWeight()
-                        )
                     }
                 }
+            }
+
+            if (fallbackBitmap != null) {
+                // A dedicated row cannot be squeezed by the clock/weather columns.
+                Image(
+                    provider = ImageProvider(fallbackBitmap),
+                    contentDescription = fallbackText,
+                    modifier = GlanceModifier.fillMaxWidth()
+                        .height(fallbackHeightDp.dp)
+                        .padding(horizontal = 14.dp),
+                    contentScale = androidx.glance.layout.ContentScale.FillBounds
+                )
             }
 
             if (chartBitmap != null) {
