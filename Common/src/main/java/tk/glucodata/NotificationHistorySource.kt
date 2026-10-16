@@ -35,6 +35,20 @@ object NotificationHistorySource {
         return loadHistory(startTimeMs, false, sensorSerial)
     }
 
+    /**
+     * Native-only supplement for home-widget charts.
+     *
+     * Phone Room history remains authoritative for ordinary consumers, but a widget may be
+     * rendered while Room still has holes that the Libre sensor's native history can fill.
+     * Callers must merge these points without replacing an existing Room/display minute.
+     */
+    @JvmStatic
+    fun getNativeDisplayHistoryForWidget(
+        startTimeMs: Long,
+        isMmol: Boolean,
+        sensorSerial: String? = null
+    ): List<GlucosePoint> = loadNativeHistory(startTimeMs, isMmol, sensorSerial)
+
     private fun loadHistory(startTimeMs: Long, isMmol: Boolean, sensorSerial: String?): List<GlucosePoint> {
         val roomHistory = loadRoomHistory(startTimeMs, isMmol, sensorSerial)?.takeIf { it.isNotEmpty() }
         if (roomHistory != null) {
@@ -96,7 +110,9 @@ object NotificationHistorySource {
                 rawValue /= MGDL_PER_MMOL
             }
 
-            val candidate = GlucosePoint(timestamp, value, rawValue)
+            val candidate = GlucosePoint(timestamp, value, rawValue).also {
+                it.sensorSerial = resolvedSerial
+            }
             val existing = orderedPoints[timestamp]
             if (existing == null || shouldReplace(existing, candidate)) {
                 orderedPoints[timestamp] = candidate

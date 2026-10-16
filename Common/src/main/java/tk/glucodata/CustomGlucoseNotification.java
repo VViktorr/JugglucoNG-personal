@@ -125,13 +125,11 @@ final class CustomGlucoseNotification {
         views.setViewVisibility(id, visible ? View.VISIBLE : View.GONE);
         if (!visible) return;
         boolean doubled = Math.abs(rate) > 2f;
-        int drawable = large ? (doubled ? R.drawable.notification_trend_long_double : R.drawable.notification_trend_long_single)
-                : (doubled ? R.drawable.notification_trend_double : R.drawable.notification_trend_single);
-        views.setImageViewResource(id, drawable);
         float angle = TrendArrowAngle.rotationDegrees(rate);
-        // Level controls rotation; select head-count resources independently of that level.
-        views.setInt(id, "setImageLevel", Math.round((angle + 90f) * 10000f / 180f));
-        views.setInt(id, "setColorFilter", color);
+        // Bake the direction into the pixels, as alert notifications do. The host can
+        // reapply this view without inheriting a RotateDrawable/ImageView level.
+        views.setImageViewBitmap(id, NotificationChartDrawer.drawArrow(
+                context, rate, false, color, 64f / 20f, false, large));
         int size = Math.max(1, Math.round(pixels));
         startPadding(context, views, id, gap);
         // Max width includes the gap so padding does not shrink the vector itself.

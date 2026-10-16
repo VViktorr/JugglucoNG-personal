@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Rect
 import android.graphics.Typeface
+import android.util.LruCache
 import androidx.compose.ui.graphics.toArgb
 import tk.glucodata.Applic
 import tk.glucodata.GlucosePoint
@@ -30,7 +30,7 @@ import kotlin.math.abs
  * same sources the phone and the watch UI use.
  *
  * Sizing note: a SMALL_IMAGE of type PHOTO is drawn edge to edge in its slot,
- * so every bitmap keeps a [CONTENT_INSET] margin. Without it the artwork runs
+ * so every bitmap keeps a type-specific inset margin. Without it the artwork runs
  * into the slot's rim and, in the arrow's case, came out looking enormous.
  */
 internal object ComplicationRenderer {
@@ -51,14 +51,14 @@ internal object ComplicationRenderer {
      * circle needs about 15% off each side, and more than that only makes the
      * artwork small.
      */
-    private const val PHOTO_INSET = 0.11f
+    private const val PHOTO_INSET = 0.15f
 
     /**
      * Margin around an ICON (MonochromaticImage). Faces scale these to the slot
      * themselves rather than cropping, so built-in padding is wasted space —
      * which is why the small arrow and value slots came out tiny.
      */
-    private const val ICON_INSET = 0.03f
+    private const val ICON_INSET = 0.02f
 
     /**
      * Icons are tinted by the watch face, so their own colour is only a mask.
@@ -67,8 +67,9 @@ internal object ComplicationRenderer {
      */
     const val ICON_TINT = 0xFFFFFFFF.toInt()
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val bounds = Rect()
+    // Each data-source request may render concurrently on a different thread.
+    private val threadPaint = ThreadLocal.withInitial { Paint(Paint.ANTI_ALIAS_FLAG) }
+    private val paint: Paint get() = threadPaint.get()
 
     private fun neutral(): Int = 0xFFE3E2DE.toInt()
 
@@ -104,6 +105,47 @@ internal object ComplicationRenderer {
         isMmol,
     )
 
+    // Bounded across all image variants. Never recycle on eviction: an Icon or a
+    // watch face may still own that bitmap. Cached images are read-only after drawing.
+    private const val BITMAP_CACHE_BYTES = 4 * 1024 * 1024
+    private data class CachedImage(val bitmap: Bitmap, val bytes: Int)
+    private val imageCache = object : LruCache<List<Any?>, CachedImage>(BITMAP_CACHE_BYTES) {
+        override fun sizeOf(key: List<Any?>, value: CachedImage): Int = value.bytes
+    }
+
+    private fun cachedBitmap(key: List<Any?>, draw: () -> Bitmap): Bitmap =
+        synchronized(imageCache) {
+            imageCache.get(key)?.bitmap?.takeUnless { it.isRecycled } ?: draw().also { image ->
+                val bytes = image.allocationByteCount
+                if (bytes <= BITMAP_CACHE_BYTES) imageCache.put(key, CachedImage(image, bytes))
+            }
+        }
+
+    private fun cachedBitmapOrNull(key: List<Any?>, draw: () -> Bitmap?): Bitmap? =
+        synchronized(imageCache) {
+            imageCache.get(key)?.bitmap?.takeUnless { it.isRecycled } ?: draw()?.also { image ->
+                val bytes = image.allocationByteCount
+                if (bytes <= BITMAP_CACHE_BYTES) imageCache.put(key, CachedImage(image, bytes))
+            }
+        }
+
+    private fun timeStyleKey(): List<Any?> = listOf(
+        runCatching { Applic.app.resources.configuration.locales.toLanguageTags() }.getOrDefault(""),
+        java.util.TimeZone.getDefault().id,
+        runCatching { android.text.format.DateFormat.is24HourFormat(Applic.app) }.getOrDefault(false),
+    )
+
+    private fun chartStyleKey(isMmol: Boolean, value: Float): List<Any?> = listOf(
+        sparkKey(isMmol), timeStyleKey(), valueColor(value, isMmol),
+        threshold(Natives::targetlow, GlucoseRangeColors.defaultLow(isMmol)),
+        threshold(Natives::targethigh, GlucoseRangeColors.defaultHigh(isMmol)),
+        threshold(Natives::alarmverylow, GlucoseRangeColors.defaultVeryLow(isMmol)),
+        threshold(Natives::alarmveryhigh, GlucoseRangeColors.defaultVeryHigh(isMmol)),
+        GlucoseRangeColors.veryLow(DARK), GlucoseRangeColors.low(DARK),
+        GlucoseRangeColors.high(DARK), GlucoseRangeColors.veryHigh(DARK),
+        GlucoseRangeColors.targetBackground(DARK),
+    )
+
     private fun bitmap(width: Int, height: Int): Pair<Bitmap, Canvas> {
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         return bmp to Canvas(bmp)
@@ -118,10 +160,12 @@ internal object ComplicationRenderer {
      */
     @JvmOverloads
     fun arrowBitmap(size: Int, rateMgdlPerMin: Float, color: Int, icon: Boolean = true): Bitmap {
-        val (bmp, canvas) = bitmap(size, size)
-        val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
-        drawArrow(canvas, size - inset * 2f, size - inset * 2f, rateMgdlPerMin, color, inset, inset)
-        return bmp
+        return cachedBitmap(listOf("arrowBitmap", size, rateMgdlPerMin, color, icon)) {
+            val (bmp, canvas) = bitmap(size, size)
+            val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
+            drawArrow(canvas, size - inset * 2f, size - inset * 2f, rateMgdlPerMin, color, inset, inset)
+            return@cachedBitmap bmp
+            }
     }
 
     /**
@@ -136,18 +180,20 @@ internal object ComplicationRenderer {
         color: Int,
         icon: Boolean = true,
     ): Bitmap {
-        val (bmp, canvas) = bitmap(size, size)
-        val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
-        val content = size - inset * 2f
-        // The arrow takes three quarters of the height; the time is a caption
-        // under it, not a second line competing with it.
-        val arrowBox = content * 0.74f
-        drawArrow(
-            canvas, arrowBox, arrowBox, rateMgdlPerMin, color,
-            inset + (content - arrowBox) / 2f, inset,
-        )
-        drawTimeLabel(canvas, size.toFloat(), inset + content * 0.98f, timeMillis, color, size * 0.21f)
-        return bmp
+        return cachedBitmap(listOf("arrowWithTimeBitmap", size, rateMgdlPerMin, timeMillis, color, icon, timeStyleKey())) {
+            val (bmp, canvas) = bitmap(size, size)
+            val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
+            val content = size - inset * 2f
+            // The arrow takes three quarters of the height; the time is a caption
+            // under it, not a second line competing with it.
+            val arrowBox = content * 0.74f
+            drawArrow(
+                canvas, arrowBox, arrowBox, rateMgdlPerMin, color,
+                inset + (content - arrowBox) / 2f, inset,
+            )
+            drawTimeLabel(canvas, size.toFloat(), inset + content * 0.98f, timeMillis, color, size * 0.21f)
+            return@cachedBitmap bmp
+            }
     }
 
     private fun drawTimeLabel(
@@ -171,22 +217,27 @@ internal object ComplicationRenderer {
         paint.color = color
         paint.alpha = 0xB4
         paint.textSize = textSize
+        val availableWidth = width * (1f - PHOTO_INSET * 2f)
+        val measured = paint.measureText(text)
+        if (measured > availableWidth) paint.textSize *= availableWidth / measured
         canvas.drawText(text, width / 2f, baselineY, paint)
     }
 
     /** The reading's time alone, as an icon beside a value the text carries. */
     fun timeBitmap(size: Int, timeMillis: Long, color: Int): Bitmap {
-        val (bmp, canvas) = bitmap(size, size)
-        val inset = size * ICON_INSET
-        drawFittedText(
-            canvas,
-            runCatching {
-                android.text.format.DateFormat.getTimeFormat(Applic.app)
-                    .format(java.util.Date(timeMillis))
-            }.getOrNull() ?: return bmp,
-            color, inset, inset, size - inset * 2f, size - inset * 2f,
-        )
-        return bmp
+        return cachedBitmap(listOf("timeBitmap", size, timeMillis, color, timeStyleKey())) {
+            val (bmp, canvas) = bitmap(size, size)
+            val inset = size * ICON_INSET
+            drawFittedText(
+                canvas,
+                runCatching {
+                    android.text.format.DateFormat.getTimeFormat(Applic.app)
+                        .format(java.util.Date(timeMillis))
+                }.getOrNull() ?: return@cachedBitmap bmp,
+                color, inset, inset, size - inset * 2f, size - inset * 2f,
+            )
+            return@cachedBitmap bmp
+            }
     }
 
     fun drawArrow(
@@ -198,6 +249,7 @@ internal object ComplicationRenderer {
         offsetX: Float = 0f,
         offsetY: Float = 0f,
     ) {
+        if (!rateMgdlPerMin.isFinite()) return
         val cx = offsetX + width / 2f
         val cy = offsetY + height / 2f
         val span = minOf(width, height)
@@ -258,13 +310,15 @@ internal object ComplicationRenderer {
         color: Int = valueColor(value, isMmol),
         icon: Boolean = true,
     ): Bitmap {
-        val (bmp, canvas) = bitmap(size, size)
-        val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
-        drawFittedText(
-            canvas, text, color,
-            inset, inset, size - inset * 2f, size - inset * 2f,
-        )
-        return bmp
+        return cachedBitmap(listOf("valueBitmap", size, text, value, isMmol, color, icon)) {
+            val (bmp, canvas) = bitmap(size, size)
+            val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
+            drawFittedText(
+                canvas, text, color,
+                inset, inset, size - inset * 2f, size - inset * 2f,
+            )
+            return@cachedBitmap bmp
+            }
     }
 
     /**
@@ -281,15 +335,17 @@ internal object ComplicationRenderer {
         color: Int = valueColor(value, isMmol),
         icon: Boolean = false,
     ): Bitmap {
-        val (bmp, canvas) = bitmap(size, size)
-        val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
-        val content = size - inset * 2f
-        drawFittedText(canvas, text, color, inset, inset, content, content * 0.66f)
-        drawTimeLabel(canvas, size.toFloat(), inset + content * 0.98f, timeMillis, color, size * 0.21f)
-        return bmp
+        return cachedBitmap(listOf("valueWithTimeBitmap", size, text, value, timeMillis, isMmol, color, icon, timeStyleKey())) {
+            val (bmp, canvas) = bitmap(size, size)
+            val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
+            val content = size - inset * 2f
+            drawFittedText(canvas, text, color, inset, inset, content, content * 0.66f)
+            drawTimeLabel(canvas, size.toFloat(), inset + content * 0.98f, timeMillis, color, size * 0.21f)
+            return@cachedBitmap bmp
+            }
     }
 
-    /** Value with the arrow beside it, for the wider compact slots. */
+    /** Arrow above the value, shared by image complications and their previews. */
     @JvmOverloads
     fun valueWithArrowBitmap(
         size: Int,
@@ -300,20 +356,25 @@ internal object ComplicationRenderer {
         color: Int = valueColor(value, isMmol),
         icon: Boolean = false,
     ): Bitmap {
-        val (bmp, canvas) = bitmap(size, size)
-        val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
-        val content = size - inset * 2f
-        // Value on top, arrow beneath: side by side in a round slot leaves both
-        // small, because the pair has to fit the slot's width at its narrowest.
-        val valueHeight = content * 0.60f
-        drawFittedText(canvas, text, color, inset, inset, content, valueHeight)
-        val arrowBox = content * 0.34f
-        drawArrow(
-            canvas, arrowBox, arrowBox, rate, color,
-            inset + (content - arrowBox) / 2f,
-            inset + content - arrowBox,
-        )
-        return bmp
+        return cachedBitmap(listOf("valueWithArrowBitmap", size, text, value, rate, isMmol, color, icon)) {
+            val (bmp, canvas) = bitmap(size, size)
+            val inset = size * (if (icon) ICON_INSET else PHOTO_INSET)
+            val content = size - inset * 2f
+            // Stack the arrow above the larger value so both remain readable in
+            // round slots. Keep a small gap between the two drawing boxes.
+            val arrowBox = content * 0.40f
+            drawArrow(
+                canvas, arrowBox, arrowBox, rate, color,
+                inset + (content - arrowBox) / 2f,
+                inset,
+            )
+            val valueHeight = content * 0.58f
+            drawFittedText(
+                canvas, text, color, inset, inset + content - valueHeight,
+                content, valueHeight,
+            )
+            return@cachedBitmap bmp
+            }
     }
 
     /**
@@ -376,16 +437,39 @@ internal object ComplicationRenderer {
     }
 
     /** A blank of the right shape, for a slot with nothing to show. */
-    fun noValueBitmap(size: Int): Bitmap = bitmap(size, size).first
+    fun noValueBitmap(size: Int): Bitmap = cachedBitmap(listOf("noValue", size)) { bitmap(size, size).first }
 
     // -------------------------------------------------------------- sparkline
 
-    // One refresh asks every complication to redraw, and each was reading three
-    // hours of history for itself. They are all drawing the same window at the
-    // same instant, so the read is shared for a few seconds.
-    private const val SPARK_CACHE_MS = 5_000L
-    @Volatile private var sparkCache: List<GlucosePoint> = emptyList()
-    @Volatile private var sparkCacheAt = 0L
+    // Cache empty history too. All lanes/settings are part of the key, so changing
+    // the selected sensor or units can never reuse another trace for five seconds.
+    private data class SparkKey(
+        val sensor: String?,
+        val isMmol: Boolean,
+        val raw: Boolean,
+        val smoothingMinutes: Int,
+        val collapse: Boolean,
+        val dataRevision: Long,
+        val calibrationRevision: Long,
+        val minute: Long,
+    )
+    private data class SparkEntry(val key: SparkKey, val points: List<GlucosePoint>)
+    private var sparkCache: SparkEntry? = null
+
+    private fun sparkKey(isMmol: Boolean): SparkKey {
+        val sensor = runCatching { tk.glucodata.ui.WearSensorSelection.resolve() }.getOrNull()
+        val context = Applic.app
+        return SparkKey(
+            sensor = sensor,
+            isMmol = isMmol,
+            raw = primaryLane(sensor),
+            smoothingMinutes = runCatching { tk.glucodata.DataSmoothing.graphSmoothingMinutes(context) }.getOrDefault(0),
+            collapse = runCatching { tk.glucodata.DataSmoothing.collapseChunks(context) }.getOrDefault(false),
+            dataRevision = tk.glucodata.UiRefreshBus.revision.value,
+            calibrationRevision = tk.glucodata.CalibrationAccess.getRevision(),
+            minute = System.currentTimeMillis() / 60_000L,
+        )
+    }
 
     /**
      * A plausible curve for the complication picker, which asks for preview
@@ -412,32 +496,25 @@ internal object ComplicationRenderer {
      * smoothing, so the complications and the watch face were drawing the raw
      * trace beside a smoothed one in the app.
      */
+    @Synchronized
     fun sparkPoints(isMmol: Boolean): List<GlucosePoint> {
+        val key = sparkKey(isMmol)
+        sparkCache?.takeIf { it.key == key }?.let { return it.points }
         val now = System.currentTimeMillis()
-        val cached = sparkCache
-        if (cached.isNotEmpty() && now - sparkCacheAt < SPARK_CACHE_MS) return cached
         val from = now - SPARK_WINDOW_MS
         val points = runCatching {
-            val sensor = tk.glucodata.ui.WearSensorSelection.resolve()
-            val lane = primaryLane(sensor)
-            NotificationHistorySource.getDisplayHistory(from, isMmol, sensor)
+            NotificationHistorySource.getDisplayHistory(from, isMmol, key.sensor)
                 .filter { it.timestamp in from..now }
                 .mapNotNull { point ->
-                    val value = if (lane) {
+                    val value = if (key.raw) {
                         point.rawValue.takeIf { it.isFinite() && it > 0f } ?: point.value
-                    } else {
-                        point.value
-                    }
-                    if (value.isFinite() && value > 0f) {
-                        GlucosePoint(point.timestamp, value, point.rawValue)
-                    } else {
-                        null
-                    }
+                    } else point.value
+                    if (value.isFinite() && value > 0f) GlucosePoint(point.timestamp, value, point.rawValue)
+                    else null
                 }
         }.getOrDefault(emptyList())
-        val smoothed = smooth(points)
-        sparkCache = smoothed
-        sparkCacheAt = now
+        val smoothed = smooth(points, key.smoothingMinutes, key.collapse)
+        sparkCache = SparkEntry(key, smoothed)
         return smoothed
     }
 
@@ -455,15 +532,8 @@ internal object ComplicationRenderer {
     }.getOrDefault(false)
 
     /** The user's smoothing, applied exactly as the watch's own store applies it. */
-    private fun smooth(points: List<GlucosePoint>): List<GlucosePoint> {
-        val context = Applic.app ?: return points
-        val minutes = runCatching {
-            tk.glucodata.DataSmoothing.graphSmoothingMinutes(context)
-        }.getOrDefault(0)
+    private fun smooth(points: List<GlucosePoint>, minutes: Int, collapse: Boolean): List<GlucosePoint> {
         if (minutes <= 0) return points
-        val collapse = runCatching {
-            tk.glucodata.DataSmoothing.collapseChunks(context)
-        }.getOrDefault(false)
         return runCatching {
             tk.glucodata.GlucoseSmoothing.smooth(
                 points = points,
@@ -498,64 +568,66 @@ internal object ComplicationRenderer {
         inset: Boolean = true,
         allowSynthetic: Boolean = false,
     ): Bitmap? {
-        val points = sparkPoints(isMmol).takeIf { it.size >= 2 }
-            ?: if (allowSynthetic) syntheticPoints(isMmol) else emptyList()
-        if (points.size < 2 || width <= 0 || height <= 0) return null
+        return cachedBitmapOrNull(listOf("chartBitmap", width, height, isMmol, valueText, value, rate, timeMillis, showArrow, showTime, inset, allowSynthetic, chartStyleKey(isMmol, value))) {
+            val points = sparkPoints(isMmol).takeIf { it.size >= 2 }
+                ?: if (allowSynthetic) syntheticPoints(isMmol) else emptyList()
+            if (points.size < 2 || width <= 0 || height <= 0) return@cachedBitmapOrNull null
 
-        val (bmp, canvas) = bitmap(width, height)
-        val marginX = if (inset) width * PHOTO_INSET else 0f
-        val marginY = if (inset) height * PHOTO_INSET else 0f
-        val contentW = width - marginX * 2f
-        val contentH = height - marginY * 2f
-        val color = valueColor(value, isMmol)
+            val (bmp, canvas) = bitmap(width, height)
+            val marginX = if (inset) width * PHOTO_INSET else 0f
+            val marginY = if (inset) height * PHOTO_INSET else 0f
+            val contentW = width - marginX * 2f
+            val contentH = height - marginY * 2f
+            val color = valueColor(value, isMmol)
 
-        // The header takes a share of the height only when there is something
-        // to put in it. With nothing above or below, the trace would run the
-        // full height of the box and read as a wall, so it is inset a little
-        // instead — the breathing room the header would otherwise have given.
-        val hasHeader = valueText != null
-        val headerH = if (hasHeader) contentH * 0.30f else 0f
-        val timeH = if (showTime) contentH * 0.11f else 0f
-        val squish = if (!hasHeader && !showTime) contentH * 0.13f else 0f
-        val chartTop = marginY + headerH + squish
-        val chartH = contentH - headerH - timeH - squish * 2f
+            // The header takes a share of the height only when there is something
+            // to put in it. With nothing above or below, the trace would run the
+            // full height of the box and read as a wall, so it is inset a little
+            // instead — the breathing room the header would otherwise have given.
+            val hasHeader = valueText != null
+            val headerH = if (hasHeader) contentH * 0.30f else 0f
+            val timeH = if (showTime) contentH * 0.11f else 0f
+            val squish = if (!hasHeader && !showTime) contentH * 0.13f else 0f
+            val chartTop = marginY + headerH + squish
+            val chartH = contentH - headerH - timeH - squish * 2f
 
-        canvas.save()
-        canvas.translate(marginX, chartTop)
-        val now = System.currentTimeMillis()
-        drawSparkline(
-            canvas, contentW, chartH, points, isMmol, now - SPARK_WINDOW_MS, now,
-            // Let the band reach the bitmap's own edges.
-            floatArrayOf(marginX, chartTop, marginX, height - chartTop - chartH),
-        )
-        canvas.restore()
+            canvas.save()
+            canvas.translate(marginX, chartTop)
+            val now = System.currentTimeMillis()
+            drawSparkline(
+                canvas, contentW, chartH, points, isMmol, now - SPARK_WINDOW_MS, now,
+                // Let the band reach the bitmap's own edges.
+                floatArrayOf(marginX, chartTop, marginX, height - chartTop - chartH),
+            )
+            canvas.restore()
 
-        if (hasHeader) {
-            // Value dominant, arrow tucked against it rather than pinned to the
-            // far edge, and both centred as one group. Sizing the arrow off the
-            // header height and pushing it right made it compete with the value.
-            val arrowBox = if (showArrow) headerH * 0.58f else 0f
-            val gap = if (showArrow) headerH * 0.10f else 0f
-            val valueW = measuredWidth(valueText!!, headerH) .coerceAtMost(contentW - arrowBox - gap)
-            val groupW = valueW + gap + arrowBox
-            val groupX = marginX + (contentW - groupW) / 2f
-            drawFittedText(canvas, valueText, color, groupX, marginY, valueW, headerH)
-            if (showArrow) {
-                drawArrow(
-                    canvas, arrowBox, arrowBox, rate, color,
-                    groupX + valueW + gap, marginY + (headerH - arrowBox) / 2f,
+            if (hasHeader) {
+                // Value dominant, arrow tucked against it rather than pinned to the
+                // far edge, and both centred as one group. Sizing the arrow off the
+                // header height and pushing it right made it compete with the value.
+                val arrowBox = if (showArrow) headerH * 0.58f else 0f
+                val gap = if (showArrow) headerH * 0.10f else 0f
+                val valueW = measuredWidth(valueText!!, headerH) .coerceAtMost(contentW - arrowBox - gap)
+                val groupW = valueW + gap + arrowBox
+                val groupX = marginX + (contentW - groupW) / 2f
+                drawFittedText(canvas, valueText, color, groupX, marginY, valueW, headerH)
+                if (showArrow) {
+                    drawArrow(
+                        canvas, arrowBox, arrowBox, rate, color,
+                        groupX + valueW + gap, marginY + (headerH - arrowBox) / 2f,
+                    )
+                }
+            }
+            if (showTime) {
+                // Smallest of the three, and measured off the box height so a wide
+                // chart does not get a caption sized from its length.
+                drawTimeLabel(
+                    canvas, width.toFloat(), marginY + contentH * 0.99f, timeMillis, color,
+                    timeH * 0.92f,
                 )
             }
-        }
-        if (showTime) {
-            // Smallest of the three, and measured off the box height so a wide
-            // chart does not get a caption sized from its length.
-            drawTimeLabel(
-                canvas, width.toFloat(), marginY + contentH * 0.99f, timeMillis, color,
-                timeH * 0.92f,
-            )
-        }
-        return bmp
+            return@cachedBitmapOrNull bmp
+            }
     }
 
     /**
@@ -574,34 +646,36 @@ internal object ComplicationRenderer {
         inset: Boolean = true,
         allowSynthetic: Boolean = false,
     ): Bitmap? {
-        val points = sparkPoints(isMmol).takeIf { it.size >= 2 }
-            ?: if (allowSynthetic) syntheticPoints(isMmol) else emptyList()
-        if (points.size < 2 || width <= 0 || height <= 0) return null
-        val (bmp, canvas) = bitmap(width, height)
-        val marginX = if (inset) width * PHOTO_INSET else 0f
-        val marginY = if (inset) height * PHOTO_INSET else 0f
-        val now = System.currentTimeMillis()
+        return cachedBitmapOrNull(listOf("sparklineBitmap", width, height, isMmol, valueText, value, inset, allowSynthetic, chartStyleKey(isMmol, value))) {
+            val points = sparkPoints(isMmol).takeIf { it.size >= 2 }
+                ?: if (allowSynthetic) syntheticPoints(isMmol) else emptyList()
+            if (points.size < 2 || width <= 0 || height <= 0) return@cachedBitmapOrNull null
+            val (bmp, canvas) = bitmap(width, height)
+            val marginX = if (inset) width * PHOTO_INSET else 0f
+            val marginY = if (inset) height * PHOTO_INSET else 0f
+            val now = System.currentTimeMillis()
 
-        // The value sits above the trace rather than on it: overlaid text at
-        // complication size buries the shape it is meant to accompany.
-        val labelHeight = if (valueText != null) (height - marginY * 2f) * 0.42f else 0f
-        val chartTop = marginY + labelHeight
-        val chartHeight = height - marginY - chartTop
-        canvas.save()
-        canvas.translate(marginX, chartTop)
-        drawSparkline(
-            canvas, width - marginX * 2f, chartHeight, points, isMmol,
-            now - SPARK_WINDOW_MS, now,
-        )
-        canvas.restore()
-
-        if (valueText != null) {
-            drawFittedText(
-                canvas, valueText, valueColor(value, isMmol),
-                marginX, marginY, width - marginX * 2f, labelHeight * 0.86f,
+            // The value sits above the trace rather than on it: overlaid text at
+            // complication size buries the shape it is meant to accompany.
+            val labelHeight = if (valueText != null) (height - marginY * 2f) * 0.42f else 0f
+            val chartTop = marginY + labelHeight
+            val chartHeight = height - marginY - chartTop
+            canvas.save()
+            canvas.translate(marginX, chartTop)
+            drawSparkline(
+                canvas, width - marginX * 2f, chartHeight, points, isMmol,
+                now - SPARK_WINDOW_MS, now,
             )
-        }
-        return bmp
+            canvas.restore()
+
+            if (valueText != null) {
+                drawFittedText(
+                    canvas, valueText, valueColor(value, isMmol),
+                    marginX, marginY, width - marginX * 2f, labelHeight * 0.86f,
+                )
+            }
+            return@cachedBitmapOrNull bmp
+            }
     }
 
     /**
@@ -752,31 +826,33 @@ internal object ComplicationRenderer {
         rate: Float,
         allowSynthetic: Boolean = false,
     ): Bitmap? {
-        val points = sparkPoints(isMmol).takeIf { it.size >= 2 }
-            ?: if (allowSynthetic) syntheticPoints(isMmol) else emptyList()
-        if (points.size < 2 || width <= 0 || height <= 0) return null
-        val (bmp, canvas) = bitmap(width, height)
-        val marginY = height * 0.10f
-        val contentHeight = height - marginY * 2f
-        val color = valueColor(value, isMmol)
+        return cachedBitmapOrNull(listOf("wideChartBitmap", width, height, isMmol, valueText, value, rate, allowSynthetic, chartStyleKey(isMmol, value))) {
+            val points = sparkPoints(isMmol).takeIf { it.size >= 2 }
+                ?: if (allowSynthetic) syntheticPoints(isMmol) else emptyList()
+            if (points.size < 2 || width <= 0 || height <= 0) return@cachedBitmapOrNull null
+            val (bmp, canvas) = bitmap(width, height)
+            val marginY = height * 0.10f
+            val contentHeight = height - marginY * 2f
+            val color = valueColor(value, isMmol)
 
-        val valueWidth = width * 0.26f
-        drawFittedText(canvas, valueText, color, 0f, marginY, valueWidth, contentHeight * 0.78f)
-        val arrowBox = contentHeight * 0.5f
-        drawArrow(
-            canvas, arrowBox, arrowBox, rate, color,
-            valueWidth, marginY + (contentHeight - arrowBox) / 2f,
-        )
+            val valueWidth = width * 0.26f
+            drawFittedText(canvas, valueText, color, 0f, marginY, valueWidth, contentHeight * 0.78f)
+            val arrowBox = contentHeight * 0.5f
+            drawArrow(
+                canvas, arrowBox, arrowBox, rate, color,
+                valueWidth, marginY + (contentHeight - arrowBox) / 2f,
+            )
 
-        val chartLeft = valueWidth + arrowBox + width * 0.03f
-        canvas.save()
-        canvas.translate(chartLeft, marginY)
-        val now = System.currentTimeMillis()
-        drawSparkline(
-            canvas, width - chartLeft, contentHeight, points, isMmol,
-            now - SPARK_WINDOW_MS, now,
-        )
-        canvas.restore()
-        return bmp
+            val chartLeft = valueWidth + arrowBox + width * 0.03f
+            canvas.save()
+            canvas.translate(chartLeft, marginY)
+            val now = System.currentTimeMillis()
+            drawSparkline(
+                canvas, width - chartLeft, contentHeight, points, isMmol,
+                now - SPARK_WINDOW_MS, now,
+            )
+            canvas.restore()
+            return@cachedBitmapOrNull bmp
+            }
     }
 }

@@ -118,8 +118,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.lerp
-import kotlin.math.cos
-import kotlin.math.sin
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.Applic
@@ -135,20 +133,10 @@ import tk.glucodata.ui.util.AdaptiveContentWidthClass
 import tk.glucodata.ui.util.adaptiveContentWidthClass
 import tk.glucodata.ui.util.rememberAdaptiveWindowMetrics
 
-private data class TrendCornerWeights(
-    val topStart: Float,
-    val topEnd: Float,
-    val bottomEnd: Float,
-    val bottomStart: Float
-)
-
 private data class GlucoseHeroTone(
     val tint: Color,
     val blendFraction: Float
 )
-
-private fun lerpFloat(start: Float, end: Float, fraction: Float): Float =
-    start + (end - start) * fraction.coerceIn(0f, 1f)
 
 private fun fallbackLowThreshold(isMmol: Boolean): Float = GlucoseRangeColors.defaultLow(isMmol)
 
@@ -182,32 +170,15 @@ private fun glucoseHeroTone(
     GlucoseHeroTone(tint = Color(tone.tintArgb), blendFraction = tone.blendFraction)
 }
 
-private fun trendCornerWeightsFromVelocity(velocity: Float): TrendCornerWeights {
-    val angleDeg = (-velocity * 25f).coerceIn(-90f, 90f)
-    val angleRad = Math.toRadians(angleDeg.toDouble())
-    val dirX = cos(angleRad).toFloat()
-    val dirY = sin(angleRad).toFloat()
-
-    fun cornerRoundWeight(cornerX: Float, cornerY: Float): Float {
-        val dot = ((dirX * cornerX + dirY * cornerY) * 0.70710677f).coerceIn(-1f, 1f)
-        return if (dot >= 0f) {
-            // Toward direction: sharper as dot increases.
-            lerpFloat(0.88f, 0.08f, dot)
-        } else {
-            // Opposite side: extra rounded.
-            lerpFloat(0.88f, 1f, -dot)
-        }
+private fun trendRightCornerRadius(velocity: Float, top: Boolean): Dp {
+    val directionalVelocity = if (top) -velocity else velocity
+    val strength = if (directionalVelocity.isFinite()) {
+        (directionalVelocity / 3.6f).coerceIn(0f, 1f)
+    } else {
+        0f
     }
-
-    return TrendCornerWeights(
-        topStart = cornerRoundWeight(-1f, -1f),
-        topEnd = cornerRoundWeight(1f, -1f),
-        bottomEnd = cornerRoundWeight(1f, 1f),
-        bottomStart = cornerRoundWeight(-1f, 1f)
-    )
+    return lerp(16.dp, 40.dp, strength)
 }
-
-private fun directionalRadius(weight: Float, min: Dp, max: Dp): Dp = lerp(min, max, weight.coerceIn(0f, 1f))
 
 private const val CalibrationDeleteSwipeThresholdFraction = 0.4f
 
@@ -241,6 +212,9 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    sensorEndTimeMs: Long = 0L,
+    stackBars: Boolean = false,
+    glucoseWidthPercent: Int = 70,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -269,14 +243,10 @@ fun DashboardCombinedHeader(
     val glucoseBaseContainerColor = MaterialTheme.colorScheme.primaryContainer
     val glucoseContentColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-    // Sensor: Surface Variant (Tonal) vs Tertiary Container (Expiring)
-    // FIX: Replaced fragile string matching (failed in Dutch, false positive in English for "1 days in use")
-    // with robust progress-based logic. >90% progress (approx <1.4 days left) triggers Expiring state.
-    val isExpiring = sensorProgress > 0.90f
-    // FIX: User reported "Silly" contrast in Dark Mode with surfaceVariant (too bright/green).
-    // Switched to primaryContainer to match the Glucose Card (Left) for a cohesive dark look.
-    val sensorContainerColor = if (isExpiring) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) // Darker variant
-    val sensorContentColor = if (isExpiring) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+    // The remaining lifetime uses the glucose card tone; elapsed time is grey.
+    val sensorContainerColor = glucoseBaseContainerColor
+    val sensorContentColor = glucoseContentColor
+    val sensorAgedColor = MaterialTheme.colorScheme.surfaceVariant
 
     // Advanced Trend
     val trendResult = remember(history, latestPoint, currentSnapshot) {
@@ -310,53 +280,31 @@ fun DashboardCombinedHeader(
     }
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val isLandscape = adaptiveMetrics.isLandscape
-    val cornerWeights = remember(trendResult.velocity) { trendCornerWeightsFromVelocity(trendResult.velocity) }
     val cornerAnimSpec = spring<Dp>(
         dampingRatio = Spring.DampingRatioLowBouncy,
         stiffness = Spring.StiffnessLow
     )
 
-    val heroTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 22.dp, 52.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroTopStartRadius"
-    )
-    val heroTopEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topEnd, 8.dp, 24.dp),
+    val heroTopStart = 16.dp
+    val heroTopEndAnimated by animateDpAsState(
+        targetValue = trendRightCornerRadius(trendResult.velocity, top = true),
         animationSpec = cornerAnimSpec,
         label = "HeroTopEndRadius"
     )
-    val heroBottomEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomEnd, 8.dp, 24.dp),
+    val heroBottomEndAnimated by animateDpAsState(
+        targetValue = trendRightCornerRadius(trendResult.velocity, top = false),
         animationSpec = cornerAnimSpec,
         label = "HeroBottomEndRadius"
     )
-    val heroBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 22.dp, 46.dp),
-        animationSpec = cornerAnimSpec,
-        label = "HeroBottomStartRadius"
-    )
+    // Keep spring overshoot inside the bounds of the 80dp card.
+    val heroTopEnd = heroTopEndAnimated.coerceIn(16.dp, 40.dp)
+    val heroBottomEnd = heroBottomEndAnimated.coerceIn(16.dp, 40.dp)
+    val heroBottomStart = 16.dp
 
-    val sensorTopStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorTopStartRadius"
-    )
-    val sensorTopEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.topEnd, 20.dp, 46.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorTopEndRadius"
-    )
-    val sensorBottomEnd by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomEnd, 22.dp, 52.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorBottomEndRadius"
-    )
-    val sensorBottomStart by animateDpAsState(
-        targetValue = directionalRadius(cornerWeights.bottomStart, 8.dp, 24.dp),
-        animationSpec = cornerAnimSpec,
-        label = "SensorBottomStartRadius"
-    )
+    val sensorTopStart = 16.dp
+    val sensorTopEnd = 16.dp
+    val sensorBottomEnd = 16.dp
+    val sensorBottomStart = 16.dp
 
     // 1. Resolve Values using shared logic (with calibration if active)
     val refreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
@@ -553,32 +501,25 @@ fun DashboardCombinedHeader(
                     else -> 28.dp
                 }
                 val resolvedEndPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 12.dp else 16.dp
-                // Multi-sensor mode: the value + chip are scaled down (so they
-                // read as a balanced cluster), and the hero CARD is pinned to the
-                // single-sensor content height (heroContentMinHeight below) so it
-                // never grows or shrinks — the scaled cluster just centers inside it.
+                // Reserve space for the peer strip within the fixed 80dp card.
                 val isMultiHero = peerReadings.isNotEmpty()
                 val heroMultiSensorScale = if (isMultiHero) 0.74f else 1f
-                // Single-sensor padding defines the target card height. Multi mode
-                // uses a smaller inner padding so the scaled value + chip cluster
-                // fills the SAME pinned height (heroContentMinHeight) below.
                 val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 12.dp
                 val resolvedVerticalPadding = if (isMultiHero) 4.dp else singleVerticalPadding
-                // Full (single-sensor) value style. The card height is pinned to
-                // the MEASURED height of this style (incl. font padding) + padding,
-                // so multi-sensor mode renders at the exact same card height — not
-                // the lineHeight estimate, which understated it and made multi smaller.
-                val fullPrimaryStyle = (
+                // Fit the value typography to the available card height.
+                val unscaledPrimaryStyle = (
                     if (heroWidthClass == AdaptiveContentWidthClass.Compact) MaterialTheme.typography.displayMedium
                     else MaterialTheme.typography.displayLargeExpressive
                 ).copy(fontFeatureSettings = "tnum")
                 val heroTextMeasurer = rememberTextMeasurer()
-                val heroContentMinHeight = remember(fullPrimaryStyle, density, singleVerticalPadding) {
-                    with(density) {
-                        heroTextMeasurer.measure("0,0", style = fullPrimaryStyle, maxLines = 1)
-                            .size.height.toDp()
-                    } + singleVerticalPadding * 2
+                val availableValueHeight = if (isMultiHero) 36.dp else 80.dp - singleVerticalPadding * 2
+                val valueHeight = with(density) {
+                    heroTextMeasurer.measure("0,0", style = unscaledPrimaryStyle, maxLines = 1)
+                        .size.height.toDp()
                 }
+                val fullPrimaryStyle = unscaledPrimaryStyle.scaleForHero(
+                    (availableValueHeight / valueHeight).coerceAtMost(1f)
+                )
                 val resolvedTrendIconSize = (when (heroWidthClass) {
                     AdaptiveContentWidthClass.Compact -> 30.dp
                     AdaptiveContentWidthClass.Medium -> 38.dp
@@ -775,7 +716,6 @@ fun DashboardCombinedHeader(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .heightIn(min = heroContentMinHeight)
                             .padding(
                                 start = resolvedStartPadding,
                                 end = resolvedEndPadding,
@@ -838,11 +778,7 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = if (statusCopy != null) {
-            modifier.heightIn(min = 96.dp)
-        } else {
-            modifier
-        }
+        val stabilizedModifier = modifier.height(80.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
@@ -867,7 +803,7 @@ fun DashboardCombinedHeader(
         var sensorContentWidthPx by remember { mutableStateOf(0) }
         val sensorDensity = LocalDensity.current
         Card(
-            modifier = modifier,
+            modifier = modifier.height(80.dp),
              colors = CardDefaults.cardColors(
                 containerColor = sensorContainerColor,
                 contentColor = sensorContentColor
@@ -886,7 +822,7 @@ fun DashboardCombinedHeader(
             ) {
                 val showRemainingHours = sensorHoursRemaining in 0L..24L
                 val lifecycleText = if (showRemainingHours) "$sensorHoursRemaining" + "h" else daysRemaining
-                val lifecycleStyle = MaterialTheme.typography.labelLarge
+                val lifecycleStyle = if (stackBars) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge
                 val lifecycleTextMeasurer = rememberTextMeasurer()
                 val lifecycleTextWidthPx = remember(lifecycleText, lifecycleStyle) {
                     lifecycleTextMeasurer.measure(
@@ -904,37 +840,29 @@ fun DashboardCombinedHeader(
                 // whole screen, not the real space inside this card.
                 val showLifecycleCalendar = sensorContentWidthPx == 0 ||
                     lifecycleTextWidthPx + lifecycleCalendarChromePx <= sensorContentWidthPx
-                // Dynamic Fill Layer
+                // At activation the entire bar matches the glucose card. As the sensor
+                // ages, neutral grey advances from the right edge toward the left.
                 if (sensorProgress > 0f) {
-                    val fillColor = when {
-                        sensorProgress > 0.95f -> MaterialTheme.colorScheme.error
-                        sensorProgress > 0.80f -> MaterialTheme.colorScheme.tertiary
-                        else -> StatusPalette.sensorLifeFill
-                    }
                     Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(sensorProgress)
-                            .background(fillColor.copy(alpha = 0.25f)) // Slightly increased opacity for visibility
-                    )
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(sensorProgress.coerceIn(0f, 1f))
+                                .background(sensorAgedColor)
+                        )
+                    }
                 }
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 12.dp), // Matched Vertical Padding (12dp)
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
-                    // Quiet window: visible while it runs, so nobody forgets it.
-                    if (quietWindowUntilMs > 0L) {
-                        QuietWindowHeaderChip(
-                            untilMs = quietWindowUntilMs,
-                            onClick = onQuietWindowClick,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-
                     // 0. Signal quality (start) and how old the newest reading is (end).
                     // The noise indicator shows as before; only the reading-age
                     // counter is opt-in via Display → Dashboard readouts (off by
@@ -945,9 +873,11 @@ fun DashboardCombinedHeader(
                             noiseLevel = trendResult.noiseLevel,
                             readingMillis = if (showReadingAge) primaryReadingMillis else null,
                             contentColor = sensorContentColor,
+                            readingAgeStyle = if (stackBars) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+                            readingAgeIconSize = if (stackBars) 16.dp else 14.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = if (stackBars || sensorEndTimeMs > 0L) 2.dp else 4.dp)
                         )
                     }
                     
@@ -959,12 +889,12 @@ fun DashboardCombinedHeader(
                                     transport = cloneTransport,
                                     showLabel = true,
                                     tint = sensorContentColor.copy(alpha = 0.7f),
-                                    textStyle = MaterialTheme.typography.labelMedium,
+                                    textStyle = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                                 )
                             } else {
                                 Text(
                                     text = sensorDisplayName,
-                                    style = MaterialTheme.typography.labelMedium, // M3 Standard
+                                    style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                                     color = sensorContentColor.copy(alpha = 0.7f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -1011,18 +941,19 @@ fun DashboardCombinedHeader(
                         heroOwnsAwaitingStatus = heroOwnsAwaitingStatus,
                     )
                     val mainText = if (showingStatus) sensorStatus else lifecycleText
-                    if (mainText.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                    if (mainText.isNotEmpty() || (stackBars && sensorEndTimeMs > 0L)) {
+                        Spacer(modifier = Modifier.height(if (stackBars || sensorEndTimeMs > 0L) 2.dp else 4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                              // Text First
                              Text(
                                 text = mainText,
-                                style = MaterialTheme.typography.labelLarge,
+                                style = lifecycleStyle,
                                 color = sensorContentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = if (!showingStatus &&
-                                    (showRemainingHours || showLifecycleCalendar)
+                                modifier = if ((showingStatus && stackBars && sensorEndTimeMs > 0L) ||
+                                    ((!stackBars || sensorEndTimeMs <= 0L) && !showingStatus &&
+                                        (showRemainingHours || showLifecycleCalendar))
                                 ) {
                                     Modifier.weight(1f, fill = false)
                                 } else {
@@ -1052,38 +983,72 @@ fun DashboardCombinedHeader(
                                       )
                                  }
                              }
+                             if (stackBars && sensorEndTimeMs > 0L) {
+                                 Spacer(modifier = Modifier.width(12.dp))
+                                 val expiryText = remember(sensorEndTimeMs) {
+                                     java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                         .format(java.util.Date(sensorEndTimeMs))
+                                 }
+                                 Text(
+                                     text = expiryText,
+                                     style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
+                                     color = sensorContentColor.copy(alpha = 0.85f),
+                                     maxLines = 1,
+                                     softWrap = false,
+                                     overflow = TextOverflow.Ellipsis,
+                                     modifier = Modifier.weight(1f)
+                                 )
+                             }
                          }
                      }
+                     if (!stackBars && sensorEndTimeMs > 0L) {
+                         Spacer(modifier = Modifier.height(2.dp))
+                         val expiryText = remember(sensorEndTimeMs) {
+                             java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                 .format(java.util.Date(sensorEndTimeMs))
+                         }
+                         Text(
+                             text = expiryText,
+                             style = MaterialTheme.typography.labelMedium,
+                             color = sensorContentColor.copy(alpha = 0.85f),
+                             maxLines = 1,
+                             softWrap = false,
+                             overflow = TextOverflow.Ellipsis,
+                             modifier = Modifier.fillMaxWidth()
+                         )
+                     }
+
                 }
             }
         }
     }
 
-    if (isLandscape) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            heroCard(Modifier.fillMaxWidth())
-            sensorCard(Modifier.fillMaxWidth())
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        if (stackBars) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                sensorCard(Modifier.fillMaxWidth())
+                heroCard(Modifier.fillMaxWidth())
+            }
+        } else {
+            val glucoseWeight = glucoseWidthPercent.coerceIn(40, 70) / 100f
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                heroCard(Modifier.weight(glucoseWeight))
+                sensorCard(Modifier.weight(1f - glucoseWeight))
+            }
         }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            heroCard(
-                Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight()
-            )
-            sensorCard(
-                Modifier
-                    .weight(0.3f)
-                    .fillMaxHeight()
-            )
+        // Keep the quiet-window action accessible without consuming the compact
+        // sensor card's 80dp budget for name, lifecycle, expiry and signal quality.
+        if (quietWindowUntilMs > 0L) {
+            QuietWindowHeaderChip(untilMs = quietWindowUntilMs, onClick = onQuietWindowClick)
         }
     }
 }
@@ -2238,7 +2203,9 @@ private fun SignalQualityAndReadingAgeRow(
     noiseLevel: Float,
     readingMillis: Long?,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readingAgeStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    readingAgeIconSize: androidx.compose.ui.unit.Dp = 12.dp
 ) {
     val density = LocalDensity.current
     val gapPx = with(density) { SIGNAL_AGE_GAP.roundToPx() }
@@ -2285,6 +2252,8 @@ private fun SignalQualityAndReadingAgeRow(
                     readingMillis = readingMillis,
                     iconTint = contentColor.copy(alpha = 0.55f),
                     textColor = contentColor.copy(alpha = 0.75f),
+                    textStyle = readingAgeStyle,
+                    iconSize = readingAgeIconSize,
                     modifier = Modifier.layoutId(SIGNAL_AGE_COUNTER_ID)
                 )
             }
@@ -2367,7 +2336,7 @@ private fun DashboardClearOptionsBottomSheet(
                         Icon(Icons.Filled.Close, null, tint = MaterialTheme.colorScheme.secondary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.clear_disabled_only), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.clear_disabled_only), style = MaterialTheme.typography.titleMediumEmphasized,)
                             Text(stringResource(R.string.disabled_count, disabledCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

@@ -605,6 +605,20 @@ object ExportPackageExporter {
                 afterSerial = page.last().sensorSerial
             }
         }
+        val readingDisplaySummary = JSONObject()
+            .put("sealedMinutes", sealedByKey.size)
+            .put(
+                "viewModes",
+                JSONArray().also { array ->
+                    sealedByKey.values.map { it.viewMode }.distinct().sorted().forEach(array::put)
+                }
+            )
+            .put(
+                "sensorSerials",
+                JSONArray().also { array ->
+                    sealedByKey.values.map { it.sensorSerial }.distinct().sorted().forEach(array::put)
+                }
+            )
 
         return JSONObject()
             .put("rangeStartEpochMillis", if (startMillis > 0L) startMillis else JSONObject.NULL)

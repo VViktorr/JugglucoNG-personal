@@ -397,6 +397,20 @@ object HistorySync {
             val rawValue = valueRawRaw / 10f
 
             if (value > 0 || rawValue > 0) {
+                // Native history is time-ordered. Finish the last minute before
+                // flushing, even if that makes this batch slightly larger.
+                if (HistoryBucketReplacement.shouldFlushBefore(
+                        readings, timeMs, NATIVE_SYNC_INSERT_CHUNK, RECENT_SYNC_BUCKET_MS
+                    )
+                ) {
+                    val stored = historyRepository.storeReadingsReplacingSensorBuckets(
+                        sensorSerial = roomSerial,
+                        readings = readings,
+                        bucketDurationMs = RECENT_SYNC_BUCKET_MS,
+                    )
+                    readings.clear()
+                    storedAny = storedAny || stored
+                }
                 readings.add(
                     HistoryReading(
                         timestamp = timeMs,
@@ -408,15 +422,6 @@ object HistorySync {
                     )
                 )
                 parsedCount++
-                if (readings.size >= NATIVE_SYNC_INSERT_CHUNK) {
-                    val stored = historyRepository.storeReadingsReplacingSensorBuckets(
-                        sensorSerial = roomSerial,
-                        readings = readings,
-                        bucketDurationMs = RECENT_SYNC_BUCKET_MS,
-                    )
-                    readings.clear()
-                    storedAny = storedAny || stored
-                }
             }
         }
 
