@@ -4864,6 +4864,7 @@ public class Notify {
         }
         builder.setPriority(Notification.PRIORITY_DEFAULT);
         applyReadingHeaderTimestamp(builder, actualMillis);
+        if (!isWearable) CustomGlucoseNotification.applyStatus(builder, app, status);
         final Notification not = builder.build();
         not.flags |= FLAG_ONGOING_EVENT;
         return not;
@@ -4983,6 +4984,7 @@ public class Notify {
         final Notification.Builder builder = mkbuilder(GLUCOSENOTIFICATION);
         builder.setSmallIcon(R.drawable.novalue).setOnlyAlertOnce(true)
                 .setContentTitle(message).setWhen(0L).setShowWhen(false).setOngoing(true);
+        if (!isWearable) CustomGlucoseNotification.applyStatus(builder, app, message);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setVisibility(VISIBILITY_PUBLIC);
             builder.setCategory(Notification.CATEGORY_SERVICE);

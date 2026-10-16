@@ -12,6 +12,13 @@ method = src[start:end]
 java = """
 class StaleNotificationHarness {
     static final String GLUCOSENOTIFICATION = "glucose";
+    static final boolean isWearable = false;
+    static final Object app = new Object();
+    static class CustomGlucoseNotification {
+        static void applyStatus(Notification.Builder b, Object context, CharSequence text) {
+            b.n.wrappedStatus = text.toString();
+        }
+    }
     static final int VISIBILITY_PUBLIC = 1, FLAG_ONGOING_EVENT = 2;
     static class R { static class drawable { static final int novalue = 3; } }
     static class Build {
@@ -30,7 +37,7 @@ class StaleNotificationHarness {
         static final int CATEGORY_SERVICE = 4, PRIORITY_DEFAULT = 0;
         int flags, icon, visibility;
         long time;
-        String title, text;
+        String title, text, wrappedStatus;
         boolean silent, ongoing;
         static class Builder {
             Notification n = new Notification();
@@ -54,6 +61,7 @@ class StaleNotificationHarness {
         CurrentDisplaySource.Snapshot stale = new CurrentDisplaySource.Snapshot();
         Notification n = h.makeStaleReadingNotification(stale);
         if (!n.text.isEmpty()) throw new AssertionError("Stale number exposed on lock screen: " + n.text);
+        if (!n.title.equals(n.wrappedStatus)) throw new AssertionError("Wrapping lost the complete status");
         if (!n.title.contains("No current value") || n.time != stale.time) throw new AssertionError("Missing status or original timestamp");
         if (!n.silent || !n.ongoing || n.icon != R.drawable.novalue || n.visibility != VISIBILITY_PUBLIC) throw new AssertionError("Status notification behavior changed");
         Notification empty = h.makeStaleReadingNotification(null);

@@ -15,6 +15,7 @@ import tk.glucodata.R
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 object WidgetUpdater {
@@ -155,7 +156,17 @@ object WidgetUpdater {
                                     setTextColor(clockId, textColor)
                                     setViewVisibility(detailId, if (detailText.isNotBlank() && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                                     setTextViewText(detailId, detailText)
-                                    setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                                    val staleStatus = !snapshot.hasFreshReading
+                                    setInt(detailId, "setMaxLines", if (staleStatus) 3 else 1)
+                                    // Keep the wrapped status in its own half beside the date.
+                                    val density = context.resources.displayMetrics.density
+                                    val halfWidth = (w * 0.48f * density).roundToInt()
+                                    setViewPadding(detailId, if (staleStatus && config.showDate) halfWidth else 0,
+                                        0, (12f * density).roundToInt(), 0)
+                                    setViewPadding(dateId, (14f * density).roundToInt(), 0,
+                                        if (staleStatus) halfWidth else 0, 0)
+                                    val detailSize = if (staleStatus) min(dateSize, h * 0.42f / 3.6f) else dateSize
+                                    setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, detailSize)
                                     setTextColor(detailId, textColor)
                                     setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
                                     setTextColor(dateId, textColor)

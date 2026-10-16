@@ -146,7 +146,9 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         sizeSp: Float,
         config: WidgetConfig,
         color: Int,
-        weight: Int = config.secondaryFontWeight
+        weight: Int = config.secondaryFontWeight,
+        wrapWidthPx: Int? = null,
+        maxHeightPx: Int? = null
     ): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = sizeSp * context.resources.displayMetrics.scaledDensity
@@ -156,8 +158,31 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 fontVariationSettings = "'wght' $weight, 'wdth' 100"
             }
         }
-        val fm = paint.fontMetrics
         val pad = (3f * context.resources.displayMetrics.density).coerceAtLeast(2f)
+        if (wrapWidthPx != null && maxHeightPx != null) {
+            val width = wrapWidthPx.coerceAtLeast(1)
+            val textWidth = (width - 2 * pad).roundToInt().coerceAtLeast(1)
+            val availableHeight = (maxHeightPx - 2 * pad).coerceAtLeast(1f)
+            val textPaint = android.text.TextPaint(paint)
+            fun layout() = android.text.StaticLayout.Builder.obtain(text, 0, text.length, textPaint, textWidth)
+                .setAlignment(android.text.Layout.Alignment.ALIGN_OPPOSITE)
+                .setIncludePad(false)
+                .setBreakStrategy(android.text.Layout.BREAK_STRATEGY_SIMPLE)
+                .build()
+            var wrapped = layout()
+            // Reflow first; shrink only if all lines exceed the available header height.
+            while (wrapped.height > availableHeight && textPaint.textSize > 1f) {
+                textPaint.textSize *= 0.9f
+                wrapped = layout()
+            }
+            return Bitmap.createBitmap(width, (wrapped.height + 2 * pad).roundToInt().coerceAtLeast(1),
+                Bitmap.Config.ARGB_8888).also { bitmap ->
+                val canvas = Canvas(bitmap)
+                canvas.translate(pad, pad)
+                wrapped.draw(canvas)
+            }
+        }
+        val fm = paint.fontMetrics
         val width = (paint.measureText(text) + pad * 2f).roundToInt().coerceAtLeast(1)
         val height = ((fm.descent - fm.ascent) + pad * 2f).roundToInt().coerceAtLeast(1)
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
@@ -454,9 +479,13 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                             config.secondaryFontWeight,
                             config.textScale,
                             config.detailScale,
-                            secondaryTextColor
+                            secondaryTextColor,
+                            size
                         ) {
-                            textBitmap(context, fallbackText, 13f * detailScale, config, secondaryTextColor, secondaryFontWeight)
+                            textBitmap(context, fallbackText, 13f * detailScale, config, secondaryTextColor,
+                                secondaryFontWeight,
+                                wrapWidthPx = (size.width.value * 0.40f * density).roundToInt(),
+                                maxHeightPx = ((HeaderHeight.value - 20f) * density).roundToInt())
                         }
                         Image(
                             provider = ImageProvider(fallbackBitmap),

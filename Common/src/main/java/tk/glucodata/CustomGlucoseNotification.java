@@ -16,6 +16,14 @@ import android.widget.RemoteViews;
 final class CustomGlucoseNotification {
     private CustomGlucoseNotification() { }
 
+    /** A full-width, wrapping status in both collapsed and expanded phone views. */
+    static void applyStatus(android.app.Notification.Builder builder, Context context, CharSequence status) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.notification_phone_status);
+        views.setTextViewText(R.id.notification_status, status);
+        builder.setStyle(new android.app.Notification.DecoratedCustomViewStyle())
+                .setCustomContentView(views).setCustomBigContentView(views);
+    }
+
     static RemoteViews values(Context context, boolean expanded, CharSequence primary,
             int primaryColor, int secondaryColor, int tertiaryColor,
             java.util.List<NotificationChartDrawer.ValueItem> peers, float rate, int arrowColor,
