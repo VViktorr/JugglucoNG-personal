@@ -1,5 +1,8 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import android.content.Context
 import android.content.Intent
@@ -334,7 +337,7 @@ fun DebugSettingsScreen(navController: NavController) {
                 onNavigateBack = { navController.popBackStack() },
                 actions = {
                     IconButtonTooltip(stringResource(R.string.debug_howto_title)) {
-                        IconButton(onClick = { showHowTo = !showHowTo }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { showHowTo = !showHowTo }, shapes = appIconButtonShapes()) {
                             Icon(
                                 Icons.AutoMirrored.Filled.HelpOutline,
                                 contentDescription = stringResource(R.string.debug_howto_title)
@@ -350,7 +353,7 @@ fun DebugSettingsScreen(navController: NavController) {
                             }
                             snapshot = LogSnapshot()
                         },
-                        shapes = IconButtonDefaults.shapes()) {
+                        shapes = appIconButtonShapes()) {
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear))
                         }
                     }
@@ -416,8 +419,8 @@ fun DebugSettingsScreen(navController: NavController) {
                 // container tone or the unselected half vanishes.
                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                 selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                unselectedContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
             )
 
             LogStatsRow(
@@ -443,14 +446,14 @@ fun DebugSettingsScreen(navController: NavController) {
                 Button(
                     onClick = { shareLog() },
                     modifier = Modifier.weight(1f),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.debug_share_log))
                 }
-                OutlinedButton(onClick = { saveLauncher.launch(logType.exportName()) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                OutlinedButton(onClick = { saveLauncher.launch(logType.exportName()) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.save))
@@ -478,7 +481,7 @@ private fun HowToReportCard(onDismiss: () -> Unit) {
                     modifier = Modifier.weight(1f)
                 )
                 IconButtonTooltip(stringResource(R.string.debug_dismiss_howto)) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp), shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp), shapes = appIconButtonShapes()) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = stringResource(R.string.debug_dismiss_howto),

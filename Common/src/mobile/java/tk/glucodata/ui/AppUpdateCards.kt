@@ -2,9 +2,11 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -471,7 +473,7 @@ internal fun AppUpdateCard(
                     )
                     if (onDismiss != null) {
                         IconButtonTooltip(stringResource(R.string.cgm_readiness_dismiss_action)) {
-                            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp), shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp), shapes = appIconButtonShapes()) {
                                 Icon(
                                     Icons.Filled.Close,
                                     contentDescription = stringResource(R.string.cgm_readiness_dismiss_action),
@@ -524,7 +526,7 @@ internal fun AppUpdateFilledAction(label: String, accent: Color, onClick: () -> 
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = accent),
-        shapes = ButtonDefaults.shapes(),
+        shapes = appButtonShapes(),
         contentPadding = ButtonDefaults.ContentPadding
     ) {
         Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -533,7 +535,7 @@ internal fun AppUpdateFilledAction(label: String, accent: Color, onClick: () -> 
 
 @Composable
 internal fun AppUpdateTextAction(label: String, onClick: () -> Unit) {
-    TextButton(onClick = onClick, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+    TextButton(onClick = onClick, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
         Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

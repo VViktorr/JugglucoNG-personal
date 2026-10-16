@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -525,7 +528,7 @@ fun ExpressiveSettingsScreen(
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (settingsQuery.isNotEmpty()) {
-                        IconButton(onClick = { settingsQuery = "" }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { settingsQuery = "" }, shapes = appIconButtonShapes()) {
                             Icon(Icons.Default.Close, contentDescription = stringResource(R.string.settings_search_clear))
                         }
                     }
@@ -1628,7 +1631,7 @@ private fun UnitPickerDialog(isMmol: Boolean, onSelect: (Int) -> Unit, onDismiss
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1668,7 +1671,7 @@ private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1723,7 +1726,7 @@ private fun SensorHandoverActionPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1779,7 +1782,7 @@ internal fun PreviewWindowPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1849,7 +1852,7 @@ private fun LanguagePickerDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1874,11 +1877,11 @@ private fun ConfirmActionDialog(
             TextButton(
                 onClick = onConfirm,
                 colors = if (isDestructive) ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.textButtonColors(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) { Text(if (isDestructive) stringResource(R.string.delete) else stringResource(R.string.ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
+        dismissButton = { TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
     )
 }
 

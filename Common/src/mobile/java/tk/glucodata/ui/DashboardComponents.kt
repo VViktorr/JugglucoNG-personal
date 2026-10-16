@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.view.HapticFeedbackConstants
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.animateColorAsState
@@ -1771,7 +1773,7 @@ fun CalibrationsCard(
             onClick = onAddCalibration,
             enabled = isCalibrationEnabled,
             modifier = Modifier.fillMaxWidth(),
-            shapes = androidx.compose.material3.ButtonDefaults.shapes(shape = RoundedCornerShape(28.dp)),
+            shapes = appButtonShapes(),
             contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
 //            elevation = androidx.compose.material3.ButtonDefaults.filledTonalButtonElevation(defaultElevation = 2.dp)
         ) {
@@ -1814,17 +1816,7 @@ fun CalibrationsCard(
 //                        modifier = Modifier
 //                            .weight(1f),
 //                            .heightIn(min = 48.dp),
-                        shapes = androidx.compose.material3.ButtonDefaults.shapes(shape = RoundedCornerShape(
-                            topStart = 12.dp,
-                            bottomStart = 12.dp,
-                            topEnd = 4.dp,
-                            bottomEnd = 4.dp
-                        ), pressedShape = RoundedCornerShape(
-                            topStart = 8.dp,
-                            bottomStart = 8.dp,
-                            topEnd = 4.dp,
-                            bottomEnd = 4.dp
-                        )),
+                        shapes = appButtonShapes(),
                         contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
                         colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -1845,17 +1837,7 @@ fun CalibrationsCard(
                     onClick = onAddCalibration,
                     enabled = isCalibrationEnabled,
                     modifier = Modifier.weight(1f),
-                    shapes = androidx.compose.material3.ButtonDefaults.shapes(shape = RoundedCornerShape(
-                        topStart = 4.dp,
-                        bottomStart = 4.dp,
-                        topEnd = 12.dp,
-                        bottomEnd = 12.dp
-                    ), pressedShape = RoundedCornerShape(
-                        topStart = 4.dp,
-                        bottomStart = 4.dp,
-                        topEnd = 8.dp,
-                        bottomEnd = 8.dp
-                    )),
+                    shapes = appButtonShapes(),
                     contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -2039,7 +2021,7 @@ fun CalibrationsCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
-                        shapes = androidx.compose.material3.ButtonDefaults.shapes(shape = RoundedCornerShape(28.dp)),
+                        shapes = appButtonShapes(),
                         contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
                         colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -2358,7 +2340,7 @@ private fun DashboardClearOptionsBottomSheet(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            androidx.compose.material3.TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(), shapes = androidx.compose.material3.ButtonDefaults.shapes(), contentPadding = androidx.compose.material3.ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+            androidx.compose.material3.TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(), shapes = appButtonShapes(), contentPadding = androidx.compose.material3.ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
         }
     }
 }

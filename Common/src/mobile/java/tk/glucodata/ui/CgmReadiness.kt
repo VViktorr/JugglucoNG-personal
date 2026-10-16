@@ -2,8 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityManager
@@ -203,7 +205,7 @@ fun CgmReadinessScreen(navController: NavController) {
                 onNavigateBack = { navController.popBackStack() },
                 actions = {
                     IconButtonTooltip(stringResource(R.string.refresh)) {
-                        IconButton(onClick = { refreshTick++ }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { refreshTick++ }, shapes = appIconButtonShapes()) {
                             Icon(
                                 Icons.Filled.Refresh,
                                 contentDescription = stringResource(R.string.refresh)
@@ -493,7 +495,7 @@ private fun CgmReadinessSummaryCard(
                     )
                 }
                 IconButtonTooltip(stringResource(R.string.cgm_readiness_dismiss_action)) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp), shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp), shapes = appIconButtonShapes()) {
                         Icon(
                             Icons.Filled.Close,
                             contentDescription = stringResource(R.string.cgm_readiness_dismiss_action),
@@ -519,13 +521,13 @@ private fun CgmReadinessSummaryCard(
                     Button(
                         onClick = { onAction(action) },
                         colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(stringResource(labelRes))
                     }
                 }
-                OutlinedButton(onClick = onOpenReadiness, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                OutlinedButton(onClick = onOpenReadiness, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(R.string.cgm_readiness_review_action))
                 }
             }
@@ -568,7 +570,7 @@ private fun CgmReadinessDetailRow(
                 )
                 if (item.action != null && item.actionLabelRes != null) {
                     Spacer(Modifier.height(12.dp))
-                    FilledTonalButton(onClick = { onAction(item.action) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                    FilledTonalButton(onClick = { onAction(item.action) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                         Text(stringResource(item.actionLabelRes))
                         Spacer(Modifier.width(8.dp))
                         Icon(

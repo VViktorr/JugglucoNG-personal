@@ -2,13 +2,14 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.TimePickerDefaults
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuPopup
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.Context
 import android.media.AudioAttributes
@@ -353,7 +354,7 @@ fun TalkerSettingsScreen(navController: NavController) {
                                             Talker.previewVoice(index)
                                         }
                                     },
-                                    shapes = IconButtonDefaults.shapes()) {
+                                    shapes = appIconButtonShapes()) {
                                         Icon(
                                             if (isPreviewing) Icons.Default.Pause else Icons.Default.PlayArrow,
                                             contentDescription = if (isPreviewing) stringResource(R.string.stop) else stringResource(R.string.preview)

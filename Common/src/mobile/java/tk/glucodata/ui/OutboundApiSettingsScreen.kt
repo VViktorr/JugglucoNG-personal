@@ -2,8 +2,11 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.AppButtonShape
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -196,12 +199,12 @@ fun OutboundApiSettingsScreen(navController: NavController) {
                 )
             },
             confirmButton = {
-                TextButton(onClick = { deleteDestination(destination) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { deleteDestination(destination) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { pendingDelete = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -258,7 +261,7 @@ fun OutboundApiSettingsScreen(navController: NavController) {
                         onClick = { showAddSheet = true },
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                        shapes = ButtonDefaults.shapes()
+                        shapes = appButtonShapes()
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = null)
                         Text(
@@ -355,12 +358,12 @@ private fun DestinationCard(
                     onCheckedChange = onEnabledChange
                 )
                 IconButtonTooltip(stringResource(R.string.delete)) {
-                    IconButton(onClick = onDelete, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onDelete, shapes = appIconButtonShapes()) {
                         Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete))
                     }
                 }
                 IconButtonTooltip(if (expanded) stringResource(R.string.show_less) else stringResource(R.string.show_more)) {
-                    IconButton(onClick = onToggleExpanded, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onToggleExpanded, shapes = appIconButtonShapes()) {
                         Icon(
                             if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                             contentDescription = if (expanded) stringResource(R.string.show_less) else stringResource(R.string.show_more)
@@ -406,13 +409,13 @@ private fun DestinationCard(
                                     confirmTestSms = false
                                     onSendTest()
                                 },
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                                 contentPadding = ButtonDefaults.TextButtonContentPadding) {
                                     Text(stringResource(R.string.sms_send_test))
                                 }
                             },
                             dismissButton = {
-                                TextButton(onClick = { confirmTestSms = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                                TextButton(onClick = { confirmTestSms = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                                     Text(stringResource(R.string.cancel))
                                 }
                             }
@@ -424,7 +427,7 @@ private fun DestinationCard(
                         onClick = { if (destination.isSms()) confirmTestSms = true else onSendTest() },
                         enabled = destination.isReady(),
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(
@@ -544,7 +547,7 @@ private fun DestinationEditor(
             visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButtonTooltip(if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                    IconButton(onClick = { onShowSecretChange(!showSecret) }, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = { onShowSecretChange(!showSecret) }, shapes = appIconButtonShapes()) {
                         Icon(
                             if (showSecret) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                             contentDescription = if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
@@ -693,7 +696,7 @@ private fun PresetSummaryRow(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            TextButton(onClick = onChangePreset, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onChangePreset, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.outbound_api_change_preset))
             }
         }
@@ -735,7 +738,7 @@ private fun TriggerPicker(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
-        TextButton(onClick = { showSheet = true }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+        TextButton(onClick = { showSheet = true }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
             Text(stringResource(R.string.outbound_api_change_trigger))
         }
     }
@@ -998,7 +1001,7 @@ internal fun NumberStepper(
                         onClick = { onChange((value - 1).coerceAtLeast(range.first)) },
                         enabled = value > range.first,
                         modifier = Modifier.size(48.dp),
-                        shapes = IconButtonDefaults.shapes()
+                        shapes = appIconButtonShapes()
                     ) {
                         Icon(
                             Icons.Filled.Remove,
@@ -1018,7 +1021,7 @@ internal fun NumberStepper(
                         onClick = { onChange((value + 1).coerceAtMost(range.last)) },
                         enabled = value < range.last,
                         modifier = Modifier.size(48.dp),
-                        shapes = IconButtonDefaults.shapes()
+                        shapes = appIconButtonShapes()
                     ) {
                         Icon(
                             Icons.Filled.Add,
@@ -1118,6 +1121,7 @@ private fun TemplateEditor(
     ) {
         templateTokens.forEach { token ->
             AssistChip(
+                shape = AppButtonShape,
                 onClick = { replaceSelection(token) },
                 label = { Text(token) }
             )
@@ -1141,6 +1145,7 @@ private fun TemplateEditor(
         ) {
             insulinTokens.forEach { token ->
                 AssistChip(
+                    shape = AppButtonShape,
                     onClick = { replaceSelection(token) },
                     label = { Text(token) }
                 )

@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.ButtonDefaults
 import android.annotation.SuppressLint
@@ -5237,14 +5239,14 @@ fun InteractiveGlucoseChart(
                         }
                         showDatePicker = false
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(stringResource(R.string.go))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showDatePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }

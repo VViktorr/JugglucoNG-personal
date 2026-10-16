@@ -1,8 +1,6 @@
 package tk.glucodata.ui.alerts
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -13,14 +11,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import tk.glucodata.ui.util.ConnectedButtonGroup
-
-private val alertPillShape = RoundedCornerShape(50)
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
 
 @Composable
-internal fun alertButtonShapes() = ButtonDefaults.shapes(
-    shape = alertPillShape,
-    pressedShape = alertPillShape
-)
+internal fun alertButtonShapes() = appButtonShapes()
 
 /** The libre2-hybrid appearance, retaining Material's checkable selection controls. */
 @Composable
@@ -72,19 +68,8 @@ internal fun AlertChoiceChip(
         modifier = modifier,
         enabled = enabled,
         leadingIcon = leadingIcon,
-        shapes = FilterChipDefaults.shapes(
-            shape = alertPillShape,
-            selectedShape = alertPillShape,
-            pressedShape = alertPillShape
-        ),
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = Color.Transparent,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimary
-        ),
+        shapes = appFilterChipShapes(),
+        colors = appFilterChipColors(),
         border = FilterChipDefaults.filterChipBorder(
             enabled = enabled,
             selected = selected,

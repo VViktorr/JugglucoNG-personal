@@ -2,7 +2,9 @@
 
 package tk.glucodata.ui
 
-import androidx.compose.material3.FilterChipDefaults
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
@@ -158,15 +160,15 @@ fun NotificationSettingsScreen(
                 selected = fontType == 0,
                 onClick = { fontType = 0; save() },
                 label = { Text(stringResource(R.string.font_app_plex)) },
-                shapes = FilterChipDefaults.shapes(),
-                colors = FilterChipDefaults.filterChipColors()
+                shapes = appFilterChipShapes(),
+                colors = appFilterChipColors()
             )
             FilterChip(
                 selected = fontType == 1,
                 onClick = { fontType = 1; save() },
                 label = { Text(stringResource(R.string.font_system_google_sans)) },
-                shapes = FilterChipDefaults.shapes(),
-                colors = FilterChipDefaults.filterChipColors()
+                shapes = appFilterChipShapes(),
+                colors = appFilterChipColors()
             )
         }
 
@@ -191,8 +193,8 @@ fun NotificationSettingsScreen(
                         selected = fontWeight == weight,
                         onClick = { fontWeight = weight; save() },
                         label = { Text(label) },
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
+                        shapes = appFilterChipShapes(),
+                        colors = appFilterChipColors()
                     )
                 }
             }
@@ -597,15 +599,15 @@ fun FloatingGlucoseSettingsScreen(
                     selected = !isTransparent,
                     onClick = { repository.setTransparent(false) },
                     label = { Text(stringResource(R.string.filled)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
                 FilterChip(
                     selected = isTransparent,
                     onClick = { repository.setTransparent(true) },
                     label = { Text(stringResource(R.string.transparent)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
         }
 
@@ -727,15 +729,15 @@ fun FloatingGlucoseSettingsScreen(
                     selected = fontSource == "APP",
                     onClick = { repository.setFontSource("APP") },
                     label = { Text(stringResource(R.string.font_app_plex)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
                 FilterChip(
                     selected = fontSource == "SYSTEM",
                     onClick = { repository.setFontSource("SYSTEM") },
                     label = { Text(stringResource(R.string.font_system_sans)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
         }
 
@@ -770,8 +772,8 @@ fun FloatingGlucoseSettingsScreen(
                     selected = fontWeight == weight,
                     onClick = { repository.setFontWeight(weight) },
                     label = { Text(stringResource(labelRes)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
             }
         }
@@ -884,15 +886,15 @@ fun AodSettingsScreen(navController: NavController) {
                 selected = fontSource == "APP",
                 onClick = { fontSource = "APP"; save() },
                 label = { Text(stringResource(R.string.font_app_plex)) },
-                shapes = FilterChipDefaults.shapes(),
-                colors = FilterChipDefaults.filterChipColors()
+                shapes = appFilterChipShapes(),
+                colors = appFilterChipColors()
             )
             FilterChip(
                 selected = fontSource == "SYSTEM",
                 onClick = { fontSource = "SYSTEM"; save() },
                 label = { Text(stringResource(R.string.font_system_google_sans)) },
-                shapes = FilterChipDefaults.shapes(),
-                colors = FilterChipDefaults.filterChipColors()
+                shapes = appFilterChipShapes(),
+                colors = appFilterChipColors()
             )
         }
 
@@ -915,8 +917,8 @@ fun AodSettingsScreen(navController: NavController) {
                     selected = fontWeight == weight,
                     onClick = { fontWeight = weight; save() },
                     label = { Text(label) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
             }
         }
@@ -954,8 +956,8 @@ fun AodSettingsScreen(navController: NavController) {
                     leadingIcon = if (positions.contains(pos)) {
                         { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
                     } else null,
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
             }
         }
@@ -976,8 +978,8 @@ fun AodSettingsScreen(navController: NavController) {
                     selected = alignment == align,
                     onClick = { alignment = align; save() },
                     label = { Text(stringResource(labelRes)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
             }
         }

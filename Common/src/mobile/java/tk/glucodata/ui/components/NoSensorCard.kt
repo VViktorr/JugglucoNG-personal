@@ -1,5 +1,7 @@
 package tk.glucodata.ui.components
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -92,7 +94,7 @@ fun NoSensorCard(
                 Button(
                     onClick = onAddSensor,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(

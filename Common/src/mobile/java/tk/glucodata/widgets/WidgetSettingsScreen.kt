@@ -2,6 +2,10 @@
 
 package tk.glucodata.widgets
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipShapes
+import tk.glucodata.ui.util.appFilterChipColors
+
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
@@ -173,7 +177,10 @@ private fun WidgetDetailSettings(
         Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             WidgetFontFamily.entries.forEach { family ->
-                FilterChip(selected = config.fontFamily == family,
+                FilterChip(
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors(),
+                    selected = config.fontFamily == family,
                     onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
                     label = { Text(stringResource(if (family == WidgetFontFamily.IBM_PLEX) R.string.widget_font_ibm_plex else R.string.widget_font_system)) })
             }
@@ -181,7 +188,10 @@ private fun WidgetDetailSettings(
         Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
-                FilterChip(selected = config.primaryFontWeight == weight,
+                FilterChip(
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors(),
+                    selected = config.primaryFontWeight == weight,
                     onClick = { onChange(config.copy(primaryFontWeight = weight, secondaryFontWeight = weight)) },
                     label = { Text(weight.toString()) })
             }
@@ -301,7 +311,7 @@ private fun WidgetDetailSettings(
                     onChange(config.copy(showTemperature = it))
                 }
                 if (!hasLocationPermission) {
-                    TextButton(onClick = onLocationPermission) {
+                    TextButton(shapes = appButtonShapes(), onClick = onLocationPermission) {
                         Text(stringResource(R.string.widget_weather_permission))
                     }
                 }
@@ -319,6 +329,8 @@ private fun WidgetDetailSettings(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(1, 3, 6, 12, 24).forEach { hours ->
                     FilterChip(
+                        shapes = appFilterChipShapes(),
+                        colors = appFilterChipColors(),
                         selected = config.graphHours == hours,
                         onClick = { onChange(config.copy(graphHours = hours)) },
                         label = { Text(stringResource(R.string.widget_hours_short, hours)) }
@@ -340,6 +352,8 @@ private fun WidgetDetailSettings(
                     WidgetStatsPeriod.WEEK to R.string.widget_period_7d
                 ).forEach { (period, label) ->
                     FilterChip(
+                        shapes = appFilterChipShapes(),
+                        colors = appFilterChipColors(),
                         selected = config.statsPeriod == period,
                         onClick = { onChange(config.copy(statsPeriod = period)) },
                         label = { Text(stringResource(label)) }
@@ -358,6 +372,8 @@ private fun BackgroundChip(
     onChange: (WidgetConfig) -> Unit
 ) {
     FilterChip(
+        shapes = appFilterChipShapes(),
+        colors = appFilterChipColors(),
         selected = config.background == background,
         onClick = { onChange(config.copy(background = background)) },
         label = { Text(stringResource(label)) }

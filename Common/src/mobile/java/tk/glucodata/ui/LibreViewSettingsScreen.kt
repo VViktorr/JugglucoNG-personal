@@ -1,7 +1,9 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -271,7 +273,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                             onClick = { saveManualAccountId() },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !isBusy,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Text(saveText)
@@ -305,7 +307,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 trailingIcon = {
                     val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButtonTooltip(if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                        IconButton(onClick = { showPassword = !showPassword }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
                             Icon(
                                 imageVector = image,
                                 contentDescription = if (showPassword) {
@@ -348,7 +350,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canSendData,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isSendingNow) {
@@ -388,7 +390,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canSendData,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isResendingData) {
@@ -434,7 +436,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasCredentials && !isBusy,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isFetchingAccountId) {
@@ -478,7 +480,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isActive && hasCredentials && !isBusy,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isReregisteringLibre2) {
