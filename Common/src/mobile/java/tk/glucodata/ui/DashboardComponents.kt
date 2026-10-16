@@ -475,8 +475,7 @@ fun DashboardCombinedHeader(
             val density = LocalDensity.current
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = (if (statusCopy == null) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
                     .onSizeChanged { heroContentWidthPx = it.width }
             ) {
                 val heroWidthDp = with(density) { heroContentWidthPx.toDp() }
@@ -578,7 +577,8 @@ fun DashboardCombinedHeader(
                 if (statusCopy != null) {
                     Row(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .heightIn(min = 80.dp)
                             .padding(
                                 start = resolvedStartPadding,
                                 end = resolvedEndPadding,
@@ -591,8 +591,7 @@ fun DashboardCombinedHeader(
                             text = statusCopy.title,
                             style = statusTitleStyle,
                             color = glucoseContentColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+                            softWrap = true,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Start
                         )
@@ -778,7 +777,10 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = modifier.height(80.dp)
+        // A stale/waiting message can need more than two lines on narrow cards
+        // or with larger system text. Let that card grow with the full message.
+        val stabilizedModifier = if (statusCopy == null) modifier.height(80.dp)
+            else modifier.heightIn(min = 80.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
