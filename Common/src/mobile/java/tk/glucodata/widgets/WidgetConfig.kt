@@ -76,7 +76,8 @@ data class WidgetConfig(
     val showDate: Boolean = true,
     val showWeather: Boolean = true,
     val showWeatherIcon: Boolean = true,
-    val showTemperature: Boolean = true
+    val showTemperature: Boolean = true,
+    val weatherProvider: WidgetWeatherProvider = WidgetWeatherProvider.OPEN_METEO
 ) {
     fun toJson() = JSONObject()
         .put("background", background.name)
@@ -108,6 +109,7 @@ data class WidgetConfig(
         .put("showWeather", showWeather)
         .put("showWeatherIcon", showWeatherIcon)
         .put("showTemperature", showTemperature)
+        .put("weatherProvider", weatherProvider.name)
 
     companion object {
         private inline fun <reified T : Enum<T>> enum(raw: String?, fallback: T): T =
@@ -153,7 +155,8 @@ data class WidgetConfig(
                     showDate = json.optBoolean("showDate", fallback.showDate),
                     showWeather = json.optBoolean("showWeather", fallback.showWeather),
                     showWeatherIcon = json.optBoolean("showWeatherIcon", fallback.showWeatherIcon),
-                    showTemperature = json.optBoolean("showTemperature", fallback.showTemperature)
+                    showTemperature = json.optBoolean("showTemperature", fallback.showTemperature),
+                    weatherProvider = enum(json.optString("weatherProvider"), fallback.weatherProvider)
                 )
             } catch (_: Throwable) {
                 fallback

@@ -266,6 +266,19 @@ private fun WidgetDetailSettings(
                 onChange(config.copy(showWeather = it))
             }
             if (config.showWeather) {
+                Text(stringResource(R.string.widget_weather_source), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(
+                        WidgetWeatherProvider.OPEN_METEO to R.string.widget_weather_source_open_meteo,
+                        WidgetWeatherProvider.IMGW to R.string.widget_weather_source_imgw
+                    ).forEach { (provider, label) ->
+                        FilterChip(
+                            selected = config.weatherProvider == provider,
+                            onClick = { onChange(config.copy(weatherProvider = provider)) },
+                            label = { Text(stringResource(label)) }
+                        )
+                    }
+                }
                 Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
                 Slider(
                     value = config.weatherScale.toFloat(),
@@ -273,12 +286,14 @@ private fun WidgetDetailSettings(
                     valueRange = 70f..200f
                 )
 
-                Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
-                Slider(
-                    value = config.weatherIconScale.toFloat(),
-                    onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
-                    valueRange = 70f..220f
-                )
+                if (config.weatherProvider == WidgetWeatherProvider.OPEN_METEO) {
+                    Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
+                    Slider(
+                        value = config.weatherIconScale.toFloat(),
+                        onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
+                        valueRange = 70f..220f
+                    )
+                }
 
                 Text(stringResource(R.string.widget_temperature_size_value, config.temperatureScale))
                 Slider(
@@ -294,8 +309,10 @@ private fun WidgetDetailSettings(
                     valueRange = 0f..40f
                 )
 
-                WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
-                    onChange(config.copy(showWeatherIcon = it))
+                if (config.weatherProvider == WidgetWeatherProvider.OPEN_METEO) {
+                    WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
+                        onChange(config.copy(showWeatherIcon = it))
+                    }
                 }
                 WidgetSwitch(stringResource(R.string.widget_show_temperature), config.showTemperature) {
                     onChange(config.copy(showTemperature = it))
@@ -306,7 +323,8 @@ private fun WidgetDetailSettings(
                     }
                 }
                 Text(
-                    stringResource(R.string.widget_weather_note),
+                    stringResource(if (config.weatherProvider == WidgetWeatherProvider.IMGW)
+                        R.string.widget_weather_imgw_note else R.string.widget_weather_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
