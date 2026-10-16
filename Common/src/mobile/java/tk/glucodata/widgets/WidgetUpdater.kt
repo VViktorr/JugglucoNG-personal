@@ -38,11 +38,12 @@ object WidgetUpdater {
     fun requestUpdateAll(context:Context,done:(()->Unit)?=null){
         done?.let(pendingCallbacks::add)
         val app=context.applicationContext
-        if(!pending.compareAndSet(false,true)) {
-            // A glucose update that arrives while bitmaps are being rendered must not be
-            // dropped. Remember it and run one more pass with the newest snapshot.
-            rerunRequested.set(true)
-            return
+        synchronized(pending) {
+            if(!pending.compareAndSet(false,true)) {
+                // Record the rerun before the renderer can release its active state.
+                rerunRequested.set(true)
+                return
+            }
         }
         executor.execute {
             try {
@@ -52,8 +53,10 @@ object WidgetUpdater {
                 if(targets.isNotEmpty()) render(app,manager,targets)
             } catch(t:Throwable){ Log.stack(LOG_ID,"requestUpdateAll",t) }
             finally {
-                val rerun=rerunRequested.getAndSet(false)
-                pending.set(false)
+                val rerun=synchronized(pending) {
+                    pending.set(false)
+                    rerunRequested.getAndSet(false)
+                }
                 while(true){
                     val callback=pendingCallbacks.poll() ?: break
                     try { callback() } catch(_:Throwable) {}

@@ -55,9 +55,12 @@ class ExpressiveWidgetReceiver : GlanceAppWidgetReceiver() {
         private suspend fun performUpdate(context: Context) {
             // Coalesce overlapping sensor broadcasts. Preserve the last update while
             // avoiding multiple concurrent Glance history reads and chart renders.
-            if (!updating.compareAndSet(false, true)) {
-                updateAgain.set(true)
-                return
+            synchronized(updating) {
+                if (!updating.compareAndSet(false, true)) {
+                    // Completion must not pass between this check and the rerun flag.
+                    updateAgain.set(true)
+                    return
+                }
             }
             try {
                 do {
@@ -74,8 +77,11 @@ class ExpressiveWidgetReceiver : GlanceAppWidgetReceiver() {
                     }
                 } while (updateAgain.getAndSet(false))
             } finally {
-                updating.set(false)
-                if (updateAgain.getAndSet(false)) updateAll(context)
+                val rerun = synchronized(updating) {
+                    updating.set(false)
+                    updateAgain.getAndSet(false)
+                }
+                if (rerun) updateAll(context)
             }
         }
     }
