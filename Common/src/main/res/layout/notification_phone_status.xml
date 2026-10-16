@@ -3,7 +3,7 @@
     android:id="@+id/notification_status"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textAppearance="@android:style/TextAppearance.Material.Notification.Text"
+    android:textAppearance="@android:style/TextAppearance.Material.Notification.Info"
     android:textSize="13sp"
     android:includeFontPadding="false"
     android:singleLine="false"
