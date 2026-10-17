@@ -1646,6 +1646,9 @@ public class Notify {
                 freshnessDeadlineService = null;
                 scheduleVisualNotificationRefresh();
             }
+            // Expiration has no new glucose event. Restore the hybrid invalidation
+            // so the launcher replaces cached numbers with the stale-data status.
+            GlucoseUpdateBroadcaster.send(Applic.app);
         }
     };
 
@@ -4846,6 +4849,9 @@ public class Notify {
             // displayed reading through the normal freshness/publication gate.
             if (doLog) Log.i(LOG_ID, "oldnotification: reconcile ongoing reading legacyTime=" + time);
             scheduleVisualNotificationRefresh();
+            // This wake-up path can run while the Handler deadline was delayed by
+            // sleep. It used to reach fornotify(), which also refreshed all widgets.
+            GlucoseUpdateBroadcaster.send(Applic.app);
             return;
         }
         final String tformat = timef.format(time);
