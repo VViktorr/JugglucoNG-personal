@@ -38,4 +38,20 @@ class WidgetCurrentFreshnessTests {
     @Test fun noReadingAndNoHistoryRemainEmpty() {
         assertNull(WidgetDisplaySource.resolveDisplaySnapshot(null, emptyList(), "test"))
     }
+
+    @Test fun justExpiredNumberIsHiddenWhileItsChartHistoryIsRetained() {
+        val timestamp = System.currentTimeMillis() - Notify.glucosetimeout - 1_000L
+        val stale = reading(timestamp)
+        val history = listOf(GlucosePoint(timestamp, 110f, 105f))
+        assertNull(WidgetDisplaySource.resolveDisplaySnapshot(stale, history, "test"))
+        assertNull(WidgetDisplaySource.resolveDisplaySnapshot(null, history, "test"))
+        assertEquals(timestamp, history.single().timestamp)
+    }
+
+    @Test fun numberReturnsAfterTheNextRealReading() {
+        val history = listOf(GlucosePoint(System.currentTimeMillis() - 15 * 60_000L, 110f, 105f))
+        assertNull(WidgetDisplaySource.resolveDisplaySnapshot(null, history, "test"))
+        val fresh = reading(System.currentTimeMillis() - 1_000L)
+        assertSame(fresh, WidgetDisplaySource.resolveDisplaySnapshot(fresh, history, "test"))
+    }
 }
