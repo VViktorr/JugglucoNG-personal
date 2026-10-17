@@ -8,6 +8,8 @@
 
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.MenuDefaults
@@ -843,7 +845,7 @@ fun OttaiSetupWizard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                     ),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.ottai_cloud_unbind_confirm))
@@ -853,7 +855,7 @@ fun OttaiSetupWizard(
                 OutlinedButton(
                     onClick = { pendingCloudUnbind = null },
                     enabled = !busy,
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.cancel))
@@ -922,7 +924,7 @@ fun OttaiSetupWizard(
                         },
                         enabled = !busy && email.contains('@'),
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(stringResource(R.string.ottai_send_code)) }
                     OutlinedTextField(
@@ -977,7 +979,7 @@ fun OttaiSetupWizard(
                         enabled = !busy && regRequestId.isNotBlank() && regCode.isNotBlank() &&
                             regPassword.isNotBlank() && profileName.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(stringResource(R.string.ottai_register_button)) }
                     if (busy) LoadingIndicator()
@@ -1243,7 +1245,7 @@ fun OttaiSetupWizard(
                                         status = ""
                                     }
                                 },
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                                 contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.ottai_sign_out)) }
                             }
                         }
@@ -1421,7 +1423,7 @@ fun OttaiSetupWizard(
                                     },
                                     enabled = !busy && smsPhone != null,
                                     modifier = Modifier.fillMaxWidth(),
-                                    shapes = ButtonDefaults.shapes(),
+                                    shapes = appButtonShapes(),
                                     contentPadding = ButtonDefaults.ContentPadding,
                                 ) { Text(stringResource(R.string.ottai_send_code)) }
                                 OutlinedTextField(
@@ -1484,7 +1486,7 @@ fun OttaiSetupWizard(
                                     },
                                     enabled = !busy && code.isNotBlank() && requestId.isNotBlank(),
                                     modifier = Modifier.fillMaxWidth(),
-                                    shapes = ButtonDefaults.shapes(),
+                                    shapes = appButtonShapes(),
                                     contentPadding = ButtonDefaults.ContentPadding,
                                 ) { Text(stringResource(R.string.ottai_login_button)) }
                             } else {
@@ -1520,7 +1522,7 @@ fun OttaiSetupWizard(
                                     },
                                     enabled = !busy && phone.isNotBlank() && password.isNotBlank(),
                                     modifier = Modifier.fillMaxWidth(),
-                                    shapes = ButtonDefaults.shapes(),
+                                    shapes = appButtonShapes(),
                                     contentPadding = ButtonDefaults.ContentPadding,
                                 ) { Text(stringResource(R.string.ottai_login_button)) }
                             }
@@ -1529,7 +1531,7 @@ fun OttaiSetupWizard(
                                 TextButton(
                                     onClick = { status = ""; step = OttaiSetupStep.REGISTER },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shapes = ButtonDefaults.shapes(),
+                                    shapes = appButtonShapes(),
                                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                                 ) { Text(stringResource(R.string.ottai_register_cta)) }
                             }
@@ -1581,7 +1583,7 @@ fun OttaiSetupWizard(
                             onClick = { startConnect(cloudId, bleAddress, true) },
                             enabled = !busy && !materialLoading && canConnect,
                             modifier = Modifier.fillMaxWidth(),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Text(stringResource(connectTitleRes))
@@ -1604,7 +1606,7 @@ fun OttaiSetupWizard(
                             onClick = armNfcRead,
                             enabled = !busy && !materialLoading,
                             modifier = Modifier.fillMaxWidth(),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Icon(Icons.Default.Nfc, contentDescription = null)
@@ -1659,7 +1661,7 @@ fun OttaiSetupWizard(
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         contentColor = MaterialTheme.colorScheme.error,
                                     ),
-                                    shapes = ButtonDefaults.shapes(),
+                                    shapes = appButtonShapes(),
                                     contentPadding = ButtonDefaults.ContentPadding,
                                 ) {
                                     Icon(
@@ -1695,7 +1697,7 @@ fun OttaiSetupWizard(
                             onClick = { refreshAccountDevices(cloudId) },
                             enabled = !busy && !devicesLoading && !materialLoading,
                             modifier = Modifier.fillMaxWidth(),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Icon(Icons.Default.Cloud, contentDescription = null)
@@ -1893,7 +1895,7 @@ private fun OttaiSensorRow(
                 enabled = enabled,
                 modifier = Modifier.align(Alignment.End).padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Icon(Icons.Default.LinkOff, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -2030,7 +2032,7 @@ private fun OttaiSensorMaterialCard(
                         onClick = onExport,
                         enabled = enabled && canExport,
                         modifier = Modifier.weight(1f),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileUpload, contentDescription = null)
@@ -2041,7 +2043,7 @@ private fun OttaiSensorMaterialCard(
                         onClick = onImport,
                         enabled = enabled,
                         modifier = Modifier.weight(1f),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileDownload, contentDescription = null)
@@ -2054,7 +2056,7 @@ private fun OttaiSensorMaterialCard(
                     onClick = onImport,
                     enabled = enabled,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Icon(Icons.Default.FileDownload, contentDescription = null)
@@ -2300,7 +2302,7 @@ private fun OttaiBleScanPanel(
                     bluetoothEnabled = scanner.isBluetoothEnabled()
                     scanRetryKey += 1
                 },
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(stringResource(R.string.search_bluetooth))
@@ -2334,7 +2336,7 @@ private fun OttaiBleScanPanel(
                     }
                 },
                 modifier = Modifier.height(ui.buttonHeight),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 val buttonRes = when {

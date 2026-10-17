@@ -358,6 +358,36 @@ class HistoryRepository(context: Context = Applic.app) {
         }
         
         /**
+         * Blocking source for home widgets. Unlike the older per-sensor bridge,
+         * this is the exact merged multi-sensor timeline used by the dashboard
+         * chart, so a sensor swap does not truncate the widget at the handover.
+         */
+        @JvmStatic
+        fun getMergedDisplayHistoryForWidget(
+            preferredSerial: String?,
+            startTime: Long,
+            isMmol: Boolean
+        ): List<tk.glucodata.GlucosePoint> {
+            return kotlinx.coroutines.runBlocking {
+                HistoryRepository()
+                    .loadMergedWindow(
+                        preferredSerial = preferredSerial,
+                        startTime = startTime,
+                        endTime = System.currentTimeMillis(),
+                        allowProvisional = false
+                    )
+                    .inDisplayUnit(isMmol)
+                    .map { p ->
+                        tk.glucodata.GlucosePoint(p.timestamp, p.value, p.rawValue).also { out ->
+                            out.sealedDisplayValue = p.sealedDisplayValue ?: Float.NaN
+                            out.sealedDisplayViewMode = p.sealedDisplayViewMode ?: -1
+                            out.sensorSerial = p.sensorSerial
+                        }
+                    }
+            }
+        }
+
+        /**
          * Blocking ownership for shared/main renderers, so the notification
          * resolves who is main at each minute from the same record the
          * dashboard does rather than approximating it.
@@ -661,43 +691,13 @@ class HistoryRepository(context: Context = Applic.app) {
             source = source,
         )
         reportIfFutureTimestamp(serial, timestamp, writer = "storeReading")
-        withContext(Dispatchers.IO) {
-            try {
-                if (dao.isReadingDeleted(serial, timestamp) > 0) {
-                    Log.d(TAG, "Skipped tombstoned reading for $serial at $timestamp")
-                    return@withContext
-                }
-                database.withTransaction {
-                    val bucketStart = (timestamp / SENSOR_MINUTE_BUCKET_MS) * SENSOR_MINUTE_BUCKET_MS
-                    val existing = dao.getSensorReadingsInTimeRange(
-                        sensorSerial = serial,
-                        startTimeInclusive = bucketStart,
-                        endTimeExclusive = bucketStart + SENSOR_MINUTE_BUCKET_MS,
-                    ).firstOrNull { it.timestamp == timestamp }
-                    deleteSensorRowsInBucketRanges(
-                        sensorSerial = serial,
-                        bucketDurationMs = SENSOR_MINUTE_BUCKET_MS,
-                        bucketRanges = listOf(
-                            HistoryBucketReplacement.BucketRange(
-                                firstBucketId = timestamp / SENSOR_MINUTE_BUCKET_MS,
-                                lastBucketId = timestamp / SENSOR_MINUTE_BUCKET_MS
-                            )
-                        )
-                    )
-                    dao.insert(
-                        reading.copy(
-                            source = HistorySourceProvenance.stableSource(existing?.source, reading.source),
-                            firstStoredAt = HistorySourceProvenance.stableFirstStoredAt(
-                                existing?.firstStoredAt,
-                                reading.firstStoredAt,
-                            ),
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error storing reading", e)
-            }
-        }
+        // A live write overlaps the same minute as NFC/native/Wear backfill.
+        // Use the same lane-preserving transaction as batched history writes.
+        storeReadingsReplacingSensorBuckets(
+            sensorSerial = serial,
+            readings = listOf(reading),
+            bucketDurationMs = SENSOR_MINUTE_BUCKET_MS,
+        )
     }
 
     private fun resolveSensorViewMode(sensorSerial: String): Int {
@@ -806,7 +806,12 @@ class HistoryRepository(context: Context = Applic.app) {
                             endTimeExclusive = endTimeExclusive,
                         ).forEach { existing -> existingProvenance[existing.timestamp] = existing }
                     }
-                    val readingsWithStableSources = collapsedReadings.map { incoming ->
+                    val retainedReadings = HistoryBucketReplacement.retainBestReadings(
+                        existingReadings = existingProvenance.values.toList(),
+                        incomingReadings = collapsedReadings,
+                        bucketDurationMs = bucketDurationMs,
+                    )
+                    val readingsWithStableSources = retainedReadings.map { incoming ->
                         val existing = existingProvenance[incoming.timestamp]
                         incoming.copy(
                             source = HistorySourceProvenance.stableSource(

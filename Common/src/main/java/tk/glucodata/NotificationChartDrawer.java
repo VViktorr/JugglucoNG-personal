@@ -1257,6 +1257,13 @@ public class NotificationChartDrawer {
 
     public static Bitmap drawArrow(Context context, float rate, boolean isMmol, int color, float arrowScale,
             boolean outline) {
+        boolean largeArrow = context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                .getBoolean("notification_large_trend_arrow", false);
+        return drawArrow(context, rate, isMmol, color, arrowScale, outline, largeArrow);
+    }
+
+    public static Bitmap drawArrow(Context context, float rate, boolean isMmol, int color, float arrowScale,
+            boolean outline, boolean largeArrow) {
         float density = context.getResources().getDisplayMetrics().density;
         // Arrow size: 20dp * scale (slightly smaller than 24dp for notifications)
         int size = (int) (20 * density * arrowScale);
@@ -1301,8 +1308,6 @@ public class NotificationChartDrawer {
         // center, so a shaft of up to ~95% of the box never clips at any
         // angle. Opt-in setting: the long-shaft variant matches what other
         // apps render for the same rate; the default keeps the compact glyph.
-        boolean largeArrow = context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
-                .getBoolean("notification_large_trend_arrow", false);
         float arrowLenFactor = largeArrow
                 ? (showDouble ? 0.62f : 0.82f)
                 : (showDouble ? 0.42f : 0.62f);

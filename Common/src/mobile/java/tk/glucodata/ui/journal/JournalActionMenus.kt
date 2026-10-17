@@ -1,5 +1,7 @@
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.derivedStateOf
@@ -422,7 +424,7 @@ private fun ChartMenuItem(
         onClick = onClick,
         modifier = modifier.height(FabMenuItemHeight),
         interactionSource = interactionSource,
-        shapes = ButtonDefaults.shapes(shape = shape),
+        shapes = appButtonShapes(),
         colors = ButtonDefaults.buttonColors(
             containerColor = journalTypeSelectedContainerColor(actionType),
             contentColor = MaterialTheme.colorScheme.onSurface

@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.ButtonDefaults
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.clickable
@@ -667,14 +669,14 @@ fun ReadingRow(
                         onDeleteReading(point)
                         showDeleteDialog = false
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(text = stringResource(R.string.delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showDeleteDialog = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(text = stringResource(R.string.cancel))
                 }
             }

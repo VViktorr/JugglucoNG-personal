@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import tk.glucodata.ui.util.toSharedGlucosePoint
 import androidx.compose.material3.ButtonDefaults
@@ -98,7 +100,6 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Badge
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -852,16 +853,9 @@ fun DashboardChartSection(
                 }
         }
     }
-    val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
-    // No dead zone: the 6% one meant the colour and the corner radius sat still while
-    // the card was already pulling in from the edges, so the shape led the paint.
-    val collapseVisualProgress = 1f - safeExpandedProgress
-    val containerColor = androidx.compose.ui.graphics.lerp(
-        MaterialTheme.colorScheme.background,
-        MaterialTheme.colorScheme.surfaceContainerHigh,
-        collapseVisualProgress
-    )
-    val cornerRadius = (16.dp * collapseVisualProgress).coerceAtLeast(0.dp)
+    // Keep the journal card style while the viewport expands independently.
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val cornerRadius = 16.dp
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(cornerRadius),
@@ -972,11 +966,8 @@ fun InteractiveGlucoseChart(
     val labelsLiftPx = with(LocalDensity.current) { (4.dp * safeExpandedProgress).toPx() }
     val chartPlotBottomGapPx = with(LocalDensity.current) { (4.dp * safeExpandedProgress).toPx() }
     val bottomAxisHeightPx = with(LocalDensity.current) { 32.dp.toPx() }
-    val axisLabelBackgroundColor = androidx.compose.ui.graphics.lerp(
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
-        MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
-        safeExpandedProgress
-    )
+    val axisLabelBackgroundColor =
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f)
 
     val TirLowColor = Color(GlucoseRangeColors.low(isDark))
     val TirHighColor = Color(GlucoseRangeColors.high(isDark))
@@ -1506,6 +1497,7 @@ fun InteractiveGlucoseChart(
         fallbackHigh = fallbackMax
     )
     val minYAxisSpan = if (isMmol) 6f else 108f
+    val scaleLimits = rememberChartScaleLimits(isMmol)
 
     fun predictionBand(series: GlucosePredictionSeries): tk.glucodata.chart.PredictionBand {
         val first = series.points.first()
@@ -1620,9 +1612,10 @@ fun InteractiveGlucoseChart(
     var baselineYMax by rememberSaveable { mutableFloatStateOf(graphRangeDefaults.second) }
     var isYAxisAdjusting by remember { mutableStateOf(false) }
 
-    LaunchedEffect(graphRangeDefaults) {
-        baselineYMin = graphRangeDefaults.first
-        baselineYMax = graphRangeDefaults.second
+    LaunchedEffect(graphRangeDefaults, scaleLimits) {
+        val bounded = scaleLimits.constrain(graphRangeDefaults.first, graphRangeDefaults.second)
+        baselineYMin = bounded.first
+        baselineYMax = bounded.second
     }
 
     val automaticYRange = remember(
@@ -1662,8 +1655,12 @@ fun InteractiveGlucoseChart(
         animationSpec = yRangeAnimationSpec,
         label = "ChartYMaxAutoRange"
     )
-    val renderedYMin = if (isYAxisAdjusting) baselineYMin else displayYMin
-    val renderedYMax = if (isYAxisAdjusting) baselineYMax else displayYMax
+    val boundedRenderedRange = scaleLimits.constrain(
+        if (isYAxisAdjusting) baselineYMin else displayYMin,
+        if (isYAxisAdjusting) baselineYMax else displayYMax
+    )
+    val renderedYMin = boundedRenderedRange.first
+    val renderedYMax = boundedRenderedRange.second
 
     // --- INTERACTION STATE ---
     var selectedPoint by remember { mutableStateOf<GlucosePoint?>(null) }
@@ -1805,6 +1802,7 @@ fun InteractiveGlucoseChart(
     val currentChartModel by rememberUpdatedState(chartModel)
     val currentRenderedYMin by rememberUpdatedState(renderedYMin)
     val currentRenderedYMax by rememberUpdatedState(renderedYMax)
+    val currentScaleLimits by rememberUpdatedState(scaleLimits)
     // The pointerInput lambda below is keyed on previewWindowReservedIntPx and otherwise
     // long-lived, so it would otherwise capture these as stale snapshots — when the
     // prediction horizon, zoom level, or expansion progress change, gesture clamping
@@ -2095,6 +2093,13 @@ fun InteractiveGlucoseChart(
                                 (contentHeight - 32.dp.toPx() - chartPlotBottomGapPx).coerceAtLeast(
                                     1f
                                 )
+                            // Match the left label column, including its background padding.
+                            // Eligibility is fixed at touch-down; entering the axis later never scales.
+                            val axisTouchWidth = 24.dp.toPx() + axisTextPaint.measureText(
+                                currentScaleLimits.high.toInt().toString()
+                            )
+                            val startedOnYAxis = down.position.x in 0f..axisTouchWidth &&
+                                down.position.y in 0f..chartHeight && !startedOnJournalMarker
                             val downDuration = visibleDuration
                             val downCenterTime = centerTime
                             val viewportStart = downCenterTime - downDuration / 2
@@ -2155,7 +2160,7 @@ fun InteractiveGlucoseChart(
 
                             // Only allow scrubbing if purely single tap start (not double tap sequence)
                             isScrubbing = if (
-                                !startedOnJournalMarker && pointAtTouch != null && !isOneFingerZoom
+                                !startedOnYAxis && !startedOnJournalMarker && pointAtTouch != null && !isOneFingerZoom
                             ) {
                                 val timeDiff = timeAtTouch - pointAtTouch.timestamp
                                 if (timeDiff > 15 * 60 * 1000) false else {
@@ -2291,7 +2296,11 @@ fun InteractiveGlucoseChart(
                                             longPressJob?.cancel()
                                             dismissJournalActionIfNeeded()
                                             if (lockedPanAxis == 0) {
-                                                lockedPanAxis = if (abs(accumulatedPanX) > abs(accumulatedPanY)) 1 else 2
+                                                lockedPanAxis = when {
+                                                    abs(accumulatedPanX) > abs(accumulatedPanY) -> 1
+                                                    startedOnYAxis -> 2
+                                                    else -> 3 // Vertical drag outside the axis never changes scale.
+                                                }
                                                 if (lockedPanAxis == 2) {
                                                     yGestureStartMin = currentRenderedYMin
                                                     yGestureStartMax = currentRenderedYMax
@@ -2316,11 +2325,14 @@ fun InteractiveGlucoseChart(
                                                 adjustsMax = yGestureAdjustsMax,
                                                 minimumSpan = minYAxisSpan
                                             )
-                                            baselineYMin = manualRange.min
-                                            baselineYMax = manualRange.max
+                                            val bounded = currentScaleLimits.constrain(manualRange.min, manualRange.max)
+                                            baselineYMin = bounded.first
+                                            baselineYMax = bounded.second
                                         }
                                     }
-                                    newChange.consume()
+                                    if (isScrubbing || lockedPanAxis == 1 || lockedPanAxis == 2) {
+                                        newChange.consume()
+                                    }
                                 }
                                 change = newChange
                                 lastPointerCount = pointerCount
@@ -2390,7 +2402,7 @@ fun InteractiveGlucoseChart(
                                             }
                                         }
                                     }
-                                } else if (!isOneFingerZoom && lockedPanAxis != 2) {
+                                } else if (!isOneFingerZoom && lockedPanAxis == 1) {
                                     // FLING - simple defaults
                                     val velocity = velocityTracker.calculateVelocity()
                                     val vx = velocity.x
@@ -4182,14 +4194,15 @@ fun InteractiveGlucoseChart(
                 }
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 12.dp, top = 12.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(end = 2.dp, top = 2.dp)
                         .widthIn(max = activeInsulinMaxWidth)
                         .zIndex(1.6f)
                         .clip(activeInsulinShape)
                         .clickable(enabled = summary != null || activeCarbsGrams != null) { isActiveInsulinExpanded = !isActiveInsulinExpanded },
                     shape = activeInsulinShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
@@ -4211,7 +4224,7 @@ fun InteractiveGlucoseChart(
                                     Text(
                                         text = stringResource(R.string.dashboard_eiob_full, eiobValue),
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                     )
                                 }
                             } else {
@@ -4228,7 +4241,7 @@ fun InteractiveGlucoseChart(
                                         Text(
                                             text = stringResource(R.string.dashboard_eiob_short, eiobValue),
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                             maxLines = 1
                                         )
                                     }
@@ -4254,7 +4267,7 @@ fun InteractiveGlucoseChart(
                             Text(
                                 text = doseHintLabel,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                 maxLines = if (isActiveInsulinExpanded) 2 else 1
                             )
                         } else if (remainingLabel != null && !isActiveInsulinExpanded) {
@@ -4262,14 +4275,14 @@ fun InteractiveGlucoseChart(
                                 Icon(
                                     imageVector = Icons.Default.AccessTime,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = remainingLabel,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                     maxLines = 1
                                 )
                             }
@@ -4283,7 +4296,7 @@ fun InteractiveGlucoseChart(
                                     summary.weightedActivityPercent
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                             )
                             summary.activeUntil?.let { activeUntil ->
                                 Text(
@@ -4293,14 +4306,14 @@ fun InteractiveGlucoseChart(
                                             .format(java.util.Date(activeUntil))
                                     ),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                             if (activeInsulinFromRemote) {
                                 Text(
                                     text = stringResource(R.string.journal_iob_source_remote),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                         }
@@ -4783,8 +4796,8 @@ fun InteractiveGlucoseChart(
                     transformOrigin = TransformOrigin(1f, 0f)
                 ),
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 16.dp, end = 16.dp)
+                    .align(Alignment.TopStart)
+                    .padding(top = 16.dp, start = 16.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -5237,14 +5250,14 @@ fun InteractiveGlucoseChart(
                         }
                         showDatePicker = false
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(stringResource(R.string.go))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showDatePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }

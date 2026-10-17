@@ -1,5 +1,8 @@
 package tk.glucodata.ui.calibration
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import tk.glucodata.ui.StatusPalette
 import android.os.Build
@@ -296,7 +299,7 @@ fun CalibrationBottomSheet(
                                         MaterialTheme.colorScheme.tertiary
                                 ),
                                 modifier = Modifier.size(48.dp),
-                                shapes = IconButtonDefaults.shapes()
+                                shapes = appIconButtonShapes()
                             ) {
                                 Icon(
                                     if (editingEntity!!.isEnabled) Icons.Default.Close else Icons.Default.Check,
@@ -318,7 +321,7 @@ fun CalibrationBottomSheet(
                                 },
                                 colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error),
                                 modifier = Modifier.size(48.dp),
-                                shapes = IconButtonDefaults.shapes()
+                                shapes = appIconButtonShapes()
                             ) {
                                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                             }
@@ -365,7 +368,7 @@ fun CalibrationBottomSheet(
                                     onClick = { selectedTimestamp = System.currentTimeMillis() },
                                     contentPadding = PaddingValues(horizontal = 16.dp),
                                     modifier = Modifier.height(32.dp),
-                                    shapes = ButtonDefaults.shapes()
+                                    shapes = appButtonShapes()
                                 ) {
                                     Text(stringResource(R.string.now))
                                 }
@@ -498,7 +501,7 @@ fun CalibrationBottomSheet(
                             }
                         },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(stringResource(R.string.cancel))
@@ -544,7 +547,7 @@ fun CalibrationBottomSheet(
                         }
                     },
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(if (editingEntity != null) stringResource(R.string.update) else stringResource(R.string.save))
@@ -719,7 +722,7 @@ private fun CalibrationHistoryList(
             TextButton(
                 onClick = onSeeAll,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -836,7 +839,7 @@ private fun CalibrationHeroSection(
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     },
                     modifier = Modifier.size(valueButtonSize),
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.outbound_api_decrease_value), modifier = Modifier.size(valueIconSize))
                 }
@@ -913,7 +916,7 @@ private fun CalibrationHeroSection(
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     },
                     modifier = Modifier.size(valueButtonSize),
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.outbound_api_increase_value), modifier = Modifier.size(valueIconSize))
                 }

@@ -10,6 +10,8 @@
 
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import android.widget.Toast
@@ -382,7 +384,7 @@ private fun AnytimeScanStep(
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    TextButton(onClick = { showAllDevices = !showAllDevices }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = { showAllDevices = !showAllDevices }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(
                             if (showAllDevices) stringResource(R.string.show_sensors_only)
                             else stringResource(R.string.see_all_devices)
@@ -457,7 +459,7 @@ private fun AnytimeScanStep(
                         OutlinedButton(
                             onClick = onShowManualQrEntry,
                             modifier = Modifier.fillMaxWidth(),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Text(stringResource(R.string.enter_code_manually))
@@ -581,7 +583,7 @@ private fun AnytimeCt5CredentialsCard(
                             exportLauncher.launch("anytime_ct5_${exportRecord?.sensorId.orEmpty()}.json")
                         },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileUpload, contentDescription = null)
@@ -593,7 +595,7 @@ private fun AnytimeCt5CredentialsCard(
                             importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                         },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileDownload, contentDescription = null)
@@ -607,7 +609,7 @@ private fun AnytimeCt5CredentialsCard(
                         importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                     },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Icon(Icons.Default.FileDownload, contentDescription = null)
@@ -647,12 +649,12 @@ private fun AnytimeManualQrEntryDialog(
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(normalizeAnytimeQrCode(text)) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+            Button(onClick = { onConfirm(normalizeAnytimeQrCode(text)) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                 Text(stringResource(R.string.ok))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

@@ -1,6 +1,7 @@
 package tk.glucodata.ui.util
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -38,9 +39,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.rememberTextMeasurer
 
 /**
- * M3 Expressive connected button group: material3's [ToggleButton]s with the
- * [ButtonGroupDefaults] connected shapes, so the outer ends are round, inner corners small,
- * the selected item a pill, and a press squeezes the inner corners with the expressive spring.
+ * Checkable button group using the app's outlined pill style by default.
+ * Callers can opt into [ButtonGroupDefaults] connected shapes with [pillShapeForAll].
  *
  * On top of the library pieces this adds what the app's groups need: colours that cross-fade
  * (ToggleButton swaps them instantly), per-option colours, and labels that step down from
@@ -67,11 +67,14 @@ fun <T> ConnectedButtonGroup(
     spacing: Dp = ButtonGroupDefaults.ConnectedSpaceBetween,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primary,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
-    unselectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh, // Slightly darker than surface for contrast
+    unselectedContainerColor: Color = Color.Transparent,
     unselectedContentColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainerColorFor: ((T) -> Color)? = null,
     selectedContentColorFor: ((T) -> Color)? = null,
     iconTint: ((T, Boolean) -> Color)? = null,
+    selectedBorder: BorderStroke? = null,
+    unselectedBorder: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    pillShapeForAll: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -107,6 +110,11 @@ fun <T> ConnectedButtonGroup(
                     .weight(1f)
                     .height(itemHeight),
                 shapes = when {
+                    pillShapeForAll -> ToggleButtonDefaults.shapesFor(itemHeight).copy(
+                        shape = AppButtonShape,
+                        pressedShape = AppButtonShape,
+                        checkedShape = AppButtonShape
+                    )
                     options.size == 1 -> ToggleButtonDefaults.shapesFor(itemHeight)
                     index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                     index == options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
@@ -120,6 +128,7 @@ fun <T> ConnectedButtonGroup(
                     checkedContentColor = contentColor
                 ),
                 elevation = null,
+                border = if (isSelected) selectedBorder else unselectedBorder,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 var availableWidthPx by remember(option) { mutableIntStateOf(0) }
@@ -177,13 +186,14 @@ fun <T> ConnectedButtonGroup(
                         Text(
                             text = labelText(option),
                             style = labelTextStyle,
+                            color = contentColor,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
                     } else if (!iconOnly) {
-                        androidx.compose.material3.ProvideTextStyle(value = labelTextStyle) {
+                        androidx.compose.material3.ProvideTextStyle(value = labelTextStyle.copy(color = contentColor)) {
                             label(option)
                         }
                     }

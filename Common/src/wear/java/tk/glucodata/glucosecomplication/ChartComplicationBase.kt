@@ -104,8 +104,13 @@ abstract class ChartComplicationBase : SuspendingComplicationDataSourceService()
                     contentDescription = description(),
                 ).setTapAction(tapAction).build()
             }
+            ComplicationType.SHORT_TEXT -> GlucoseComplicationData.shortValueData(
+                if (showArrow) GlucoseComplicationData.withTrend(reading) else reading,
+                "Glucose chart", tapAction,
+                chartIcon(SMALL_PX, SMALL_PX, fill = false, preview = preview),
+            )
             ComplicationType.LONG_TEXT -> GlucoseComplicationData.longTextData(
-                reading,
+                if (showArrow) GlucoseComplicationData.withTrend(reading) else reading,
                 "Glucose chart",
                 tapAction,
                 chartIcon(WIDE_W, WIDE_H, fill = false, preview = preview),

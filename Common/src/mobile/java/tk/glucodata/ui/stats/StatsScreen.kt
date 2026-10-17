@@ -2,9 +2,11 @@
 
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.ClipData
 import android.content.Context
@@ -519,7 +521,7 @@ fun StatsScreen(
                         itemHeight = 36.dp,
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
@@ -545,7 +547,7 @@ fun StatsScreen(
                     androidx.compose.material3.FilledTonalButton(
                         onClick = { showPatientInfo = !showPatientInfo },
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(
@@ -610,7 +612,7 @@ fun StatsScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = parsedReportDays != null,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.export_readable_report))
@@ -664,7 +666,7 @@ fun StatsScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isPublishing && workerUrl.isNotBlank() && parsedReportDays != null,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = if (isPublishing) stringResource(R.string.loading_data) else stringResource(R.string.export))
@@ -839,7 +841,7 @@ private fun ArrangeSheet(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Button(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                Button(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
@@ -1195,7 +1197,7 @@ private fun HeaderBlock(
 ) {
     TabScreenHeader(title = stringResource(R.string.statistics_title)) {
         IconButtonTooltip(stringResource(R.string.export)) {
-            IconButton(onClick = onShareClick, shapes = IconButtonDefaults.shapes()) {
+            IconButton(onClick = onShareClick, shapes = appIconButtonShapes()) {
                 Icon(
                     imageVector = Icons.Filled.Share,
                     contentDescription = stringResource(R.string.export),
@@ -1942,7 +1944,7 @@ private fun PatternsCard(
                     itemHeight = 38.dp,
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)

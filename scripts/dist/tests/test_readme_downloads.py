@@ -152,7 +152,8 @@ class Downloads(unittest.TestCase):
             (root / helper.BUTTON_PATH).parent.mkdir(parents=True)
             (root / helper.BUTTON_PATH).write_text(BUTTON)
             (root / 'README.md').write_text(README)
-            with patch.object(helper, 'ROOT', root), patch.object(helper, 'api', return_value=[[OLDER_RELEASE, newer]]):
+            with patch.dict('os.environ', {}, clear=True), \
+                 patch.object(helper, 'ROOT', root), patch.object(helper, 'api', return_value=[[OLDER_RELEASE, newer]]):
                 helper.update(local=True)
             text = (root / 'README.md').read_text()
             self.assertIn('Download JugglucoNG 1.2.5-Alpha for Android', text)
@@ -171,7 +172,9 @@ class Downloads(unittest.TestCase):
 
     def test_noop_and_superseded_release_do_not_commit(self):
         updated = helper.rewrite(README, PREVIEW)
-        replies = remote_responses(readme=updated)[:4]
+        replies = remote_responses(
+            readme=updated, button=helper.rewrite_button(BUTTON, PREVIEW['tag_name'])
+        )[:4]
         with patch.dict('os.environ', {}, clear=True), patch.object(helper, 'api', side_effect=replies) as api, \
              patch.object(helper, 'ensure_ci') as ci:
             helper.update()

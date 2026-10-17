@@ -29,7 +29,6 @@ import tk.glucodata.alerts.MIN_ALERT_DURATION_SECONDS
 import tk.glucodata.alerts.HapticProfile
 import tk.glucodata.alerts.maxSoundDelaySecondsFor
 import tk.glucodata.ui.components.StyledSwitch
-import tk.glucodata.ui.util.ConnectedButtonGroup
 
 /**
  * The body every alert shares: master, standard and custom.
@@ -79,7 +78,7 @@ fun CommonAlertSettings(
                     .fillMaxWidth()
                     .padding(horizontal = sectionHorizontalPadding),
                 contentPadding = PaddingValues(vertical = 8.dp),
-                shapes = ButtonDefaults.shapes()
+                shapes = alertButtonShapes()
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
@@ -105,7 +104,7 @@ fun CommonAlertSettings(
                 "Flash" to stringResource(R.string.flash)
             )
 
-            ConnectedButtonGroup(
+            AlertOptionButtonGroup(
                 options = modes,
                 selectedOptions = selectedModes,
                 multiSelect = true,
@@ -136,10 +135,6 @@ fun CommonAlertSettings(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), // Transparent-ish on PrimaryContainer
-                unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
 
@@ -220,7 +215,13 @@ fun CommonAlertSettings(
                         Column(modifier = Modifier.padding(horizontal = sectionHorizontalPadding)) {
                             run {
                                 val hapticProfileLabels = HapticProfile.entries.associateWith { it.localizedName() }
-                                ConnectedButtonGroup(
+                                Text(
+                                    text = stringResource(R.string.alert_profile_label),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                AlertOptionButtonGroup(
                                     options = listOf(
                                         HapticProfile.SOFT,
                                         HapticProfile.STEADY,
@@ -233,10 +234,6 @@ fun CommonAlertSettings(
                                     label = { Text(hapticProfileLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelMedium) },
                                     modifier = Modifier.fillMaxWidth(),
                                     itemHeight = 36.dp,
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    selectedContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                                    unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -257,17 +254,19 @@ fun CommonAlertSettings(
                     // === Notification / alarm / both ===
                     Column(modifier = Modifier.padding(horizontal = sectionHorizontalPadding)) {
                         val deliveryModeLabels = AlertDeliveryMode.entries.associateWith { it.localizedName() }
-                        ConnectedButtonGroup(
+                        Text(
+                            text = stringResource(R.string.alert_delivery_method_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        AlertOptionButtonGroup(
                             options = AlertDeliveryMode.entries,
                             selectedOption = config.deliveryMode,
                             onOptionSelected = { onConfigChange(config.copy(deliveryMode = it)) },
                             labelText = { deliveryModeLabels[it] ?: it.displayName },
                             label = { Text(deliveryModeLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelLarge) },
                             modifier = Modifier.fillMaxWidth(),
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                            unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
 
@@ -375,7 +374,7 @@ fun CommonAlertSettings(
                             .padding(horizontal = sectionHorizontalPadding)
                             .padding(bottom = 16.dp),
                         contentPadding = PaddingValues(vertical = 8.dp),
-                        shapes = ButtonDefaults.shapes()
+                        shapes = alertButtonShapes()
                     ) {
                         Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
@@ -422,7 +421,7 @@ internal fun AdvancedSectionHeader(expanded: Boolean, onToggle: () -> Unit, modi
         ) {
             Text(
                 stringResource(R.string.advanced),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMediumEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
