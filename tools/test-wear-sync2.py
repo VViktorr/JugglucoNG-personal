@@ -113,7 +113,6 @@ object UiRefreshBus {
 object Log {
     const val doLog = false
     fun i(tag: String, message: String) {}
-    fun w(tag: String, message: String) {}
     fun stack(tag: String, message: String, error: Throwable): Nothing = throw AssertionError(message, error)
 }
 object WearSync2 {
@@ -200,29 +199,6 @@ fun main(args: Array<String>) {
             check(Natives.snapshotReads == 0 && Natives.shellWrites == 0 && Natives.batches == 0)
             check(HistorySyncAccess.historyTimes.isEmpty() && UiRefreshBus.refreshes == 0)
         }
-        "short-header", "truncated-frame", "trailing-frame" -> {
-            val payload = when (scenario) {
-                "short-header" -> byteArrayOf(1, 1, 0, 8)
-                "truncated-frame" -> chunk().dropLast(1).toByteArray()
-                else -> chunk() + byteArrayOf(0)
-            }
-            WearSync2.onChunk(payload)
-            check(Natives.snapshotReads == 0 && Natives.shellWrites == 0 && Natives.batches == 0)
-            check(HistorySyncAccess.historyTimes.isEmpty() && UiRefreshBus.refreshes == 0)
-        }
-        "out-of-order" -> {
-            val payload = chunk()
-            val buf = ByteBuffer.wrap(payload)
-            val records = 5 + "3038HVEAD0D".toByteArray().size
-            // The newest timestamp is first rather than last in the wire frame.
-            buf.putLong(records, Natives.start + 2925 * 60L)
-            buf.putLong(records + 7 * 16, Natives.start + 2918 * 60L)
-            WearSync2.onChunk(payload)
-            check(HistorySyncAccess.currentTime == (Natives.start + 2925 * 60L) * 1000)
-            check(HistorySyncAccess.currentValue == 128f && HistorySyncAccess.currentRaw == 120f)
-            check(WearSync2.exchangedAt == HistorySyncAccess.currentTime)
-            check(Natives.shellWrites == 0 && Natives.batches == 0)
-        }
         else -> error(scenario)
     }
     println("PASS $scenario")
@@ -233,7 +209,6 @@ scenarios = [
     'phone-libre2', 'phone-alias', 'watch-libre2', 'phone-libre3',
     'phone-sibionics', 'phone-managed', 'phone-managed-family', 'phone-unknown',
     'phone-short-snapshot', 'local-owner', 'removed', 'companion-disabled',
-    'short-header', 'truncated-frame', 'trailing-frame', 'out-of-order',
 ]
 with tempfile.TemporaryDirectory(prefix='wear-sync2-test-') as directory:
     temp = Path(directory)

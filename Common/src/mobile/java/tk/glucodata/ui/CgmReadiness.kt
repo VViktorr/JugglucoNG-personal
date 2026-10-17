@@ -2,9 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.IconButtonTooltip
+import androidx.compose.material3.IconButtonDefaults
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.bluetooth.BluetoothAdapter
@@ -135,10 +136,8 @@ private enum class CgmReadinessStatus {
 private enum class CgmReadinessAction {
     RequestBlePermissions,
     RequestNotificationPermission,
-    RequestLocationPermission,
     EnableBluetooth,
     OpenBatteryOptimization,
-    OpenBackgroundActivitySettings,
     OpenExactAlarmSettings,
     OpenFullScreenIntentSettings,
     OpenNotificationSettings,
@@ -200,11 +199,13 @@ fun CgmReadinessScreen(navController: NavController) {
                 title = stringResource(R.string.cgm_readiness_title),
                 onNavigateBack = { navController.popBackStack() },
                 actions = {
-                    IconButton(onClick = { refreshTick++ }) {
-                        Icon(
-                            Icons.Filled.Refresh,
-                            contentDescription = stringResource(R.string.refresh)
-                        )
+                    IconButtonTooltip(stringResource(R.string.refresh)) {
+                        IconButton(onClick = { refreshTick++ }, shapes = IconButtonDefaults.shapes()) {
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = stringResource(R.string.refresh)
+                            )
+                        }
                     }
                 },
             )
@@ -488,12 +489,14 @@ private fun CgmReadinessSummaryCard(
                         color = supportingColor
                     )
                 }
-                IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.cgm_readiness_dismiss_action),
-                        tint = supportingColor
-                    )
+                IconButtonTooltip(stringResource(R.string.cgm_readiness_dismiss_action)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp), shapes = IconButtonDefaults.shapes()) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.cgm_readiness_dismiss_action),
+                            tint = supportingColor
+                        )
+                    }
                 }
             }
 
@@ -512,12 +515,14 @@ private fun CgmReadinessSummaryCard(
                 topAction?.let { (action, labelRes) ->
                     Button(
                         onClick = { onAction(action) },
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                        shapes = ButtonDefaults.shapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(stringResource(labelRes))
                     }
                 }
-                OutlinedButton(onClick = onOpenReadiness) {
+                OutlinedButton(onClick = onOpenReadiness, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(R.string.cgm_readiness_review_action))
                 }
             }
@@ -560,7 +565,7 @@ private fun CgmReadinessDetailRow(
                 )
                 if (item.action != null && item.actionLabelRes != null) {
                     Spacer(Modifier.height(12.dp))
-                    FilledTonalButton(onClick = { onAction(item.action) }) {
+                    FilledTonalButton(onClick = { onAction(item.action) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                         Text(stringResource(item.actionLabelRes))
                         Spacer(Modifier.width(8.dp))
                         Icon(
@@ -700,15 +705,6 @@ private fun rememberCgmReadinessActionHandler(onChanged: () -> Unit): (CgmReadin
     ) {
         onChanged()
     }
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            tk.glucodata.widgets.WidgetUpdater.requestUpdateAll(context)
-            tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
-        }
-        onChanged()
-    }
     val activityLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
@@ -727,11 +723,6 @@ private fun rememberCgmReadinessActionHandler(onChanged: () -> Unit): (CgmReadin
                     } else {
                         onChanged()
                     }
-                }
-                CgmReadinessAction.RequestLocationPermission -> {
-                    context.getSharedPreferences(CGM_READINESS_PREFS, Context.MODE_PRIVATE)
-                        .edit().putBoolean("location_permission_requested", true).apply()
-                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                 }
                 CgmReadinessAction.EnableBluetooth -> {
                     activityLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
@@ -783,13 +774,11 @@ private fun buildCgmReadinessSnapshot(
             blePermissionItem(appContext),
             bluetoothItem(appContext),
             legacyLocationServicesItem(appContext),
-            weatherLocationPermissionItem(appContext),
             notificationPermissionItem(appContext),
             appNotificationItem(appContext),
             exactAlarmItem(appContext),
             fullScreenIntentItem(appContext),
             batteryOptimizationItem(appContext),
-            backgroundActivityItem(appContext),
             dndItem(appContext),
             overlayItem(appContext),
             dataSaverItem(appContext),
@@ -880,24 +869,6 @@ private fun blePermissionItem(context: Context): CgmReadinessItem? {
         icon = Icons.Filled.Security,
         action = if (ready) null else CgmReadinessAction.RequestBlePermissions,
         actionLabelRes = if (ready) null else R.string.cgm_readiness_allow_action
-    )
-}
-
-private fun weatherLocationPermissionItem(context: Context): CgmReadinessItem? {
-    // Android 6-11 already has the BLE location row above. On 12+ this is optional weather access.
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
-    val ready = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    val requested = context.getSharedPreferences(CGM_READINESS_PREFS, Context.MODE_PRIVATE)
-        .getBoolean("location_permission_requested", false)
-    return CgmReadinessItem(
-        id = "weather_location_permission",
-        titleRes = R.string.cgm_readiness_weather_location_title,
-        detailRes = if (ready) R.string.cgm_readiness_weather_location_ready_detail else R.string.cgm_readiness_weather_location_detail,
-        status = if (ready) CgmReadinessStatus.Ready else CgmReadinessStatus.Advisory,
-        icon = Icons.Filled.LocationOn,
-        action = when { ready -> null; requested -> CgmReadinessAction.OpenAppSettings; else -> CgmReadinessAction.RequestLocationPermission },
-        actionLabelRes = when { ready -> null; requested -> R.string.cgm_readiness_open_location_permission_action; else -> R.string.cgm_readiness_allow_action }
     )
 }
 
@@ -1029,22 +1000,6 @@ private fun batteryOptimizationItem(context: Context): CgmReadinessItem? {
         icon = Icons.Filled.BatterySaver,
         action = if (ready) null else CgmReadinessAction.OpenBatteryOptimization,
         actionLabelRes = if (ready) null else R.string.cgm_readiness_open_battery_action
-    )
-}
-
-private fun backgroundActivityItem(context: Context): CgmReadinessItem {
-    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-    val restricted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && manager?.isBackgroundRestricted == true
-    return CgmReadinessItem(
-        id = "background_activity",
-        titleRes = R.string.cgm_readiness_background_activity_title,
-        detailRes = if (restricted) R.string.cgm_readiness_background_activity_restricted_detail else R.string.cgm_readiness_background_activity_detail,
-        // OEM switches are not reported by isIgnoringBatteryOptimizations or isBackgroundRestricted.
-        status = if (restricted) CgmReadinessStatus.Critical else CgmReadinessStatus.Manual,
-        icon = Icons.Filled.BatterySaver,
-        action = CgmReadinessAction.OpenBackgroundActivitySettings,
-        actionLabelRes = R.string.cgm_readiness_open_battery_usage_action,
-        showInBanners = restricted
     )
 }
 
@@ -1218,11 +1173,9 @@ private fun Context.startReadinessSettingsActivity(action: CgmReadinessAction) {
         CgmReadinessAction.OpenOverlaySettings -> {
             Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri)
         }
-        CgmReadinessAction.OpenBackgroundActivitySettings,
         CgmReadinessAction.OpenAppSettings -> {
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri)
         }
-        CgmReadinessAction.RequestLocationPermission,
         CgmReadinessAction.RequestBlePermissions,
         CgmReadinessAction.RequestNotificationPermission,
         CgmReadinessAction.EnableBluetooth -> return

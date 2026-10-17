@@ -221,8 +221,6 @@ object WearGlucoseStore {
 
     /** Re-reads on the next opportunity; bursts collapse into one pass. */
     fun refresh(force: Boolean = false) {
-        // A delayed reload or a settings callback can arrive after the last screen left.
-        if (!isObserved()) return
         val now = System.currentTimeMillis()
         if (!force && now - lastLoadStartedAt < MIN_RELOAD_INTERVAL_MS) {
             reloadPending = true
@@ -248,10 +246,8 @@ object WearGlucoseStore {
                 loading.set(false)
                 if (reloadPending) {
                     reloadPending = false
-                    if (isObserved()) {
-                        delay(MIN_RELOAD_INTERVAL_MS)
-                        refresh(force = true)
-                    }
+                    delay(MIN_RELOAD_INTERVAL_MS)
+                    refresh(force = true)
                 }
             }
         }

@@ -105,7 +105,7 @@ public class ScanNfcV {
             ;
         }
         ;
-        if (SensorBluetooth.resetDeviceFromNfc(sensorident))
+        if (SensorBluetooth.resetDevice(sensorident))
             askpermission = true;
         return true;
     }
@@ -374,7 +374,7 @@ public class ScanNfcV {
                             }
                             if (newdevice != null && Arrays.equals(newdevice, uid) && Applic.app.canusebluetooth()) {
                                 if (value != 0 || (ret & 0xFF) == 5 || (ret & 0xFF) == 7) {
-                                    if (SensorBluetooth.resetDeviceFromNfc(scannedSensorIdent))
+                                    if (SensorBluetooth.resetDevice(scannedSensorIdent))
                                         askpermission = true;
                                     newdevice = null;
                                 }
@@ -402,7 +402,7 @@ public class ScanNfcV {
                                         ;
                                     }
                                     ;
-                                    if (SensorBluetooth.resetDeviceFromNfc(sensorident))
+                                    if (SensorBluetooth.resetDevice(sensorident))
                                         askpermission = true;
                                 }
                                     ret = 0;

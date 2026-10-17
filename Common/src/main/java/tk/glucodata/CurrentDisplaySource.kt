@@ -89,13 +89,6 @@ object CurrentDisplaySource {
         } catch (_: Throwable) {
             emptyList()
         }
-        // The chart window outlives the current-reading timeout. A missing live
-        // value may fall back to history only while that history is still fresh.
-        val latestHistoryTime = recentPoints.lastOrNull()?.timestamp ?: 0L
-        if (current == null && (latestHistoryTime <= 0L ||
-                kotlin.math.abs(now - latestHistoryTime) > maxAgeMillis)) {
-            return null
-        }
         val viewMode = resolveSensorViewMode(resolvedSensorId)
         return resolveSnapshot(
             current = current,
@@ -105,11 +98,7 @@ object CurrentDisplaySource {
             isMmol = isMmol,
             smoothingMode = smoothingMode,
             sensorId = resolvedSensorId
-        )?.takeIf {
-            // Smoothing/chunk collapsing can select an older history timestamp.
-            // Validate the value actually displayed, not just the live input.
-            it.timeMillis > 0L && kotlin.math.abs(now - it.timeMillis) <= maxAgeMillis
-        }
+        )
     }
 
     @JvmStatic
@@ -736,11 +725,7 @@ object CurrentDisplaySource {
             runCatching {
                 val dataptr = Natives.getdataptr(sensorName)
                 if (dataptr != 0L) {
-                    try {
-                        Natives.setViewMode(dataptr, normalized)
-                    } finally {
-                        Natives.freedataptr(dataptr)
-                    }
+                    Natives.setViewMode(dataptr, normalized)
                 }
             }
         }
@@ -854,4 +839,3 @@ object CurrentDisplaySource {
         return (if (isMmol) value * MGDL_PER_MMOLL else value).roundToInt()
     }
 }
-

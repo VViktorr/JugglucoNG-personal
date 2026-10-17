@@ -897,8 +897,7 @@ bool sendlibreviewdata(const int newcurrent, const uint32_t nu) {
   const int uitlen = uitptr - uitbuf - 1;
   //    write(STDOUT_FILENO,uitbuf,uitlen);
   LOGGER("uitlen=%d\n", uitlen);
-  LOGGER("LibreView payload bytes=%d UOM=%.*s country=%d body=****\n",
-         uitlen, (int)settings->getunitlabel().size(), settings->getunitlabel().data(), country);
+  logwriter(uitbuf, uitlen);
   if (!currentToSend && scansiter == 0 && !histtotal && !bytesnumbers && !journalbytes) {
     LOGAR("Nothing to write to libreview");
     return true;
@@ -1153,7 +1152,6 @@ void libreviewthread() {
   LOGGERN(view, sizeof(view) - 1);
   prctl(PR_SET_NAME, view, 0, 0, 0);
   int waitmin = 10;
-  bool libre2SessionAuthenticated = false;
   while (true) {
     if (!networkpresent || !librecondition.dobackup) {
       if (!networkpresent) {
@@ -1219,7 +1217,6 @@ void libreviewthread() {
       }
       if (settings->data()->haslibre2) {
         LOGAR("Libreview: haslibre2");
-        if (!libre2SessionAuthenticated) settings->data()->libreinit = false;
         if (!settings->data()->libreinit) {
           if (!(settings->data()->libreinit =
                     initlibreconfig(false, alwaysnewstatus))) {
@@ -1228,7 +1225,6 @@ void libreviewthread() {
             continue;
           }
           alwaysnewstatus = false;
-          libre2SessionAuthenticated = true;
         }
         if (!settings->data()->sendtolibreview) {
           askforaccount = false;
@@ -1452,16 +1448,6 @@ void startlibrethread() {
     libre.detach();
   }
 }
-extern "C" JNIEXPORT void JNICALL fromjava(resetLibre2ViewAuth)(JNIEnv *env,
-                                                                 jclass cl) {
-  settings->data()->libreinit = false;
-  if (sensors) sensors->onallsensors([](SensorGlucoseData *sensor) {
-    if (sensor->isLibre2()) sensor->getinfo()->putsensor = false;
-  });
-  alwaysnewstatus = true;
-  startlibrethread();
-  librecondition.wakebackup(Backup::wakeall);
-}
 void endlibrethread() {
   if (libreviewrunning) {
     librecondition.wakebackup(Backup::wakeend);
@@ -1557,4 +1543,3 @@ int makesensorstarts(const LibreHist *list,const int len,char *buf) {
 extern void wakeaftermin(const int waitmin);
 void wakeaftermin(const int waitmin) {}
 #endif
-

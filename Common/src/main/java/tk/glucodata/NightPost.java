@@ -303,7 +303,7 @@ static private String token="";
 static JSONObject  readJSONObject(HttpURLConnection urlConnection)  throws IOException, JSONException {
     String ant=getstring(urlConnection);
     if(doLog) {
-        Log.format("%s: readJSONObject len=%d body=****",LOG_ID,ant.length());
+        Log.format("%s: readJSONObject len=%d %s",LOG_ID,ant.length(),ant);
         }
      return new JSONObject(ant);
     }
@@ -330,7 +330,7 @@ private static TokenExchange exchangeToken(int connectTimeoutMs,int readTimeoutM
         final int code=urlConnection.getResponseCode();
         final String body=getstring(urlConnection);
         if(doLog) {
-            Log.format("%s: token exchange code=%d len=%d body=****",LOG_ID,code,body.length());
+            Log.format("%s: token exchange code=%d len=%d %s",LOG_ID,code,body.length(),body);
             }
         final NightscoutTokenGrant grant=code==HTTP_OK?NightscoutTokenGrant.parse(body):null;
         if(grant!=null)
@@ -912,4 +912,3 @@ public static void  config(MainActivity act, View settingsview) {
     
     }
  }
-

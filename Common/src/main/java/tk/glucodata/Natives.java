@@ -1031,6 +1031,8 @@ public class Natives {
 
         public static native boolean removeSensorById(String sensorId);
 
+        public static native boolean finishSensorById(String sensorId);
+
         public static native void unfinishSensor(long dataptr);
 
         public static native long manualLibreAccountIDnumber();
@@ -1212,37 +1214,6 @@ public class Natives {
         public static native int getLibreCountry();
 
         public static native void setLibreCountry(int val);
-
-        public static native void initLibreCountryIfUnset(int val);
-
-        public static native void resetLibre2ViewAuth();
-
-        public static int libreCountryIndex(String countryCode) {
-                if (countryCode == null)
-                        return -1;
-                switch (countryCode.trim().toUpperCase(java.util.Locale.ROOT)) {
-                        case "GB":
-                        case "UK":
-                                return 0;
-                        case "FR":
-                                return 1;
-                        case "NL":
-                                return 2;
-                        case "PL":
-                                return 3;
-                        case "RU":
-                                return 4;
-                        default:
-                                return -1;
-                }
-        }
-
-        public static void initLibreCountryFromLocale() {
-                int country = libreCountryIndex(java.util.Locale.getDefault().getCountry());
-                if (country < 0)
-                        country = getunit() == 1 ? 0 : 1;
-                initLibreCountryIfUnset(country);
-        }
 
         public static native void setinterval(int val);
 
@@ -1723,7 +1694,9 @@ public class Natives {
                         float high = (type == 1) ? threshold : alarmhigh();
                         boolean lowEnabled = (type == 0) ? enabled : hasalarmlow();
                         boolean highEnabled = (type == 1) ? enabled : hasalarmhigh();
-                        boolean availableEnabled = (type == 2) ? enabled : hasvaluealarm();
+                        // Legacy "value available" is intentionally disabled in NG Compose.
+                        // Never preserve or re-arm it while syncing other alerts.
+                        boolean availableEnabled = false;
                         boolean lossEnabled = (type == 4) ? enabled : hasalarmloss();
 
                         setalarms(low, high, lowEnabled, highEnabled, availableEnabled, lossEnabled);
@@ -1742,4 +1715,3 @@ public class Natives {
                 }
         }
 }
-

@@ -402,10 +402,6 @@ fun DashboardScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val activeSensorList by viewModel.activeSensorList.collectAsStateWithLifecycle()
     val sensorHoursRemaining by viewModel.sensorHoursRemaining.collectAsStateWithLifecycle()
-    val sensorEndTimeMs by viewModel.sensorEndTimeMs.collectAsStateWithLifecycle()
-    val dashboardBarsStacked by viewModel.dashboardBarsStacked.collectAsStateWithLifecycle()
-    val dashboardBarsCustomRatio by viewModel.dashboardBarsCustomRatio.collectAsStateWithLifecycle()
-    val dashboardGlucoseWidthPercent by viewModel.dashboardGlucoseWidthPercent.collectAsStateWithLifecycle()
     val currentDay by viewModel.currentDay.collectAsStateWithLifecycle()
     val predictionCalibrationRefresh by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
     val calibrationRevision by tk.glucodata.data.calibration.CalibrationManager.revision.collectAsStateWithLifecycle()
@@ -435,12 +431,15 @@ fun DashboardScreen(
     var showOttaiWizard by remember { mutableStateOf(false) }
     var journalEditorRequest by remember { mutableStateOf<JournalEditorRequest?>(null) }
     var journalActionTimestamp by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Where the chart draws the tapped time's dot, for the journal menu to grow from.
+    val journalActionAnchor = remember { tk.glucodata.ui.ChartActionAnchor() }
     var journalActionSuggestedGlucoseMgDl by remember { mutableStateOf<Float?>(null) }
     var journalActionSuggestedAmountFraction by remember { mutableStateOf<Float?>(null) }
     var lastJournalType by rememberSaveable { mutableStateOf(JournalEntryType.INSULIN) }
     var journalNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var dashboardChartViewport by remember { mutableStateOf<ChartViewportSnapshot?>(null) }
-    var dashboardFabExpanded by rememberSaveable { mutableStateOf(false) }
+    // Not saveable: leaving the screen by any route closes the menu, as it did the popup.
+    var dashboardFabExpanded by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val journalPresetsById = remember(journalInsulinPresets) { journalInsulinPresets.associateBy { it.id } }
@@ -1314,14 +1313,15 @@ fun DashboardScreen(
             // ignored the smoothing setting, so the row could state a fall the notification
             // and the delta alarms — computed from the smoothed reading — did not agree with.
             val recentReadingDeltas = remember(
-                dashboardRowsShowDelta, recentReadings, consumerHistory, unit, deltaIntervalMinutes
+                dashboardRowsShowDelta, recentReadings, consumerHistory, unit, deltaIntervalMinutes, viewMode
             ) {
                 if (dashboardRowsShowDelta) {
                     readingDeltas(
                         recentReadings.map { it.timestamp },
                         consumerHistory,
                         tk.glucodata.ui.util.GlucoseFormatter.isMmol(unit),
-                        deltaIntervalMinutes
+                        deltaIntervalMinutes,
+                        useRaw = viewMode == 1 || viewMode == 3
                     )
                 } else {
                     emptyList()
@@ -1457,9 +1457,6 @@ fun DashboardScreen(
                                 sensorStatus = sensorStatus,
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
-                                sensorEndTimeMs = sensorEndTimeMs,
-                                stackBars = dashboardBarsStacked,
-                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast
@@ -1617,8 +1614,9 @@ fun DashboardScreen(
                     }
                 }
 
-                // Landscape keeps the journal card styling; expansion still controls
-                // the plot viewport and pinned metrics underneath it.
+                // Right pane: the chart really is the whole pane in landscape, so it is
+                // drawn full-bleed (expandedProgress = 1) rather than as an inset card
+                // floating inside its own container. Pinned metrics ride underneath it.
                 Column(
                     modifier = Modifier
                         .weight(0.75f)
@@ -1626,7 +1624,7 @@ fun DashboardScreen(
                         // The scaffold only consumes the top inset, so the bottom one has
                         // to be taken here or the strip sits under the gesture bar.
                         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                        .padding(top = 8.dp, bottom = 8.dp, end = 16.dp)
+                        .padding(top = 8.dp, bottom = 8.dp)
                 ) {
                         Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                             key(sensorName) {
@@ -1687,6 +1685,7 @@ fun DashboardScreen(
                                         },
                                         journalActionTimestamp = if (journalEnabled) journalActionTimestamp else null,
                                         journalActionDisplayValue = if (journalEnabled) journalActionSuggestedDisplayValue else null,
+                                        journalActionAnchor = journalActionAnchor,
                                         onDismissJournalAction = { clearJournalAction() },
                                         onJournalMarkerClick = { entryId ->
                                             journalEntriesById[entryId]?.let { entry ->
@@ -1699,27 +1698,24 @@ fun DashboardScreen(
                                     )
                                 }
                             }
-                            journalActionTimestamp?.let { actionTimestamp ->
-                                JournalFloatingActionMenu(
-                                    visible = journalEnabled,
-                                    selectedTimestamp = actionTimestamp,
-                                    onDismissRequest = { clearJournalAction() },
-                                    viewportSnapshot = dashboardChartViewport,
-                                    onTypeSelected = {
-                                        lastJournalType = it
-                                        val suggestedGlucoseMgDl = journalActionSuggestedGlucoseMgDl
-                                        val suggestedAmountFraction = journalActionSuggestedAmountFraction
-                                        clearJournalAction()
-                                        journalEditorRequest = JournalEditorRequest(
-                                            type = it,
-                                            timestamp = actionTimestamp,
-                                            suggestedGlucoseMgDl = suggestedGlucoseMgDl,
-                                            suggestedChartAnchorGlucoseMgDl = suggestedGlucoseMgDl,
-                                            suggestedAmountFraction = suggestedAmountFraction
-                                        )
-                                    }
-                                )
-                            }
+                            JournalFloatingActionMenu(
+                                selectedTimestamp = journalActionTimestamp?.takeIf { journalEnabled },
+                                anchor = journalActionAnchor,
+                                onDismissRequest = { clearJournalAction() },
+                                onTypeSelected = { type, actionTimestamp ->
+                                    lastJournalType = type
+                                    val suggestedGlucoseMgDl = journalActionSuggestedGlucoseMgDl
+                                    val suggestedAmountFraction = journalActionSuggestedAmountFraction
+                                    clearJournalAction()
+                                    journalEditorRequest = JournalEditorRequest(
+                                        type = type,
+                                        timestamp = actionTimestamp,
+                                        suggestedGlucoseMgDl = suggestedGlucoseMgDl,
+                                        suggestedChartAnchorGlucoseMgDl = suggestedGlucoseMgDl,
+                                        suggestedAmountFraction = suggestedAmountFraction
+                                    )
+                                }
+                            )
                         }
 
                 }
@@ -1773,9 +1769,6 @@ fun DashboardScreen(
                                 sensorStatus = sensorStatus,
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
-                                sensorEndTimeMs = sensorEndTimeMs,
-                                stackBars = dashboardBarsStacked,
-                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast
@@ -1857,7 +1850,7 @@ fun DashboardScreen(
                     // top state shows ~3-4 rows, middle shows ~1-2, fullscreen hides the list.
                     val chartItemHeightTarget = (boundedCollapsedChartItemHeight + chartHeightBoostDp)
                         .coerceIn(boundedCollapsedChartItemHeight, boundedFullscreenChartItemHeight)
-                    val chartHorizontalPadding = collapsedChartHorizontalPadding
+                    val animatedChartHorizontalPadding = collapsedChartHorizontalPadding * animatedCollapse
                     val animatedChartItemHeight by animateDpAsState(
                                 targetValue = chartItemHeightTarget,
                                 animationSpec = spring(
@@ -1868,7 +1861,7 @@ fun DashboardScreen(
                                 )
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = chartHorizontalPadding.coerceAtLeast(0.dp))
+                            .padding(horizontal = animatedChartHorizontalPadding.coerceAtLeast(0.dp))
                     ) {
                         Box(
                             modifier = Modifier
@@ -1936,6 +1929,7 @@ fun DashboardScreen(
                                         },
                                         journalActionTimestamp = if (journalEnabled) journalActionTimestamp else null,
                                         journalActionDisplayValue = if (journalEnabled) journalActionSuggestedDisplayValue else null,
+                                        journalActionAnchor = journalActionAnchor,
                                         onDismissJournalAction = { clearJournalAction() },
                                         onJournalMarkerClick = { entryId ->
                                             journalEntriesById[entryId]?.let { entry ->
@@ -1948,27 +1942,24 @@ fun DashboardScreen(
                                     )
                                 }
                             }
-                            journalActionTimestamp?.let { actionTimestamp ->
-                                JournalFloatingActionMenu(
-                                    visible = journalEnabled,
-                                    selectedTimestamp = actionTimestamp,
-                                    onDismissRequest = { clearJournalAction() },
-                                    viewportSnapshot = dashboardChartViewport,
-                                    onTypeSelected = {
-                                        lastJournalType = it
-                                        val suggestedGlucoseMgDl = journalActionSuggestedGlucoseMgDl
-                                        val suggestedAmountFraction = journalActionSuggestedAmountFraction
-                                        clearJournalAction()
-                                        journalEditorRequest = JournalEditorRequest(
-                                            type = it,
-                                            timestamp = actionTimestamp,
-                                            suggestedGlucoseMgDl = suggestedGlucoseMgDl,
-                                            suggestedChartAnchorGlucoseMgDl = suggestedGlucoseMgDl,
-                                            suggestedAmountFraction = suggestedAmountFraction
-                                        )
-                                    }
-                                )
-                            }
+                            JournalFloatingActionMenu(
+                                selectedTimestamp = journalActionTimestamp?.takeIf { journalEnabled },
+                                anchor = journalActionAnchor,
+                                onDismissRequest = { clearJournalAction() },
+                                onTypeSelected = { type, actionTimestamp ->
+                                    lastJournalType = type
+                                    val suggestedGlucoseMgDl = journalActionSuggestedGlucoseMgDl
+                                    val suggestedAmountFraction = journalActionSuggestedAmountFraction
+                                    clearJournalAction()
+                                    journalEditorRequest = JournalEditorRequest(
+                                        type = type,
+                                        timestamp = actionTimestamp,
+                                        suggestedGlucoseMgDl = suggestedGlucoseMgDl,
+                                        suggestedChartAnchorGlucoseMgDl = suggestedGlucoseMgDl,
+                                        suggestedAmountFraction = suggestedAmountFraction
+                                    )
+                                }
+                            )
                         }
                     }
 
@@ -2158,9 +2149,9 @@ fun DashboardScreen(
                             suggestedChartAnchorGlucoseMgDl = suggestedGlucoseMgDl
                         )
                     },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 20.dp)
+                    // Centred: at the end it sat on the newest reading's value.
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 )
             }
         }

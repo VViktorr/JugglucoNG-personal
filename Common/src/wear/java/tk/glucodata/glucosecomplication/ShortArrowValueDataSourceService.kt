@@ -77,43 +77,80 @@ fun getview(type: ComplicationType):WearComplicationValue {
          }
       return glview as WearComplicationValue;
       }
-    override fun getPreviewData(type: ComplicationType): ComplicationData? =
-        build(type, GlucoseComplicationData.previewReading())
-
-    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? =
-        build(request.complicationType, GlucoseComplicationData.currentReading())
-
-    private fun build(type: ComplicationType, reading: GlucoseComplicationData.Reading?): ComplicationData? {
-        val tap = GlucoseComplicationData.tapAction()
-        val image = reading?.let { Icon.createWithBitmap(arrowTimeBitmap(it.rate, it.timeMillis)) }
-        val textReading = GlucoseComplicationData.withTrend(reading)
-        return when (type) {
-            SHORT_TEXT -> GlucoseComplicationData.shortValueData(textReading, "Glucose+trend", tap, image)
-            LONG_TEXT -> GlucoseComplicationData.longTextData(textReading, "Glucose+trend", tap, image)
-            RANGED_VALUE -> GlucoseComplicationData.rangedValueData(textReading, "Glucose+trend", tap, image)
-            SMALL_IMAGE, MONOCHROMATIC_IMAGE -> {
-                val bitmap = reading?.let {
-                    ComplicationRenderer.valueWithArrowBitmap(
-                        ICON_PX, it.text, it.value, it.rate, it.isMmol,
-                        if (type == MONOCHROMATIC_IMAGE) ComplicationRenderer.ICON_TINT
-                        else ComplicationRenderer.valueColor(it.value, it.isMmol),
-                        icon = type == MONOCHROMATIC_IMAGE,
-                    )
-                } ?: ComplicationRenderer.noValueBitmap(ICON_PX)
-                val icon = Icon.createWithBitmap(bitmap)
-                val description = PlainComplicationText.Builder("Glucose+trend").build()
-                if (type == MONOCHROMATIC_IMAGE) {
-                    MonochromaticImageComplicationData.Builder(
-                        MonochromaticImage.Builder(icon).build(), description,
-                    ).setTapAction(tap).build()
-                } else {
-                    SmallImageComplicationData.Builder(
-                        SmallImage.Builder(icon, SmallImageType.PHOTO).build(), description,
-                    ).setTapAction(tap).build()
-                }
-            }
-            else -> null
+    override fun getPreviewData(type: ComplicationType): ComplicationData {
+      val reading = GlucoseComplicationData.previewReading()
+      val tapAction = GlucoseComplicationData.tapAction()
+      val icon=Icon.createWithBitmap( arrowTimeBitmap(reading.rate, reading.timeMillis));
+       Log.i(LOG_ID,"getPreviewData $type")
+         return when (type) {
+             SHORT_TEXT -> GlucoseComplicationData.shortValueData(
+                 reading,
+                 "Small Glucose",
+                 tapAction,
+                 icon,
+              )
+             LONG_TEXT -> GlucoseComplicationData.longTextData(
+                 reading,
+                 "Small Glucose",
+                 tapAction,
+                 icon,
+              )
+             RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
+                 reading,
+                 "Small Glucose",
+                 tapAction,
+                 icon,
+             )
+             else -> GlucoseComplicationData.shortValueData(null, "Small Glucose", tapAction)
+         }
         }
+
+    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
+        Log.d(LOG_ID, "onComplicationRequest() id: ${request.complicationInstanceId}")
+        val complicationPendingIntent = GlucoseComplicationData.tapAction()
+        val type=        request.complicationType
+      val glucose = GlucoseComplicationData.currentReading()
+      if(glucose==null) {
+         Log.i(LOG_ID,"no glucose") 
+           return when (type) {
+               RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
+                   null,
+                   "Small Glucose",
+                   complicationPendingIntent,
+               )
+               else -> GlucoseComplicationData.shortValueData(
+                   null,
+                   "Small Glucose",
+                   complicationPendingIntent,
+               )
+           }
+         }
+      else {
+
+            val bitmap=arrowTimeBitmap(glucose.rate, glucose.timeMillis);
+            Log.i(LOG_ID," glucose==${glucose.text}")
+                val image=Icon.createWithBitmap(bitmap)
+             return when (type) {
+                 RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
+                     glucose,
+                     "Small Glucose",
+                     complicationPendingIntent,
+                     image,
+                 )
+                 LONG_TEXT -> GlucoseComplicationData.longTextData(
+                     glucose,
+                     "Small Glucose",
+                     complicationPendingIntent,
+                     image,
+                      )
+                 else -> GlucoseComplicationData.shortValueData(
+                     glucose,
+                     "Small Glucose",
+                     complicationPendingIntent,
+                     image,
+                      )
+             }
+            }
     }
 
     companion object {

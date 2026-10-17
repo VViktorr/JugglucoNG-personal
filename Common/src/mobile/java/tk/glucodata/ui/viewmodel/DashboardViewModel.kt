@@ -393,9 +393,6 @@ class DashboardViewModel(
     private val _viewMode = MutableStateFlow(0)
     val viewMode = _viewMode.asStateFlow()
 
-    private val _sensorEndTimeMs = MutableStateFlow(0L)
-    val sensorEndTimeMs = _sensorEndTimeMs.asStateFlow()
-
     private val _sensorHoursRemaining = MutableStateFlow(999L)
     val sensorHoursRemaining = _sensorHoursRemaining.asStateFlow()
 
@@ -496,13 +493,6 @@ class DashboardViewModel(
 
     private val _glucoseAppChartRangeColorsEnabled = MutableStateFlow(false)
     val glucoseAppChartRangeColorsEnabled = _glucoseAppChartRangeColorsEnabled.asStateFlow()
-
-    private val _dashboardBarsStacked = MutableStateFlow(false)
-    val dashboardBarsStacked = _dashboardBarsStacked.asStateFlow()
-    private val _dashboardBarsCustomRatio = MutableStateFlow(false)
-    val dashboardBarsCustomRatio = _dashboardBarsCustomRatio.asStateFlow()
-    private val _dashboardGlucoseWidthPercent = MutableStateFlow(70)
-    val dashboardGlucoseWidthPercent = _dashboardGlucoseWidthPercent.asStateFlow()
 
     private val _dashboardShowDelta = MutableStateFlow(false)
     val dashboardShowDelta = _dashboardShowDelta.asStateFlow()
@@ -878,9 +868,6 @@ class DashboardViewModel(
         _glucoseArrowForecastColorsEnabled.value = prefs.getBoolean(ARROW_FORECAST_COLORS_KEY, false)
         _glucoseChartRangeColorsEnabled.value = prefs.getBoolean(CHART_RANGE_COLORS_KEY, false)
         _glucoseAppChartRangeColorsEnabled.value = prefs.getBoolean(APP_CHART_RANGE_COLORS_KEY, false)
-        _dashboardBarsStacked.value = prefs.getBoolean("dashboard_bars_stacked", false)
-        _dashboardBarsCustomRatio.value = prefs.getBoolean("dashboard_bars_custom_ratio", false)
-        _dashboardGlucoseWidthPercent.value = prefs.getInt("dashboard_glucose_width_percent", 70).coerceIn(40, 70)
         _dashboardShowDelta.value = prefs.getBoolean(DASHBOARD_SHOW_DELTA_KEY, false)
         _dashboardRowsShowDelta.value = prefs.getBoolean(DASHBOARD_ROWS_SHOW_DELTA_KEY, false)
         _dashboardShowReadingAge.value = prefs.getBoolean(DASHBOARD_SHOW_READING_AGE_KEY, false)
@@ -1003,11 +990,6 @@ class DashboardViewModel(
             } else {
                 null
             }
-            // Same post-extension timestamp used by the NFC calendar action in hybrid.
-            val calendarEndMs = if (hasNativeBacking) runCatching {
-                val seconds = Natives.getSensorEndData(sName) and 0xFFFFFFFFL
-                (seconds * 1000L).takeIf { it > 946684800000L }
-            }.getOrNull() else null
             val fallbackDurationDays =
                 if (managedSnapshot?.uiFamily == ManagedSensorUiFamily.AIDEX ||
                     sName.startsWith("X-", ignoreCase = true)
@@ -1042,10 +1024,6 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
-                _sensorEndTimeMs.value = calendarEndMs
-                    ?: lifecycleOfficialEndMs.takeIf { it > 0L }
-                    ?: lifecycleExpectedEndMs.takeIf { it > 0L }
-                    ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1065,10 +1043,6 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
-                _sensorEndTimeMs.value = calendarEndMs
-                    ?: managedSnapshot?.officialEndMs?.takeIf { it > 0L }
-                    ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L }
-                    ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1078,7 +1052,6 @@ class DashboardViewModel(
             _sensorName.value = ""
             _sensorStatus.value = ""
             _viewMode.value = 0
-            _sensorEndTimeMs.value = 0L
             _sensorProgress.value = 0f
             _sensorHoursRemaining.value = 999L
             _daysRemaining.value = ""
@@ -1919,25 +1892,6 @@ class DashboardViewModel(
         refreshNotificationPredictionSurfaces(context)
         // Travels with the palette: the watch colours its readings by the same rule.
         tk.glucodata.GlucoseColorSync.push()
-    }
-
-    fun setDashboardBarsStacked(enabled: Boolean) {
-        tk.glucodata.Applic.app.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
-            .edit().putBoolean("dashboard_bars_stacked", enabled).apply()
-        _dashboardBarsStacked.value = enabled
-    }
-
-    fun setDashboardBarsCustomRatio(enabled: Boolean) {
-        tk.glucodata.Applic.app.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
-            .edit().putBoolean("dashboard_bars_custom_ratio", enabled).apply()
-        _dashboardBarsCustomRatio.value = enabled
-    }
-
-    fun setDashboardGlucoseWidthPercent(percent: Int) {
-        val bounded = percent.coerceIn(40, 70)
-        tk.glucodata.Applic.app.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
-            .edit().putInt("dashboard_glucose_width_percent", bounded).apply()
-        _dashboardGlucoseWidthPercent.value = bounded
     }
 
     fun setDashboardShowDelta(enabled: Boolean) {

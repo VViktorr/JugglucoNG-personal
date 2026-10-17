@@ -549,8 +549,7 @@ addstrview(uitptr,afterUserToken);
 int uitlen=uitptr-buf;
 LOGGER("END sendlibre3viewdata uitlen=%d\n",uitlen);
 buf[uitlen]='\n';
-LOGGER("LibreView Libre3 payload bytes=%d UOM=%.*s body=****\n", uitlen,
-    (int)settings->getunitlabel().size(), settings->getunitlabel().data());
+logwriter(buf,uitlen+1);
 int nextsensor=(wrotecurrent>0)?lastsensor:lastwrote;
 if(nextsensor<0) {
 	LOGSTRING("nextsensor<0\n");

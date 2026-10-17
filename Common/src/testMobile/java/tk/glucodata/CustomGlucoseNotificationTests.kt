@@ -3,7 +3,8 @@ package tk.glucodata
 import android.app.Application
 import android.app.Notification
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.RotateDrawable
+import android.graphics.drawable.VectorDrawable
 import android.os.Parcel
 import android.view.View
 import android.view.ViewGroup
@@ -24,26 +25,52 @@ class CustomGlucoseNotificationTests {
     private val app: Application = ApplicationProvider.getApplicationContext()
     private fun values(expanded: Boolean = true, rate: Float = 0f,
         peers: List<NotificationChartDrawer.ValueItem> = listOf(NotificationChartDrawer.ValueItem("5,5", 0xff81a9f6.toInt(), 0f)),
-        scale: Float = 1f, enabled: Boolean = true, systemFont: Boolean = true, weight: Int = 400) =
+        scale: Float = 1f, enabled: Boolean = true, systemFont: Boolean = true, weight: Int = 400,
+        status: CharSequence = "") =
         CustomGlucoseNotification.values(app, expanded, "5,7", 0xffeeeeee.toInt(), 0xffcccccc.toInt(),
-            0xffaaaaaa.toInt(), peers, rate, 0xffff0000.toInt(), true, scale, weight, systemFont, false, enabled, 1f, "", true)
+            0xffaaaaaa.toInt(), peers, rate, 0xffff0000.toInt(), true, scale, weight, systemFont, false, enabled, 1f, status, true)
 
-    @Test fun statusWrapsInCollapsedAndExpandedViewsWithoutEllipsis() {
-        val status = "Brak nowej wartości glukozy od godziny 08:24"
-        val builder = Notification.Builder(app, "status-test")
-        CustomGlucoseNotification.applyStatus(builder, app, status)
-        val notification = builder.build()
-        for (views in listOf(notification.contentView, notification.bigContentView)) {
-            val text = views.apply(app, null).findViewById<TextView>(R.id.notification_status)
-            val width = (160 * app.resources.displayMetrics.density).toInt()
-            text.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
-            text.layout(0, 0, text.measuredWidth, text.measuredHeight)
-            assertEquals(status, text.text.toString())
-            assertTrue("Long status must wrap", text.lineCount > 1)
-            assertTrue("All status lines must fit", text.lineCount <= text.maxLines)
-            assertNull(text.ellipsize)
-        }
+    @Test fun supportingLineSurvivesParcelAndFontSwitchWithoutRetainingOldContent() {
+        val status = "+0,1 · IOB 1,2"
+        val parcel = Parcel.obtain()
+        try {
+            values(systemFont = false, status = status).writeToParcel(parcel, 0)
+            parcel.setDataPosition(0)
+            val restricted = object : android.content.ContextWrapper(app) { override fun isRestricted() = true }
+            val root = android.widget.RemoteViews.CREATOR.createFromParcel(parcel).apply(restricted, null)
+            val image = root.findViewById<ImageView>(R.id.notification_status_image)
+            val text = root.findViewById<TextView>(R.id.notification_status)
+            assertEquals(View.GONE, text.visibility)
+            assertEquals(View.VISIBLE, image.visibility)
+            assertEquals(status, image.contentDescription.toString())
+            val bitmap = (image.drawable as android.graphics.drawable.BitmapDrawable).bitmap
+            assertEquals((bitmap.height + 1) / 2, image.maxHeight)
+
+            values(status = status).reapply(app, root)
+            assertEquals(View.GONE, image.visibility)
+            assertNull((image.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap)
+            assertEquals(View.VISIBLE, text.visibility)
+            val styled = text.text as android.text.Spanned
+            assertEquals(status, styled.toString())
+            assertEquals(CustomGlucoseNotification.systemBodyFamily(app),
+                styled.getSpans(0, styled.length, android.text.style.TypefaceSpan::class.java).single().family)
+
+            values(status = "", systemFont = false).reapply(app, root)
+            assertEquals(View.GONE, image.visibility)
+            assertEquals(View.GONE, text.visibility)
+        } finally { parcel.recycle() }
+    }
+
+    @Test fun bundledSupportingLineBoundsLongStyledContentAndKeepsItsAccessibleText() {
+        val status = android.text.SpannableStringBuilder("+0,1 · " + "sensor status ".repeat(80))
+        status.setSpan(android.text.style.ForegroundColorSpan(0xffff0000.toInt()), 7, 13,
+            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val bitmap = NotificationValueBitmap.drawStatus(app, status, 0xffaaaaaa.toInt(), 12f, 240)
+        assertTrue(bitmap.width <= 480)
+        val short = NotificationValueBitmap.drawStatus(app, "+0,1", 0xffaaaaaa.toInt(), 12f, 240)
+        assertEquals(short.height, bitmap.height)
+        val root = values(systemFont = false, status = status).apply(app, null)
+        assertEquals(status.toString(), root.findViewById<ImageView>(R.id.notification_status_image).contentDescription.toString())
     }
 
     @Test fun nativeReadoutSurvivesParcelAndRestrictedHostWithoutBitmapValues() {
@@ -57,7 +84,8 @@ class CustomGlucoseNotificationTests {
             assertEquals("5,7", root.findViewById<TextView>(R.id.notification_glucose).text.toString())
             assertEquals("5,5", root.findViewById<TextView>(R.id.notification_peer_value).text.toString())
             val arrow = root.findViewById<ImageView>(R.id.notification_arrow)
-            assertTrue(arrow.drawable is BitmapDrawable)
+            assertTrue(arrow.drawable is RotateDrawable)
+            assertTrue((arrow.drawable as RotateDrawable).drawable is VectorDrawable)
             assertEquals("Steady trend", arrow.contentDescription.toString())
             assertEquals(View.GONE, root.findViewById<TextView>(R.id.notification_status).visibility)
         } finally { parcel.recycle() }
@@ -73,38 +101,16 @@ class CustomGlucoseNotificationTests {
     }
 
     @Test fun directionAndDoubleHeadThresholdUseTheSharedRateConvention() {
-        for (rate in listOf(-3f, -1f, 0.5f, 1f, 3f)) {
+        for ((rate, level) in listOf(-3f to 10000, -1f to 7500, 0.5f to 5000, 1f to 2500, 3f to 0)) {
             val root = values(rate = rate).apply(app, null)
             val arrow = root.findViewById<ImageView>(R.id.notification_arrow)
-            assertTrue(arrow.drawable is BitmapDrawable)
+            assertEquals(level, arrow.drawable.level)
             val description = arrow.contentDescription.toString()
             assertEquals(kotlin.math.abs(rate) > 2f, description.startsWith("Rapidly"))
         }
         val hidden = values(enabled = false).apply(app, null)
         assertEquals(View.GONE, hidden.findViewById<ImageView>(R.id.notification_arrow).visibility)
         assertEquals(View.GONE, hidden.findViewById<ImageView>(R.id.notification_peer_arrow).visibility)
-    }
-
-
-    @Test
-    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
-    fun rapidRiseAndFallHaveOppositePixelDirectionsAfterReapply() {
-        val root = values(rate = -3f, peers = emptyList()).apply(app, null)
-        for (rate in listOf(3f, -3f, 3f, 3f)) {
-            values(rate = rate, peers = emptyList()).reapply(app, root)
-            val bitmap = (root.findViewById<ImageView>(R.id.notification_arrow).drawable as BitmapDrawable).bitmap
-            var upper = 0L
-            var lower = 0L
-            // Ignore the central shaft; the two heads spread to either side at the tip.
-            for (y in 0 until bitmap.height) for (x in 0 until bitmap.width) {
-                if (kotlin.math.abs(x - bitmap.width / 2) <= bitmap.width / 10) continue
-                val alpha = android.graphics.Color.alpha(bitmap.getPixel(x, y)).toLong()
-                if (y < bitmap.height / 2) upper += alpha else lower += alpha
-            }
-            assertTrue("Nonempty arrow", upper + lower > 0)
-            assertTrue("Rapid rise points up; rapid fall points down",
-                if (rate > 0f) upper > lower else lower > upper)
-        }
     }
 
     @Test fun compactPlotUsesItsHeightInsteadOfFittingAScreenWidthRaster() {
@@ -143,7 +149,7 @@ class CustomGlucoseNotificationTests {
         assertTrue(compact.measuredHeight <= 48*density+1)
     }
 
-    @Test fun ibmPlexHasAccessibleBoundedPrimaryAndPeerImagesAndKeepsRenderedArrows() {
+    @Test fun ibmPlexHasAccessibleBoundedPrimaryAndPeerImagesAndKeepsVectorArrows() {
         val restricted = object : android.content.ContextWrapper(app) { override fun isRestricted() = true }
         val views = values(expanded = false, scale = 1.5f, systemFont = false)
         val parcel = Parcel.obtain()
@@ -161,7 +167,7 @@ class CustomGlucoseNotificationTests {
                 assertTrue(bitmap.width > 0)
                 assertEquals((bitmap.height + 1) / 2, image.maxHeight)
             }
-            assertTrue(root.findViewById<ImageView>(R.id.notification_arrow).drawable is BitmapDrawable)
+            assertTrue(root.findViewById<ImageView>(R.id.notification_arrow).drawable is RotateDrawable)
             val density = app.resources.displayMetrics.density
             root.measure(View.MeasureSpec.makeMeasureSpec((300*density).toInt(), View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
@@ -196,7 +202,7 @@ class CustomGlucoseNotificationTests {
         assertEquals(View.VISIBLE, light.findViewById<ImageView>(R.id.notification_glucose_image).visibility)
     }
 
-    @Test fun arrowAndSensorGapsScaleWithTheReadoutAndPreserveArrowSize() {
+    @Test fun arrowAndSensorGapsScaleWithTheReadoutAndPreserveVectorSize() {
         for (system in listOf(true, false)) {
             var previousGap = 0
             var previousSensorGap = 0
@@ -212,7 +218,7 @@ class CustomGlucoseNotificationTests {
                 assertTrue(arrow.paddingLeft > previousGap)
                 assertTrue(peer.paddingLeft > previousSensorGap)
                 assertEquals(arrow.paddingLeft, peerArrow.paddingLeft)
-                // The added optical gap occupies width, not the arrow's square.
+                // The added optical gap occupies width, not the vector's square.
                 assertEquals(arrow.height, arrow.width - arrow.paddingLeft)
                 assertEquals(peerArrow.height, peerArrow.width - peerArrow.paddingLeft)
                 previousGap = arrow.paddingLeft
@@ -225,15 +231,16 @@ class CustomGlucoseNotificationTests {
         }
     }
 
-    @Test fun notificationKeepsCustomContentAndActualTimestampWithUnitlessFallback() {
+    @Test fun notificationKeepsCustomContentAndActualTimestampWithoutListenerText() {
         val builder = Notification.Builder(app, "glucose").setSmallIcon(android.R.drawable.ic_dialog_info)
             .setWhen(123456L).setShowWhen(true).setOnlyAlertOnce(true)
-        CustomGlucoseNotification.apply(builder, "5,7", listOf(NotificationChartDrawer.ValueItem("5,5", 0, 0f)),
-            "", values(expanded = false), values())
+        CustomGlucoseNotification.apply(builder, values(expanded = false), values())
         val notification = builder.build()
         assertNotNull(notification.contentView)
         assertNotNull(notification.bigContentView)
-        assertEquals("5,7 · 5,5", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        // Watch companion apps forward any notification with standard text (#645).
+        assertNull(notification.extras.getCharSequence(Notification.EXTRA_TITLE))
+        assertNull(notification.extras.getCharSequence(Notification.EXTRA_TEXT))
         assertEquals(123456L, notification.`when`)
     }
 }

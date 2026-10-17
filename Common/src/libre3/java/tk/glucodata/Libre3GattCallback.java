@@ -82,7 +82,7 @@ private  final void info(String in) {
     {if(doLog) {Log.i(LOG_ID,SerialNumber +": "+ in);};};
     }
 @Override
-synchronized void free() {
+void free() {
     super.free();
     {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"free");};};
     cancelalarm();
@@ -107,18 +107,16 @@ synchronized void free() {
         else
             init();
     }
-// Entry points hold this monitor through processing, so close/replacement cannot
-// invalidate native/auth state between this check and the packet handler.
-private boolean acceptGattCallback(BluetoothGatt bluetoothGatt) {
-    if (bluetoothGatt == null || bluetoothGatt != mBluetoothGatt || retired || stop || dataptr == 0L) {
-        if (doLog) Log.i(LOG_ID, SerialNumber + " ignore retired Libre3 GATT callback");
-        return false;
+private final void checkBluetoothGatt(BluetoothGatt bluetoothGatt) {
+    if(doLog) {
+        if(bluetoothGatt!=mBluetoothGatt) {
+            {if(doLog) {Log.i(LOG_ID,SerialNumber+" bluetoothGatt!=mBluetoothGatt"+(bluetoothGatt==null?" bluetoothGatt==null":(mBluetoothGatt==null?" mBluetoothGatt==null":"")));};};
+            }
+        }
     }
-    return true;
-}
     @Override 
-    public synchronized void onCharacteristicRead(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+    public void onCharacteristicRead(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
+        checkBluetoothGatt(bluetoothGatt);
         if (bluetoothGattCharacteristic.getUuid().equals(LIBRE3_CHAR_PATCH_STATUS)) {
             //    libre3BLESensor.access$700(libre3BLESensor.this, bluetoothGattCharacteristic);
             {if(doLog){showbytes(LOG_ID + " "+SerialNumber+" onCharacteristicRead " + bluetoothGattCharacteristic.getUuid().toString(), bluetoothGattCharacteristic.getValue());};}
@@ -126,8 +124,8 @@ private boolean acceptGattCallback(BluetoothGatt bluetoothGatt) {
     }
 
     @Override 
-    public synchronized void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+    public void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int i2) {
+        checkBluetoothGatt(bluetoothGatt);
         oncharwrite(bluetoothGattCharacteristic);
         var value = bluetoothGattCharacteristic.getValue();
         {if(doLog){showbytes(LOG_ID + " "+SerialNumber+" onCharacteristicWrite " + bluetoothGattCharacteristic.getUuid().toString(), value);};}
@@ -147,7 +145,7 @@ private boolean connected=false;
     public synchronized void onConnectionStateChange(BluetoothGatt bluetoothGatt, int status, int newState) {
         if (!acceptConnectionAttemptCallback(bluetoothGatt, newState)) return;
         noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
-        if (!acceptGattCallback(bluetoothGatt)) return;
+        checkBluetoothGatt(bluetoothGatt);
 
 
         if(stop) {
@@ -200,16 +198,15 @@ private boolean connected=false;
         }
 
         @Override 
-        public synchronized void onDescriptorRead(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+        public void onDescriptorRead(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
         {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+ "onDescriptorRead status="+status);};};
         }
 
 
 
         @Override 
-        public synchronized void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+        public void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
+        checkBluetoothGatt(bluetoothGatt);
            // libre3BLESensor.access$1900(libre3blesensor, characteristic, status);
         {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+ "onDescriptorWrite status="+status);};};
         BluetoothGattCharacteristic characteristic = bluetoothGattDescriptor.getCharacteristic();
@@ -217,14 +214,12 @@ private boolean connected=false;
         }
 
         @Override // android.bluetooth.BluetoothGattCallback
-        public synchronized void onMtuChanged(BluetoothGatt bluetoothGatt, int i2, int i3) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+        public void onMtuChanged(BluetoothGatt bluetoothGatt, int i2, int i3) {
         {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"onMtuChanged");};};
         }
 
         @Override // android.bluetooth.BluetoothGattCallback
-        public synchronized void onReadRemoteRssi(BluetoothGatt bluetoothGatt, int rssi, int status) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+        public void onReadRemoteRssi(BluetoothGatt bluetoothGatt, int rssi, int status) {
             if (status != GATT_SUCCESS) {
                 Log.e(LOG_ID, SerialNumber + ": "+ "Error reading RSSI, error " + status);
                 rssi = 999;
@@ -232,6 +227,7 @@ private boolean connected=false;
         readrssi=rssi;
         if(shouldenablegattCharCommandResponse) {
             Log.i(LOG_ID,"onReadRemoteRssi "+rssi+" ablegattCharCommandResponse");
+            checkBluetoothGatt(bluetoothGatt);
             enablegattCharCommandResponse();
             shouldenablegattCharCommandResponse=false;
             }
@@ -241,8 +237,8 @@ private boolean connected=false;
         }
 
         @Override // android.bluetooth.BluetoothGattCallback
-     public synchronized void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
-      if (!acceptGattCallback(bluetoothGatt)) return;
+     public void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
+      checkBluetoothGatt(bluetoothGatt);
           {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+ "onServicesDiscovered status="+status);};};
           if (status == GATT_SUCCESS) {
                 if(!getservices()) {
@@ -447,9 +443,9 @@ private    void save_history(byte[] value) {
         Natives.saveLibre3History(this.sensorptr, olddec);
     }
 @Override 
-public synchronized void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
+public void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
 
-        if (!acceptGattCallback(bluetoothGatt)) return;
+        checkBluetoothGatt(bluetoothGatt);
     onCharacteristicChanged33(bluetoothGatt, bluetoothGattCharacteristic, bluetoothGattCharacteristic.getValue());
     }
 static final private String charglucosedata= "CHAR_GLUCOSE_DATA".intern();
@@ -464,8 +460,7 @@ private  void logcharacter(UUID uuid,String str,byte[] value) {
 private void onCharacteristicChanged33(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
        var wakelock=    Applic.usewakelock?(((PowerManager) app.getSystemService(POWER_SERVICE)).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Juggluco::Libre3")):null;
        if(wakelock!=null)
-           wakelock.acquire(Applic.GLUCOSE_WAKELOCK_TIMEOUT_MS);
-       try {
+           wakelock.acquire();
             UUID uuid = characteristic.getUuid();
 //      {if(doLog){      showbytes(LOG_ID+" onCharacteristicChanged Start "+uuid.toString(), value);};}
             if(uuid.equals(LIBRE3_CHAR_GLUCOSE_DATA)) {
@@ -507,9 +502,8 @@ private void onCharacteristicChanged33(BluetoothGatt gatt, BluetoothGattCharacte
          dodisconnect(mBluetoothGatt);
          disconnected(1042);
             }
-       } finally {
-           Applic.releasewakelock(wakelock);
-       }
+       if(wakelock!=null)
+        wakelock.release();
     {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"onCharacteristicChanged end");};};
         }
 
@@ -750,6 +744,7 @@ private void access1100(byte[] value) {
     wrotecharacter=false;
     if(sendqueue.isEmpty()) {
         Log.i(LOG_ID,"access1100 !fromqueue");
+        syncBackfillToRoom();
        if(isWearable) {
             if(Natives.getDisconnectSensor())
                 disconnect();  
@@ -1071,7 +1066,25 @@ private boolean fromqueue() {
 
 
 private boolean backFillInProgress=false;
-private void fillHistory(int backFillStartHistoricLifeCount) {
+/* Backfill lands in native storage only. The app's history (Room) copies a few
+   minutes behind each live reading, and its catch-up sync starts from Room's newest
+   row, which the first reading after a gap has already moved past. So once the
+   sensor has sent everything, copy from where the backfill started (#620). */
+private long backfillRoomSyncFromMsec=0L;
+private void noteBackfill(int fromLifeCount,int currentLifeCount) {
+    final long fromMsec=System.currentTimeMillis()-(currentLifeCount-fromLifeCount+5)*60_000L;
+    if(backfillRoomSyncFromMsec==0L||fromMsec<backfillRoomSyncFromMsec)
+        backfillRoomSyncFromMsec=fromMsec;
+    }
+private void syncBackfillToRoom() {
+    final long fromMsec=backfillRoomSyncFromMsec;
+    if(fromMsec==0L)
+        return;
+    backfillRoomSyncFromMsec=0L;
+    {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"backfill done, Room sync from "+fromMsec);};};
+    HistorySyncAccess.syncSensorWindowFromNative(SerialNumber,fromMsec);
+    }
+private void fillHistory(int backFillStartHistoricLifeCount,int currentLifeCount) {
         int lastHistoricLifeCountReceived=Natives.getlastHistoricLifeCountReceived(sensorptr);
         if(backFillStartHistoricLifeCount<=lastHistoricLifeCountReceived) {
             {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"no history needed  lastHistoricLifeCountReceived ("+lastHistoricLifeCountReceived+")>=backFillStartHistoricLifeCount ("+backFillStartHistoricLifeCount +")");};};
@@ -1080,6 +1093,7 @@ private void fillHistory(int backFillStartHistoricLifeCount) {
             {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"get History: lastHistoricLifeCountReceived ("+lastHistoricLifeCountReceived+")<backFillStartHistoricLifeCount ("+backFillStartHistoricLifeCount +")");};};
             int takelast=Math.max(lastHistoricLifeCountReceived,5);
             byte[] command=Natives.libre3ControlHistory(1, takelast);
+            noteBackfill(takelast,currentLifeCount);
             if(qsendcommand(command))
                 backFillInProgress=true;
             }
@@ -1090,6 +1104,7 @@ private void    fillClinical(int backFillStartLifeCount) {
 
       if(lastLifeCountReceived<backFillStartLifeCount) {
         var command=Natives.libre3ClinicalControl(1,lastLifeCountReceived);
+        noteBackfill(lastLifeCountReceived,backFillStartLifeCount);
         if(qsendcommand(command))
             backFillInProgress=true;
         }
@@ -1108,7 +1123,7 @@ private void receivedpatchstatus(byte[] value) {
     if(!backFillInProgress) {
         int backFillStartLifeCount=currentLifeCount;
         int backFillStartHistoricLifeCount= ((backFillStartLifeCount-16)/5)*5;
-        fillHistory(backFillStartHistoricLifeCount);
+        fillHistory(backFillStartHistoricLifeCount,backFillStartLifeCount);
         fillClinical(backFillStartLifeCount);
     if(!doTEST) {    
         int getevent=index+1;

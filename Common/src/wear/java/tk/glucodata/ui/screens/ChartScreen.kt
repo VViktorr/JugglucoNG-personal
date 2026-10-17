@@ -16,8 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -208,7 +207,7 @@ internal fun InteractiveWearChartPanel(
 ) {
     var rangeIndex by remember { mutableIntStateOf(initialRangeIndex.coerceIn(CHART_RANGES.indices)) }
     LaunchedEffect(Unit) { WearGlucoseStore.start() }
-    val storeSnapshot by WearGlucoseStore.snapshot.collectAsStateWithLifecycle(minActiveState = Lifecycle.State.RESUMED)
+    val storeSnapshot by WearGlucoseStore.snapshot.collectAsState()
     val isMmol = storeSnapshot.isMmol
     // The full mode, not a raw/auto boolean: collapsing it here meant the
     // second trace of auto+raw / raw+auto could never be drawn.

@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.ButtonDefaults
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -212,7 +214,9 @@ fun HistoryExportSheet(
                         val fileName = "Juggluco_Export_${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(System.currentTimeMillis())}.csv"
                         csvLauncher.launch(fileName)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     androidx.compose.material3.Icon(
                         imageVector = Icons.AutoMirrored.Filled.List,
@@ -227,7 +231,9 @@ fun HistoryExportSheet(
                         val fileName = "Juggluco_Report_${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(System.currentTimeMillis())}.txt"
                         textLauncher.launch(fileName)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     androidx.compose.material3.Icon(
                         imageVector = Icons.Default.Info,
@@ -598,7 +604,9 @@ fun ExportDataSettingsSheet(
                 OutlinedButton(
                     onClick = ::exportCsv,
                     enabled = !isExporting,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.List,
@@ -612,7 +620,9 @@ fun ExportDataSettingsSheet(
                 OutlinedButton(
                     onClick = ::exportReadableReport,
                     enabled = !isExporting,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
@@ -651,7 +661,9 @@ fun ExportDataSettingsSheet(
                 Button(
                     onClick = ::saveToFilePicker,
                     enabled = !isExporting,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
                         imageVector = Icons.Default.FolderOpen,
@@ -664,7 +676,9 @@ fun ExportDataSettingsSheet(
                 OutlinedButton(
                     onClick = ::shareExport,
                     enabled = !isExporting,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
@@ -737,16 +751,28 @@ fun ScheduledBackupSettingsSheet(
         val workId = ScheduledBackupWorker.runNow(context)
         Toast.makeText(context, context.getString(R.string.scheduled_backup_queued), Toast.LENGTH_SHORT).show()
         scope.launch {
+            // A full history can take minutes. Watching for as long as the sheet is open is
+            // what lets the status below actually update, as the still-running toast promises.
             var terminalState: WorkInfo.State? = null
-            for (attempt in 0 until 240) {
+            var attempt = 0
+            while (terminalState == null) {
                 val info = withContext(Dispatchers.IO) {
                     WorkManager.getInstance(context).getWorkInfoById(workId).get()
                 }
-                if (info != null && info.state.isFinished) {
-                    terminalState = info.state
-                    break
+                when {
+                    info == null -> break
+                    info.state.isFinished -> terminalState = info.state
+                    else -> {
+                        if (++attempt == 240) {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.scheduled_backup_still_running),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        delay(500)
+                    }
                 }
-                delay(500)
             }
             config = ScheduledBackupSettings.load(context)
             onConfigurationChanged(config)
@@ -754,7 +780,7 @@ fun ScheduledBackupSettingsSheet(
             val message = when (terminalState) {
                 WorkInfo.State.SUCCEEDED -> R.string.scheduled_backup_run_success
                 WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> R.string.scheduled_backup_run_failed
-                else -> R.string.scheduled_backup_still_running
+                else -> return@launch
             }
             Toast.makeText(context, context.getString(message), Toast.LENGTH_LONG).show()
         }
@@ -841,7 +867,9 @@ fun ScheduledBackupSettingsSheet(
                                 },
                                 modifier = Modifier
                                     .align(Alignment.End)
-                                    .padding(top = 8.dp)
+                                    .padding(top = 8.dp),
+                                shapes = ButtonDefaults.shapes(),
+                                contentPadding = ButtonDefaults.ContentPadding
                             ) {
                                 Text(stringResource(R.string.scheduled_backup_acknowledge))
                             }
@@ -954,7 +982,9 @@ fun ScheduledBackupSettingsSheet(
             Button(
                 onClick = ::runNow,
                 enabled = config.destination != null && !isRunningNow && !isTestingBackup,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isRunningNow) {
                     CircularProgressIndicator(
@@ -975,7 +1005,9 @@ fun ScheduledBackupSettingsSheet(
                     )
                 },
                 enabled = !isRunningNow && !isTestingBackup,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isTestingBackup) {
                     CircularProgressIndicator(
@@ -1003,15 +1035,17 @@ fun ScheduledBackupSettingsSheet(
                     onClick = {
                         persist(config.copy(hour = pickerState.hour, minute = pickerState.minute))
                         showTimePicker = false
-                    }
+                    },
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) { Text(stringResource(android.R.string.ok)) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showTimePicker = false }) {
+                OutlinedButton(onClick = { showTimePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(android.R.string.cancel))
                 }
             },
-            text = { TimePicker(state = pickerState) }
+            text = { TimePicker(state = pickerState, shapes = TimePickerDefaults.shapes(), colors = TimePickerDefaults.colors()) }
         )
     }
 
@@ -1019,7 +1053,7 @@ fun ScheduledBackupSettingsSheet(
         AlertDialog(
             onDismissRequest = { backupTestMessage = null },
             confirmButton = {
-                Button(onClick = { backupTestMessage = null }) {
+                Button(onClick = { backupTestMessage = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(android.R.string.ok))
                 }
             },

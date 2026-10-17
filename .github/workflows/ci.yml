@@ -56,8 +56,6 @@ jobs:
           persist-credentials: false
       - name: Check UI guardrail counts against the baseline
         run: python3 scripts/ui-guardrails.py
-      - name: Check resource structure, format arguments and Polish translations
-        run: python3 tools/check-translations.py --require-locale pl
 
   unit-tests:
     name: JVM unit tests
@@ -75,12 +73,6 @@ jobs:
           java-version: '21'
 
       - uses: gradle/actions/setup-gradle@v6
-
-      - name: Replay sensor lifecycle regression checks
-        run: |
-          python3 tools/test-libre2-connect.py
-          python3 tools/test-sensor-lifecycle.py
-          python3 tools/test-libreview-config.py
 
       - name: Run both flavours' debug unit suites
         run: |

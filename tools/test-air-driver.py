@@ -204,7 +204,7 @@ class SensorBluetooth {
 class PlatformCallback { public void onConnectionStateChange(BluetoothGatt g, int status, int state) {} }
 class SuperGattCallback extends PlatformCallback {
   static final String LOG_ID = "test";
-  boolean retired, stop, autoconnect;
+  boolean stop, autoconnect;
   long dataptr = 1;
   String SerialNumber = "synthetic";
   BluetoothGatt mBluetoothGatt, locallyConnectedGatt;

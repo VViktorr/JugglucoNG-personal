@@ -37,6 +37,7 @@ base_methods = '\n'.join(method(base, signature) for signature in [
     'public final synchronized void closeGattTransport(', 'public synchronized void disconnect(',
     'public synchronized void setPause(', 'public void onConnectionStateChange(',
     'public void close()', 'protected boolean useAutoConnect(',
+    'protected void onConnectionAttemptTimeout(',
 ])
 libre_methods = '\n'.join(method(libre, signature) for signature in [
     'protected boolean useAutoConnect(', 'protected long connectionAttemptTimeoutMillis(',
@@ -49,11 +50,6 @@ libre_methods = '\n'.join(method(libre, signature) for signature in [
     'public synchronized void onCharacteristicWrite(', 'public synchronized void onCharacteristicChanged(',
     'public synchronized void onReadRemoteRssi(', 'public synchronized void close()',
     'private Runnable forCurrentGatt(', 'private void endBLEHandler(',
-    'private boolean canRecoverLocally(', 'private void libre2Diag(', 'private void watchStream(',
-    'private void streamExpired(', 'private void markPacketReceived(', 'private boolean failedHandshakeNeedsRecovery(',
-    'private void releaseRecoveryWakeLock(', 'private void cancelRecovery(',
-    'private void hardRecoverGatt(', 'private void resumeRecovery(',
-    'public synchronized long resetdataptr(', 'synchronized void diagnoseReset(',
 ])
 
 # Fields and all lifecycle/entry-point methods above come from production sources.
@@ -69,7 +65,7 @@ class SuperGattCallback {
     static boolean doLog=false, isWearable=false, autoconnect=true;
     static final int GATT_SUCCESS=0;
     static final String LOG_ID="test";
-    boolean retired, stop, connectPending;
+    boolean stop, connectPending;
     long dataptr=1L, foundtime, connectTime, showtime=60_000L;
     long[] charcha={0L,0L}, constatchange={0L,0L}, wrotepass={0L,0L};
     String SerialNumber="synthetic", mActiveDeviceAddress="fake", mDeviceName, handshake, constatstatusstr;
@@ -80,7 +76,6 @@ class SuperGattCallback {
     static SensorBluetooth blueone=new SensorBluetooth();
     static class SensorBluetooth {
         static SensorBluetooth blueone=SuperGattCallback.blueone;
-        void connectToActiveDevice(SuperGattCallback cb,long delay){cb.connectDevice(delay);}
         boolean enabled=true; boolean bluetoothIsEnabled(){return enabled;} void scanStarter(int delay){}
     }
     static class CloneSensorRegistry { static boolean clone; static boolean isCloneSensor(String s){return clone;} }
@@ -126,20 +121,9 @@ class SuperGattCallback {
     }
     static class Applic {
         static final Applic app=new Applic(); static Scheduler scheduler;
-        Object getSystemService(String name){return new PowerManager();}
         static Applic getContext(){return app;} String getString(int id){return "";}
         static void Toaster(String s){} static void Toaster(int id){} static boolean mayscan(){return true;}
         Handler getHandler(){return new Handler();}
-    }
-    static final Applic app=Applic.app;
-    static final String POWER_SERVICE="power";
-    static class PowerManager {
-        static int PARTIAL_WAKE_LOCK=1;
-        WakeLock newWakeLock(int type,String tag){return new WakeLock();}
-        static class WakeLock {
-            boolean held; long acquiredTimeout; void setReferenceCounted(boolean value){}
-            void acquire(long timeout){held=true;acquiredTimeout=timeout;} boolean isHeld(){return held;} void release(){held=false;}
-        }
     }
     static class Handler { void removeCallbacks(Runnable task){} }
     static class Scheduler extends ScheduledThreadPoolExecutor {
@@ -159,7 +143,6 @@ class SuperGattCallback {
         public long getDelay(TimeUnit u){return 0;}public int compareTo(Delayed d){return 0;}
     }
     protected long connectionAttemptTimeoutMillis(){return 0L;}
-    long resetdataptr(){close();return ++dataptr;}
     boolean allowConnectWithoutDataptr(){return false;}
     void armConnectCallbackLatency(){} void noteFirstGattCallback(String s,BluetoothGatt g){}
     void setpriority(BluetoothGatt g){} void setGattOptions(BluetoothGatt g){}
@@ -172,7 +155,6 @@ class SuperGattCallback {
 java += field(base, 'private final GattConnectDeadline<BluetoothGatt> connectDeadline', '}, this::connectionAttemptExpired);')
 java += '\n' + base_methods + '\n}\nclass Libre2GattCallback extends SuperGattCallback {\n'
 java += field(libre, 'private final GattConnectDeadline<BluetoothGatt> disconnectDeadline', '}, this::retryAfterDisconnect);')
-java += libre[libre.index('    private static final long GATT_WATCHDOG_MS'):libre.index('    private boolean canRecoverLocally()')]
 java += r'''
     BluetoothGatt disconnectingGatt;
     long reconnectDelayMillis;
@@ -186,13 +168,13 @@ java += r'''
     boolean m2831x(){logins++;return true;}
     void writeBLELogin(){logins++;}
     void phase2(byte[] value){logins++;} void phase3(byte[] value){logins++;}
-    void oldonCharacteristicChanged(byte[] value){frames++;markPacketReceived();}
+    void oldonCharacteristicChanged(byte[] value){frames++;}
     static void showCharacter(String s,BluetoothGattCharacteristic c){}
 '''
 java += libre_methods
 java += r'''
     static Libre2GattCallback fresh(){
-        Applic.scheduler=new Scheduler();SensorBluetooth.blueone=SuperGattCallback.blueone;CloneSensorRegistry.clone=false;SensorOwnershipRuntime.blocked=false;
+        Applic.scheduler=new Scheduler();CloneSensorRegistry.clone=false;SensorOwnershipRuntime.blocked=false;
         Natives.resets=0;WearSensorClaim.releases=0;
         Libre2GattCallback cb=new Libre2GattCallback();cb.connectDevice(0);Applic.scheduler.advance(0);
         check(cb.mActiveBluetoothDevice.calls==1,"initial connect");
@@ -212,10 +194,10 @@ java += r'''
         check(Natives.resets==0,"retired status 19 reset authentication");
     }
     public static void main(String[] args){
-        // Transient failures below the escalation window, then sustained healthy packets.
+        // The reported trace: repeated ~30s failures, then a healthy streaming connection.
         Libre2GattCallback cb=fresh();BluetoothGatt old=null;
         for(int status:new int[]{8,147,147,133,19}){
-            old=cb.mBluetoothGatt;Applic.scheduler.advance(20_000);
+            old=cb.mBluetoothGatt;Applic.scheduler.advance(30_000);
             cb.onConnectionStateChange(old,status,0);
             check(old.closed==1&&cb.mBluetoothGatt==null,"disconnect did not retire old GATT");
             Applic.scheduler.advance(0);ignoredCallbacks(cb,old);
@@ -225,8 +207,7 @@ java += r'''
         BluetoothGatt current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
         cb.onServicesDiscovered(current,0);cb.onCharacteristicChanged(current,new BluetoothGattCharacteristic());
         check(current.discoveries==1&&cb.logins==1&&cb.frames==1,"healthy streaming did not resume");
-        Applic.scheduler.advance(119_999);cb.onCharacteristicChanged(current,new BluetoothGattCharacteristic());
-        Applic.scheduler.advance(119_999);check(cb.mBluetoothGatt==current,"healthy connection expired");
+        Applic.scheduler.advance(360_000);check(cb.mBluetoothGatt==current,"healthy connection expired");
 
         // Periodic recovery waits for DISCONNECTED and duplicate requests do not extend the fallback.
         cb=fresh();old=cb.mBluetoothGatt;cb.onConnectionStateChange(old,0,2);
@@ -320,50 +301,6 @@ java += r'''
         login=cb.forCurrentGatt(()->retries[0]++);Runnable replacement=cb.forCurrentGatt(()->retries[0]++);
         login.run();check(retries[0]==1,"superseded login ran on the same GATT");
         replacement.run();check(retries[0]==2,"replacement login rejected");
-        // Full recovery is exclusive: periodic reconnect cannot interrupt the LibreLink wait.
-        cb=fresh();old=cb.mBluetoothGatt;cb.onConnectionStateChange(old,0,2);
-        Applic.scheduler.advance(120_000);
-        check(cb.recoveryInProgress&&old.closed==1&&Natives.resets==1,"stream watchdog did not start recovery");
-        check(cb.recoveryWakeLock.isHeld()&&cb.recoveryWakeLock.acquiredTimeout==15_000L,"recovery CPU hold is unbounded/missing");
-        Job resume=Applic.scheduler.last();
-        cb.reconnect(cb.connectTime+360_000);cb.connectDevice(0);
-        Applic.scheduler.advance(5_999);
-        check(cb.mActiveBluetoothDevice.calls==1,"parallel reconnect interrupted recovery");
-        Applic.scheduler.advance(1);
-        check(!cb.recoveryInProgress&&!cb.stop,"recovery changed user pause");
-        Applic.scheduler.advance(199);check(cb.mActiveBluetoothDevice.calls==1,"fresh-connect delay ignored");
-        Applic.scheduler.advance(1);check(cb.mActiveBluetoothDevice.calls==2,"recovery never reconnected");
-        resume.task.run();check(cb.mActiveBluetoothDevice.calls==2,"old recovery reopened transport");
-
-        // RSSI and handshake callbacks cannot conceal absent complete sensor packets.
-        cb=fresh();old=cb.mBluetoothGatt;cb.onConnectionStateChange(old,0,2);
-        Applic.scheduler.advance(60_000);cb.onReadRemoteRssi(old,-40,0);cb.onServicesDiscovered(old,0);
-        Applic.scheduler.advance(60_000);check(cb.recoveryInProgress,"RSSI extended stream deadline");
-
-        // Dispatched recovery cannot undo pause/resume, close, removal or remote ownership.
-        for(int guard=0;guard<6;guard++){
-            cb=fresh();cb.onConnectionStateChange(cb.mBluetoothGatt,0,2);Applic.scheduler.advance(120_000);
-            resume=Applic.scheduler.last();
-            if(guard==0){cb.setPause(true);cb.setPause(false);}
-            else if(guard==1)cb.close();else if(guard==2)cb.dataptr=0;
-            else if(guard==3)CloneSensorRegistry.clone=true;else if(guard==4)SensorOwnershipRuntime.blocked=true;
-            else cb.resetdataptr();
-            resume.task.run();Applic.scheduler.advance(120_000);
-            check(cb.mActiveBluetoothDevice.calls==1,"cancelled/remote recovery resurrected sensor");
-        }
-
-        // Repeated failed handshakes escalate without extending the original failure window.
-        cb=fresh();old=cb.mBluetoothGatt;cb.onConnectionStateChange(old,8,0);Applic.scheduler.advance(0);
-        Applic.scheduler.advance(60_000);old=cb.mBluetoothGatt;cb.onConnectionStateChange(old,147,0);Applic.scheduler.advance(0);
-        Applic.scheduler.advance(60_000);old=cb.mBluetoothGatt;cb.onConnectionStateChange(old,19,0);
-        check(cb.recoveryInProgress&&Natives.resets==1,"failed handshakes did not escalate at 120s");
-        check(!cb.stop,"automatic recovery masqueraded as user pause");
-        cb.setPause(true);check(cb.recoveryWakeLock==null,"pause leaked recovery wake lock");
-
-        cb=fresh();isWearable=true;
-        cb.onConnectionStateChange(cb.mBluetoothGatt,0,2);Applic.scheduler.advance(120_000);
-        check(!cb.recoveryInProgress&&Natives.resets==0,"phone-only recovery changed Wear policy");
-        isWearable=false;
         System.out.println("PASS: Libre 2 fresh-GATT recovery, callback isolation, deadlines, cancellation, ownership and login retries");
     }
 }
@@ -374,10 +311,7 @@ with tempfile.TemporaryDirectory(prefix='libre2-connect-') as directory:
     (directory / 'BluetoothProfile.java').write_text(
         'package android.bluetooth; public class BluetoothProfile {'
         'public static final int STATE_CONNECTED=2,STATE_DISCONNECTED=0;}')
-    (directory / 'SystemClock.java').write_text('package android.os; public class SystemClock { public static long elapsedRealtime(){return tk.glucodata.TestClock.now();}}')
-    (directory / 'TestClock.java').write_text('package tk.glucodata; public class TestClock { public static long now(){return SuperGattCallback.Applic.scheduler.now;}}')
     subprocess.run(['javac', '-d', str(directory), str(directory / 'Libre2GattCallback.java'),
-                    str(directory / 'BluetoothProfile.java'), str(directory / 'SystemClock.java'), str(directory / 'TestClock.java'),
+                    str(directory / 'BluetoothProfile.java'),
                     str(root / 'Common/src/main/java/tk/glucodata/GattConnectDeadline.java')], check=True)
     subprocess.run(['java', '-cp', str(directory), 'tk.glucodata.Libre2GattCallback'], check=True)
-

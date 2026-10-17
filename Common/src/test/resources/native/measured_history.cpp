@@ -11,8 +11,6 @@ using HistorySamples = std::map<jlong, std::pair<jlong, jlong>>;
 struct Glucose {
     uint32_t time;
     uint16_t mgdlTimes10;
-    uint16_t rawMgdlTimes10 = 0;
-    uint16_t getraw() const { return rawMgdlTimes10; }
     bool valid() const { return mgdlTimes10 > 380 && mgdlTimes10 < 5020; }
     uint32_t gettime() const { return time; }
     uint16_t getsputnik() const { return mgdlTimes10; }
@@ -50,16 +48,16 @@ int main() {
     assert(samples.size() == 1);
     assert(samples.at(forecastTime).first == 1360);
 
-    // Libre NFC history exports both available lanes in mg/dL * 10.
+    // Libre NFC history must still export in JNI units (mg/dL * 10), with no raw lane.
     const SensorGlucoseData libre{false, {{measuredTime - 900, 770},
-                                        {measuredTime, 1360, 1250},
+                                        {measuredTime, 1360},
                                         {forecastTime, 0}}};
     samples.clear();
     appendStoredHistory(&libre, 0, samples);
     assert(samples.size() == 2);
     assert(samples.at(measuredTime - 900).first == 770);
     assert(samples.at(measuredTime).first == 1360);
-    assert(samples.at(measuredTime).second == 1250);
+    assert(samples.at(measuredTime).second == 0);
 
     samples.clear();
     appendStoredHistory(&libre, measuredTime - 900, samples);

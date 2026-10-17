@@ -60,14 +60,6 @@ import static tk.glucodata.SensorBluetooth.blueone;
 
 public abstract class SuperGattCallback extends BluetoothGattCallback {
     volatile protected boolean stop = false;
-    // Terminal retirement differs from a reversible user pause. No monitor is
-    // needed here: roster removal must never wait for an in-flight callback.
-    protected volatile boolean retired = false;
-
-    final void retire() {
-        retired = true;
-        stop = true;
-    }
     public static boolean doWearInt = false;
     public static boolean doGadgetbridge = false;
     private static final String LOG_ID = "SuperGattCallback";
@@ -126,9 +118,12 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     /** Opt in only for drivers whose silent connect failure is covered by this deadline. */
     protected long connectionAttemptTimeoutMillis() { return 0L; }
 
+    /** Let an opted-in driver adjust its retry policy after a silent connect attempt. */
+    protected void onConnectionAttemptTimeout() { }
+
     protected final void watchConnectionAttempt(BluetoothGatt attempt) {
         synchronized (this) {
-            if (mBluetoothGatt != attempt || retired || stop) return;
+            if (mBluetoothGatt != attempt || stop) return;
             final long timeout = connectionAttemptTimeoutMillis();
             if (timeout > 0L) connectDeadline.arm(attempt, timeout);
         }
@@ -136,10 +131,11 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
 
     private void connectionAttemptExpired(BluetoothGatt attempt) {
         // The deadline holds this callback's monitor, also used for GATT replacement.
-        if (mBluetoothGatt != attempt || retired || stop || dataptr == 0L
+        if (mBluetoothGatt != attempt || stop || dataptr == 0L
                 || CloneSensorRegistry.isCloneSensor(SerialNumber)
                 || SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)) return;
         Log.i(LOG_ID, SerialNumber + " no connection result before deadline; retrying");
+        onConnectionAttemptTimeout();
         closeGattTransport();
         connectDevice(0);
     }
@@ -153,7 +149,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
                 || state == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) {
             connectDeadline.completed(gatt);
         }
-        return !retired && !stop;
+        return !stop;
     }
 
     boolean superseded = false;
@@ -251,7 +247,6 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     }
 
     public synchronized void setPause(boolean pause) {
-        if (retired) return;
         this.stop = pause;
         if (pause) {
             connectDeadline.cancel();
@@ -536,6 +531,12 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
      */
     public static void processExternalCurrentReading(String sensorSerial, LiveReadingLanes reading, float rate,
             long timmsec, int sensorgen) {
+        processExternalCurrentReading(sensorSerial, reading, rate, timmsec, sensorgen, 0L);
+    }
+
+    /** Managed drivers with a known activation preserve it for the exchange feeds. */
+    public static void processExternalCurrentReading(String sensorSerial, LiveReadingLanes reading, float rate,
+            long timmsec, int sensorgen, long sensorStartMs) {
         if (reading == null || !reading.getHasValue() || timmsec <= 0L) {
             return;
         }
@@ -569,7 +570,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         }
         final int mgdlValue = Math.round(glucoseValue * (Applic.unit == 1 ? mgdLmult : 1.0f));
         dowithglucose(resolvedSensorSerial, mgdlValue, glucoseValue, rate, 0, timmsec,
-                0L, Notify.glucosetimeout, sensorgen, reading);
+                sensorStartMs, Notify.glucosetimeout, sensorgen, reading);
     }
 
     private static float stockPrimaryValue(LiveReadingLanes reading) {
@@ -1030,6 +1031,14 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         if (health != null) health.writeAll(sensorptr, SerialNumber);
     }
 
+    /** Finish the accepted live path for a managed driver that publishes explicit lanes. */
+    protected final void completeManagedLiveReading(long timestampMs) {
+        markLocalReadingAccepted(timestampMs);
+        charcha[0] = timestampMs;
+        exportToHealthConnect();
+        SensorBluetooth.othersworking(this, timestampMs);
+    }
+
     protected void handleGlucoseResult(long res, long timmsec) {
         handleGlucoseResultInternal(res, timmsec, 0, Float.NaN);
     }
@@ -1271,7 +1280,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     }
 
     synchronized void free() {
-        retire();
+        stop = true;
         {
             if (doLog) {
                 Log.i(LOG_ID, "free " + SerialNumber);
@@ -1430,7 +1439,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
                 ;
             }
             ;
-            if (retired || stop || CloneSensorRegistry.isCloneSensor(SerialNumber)
+            if (stop || CloneSensorRegistry.isCloneSensor(SerialNumber)
                     || SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)
                     || (dataptr == 0L && !allowConnectWithoutDataptr())) {
                 if (doLog) {
@@ -1542,7 +1551,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
             Log.i(LOG_ID, "connectDevice(" + delayMillis + ") " + SerialNumber);
         }
         ;
-        if (retired || stop || CloneSensorRegistry.isCloneSensor(SerialNumber)
+        if (stop || CloneSensorRegistry.isCloneSensor(SerialNumber)
                 || SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)
                 || (dataptr == 0L && !allowConnectWithoutDataptr())) {
             return false;

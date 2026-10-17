@@ -8,6 +8,11 @@
 
 package tk.glucodata.ui.setup
 
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.SelectableDropdownMenuItem
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.DropdownMenuGroup
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.LoadingIndicator
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -56,7 +61,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -393,6 +397,22 @@ internal fun ottaiActiveCloudUnbindTarget(
     return devices?.firstOrNull { device ->
         device.isActive && OttaiConstants.canonicalSensorId(device.mac) == selected
     }
+}
+
+/**
+ * Account bindings no managed sensor accounts for: what a sensor removed without unbinding, or
+ * one that simply ended, leaves behind. The account holds one binding at a time, so a stale one
+ * blocks the next activation (AppUser_AlreadyBinding) until something releases it.
+ */
+internal fun ottaiUnusedCloudBindings(
+    devices: List<OttaiCloudClient.DeviceSummary>?,
+    managedSensorIds: Collection<String>,
+): List<OttaiCloudClient.DeviceSummary> {
+    val managed = managedSensorIds.map(OttaiConstants::canonicalSensorId).toSet()
+    return devices.orEmpty().filter { device ->
+        val mac = OttaiConstants.canonicalSensorId(device.mac)
+        device.isActive && OttaiConstants.looksLikeMac(mac) && mac !in managed
+    }.distinctBy { OttaiConstants.canonicalSensorId(it.mac) }
 }
 
 internal enum class OttaiCloudBindingUiState {
@@ -823,6 +843,8 @@ fun OttaiSetupWizard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                     ),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.ottai_cloud_unbind_confirm))
                 }
@@ -831,6 +853,8 @@ fun OttaiSetupWizard(
                 OutlinedButton(
                     onClick = { pendingCloudUnbind = null },
                     enabled = !busy,
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.cancel))
                 }
@@ -898,6 +922,8 @@ fun OttaiSetupWizard(
                         },
                         enabled = !busy && email.contains('@'),
                         modifier = Modifier.fillMaxWidth(),
+                        shapes = ButtonDefaults.shapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(stringResource(R.string.ottai_send_code)) }
                     OutlinedTextField(
                         value = regCode, onValueChange = { regCode = it.trim() },
@@ -951,6 +977,8 @@ fun OttaiSetupWizard(
                         enabled = !busy && regRequestId.isNotBlank() && regCode.isNotBlank() &&
                             regPassword.isNotBlank() && profileName.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
+                        shapes = ButtonDefaults.shapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(stringResource(R.string.ottai_register_button)) }
                     if (busy) LoadingIndicator()
                     if (status.isNotBlank()) Text(status, color = MaterialTheme.colorScheme.error)
@@ -1214,7 +1242,25 @@ fun OttaiSetupWizard(
                                         devices = null
                                         status = ""
                                     }
-                                }) { Text(stringResource(R.string.ottai_sign_out)) }
+                                },
+                        shapes = ButtonDefaults.shapes(),
+                                contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.ottai_sign_out)) }
+                            }
+                        }
+
+                        if (signedIn) {
+                            val unusedBindings = remember(devices) {
+                                ottaiUnusedCloudBindings(
+                                    devices,
+                                    OttaiRegistry.persistedRecords(context).map { it.sensorId },
+                                )
+                            }
+                            unusedBindings.forEach { binding ->
+                                OttaiUnusedBindingCard(
+                                    sensorId = OttaiConstants.canonicalSensorId(binding.mac),
+                                    enabled = !busy && !devicesLoading,
+                                    onUnbind = { pendingCloudUnbind = binding },
+                                )
                             }
                         }
 
@@ -1302,25 +1348,29 @@ fun OttaiSetupWizard(
                                                     modifier = Modifier.size(20.dp),
                                                 )
                                             }
-                                            DropdownMenu(
+                                            DropdownMenuPopup(
                                                 expanded = smsCountryMenuExpanded,
                                                 onDismissRequest = { smsCountryMenuExpanded = false },
                                             ) {
-                                                OttaiSmsCountry.entries.forEach { country ->
-                                                    DropdownMenuItem(
-                                                        text = { Text(country.prefix) },
-                                                        onClick = {
-                                                            smsCountryMenuExpanded = false
-                                                            if (country != smsCountry) {
-                                                                smsCountry = country
-                                                                phone = ""
-                                                                requestId = ""
-                                                                code = ""
-                                                                smsStatus = ""
-                                                                smsStatusIsError = false
-                                                            }
-                                                        },
-                                                    )
+                                                DropdownMenuGroup(shapes = MenuDefaults.groupShape(0, 1)) {
+                                                    OttaiSmsCountry.entries.forEachIndexed { index, country ->
+                                                        SelectableDropdownMenuItem(
+                                                            selected = country == smsCountry,
+                                                            shapes = MenuDefaults.itemShape(index, OttaiSmsCountry.entries.size),
+                                                            text = { Text(country.prefix) },
+                                                            onClick = {
+                                                                smsCountryMenuExpanded = false
+                                                                if (country != smsCountry) {
+                                                                    smsCountry = country
+                                                                    phone = ""
+                                                                    requestId = ""
+                                                                    code = ""
+                                                                    smsStatus = ""
+                                                                    smsStatusIsError = false
+                                                                }
+                                                            },
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -1371,6 +1421,8 @@ fun OttaiSetupWizard(
                                     },
                                     enabled = !busy && smsPhone != null,
                                     modifier = Modifier.fillMaxWidth(),
+                                    shapes = ButtonDefaults.shapes(),
+                                    contentPadding = ButtonDefaults.ContentPadding,
                                 ) { Text(stringResource(R.string.ottai_send_code)) }
                                 OutlinedTextField(
                                     value = code,
@@ -1432,6 +1484,8 @@ fun OttaiSetupWizard(
                                     },
                                     enabled = !busy && code.isNotBlank() && requestId.isNotBlank(),
                                     modifier = Modifier.fillMaxWidth(),
+                                    shapes = ButtonDefaults.shapes(),
+                                    contentPadding = ButtonDefaults.ContentPadding,
                                 ) { Text(stringResource(R.string.ottai_login_button)) }
                             } else {
                                 OutlinedTextField(
@@ -1466,6 +1520,8 @@ fun OttaiSetupWizard(
                                     },
                                     enabled = !busy && phone.isNotBlank() && password.isNotBlank(),
                                     modifier = Modifier.fillMaxWidth(),
+                                    shapes = ButtonDefaults.shapes(),
+                                    contentPadding = ButtonDefaults.ContentPadding,
                                 ) { Text(stringResource(R.string.ottai_login_button)) }
                             }
 
@@ -1473,6 +1529,8 @@ fun OttaiSetupWizard(
                                 TextButton(
                                     onClick = { status = ""; step = OttaiSetupStep.REGISTER },
                                     modifier = Modifier.fillMaxWidth(),
+                                    shapes = ButtonDefaults.shapes(),
+                                    contentPadding = ButtonDefaults.TextButtonContentPadding,
                                 ) { Text(stringResource(R.string.ottai_register_cta)) }
                             }
                         }
@@ -1523,6 +1581,8 @@ fun OttaiSetupWizard(
                             onClick = { startConnect(cloudId, bleAddress, true) },
                             enabled = !busy && !materialLoading && canConnect,
                             modifier = Modifier.fillMaxWidth(),
+                            shapes = ButtonDefaults.shapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Text(stringResource(connectTitleRes))
                         }
@@ -1544,6 +1604,8 @@ fun OttaiSetupWizard(
                             onClick = armNfcRead,
                             enabled = !busy && !materialLoading,
                             modifier = Modifier.fillMaxWidth(),
+                            shapes = ButtonDefaults.shapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Icon(Icons.Default.Nfc, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1597,6 +1659,8 @@ fun OttaiSetupWizard(
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         contentColor = MaterialTheme.colorScheme.error,
                                     ),
+                                    shapes = ButtonDefaults.shapes(),
+                                    contentPadding = ButtonDefaults.ContentPadding,
                                 ) {
                                     Icon(
                                         Icons.Default.LinkOff,
@@ -1625,12 +1689,14 @@ fun OttaiSetupWizard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (status.isNotBlank()) Text(status)
-                    if (busy) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    if (busy) LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
                     if (signedIn) {
                         OutlinedButton(
                             onClick = { refreshAccountDevices(cloudId) },
                             enabled = !busy && !devicesLoading && !materialLoading,
                             modifier = Modifier.fillMaxWidth(),
+                            shapes = ButtonDefaults.shapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Icon(Icons.Default.Cloud, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1827,8 +1893,54 @@ private fun OttaiSensorRow(
                 enabled = enabled,
                 modifier = Modifier.align(Alignment.End).padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Icon(Icons.Default.LinkOff, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.unbind_sensor))
+            }
+        }
+    }
+}
+
+@Composable
+private fun OttaiUnusedBindingCard(
+    sensorId: String,
+    enabled: Boolean,
+    onUnbind: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.ottai_unused_binding_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.ottai_unused_binding_desc, sensorId),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = onUnbind,
+                enabled = enabled,
+                modifier = Modifier.align(Alignment.End),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.ContentPadding,
+            ) {
+                Icon(
+                    Icons.Default.LinkOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.unbind_sensor))
             }
@@ -1918,6 +2030,8 @@ private fun OttaiSensorMaterialCard(
                         onClick = onExport,
                         enabled = enabled && canExport,
                         modifier = Modifier.weight(1f),
+                        shapes = ButtonDefaults.shapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileUpload, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -1927,6 +2041,8 @@ private fun OttaiSensorMaterialCard(
                         onClick = onImport,
                         enabled = enabled,
                         modifier = Modifier.weight(1f),
+                        shapes = ButtonDefaults.shapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileDownload, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -1938,6 +2054,8 @@ private fun OttaiSensorMaterialCard(
                     onClick = onImport,
                     enabled = enabled,
                     modifier = Modifier.fillMaxWidth(),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Icon(Icons.Default.FileDownload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -2164,7 +2282,7 @@ private fun OttaiBleScanPanel(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (scanActive) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        if (scanActive) LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -2182,6 +2300,8 @@ private fun OttaiBleScanPanel(
                     bluetoothEnabled = scanner.isBluetoothEnabled()
                     scanRetryKey += 1
                 },
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(stringResource(R.string.search_bluetooth))
             }
@@ -2214,6 +2334,8 @@ private fun OttaiBleScanPanel(
                     }
                 },
                 modifier = Modifier.height(ui.buttonHeight),
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 val buttonRes = when {
                     !scanPermissionGranted -> R.string.permission

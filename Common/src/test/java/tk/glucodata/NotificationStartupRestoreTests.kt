@@ -829,9 +829,6 @@ class NotificationStartupRestoreTests {
                             last = n;
                         }
                     }
-                    static class CustomGlucoseNotification {
-                        static void applyStatus(Notification.Builder builder, Object context, CharSequence status) { }
-                    }
                     static class Notification {
                         static final String CATEGORY_SERVICE = "service";
                         public String title;
@@ -994,9 +991,6 @@ class NotificationStartupRestoreTests {
                         awaitGate("resolver");
                         if (resolverThrow) throw new RuntimeException("resolver down");
                         return resolverCalls > 1 && subsequentSnapshot != null ? subsequentSnapshot : cannedSnapshot;
-                    }
-                    CurrentDisplaySource.Snapshot resolveOngoingNotificationCurrentSnapshot(String serial) {
-                        return resolveNotificationCurrentSnapshot(serial);
                     }
                     long latestNotificationTimestamp(List<GlucosePoint> points) {
                         long latest = 0L;

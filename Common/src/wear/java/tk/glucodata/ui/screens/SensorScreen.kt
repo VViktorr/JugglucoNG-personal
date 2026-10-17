@@ -22,10 +22,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
@@ -124,7 +121,7 @@ fun SensorScreen(onCalibrate: () -> Unit, onOpenSettings: (() -> Unit)? = null) 
     var forgetTarget by androidx.compose.runtime.remember {
         androidx.compose.runtime.mutableStateOf<String?>(null)
     }
-    val storeSnapshot by tk.glucodata.ui.WearGlucoseStore.snapshot.collectAsStateWithLifecycle(minActiveState = Lifecycle.State.RESUMED)
+    val storeSnapshot by tk.glucodata.ui.WearGlucoseStore.snapshot.collectAsState()
     val displayedSensor = storeSnapshot.sensorId
     var revision by remember { mutableLongStateOf(0L) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -144,15 +141,10 @@ fun SensorScreen(onCalibrate: () -> Unit, onOpenSettings: (() -> Unit)? = null) 
         tk.glucodata.CurrentDisplaySource.resolveViewModeForSensor(currentSensor)
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        tk.glucodata.ui.WearGlucoseStore.start()
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            now = System.currentTimeMillis()
-            launch { UiRefreshBus.revision.collect { revision = it; now = System.currentTimeMillis() } }
-            launch { tk.glucodata.WearSensorClaim.revision.collect { revision += 1L } }
-            while (true) { delay(SENSOR_TICK_MS); now = System.currentTimeMillis() }
-        }
+    LaunchedEffect(Unit) {
+        launch { UiRefreshBus.revision.collect { revision = it; now = System.currentTimeMillis() } }
+        launch { tk.glucodata.WearSensorClaim.revision.collect { revision += 1L } }
+        while (true) { delay(SENSOR_TICK_MS); now = System.currentTimeMillis() }
     }
 
     ScreenScaffold(timeText = { TimeText() }) {

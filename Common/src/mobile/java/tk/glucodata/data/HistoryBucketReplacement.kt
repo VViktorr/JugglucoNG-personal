@@ -12,15 +12,6 @@ internal object HistoryBucketReplacement {
         val bucketRanges: List<BucketRange>,
     )
 
-    fun shouldFlushBefore(
-        readings: List<HistoryReading>,
-        nextTimestamp: Long,
-        targetSize: Int,
-        bucketDurationMs: Long,
-    ): Boolean = readings.isNotEmpty() && readings.size >= targetSize &&
-        bucketDurationMs > 0L &&
-        readings.last().timestamp / bucketDurationMs != nextTimestamp / bucketDurationMs
-
     fun plan(
         readings: List<HistoryReading>,
         bucketDurationMs: Long,
@@ -92,32 +83,6 @@ internal object HistoryBucketReplacement {
         }
 
         return byBucket.values.sortedBy { it.timestamp }
-    }
-
-    /**
-     * Keep a complete existing sample when an overlap only contains a poorer
-     * sample. Only combine lanes at the exact same timestamp and sensor:
-     * different times remain separate candidates until bucket selection.
-     */
-    fun retainBestReadings(
-        existingReadings: List<HistoryReading>,
-        incomingReadings: List<HistoryReading>,
-        bucketDurationMs: Long,
-    ): List<HistoryReading> {
-        val byIdentity = existingReadings.associateBy { it.sensorSerial to it.timestamp }
-        val updated = incomingReadings.map { incoming ->
-            val existing = byIdentity[incoming.sensorSerial to incoming.timestamp]
-            if (existing == null) incoming else incoming.copy(
-                value = incoming.value.takeIf { it.isFinite() && it > 0f } ?: existing.value,
-                rawValue = incoming.rawValue.takeIf { it.isFinite() && it > 0f } ?: existing.rawValue,
-                rate = incoming.rate?.takeIf { it.isFinite() } ?: existing.rate,
-            )
-        }
-        val updatedIdentities = updated.map { it.sensorSerial to it.timestamp }.toSet()
-        return collapseReadings(
-            existingReadings.filter { (it.sensorSerial to it.timestamp) !in updatedIdentities } + updated,
-            bucketDurationMs,
-        )
     }
 
     private fun choosePreferred(current: HistoryReading, candidate: HistoryReading): HistoryReading {

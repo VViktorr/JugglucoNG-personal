@@ -1,5 +1,6 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.IconButtonTooltip
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -40,7 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -333,21 +333,26 @@ fun DebugSettingsScreen(navController: NavController) {
                 title = stringResource(R.string.debug_logs_title),
                 onNavigateBack = { navController.popBackStack() },
                 actions = {
-                    IconButton(onClick = { showHowTo = !showHowTo }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.HelpOutline,
-                            contentDescription = stringResource(R.string.debug_howto_title)
-                        )
-                    }
-                    IconButton(onClick = {
-                        when (logType) {
-                            LogType.TRACE -> Natives.zeroLog()
-                            LogType.LOGCAT -> Natives.zeroLogcat()
-                            LogType.BLE_ERRORS -> BleErrorHistory.clear()
+                    IconButtonTooltip(stringResource(R.string.debug_howto_title)) {
+                        IconButton(onClick = { showHowTo = !showHowTo }, shapes = IconButtonDefaults.shapes()) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.HelpOutline,
+                                contentDescription = stringResource(R.string.debug_howto_title)
+                            )
                         }
-                        snapshot = LogSnapshot()
-                    }) {
-                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear))
+                    }
+                    IconButtonTooltip(stringResource(R.string.clear)) {
+                        IconButton(onClick = {
+                            when (logType) {
+                                LogType.TRACE -> Natives.zeroLog()
+                                LogType.LOGCAT -> Natives.zeroLogcat()
+                                LogType.BLE_ERRORS -> BleErrorHistory.clear()
+                            }
+                            snapshot = LogSnapshot()
+                        },
+                        shapes = IconButtonDefaults.shapes()) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear))
+                        }
                     }
                 },
             )
@@ -437,13 +442,15 @@ fun DebugSettingsScreen(navController: NavController) {
             ) {
                 Button(
                     onClick = { shareLog() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.debug_share_log))
                 }
-                OutlinedButton(onClick = { saveLauncher.launch(logType.exportName()) }) {
+                OutlinedButton(onClick = { saveLauncher.launch(logType.exportName()) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.save))
@@ -470,12 +477,14 @@ private fun HowToReportCard(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.titleSmallEmphasized,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.debug_dismiss_howto),
-                        modifier = Modifier.size(18.dp)
-                    )
+                IconButtonTooltip(stringResource(R.string.debug_dismiss_howto)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp), shapes = IconButtonDefaults.shapes()) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.debug_dismiss_howto),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -509,8 +518,7 @@ private fun NumberedStep(number: Int, text: String) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = number.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelSmallEmphasized,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onPrimary
                 )

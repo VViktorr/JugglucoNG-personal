@@ -16,14 +16,6 @@ import android.widget.RemoteViews;
 final class CustomGlucoseNotification {
     private CustomGlucoseNotification() { }
 
-    /** A full-width, wrapping status in both collapsed and expanded phone views. */
-    static void applyStatus(android.app.Notification.Builder builder, Context context, CharSequence status) {
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.notification_phone_status);
-        views.setTextViewText(R.id.notification_status, status);
-        builder.setStyle(new android.app.Notification.DecoratedCustomViewStyle())
-                .setCustomContentView(views).setCustomBigContentView(views);
-    }
-
     static RemoteViews values(Context context, boolean expanded, CharSequence primary,
             int primaryColor, int secondaryColor, int tertiaryColor,
             java.util.List<NotificationChartDrawer.ValueItem> peers, float rate, int arrowColor,
@@ -74,7 +66,30 @@ final class CustomGlucoseNotification {
         if (!expanded && textPixels + TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, metrics)
                 > 40f * metrics.density) hasStatus = false;
         views.setViewVisibility(R.id.notification_status, hasStatus ? View.VISIBLE : View.GONE);
-        if (hasStatus) views.setTextViewText(R.id.notification_status, status);
+        views.setViewVisibility(R.id.notification_status_image, View.GONE);
+        if (hasStatus) {
+            int statusColor = night ? 0xA6FFFFFF : 0xA6000000;
+            float statusPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, metrics);
+            if (systemFont) {
+                SpannableStringBuilder styled = new SpannableStringBuilder(status);
+                styled.setSpan(new TypefaceSpan(systemBodyFamily(context)), 0, styled.length(),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                views.setTextViewText(R.id.notification_status, styled);
+                views.setTextColor(R.id.notification_status, statusColor);
+            } else {
+                // System UI cannot load our bundled font. Use the same painter as the
+                // values, at body size/regular weight, with a single ellipsized line.
+                int widthDp = Math.max(160, context.getResources().getConfiguration().screenWidthDp - 96);
+                int width = Math.round(widthDp * metrics.density);
+                Bitmap bitmap = NotificationValueBitmap.drawStatus(context, status, statusColor, statusPixels, width);
+                views.setViewVisibility(R.id.notification_status, View.GONE);
+                views.setViewVisibility(R.id.notification_status_image, View.VISIBLE);
+                views.setInt(R.id.notification_status_image, "setMaxHeight", (bitmap.getHeight() + 1) / 2);
+                views.setImageViewBitmap(R.id.notification_status_image, bitmap);
+                views.setContentDescription(R.id.notification_status_image, status);
+            }
+        }
+        if (!hasStatus || systemFont) views.setImageViewBitmap(R.id.notification_status_image, null);
         return views;
     }
 
@@ -111,6 +126,11 @@ final class CustomGlucoseNotification {
         return weight == 500 ? "sans-serif-medium" : "sans-serif";
     }
 
+    static String systemBodyFamily(Context context) {
+        int id = context.getResources().getIdentifier("config_bodyFontFamily", "string", "android");
+        return id == 0 ? "sans-serif" : context.getResources().getString(id);
+    }
+
     private static CharSequence styledValue(CharSequence value, int secondary, int tertiary) {
         SpannableStringBuilder text = new SpannableStringBuilder(value == null ? "" : value);
         String plain = text.toString();
@@ -133,11 +153,13 @@ final class CustomGlucoseNotification {
         views.setViewVisibility(id, visible ? View.VISIBLE : View.GONE);
         if (!visible) return;
         boolean doubled = Math.abs(rate) > 2f;
+        int drawable = large ? (doubled ? R.drawable.notification_trend_long_double : R.drawable.notification_trend_long_single)
+                : (doubled ? R.drawable.notification_trend_double : R.drawable.notification_trend_single);
+        views.setImageViewResource(id, drawable);
         float angle = TrendArrowAngle.rotationDegrees(rate);
-        // Bake the direction into the pixels, as alert notifications do. The host can
-        // reapply this view without inheriting a RotateDrawable/ImageView level.
-        views.setImageViewBitmap(id, NotificationChartDrawer.drawArrow(
-                context, rate, false, color, 64f / 20f, false, large));
+        // Level controls rotation; select head-count resources independently of that level.
+        views.setInt(id, "setImageLevel", Math.round((angle + 90f) * 10000f / 180f));
+        views.setInt(id, "setColorFilter", color);
         int size = Math.max(1, Math.round(pixels));
         startPadding(context, views, id, gap);
         // Max width includes the gap so padding does not shrink the vector itself.
@@ -154,20 +176,11 @@ final class CustomGlucoseNotification {
         views.setViewPadding(id, rtl ? 0 : pixels, 0, rtl ? pixels : 0, 0);
     }
 
-    private static String valueDescription(CharSequence primary,
-            java.util.List<NotificationChartDrawer.ValueItem> peers) {
-        StringBuilder text = new StringBuilder(primary == null ? "" : primary.toString());
-        if (peers != null) for (NotificationChartDrawer.ValueItem peer : peers) {
-            if (peer != null && !peer.text.isEmpty()) text.append(" · ").append(peer.text);
-        }
-        return text.toString();
-    }
-
-    static void apply(android.app.Notification.Builder builder, CharSequence primary,
-            java.util.List<NotificationChartDrawer.ValueItem> peers, CharSequence status,
-            RemoteViews compact, RemoteViews expanded) {
-        builder.setContentTitle(valueDescription(primary, peers)).setContentText(status == null ? "" : status)
-                .setStyle(new android.app.Notification.DecoratedCustomViewStyle())
+    /** No standard title/text: watch companion apps forward any notification that has
+     * them, so each per-reading update reached the watch (#645). The custom views
+     * already expose the readout to TalkBack as native text or content descriptions. */
+    static void apply(android.app.Notification.Builder builder, RemoteViews compact, RemoteViews expanded) {
+        builder.setStyle(new android.app.Notification.DecoratedCustomViewStyle())
                 .setCustomContentView(compact).setCustomBigContentView(expanded);
     }
 

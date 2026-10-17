@@ -65,9 +65,11 @@ private val glview= WearComplicationValue(100,100)
                 SmallImageComplicationData.Builder(
                     smallImage = SmallImage.Builder(
                         Icon.createWithBitmap(
-                            ComplicationRenderer.valueWithTimeBitmap(
-                                VALUE_PX, reading.text, reading.value, reading.timeMillis,
-                                reading.isMmol,
+                            glview.getNumberBitmap(
+                                reading.text,
+                                reading.timeMillis,
+                                reading.index,
+                                System.currentTimeMillis(),
                             ),
                         ),
                         SmallImageType.PHOTO,
@@ -137,7 +139,6 @@ private val glview= WearComplicationValue(100,100)
                 glucose,
                 "Glucose Number",
                 complicationPendingIntent,
-                timeIcon(glucose),
             )
 
             else -> {

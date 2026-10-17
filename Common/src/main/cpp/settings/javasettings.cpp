@@ -2018,15 +2018,7 @@ extern "C" JNIEXPORT jint JNICALL fromjava(getLibreCountry)(JNIEnv *env,
 extern "C" JNIEXPORT void JNICALL fromjava(setLibreCountry)(JNIEnv *env,
                                                             jclass cl,
                                                             int val) {
-  if (val >= 0 && val <= 4) settings->data()->librecountry = val + 1;
-}
-
-extern "C" JNIEXPORT void JNICALL fromjava(initLibreCountryIfUnset)(
-    JNIEnv *env, jclass cl, int val) {
-  if (val < 0 || val > 4) return;
-  auto *data = settings->data();
-  if (!data->librecountry || data->librecountry > 5)
-    data->librecountry = val + 1;
+  settings->data()->librecountry = val + 1;
 }
 
 extern bool switchgen2();

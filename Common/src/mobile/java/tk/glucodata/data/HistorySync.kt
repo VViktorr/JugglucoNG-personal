@@ -178,6 +178,32 @@ object HistorySync {
         }
     }
 
+    /**
+     * Copy native history from [startTimeMs] on into Room, for a driver whose
+     * backfill landed behind the live edge. Neither the live sync (a few minutes
+     * back) nor the incremental one (from Room's newest row, which the live
+     * reading has already moved past the gap) reaches that far (#620).
+     */
+    @JvmStatic
+    fun syncSensorWindowFromNative(serial: String, startTimeMs: Long) {
+        val canonicalSerial = SensorIdentity.resolveAppSensorId(serial) ?: serial
+        if (canonicalSerial.isBlank()) return
+        if (!SensorIdentity.shouldUseNativeHistorySync(canonicalSerial)) return
+
+        BatteryTrace.bump(
+            key = "history.sync.sensor.window.request",
+            logEvery = 20L,
+            detail = "serial=$canonicalSerial start=$startTimeMs"
+        )
+
+        scope.launch {
+            syncGate.withLock {
+                val readings = doSyncSensorWindow(canonicalSerial, startTimeMs.coerceAtLeast(0L) / 1000L)
+                Log.i(TAG, "Window sync [$canonicalSerial] from $startTimeMs: $readings readings")
+            }
+        }
+    }
+
     private fun resolveRecentSyncStartMs(currentBucket: Long, previousBucket: Long?): Long {
         val defaultStart = (currentBucket - RECENT_SYNC_DEFAULT_LOOKBACK_MS).coerceAtLeast(0L)
         if (previousBucket == null || previousBucket <= 0L) {
@@ -371,20 +397,6 @@ object HistorySync {
             val rawValue = valueRawRaw / 10f
 
             if (value > 0 || rawValue > 0) {
-                // Native history is time-ordered. Finish the last minute before
-                // flushing, even if that makes this batch slightly larger.
-                if (HistoryBucketReplacement.shouldFlushBefore(
-                        readings, timeMs, NATIVE_SYNC_INSERT_CHUNK, RECENT_SYNC_BUCKET_MS
-                    )
-                ) {
-                    val stored = historyRepository.storeReadingsReplacingSensorBuckets(
-                        sensorSerial = roomSerial,
-                        readings = readings,
-                        bucketDurationMs = RECENT_SYNC_BUCKET_MS,
-                    )
-                    readings.clear()
-                    storedAny = storedAny || stored
-                }
                 readings.add(
                     HistoryReading(
                         timestamp = timeMs,
@@ -396,6 +408,15 @@ object HistorySync {
                     )
                 )
                 parsedCount++
+                if (readings.size >= NATIVE_SYNC_INSERT_CHUNK) {
+                    val stored = historyRepository.storeReadingsReplacingSensorBuckets(
+                        sensorSerial = roomSerial,
+                        readings = readings,
+                        bucketDurationMs = RECENT_SYNC_BUCKET_MS,
+                    )
+                    readings.clear()
+                    storedAny = storedAny || stored
+                }
             }
         }
 
