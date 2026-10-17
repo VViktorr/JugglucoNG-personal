@@ -16,8 +16,12 @@ class LegacyOngoingNotificationTests {
         val start = source.indexOf("    void oldnotification(long time) {")
         val end = source.indexOf("\n    @SuppressWarnings", start)
         check(start >= 0 && end > start)
+        val deadlineStart = source.indexOf("    private final Runnable freshnessDeadlineRefreshRunnable")
+        val deadlineEnd = source.indexOf("    private void armFreshnessDeadlineLocked", deadlineStart)
+        check(deadlineStart >= 0 && deadlineEnd > deadlineStart)
         val fixture = File(root, "Common/src/test/resources/java/OngoingTimerHarness.java").readText()
             .replace("// PRODUCTION_OLD_NOTIFICATION", source.substring(start, end))
+            .replace("// PRODUCTION_FRESHNESS_DEADLINE", source.substring(deadlineStart, deadlineEnd))
         val directory = java.nio.file.Files.createTempDirectory("ongoing-notification-timer").toFile()
         try {
             val javaFile = File(directory, "OngoingTimerHarness.java").apply { writeText(fixture) }
