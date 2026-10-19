@@ -4804,12 +4804,6 @@ public class Notify {
 
     private Notification.Builder mkbuilder(String type) {
         var build = mkbuilderintent(type, mkpending());
-        if (GLUCOSENOTIFICATION.equals(type)) {
-            boolean requestOriginalIcon = Applic.app
-                    .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
-                    .getBoolean(OplusStatusIconRequest.PREFERENCE, false);
-            OplusStatusIconRequest.apply(build, requestOriginalIcon, Build.VERSION.SDK_INT, isWearable);
-        }
         build.setDeleteIntent(DeleteReceiver.getDeleteIntent());
         return build;
     }

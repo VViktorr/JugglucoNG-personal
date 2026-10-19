@@ -118,9 +118,6 @@ fun NotificationSettingsScreen(
     var showDelta by rememberSaveable { mutableStateOf(prefs.getBoolean("notification_show_delta", false)) }
     var iobCobRiskColored by rememberSaveable { mutableStateOf(prefs.getBoolean("notification_iob_cob_risk_colored", false)) }
     var iobRiskWithoutCob by rememberSaveable { mutableStateOf(prefs.getBoolean("notification_iob_risk_without_cob", false)) }
-    var oplusOriginalStatusIcon by rememberSaveable {
-        mutableStateOf(prefs.getBoolean("notification_oplus_original_status_icon", false))
-    }
     var glucoseLiveUpdate by rememberSaveable {
         mutableStateOf(prefs.getBoolean("notification_glucose_live_update", false))
     }
@@ -147,7 +144,6 @@ fun NotificationSettingsScreen(
             .putBoolean("notification_iob_risk_without_cob", iobRiskWithoutCob)
             .putFloat("notification_status_icon_scale", statusIconScale)
             .putBoolean("notification_glucose_live_update", glucoseLiveUpdate)
-            .putBoolean("notification_oplus_original_status_icon", oplusOriginalStatusIcon)
             .apply()
         viewModel.refreshNotificationSurfaces()
     }
@@ -259,16 +255,6 @@ fun NotificationSettingsScreen(
                 value = arrowSize,
                 onValueChange = { arrowSize = it; save() },
                 range = 0.5f..1.5f
-            )
-        }
-
-        if (android.os.Build.VERSION.SDK_INT >= 36) {
-            SettingsSwitchItem(
-                title = stringResource(R.string.notification_oplus_original_status_icon_title),
-                subtitle = stringResource(R.string.notification_oplus_original_status_icon_summary),
-                checked = oplusOriginalStatusIcon,
-                onCheckedChange = { oplusOriginalStatusIcon = it; save() },
-                position = CardPosition.SINGLE
             )
         }
 
