@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_oplus_original_status_icon_title">OxygenOS/ColorOS: ikona glikemii (eksperymentalne)</string>
+    <string name="notification_oplus_original_status_icon_summary">Spróbuj zachować glikemię zamiast logo aplikacji na pasku stanu. System może zignorować tę prośbę. Domyślnie wyłączone; wyłącz, jeśli nie pomaga.</string>
+</resources>
