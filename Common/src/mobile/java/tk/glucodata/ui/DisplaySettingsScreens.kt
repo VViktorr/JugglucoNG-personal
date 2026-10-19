@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.util.appFilterChipColors
 import tk.glucodata.ui.util.appFilterChipShapes
 
@@ -48,7 +50,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -1122,7 +1123,7 @@ private fun LegacySliderControl(
 ) {
     Column(Modifier.padding(horizontal = legacySettingsHorizontalPadding, vertical = 8.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
-        Slider(
+        AppSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = range,

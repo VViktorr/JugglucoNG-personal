@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.util.appButtonShapes
 
 import androidx.compose.material3.TimePickerDefaults
@@ -44,7 +46,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
@@ -1094,7 +1095,7 @@ private fun BackupRetentionRow(
                 style = MaterialTheme.typography.titleLargeEmphasized.copy(fontFeatureSettings = "tnum")
             )
         }
-        Slider(
+        AppSlider(
             value = index,
             onValueChange = { index = it },
             onValueChangeFinished = { onSelected(options[index.toInt().coerceIn(options.indices)]) },
