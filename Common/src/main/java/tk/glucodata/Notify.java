@@ -4804,9 +4804,6 @@ public class Notify {
 
     private Notification.Builder mkbuilder(String type) {
         var build = mkbuilderintent(type, mkpending());
-        OplusSmallIconCompatibility.apply(build, BuildConfig.OPLUS_SMALL_ICON_TEST,
-                Applic.app.getPackageName(), Build.VERSION.SDK_INT, isWearable,
-                GLUCOSENOTIFICATION.equals(type));
         build.setDeleteIntent(DeleteReceiver.getDeleteIntent());
         return build;
     }
