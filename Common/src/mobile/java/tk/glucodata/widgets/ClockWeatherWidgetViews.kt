@@ -17,7 +17,8 @@ object ClockWeatherWidgetViews {
         pxPerDp: Float,
         weather: WidgetWeather?,
         includeBackground: Boolean = true,
-        valueText: String = snapshot.valueText
+        valueText: String = snapshot.valueText,
+        reserveTrendArrowSpace: Boolean = false
     ): RemoteViews {
         val renderer = WidgetRenderer(context)
         return RemoteViews(context.packageName,
@@ -43,6 +44,13 @@ object ClockWeatherWidgetViews {
             val detailIds = intArrayOf(R.id.home_widget_detail_300, R.id.home_widget_detail_400, R.id.home_widget_detail_500, R.id.home_widget_detail_600, R.id.home_widget_detail_700)
             val staleIds = intArrayOf(R.id.home_widget_stale_300, R.id.home_widget_stale_400, R.id.home_widget_stale_500, R.id.home_widget_stale_600, R.id.home_widget_stale_700)
             val staleStatus = !snapshot.hasFreshReading
+            // The chart header can have different proportions and larger arrows than
+            // the standalone clock widget. Reserve the full arrow box plus an 8dp gap.
+            val glucoseEndPaddingDp = if (reserveTrendArrowSpace && config.showArrow &&
+                snapshot.hasFreshReading && snapshot.rate.isFinite()) {
+                val arrowSizeDp = min(w * 0.09f, h * 0.32f) * config.glucoseScale / 100f
+                maxOf(38f, w * 0.07f + arrowSizeDp / 2f + 8f)
+            } else 38f
             setViewVisibility(R.id.home_widget_stale_container, if (staleStatus) android.view.View.VISIBLE else android.view.View.GONE)
             val detailText = if (!snapshot.hasFreshReading) snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue) else buildList {
                 if (config.showDelta) snapshot.delta?.let { add(renderer.deltaText(it, snapshot.isMmol)) }
@@ -62,6 +70,10 @@ object ClockWeatherWidgetViews {
                 setTextViewText(glucoseId, glucoseText)
                 setTextViewTextSize(glucoseId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                 setTextColor(glucoseId, glucoseColor)
+                if (reserveTrendArrowSpace) {
+                    setViewPadding(glucoseId, 0, 0,
+                        (glucoseEndPaddingDp * pxPerDp).roundToInt(), 0)
+                }
                 setViewVisibility(dateId, if (config.showDate && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                 setTextColor(clockId, textColor)
@@ -91,4 +103,3 @@ object ClockWeatherWidgetViews {
         }
     }
 }
-

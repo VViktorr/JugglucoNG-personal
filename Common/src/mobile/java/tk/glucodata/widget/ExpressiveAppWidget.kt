@@ -125,7 +125,8 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             ClockWeatherWidgetViews.create(
                 context, config, snapshot, size.width.value, headerHeightDp, density,
                 state.weather, includeBackground = false,
-                valueText = snapshot.current?.fullFormatted ?: snapshot.valueText
+                valueText = snapshot.current?.fullFormatted ?: snapshot.valueText,
+                reserveTrendArrowSpace = true
             )
         }
         val chartBitmap = remember(
@@ -191,4 +192,3 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         }
     }
 }
-
