@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.AppSlider
+import tk.glucodata.ui.components.AppRangeSlider
+
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -1473,7 +1476,7 @@ private fun ThresholdSlider(
             )
         }
         
-        Slider(
+        AppSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1482,14 +1485,7 @@ private fun ThresholdSlider(
             },
             valueRange = range,
             steps = steps.coerceAtLeast(0),
-            modifier = Modifier.fillMaxWidth(),
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary,
-                activeTickColor = MaterialTheme.colorScheme.onPrimary,
-                inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
-                inactiveTickColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
-            )
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
@@ -1542,7 +1538,7 @@ internal fun DurationSlider(
             )
         }
         
-        Slider(
+        AppSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1824,7 +1820,7 @@ private fun TimeRangeSlider(
         mutableStateOf(startHour.toFloat()..endHour.toFloat())
     }
 
-    RangeSlider(
+    AppRangeSlider(
         value = sliderValues,
         onValueChange = { range ->
             sliderValues = range

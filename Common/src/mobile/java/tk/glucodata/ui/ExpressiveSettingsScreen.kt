@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.util.appIconButtonShapes
 
@@ -1584,7 +1586,7 @@ internal fun PredictiveSimulationParameterRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Slider(
+        AppSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,

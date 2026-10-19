@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.util.appFilterChipColors
 import tk.glucodata.ui.util.appFilterChipShapes
@@ -18,7 +20,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -349,7 +350,7 @@ private fun LabeledColorSlider(
                 )
             }
         }
-        Slider(
+        AppSlider(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth()

@@ -2,6 +2,8 @@
 
 package tk.glucodata.widgets
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.util.appFilterChipShapes
 import tk.glucodata.ui.util.appFilterChipColors
@@ -33,7 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -199,21 +200,21 @@ private fun WidgetDetailSettings(
 
 
         Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) stringResource(R.string.widget_clock_detail_size_value, config.detailScale) else stringResource(R.string.widget_detail_size_value, config.detailScale))
-        Slider(
+        AppSlider(
             value = config.detailScale.toFloat(),
             onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
 
         Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) stringResource(R.string.widget_clock_glucose_size_value, config.glucoseScale) else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
-        Slider(
+        AppSlider(
             value = config.glucoseScale.toFloat(),
             onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
 
         Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
-        Slider(
+        AppSlider(
             value = config.cornerRadiusDp.toFloat(),
             onValueChange = { onChange(config.copy(cornerRadiusDp = it.toInt().coerceIn(0, 24))) },
             valueRange = 0f..24f,
@@ -229,7 +230,7 @@ private fun WidgetDetailSettings(
 
         if (config.background != WidgetBackground.TRANSPARENT) {
             Text(stringResource(R.string.widget_opacity_value, config.opacity))
-            Slider(
+            AppSlider(
                 value = config.opacity.toFloat(),
                 onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
                 valueRange = 20f..100f
@@ -277,28 +278,28 @@ private fun WidgetDetailSettings(
             }
             if (config.showWeather) {
                 Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
-                Slider(
+                AppSlider(
                     value = config.weatherScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..200f
                 )
 
                 Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
-                Slider(
+                AppSlider(
                     value = config.weatherIconScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..220f
                 )
 
                 Text(stringResource(R.string.widget_temperature_size_value, config.temperatureScale))
-                Slider(
+                AppSlider(
                     value = config.temperatureScale.toFloat(),
                     onValueChange = { onChange(config.copy(temperatureScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..200f
                 )
 
                 Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
-                Slider(
+                AppSlider(
                     value = config.weatherShiftDp.toFloat(),
                     onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },
                     valueRange = 0f..40f

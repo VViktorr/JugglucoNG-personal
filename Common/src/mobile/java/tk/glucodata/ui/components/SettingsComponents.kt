@@ -40,7 +40,7 @@ import tk.glucodata.R
 fun SliderControl(label: String, value: Float, onValueChange: (Float) -> Unit, range: ClosedFloatingPointRange<Float>, steps: Int = 0) {
     Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
-        Slider(
+        AppSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = range,
@@ -510,7 +510,7 @@ fun AlarmItem(
             AnimatedVisibility(visible = enabled) {
                 Column {
                     Spacer(Modifier.height(16.dp))
-                    Slider(
+                    AppSlider(
                         value = sliderValue,
                         onValueChange = { sliderValue = it },
                         onValueChangeFinished = { onValueChange(sliderValue) },
@@ -566,7 +566,7 @@ fun SliderItem(
                 Text("$displayValue $unit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.height(8.dp))
-            Slider(
+            AppSlider(
                 value = sliderValue,
                 onValueChange = { sliderValue = it },
                 onValueChangeFinished = { onValueChange(sliderValue) },
