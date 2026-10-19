@@ -51,6 +51,13 @@ object ClockWeatherWidgetViews {
                 val arrowSizeDp = min(w * 0.09f, h * 0.32f) * config.glucoseScale / 100f
                 maxOf(38f, w * 0.07f + arrowSizeDp / 2f + 8f)
             } else 38f
+            // Keep stale text in its own measured column, outside the weather bitmap.
+            // Weather can reach 67.1% of the width at its rightmost configured position.
+            val hasWeather = config.showWeather && weather != null &&
+                (config.showWeatherIcon || config.showTemperature)
+            val staleStartDp = if (hasWeather) w * 0.68f + 8f else w * 0.48f
+            setViewPadding(R.id.home_widget_stale_container,
+                (staleStartDp * pxPerDp).roundToInt(), 0, 0, 0)
             setViewVisibility(R.id.home_widget_stale_container, if (staleStatus) android.view.View.VISIBLE else android.view.View.GONE)
             val detailText = if (!snapshot.hasFreshReading) snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue) else buildList {
                 if (config.showDelta) snapshot.delta?.let { add(renderer.deltaText(it, snapshot.isMmol)) }
@@ -88,7 +95,7 @@ object ClockWeatherWidgetViews {
                     if (staleStatus) halfWidth else 0, 0)
                 setViewVisibility(staleId, if (staleStatus && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewText(staleId, detailText)
-                setViewPadding(staleId, halfWidth, 0, (12f * density).roundToInt(), 0)
+                setViewPadding(staleId, 0, 0, (12f * density).roundToInt(), 0)
                 setTextViewTextSize(staleId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
                 setTextColor(staleId, textColor)
                 setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
