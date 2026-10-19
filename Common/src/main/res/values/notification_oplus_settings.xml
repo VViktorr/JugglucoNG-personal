@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="notification_oplus_original_status_icon_title">OxygenOS/ColorOS: glucose icon (experimental)</string>
-    <string name="notification_oplus_original_status_icon_summary">Try to keep the glucose number instead of the app logo in the status bar. The system may ignore this request. Off by default; turn off if it does not help.</string>
-</resources>
