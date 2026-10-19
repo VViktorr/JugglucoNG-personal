@@ -58,6 +58,8 @@
     <!-- Weather fallback requires an explicitly granted location permission on Android 12+. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:remove="android:maxSdkVersion" />
 
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+
     <application
         android:name=".Applic"
         android:icon="@mipmap/ic_launcher"
@@ -244,6 +246,10 @@
         <receiver
             android:name="tk.glucodata.update.AppUpdateInstallReceiver"
             android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".GlucoseLiveUpdateDismissReceiver"
             android:exported="false" />
 
     </application>

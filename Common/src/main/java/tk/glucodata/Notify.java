@@ -4153,6 +4153,23 @@ public class Notify {
 
         CharSequence valueText = buildFormattedGlucoseText(fallbackDisplay, glvalue);
         final float displayGlucoseValue = fallbackDisplay != null ? fallbackDisplay.getPrimaryValue() : glvalue;
+
+        // The system Live Update template cannot contain custom RemoteViews.
+        // Return before chart/peer rendering, using the same resolved primary reading.
+        final boolean liveUpdateEnabled = Applic.app
+                .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                .getBoolean(GlucoseLiveUpdate.PREFERENCE, false);
+        if (GlucoseLiveUpdatePolicy.canUse(liveUpdateEnabled, Build.VERSION.SDK_INT,
+                isWearable, customPhone, displayGlucoseValue,
+                fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L,
+                System.currentTimeMillis(), glucosetimeout)) {
+            final Notification live = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
+                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis());
+            if (live != null) {
+                return new GlucoseNotificationContent(live, fallbackDisplay);
+            }
+        }
+
         // One snapshot resolution per peer per update; reused for the value row
         // and (when enabled) the chart series below.
         final java.util.List<NotificationMultiSensorSource.PeerCurrent> peerCurrents =
