@@ -4164,7 +4164,7 @@ public class Notify {
                 fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L,
                 System.currentTimeMillis(), glucosetimeout)) {
             final Notification live = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
-                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis());
+                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate);
             if (live != null) {
                 return new GlucoseNotificationContent(live, fallbackDisplay);
             }

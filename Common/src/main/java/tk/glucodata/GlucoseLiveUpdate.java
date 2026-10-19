@@ -4,6 +4,8 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.Icon;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 import java.util.Locale;
@@ -17,7 +19,7 @@ final class GlucoseLiveUpdate {
 
     @RequiresApi(36)
     static Notification tryBuild(Context context, Notification.Builder builder,
-            float value, boolean mmol, long readingTime) {
+            float value, boolean mmol, long readingTime, float trendRate) {
         try {
             final String unit = context.getString(mmol ? R.string.mmolL : R.string.mgdL);
             final Locale locale = context.getResources().getConfiguration().getLocales().get(0);
@@ -26,7 +28,7 @@ final class GlucoseLiveUpdate {
             final PendingIntent unpin = PendingIntent.getBroadcast(context, 81433,
                     new Intent(context, GlucoseLiveUpdateDismissReceiver.class).setAction(ACTION_UNPIN),
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            builder.setSmallIcon(R.drawable.novalue)
+            builder.setSmallIcon(trendIcon(context, trendRate, mmol))
                     .setContentTitle(label + ": " + shortValue + " " + unit)
                     .setContentText(shortValue + " " + unit)
                     .setCategory(Notification.CATEGORY_STATUS)
@@ -58,6 +60,15 @@ final class GlucoseLiveUpdate {
             Log.stack("GlucoseLiveUpdate", "Using existing glucose notification", unsupportedLiveUpdate);
             return null;
         }
+    }
+
+    private static Icon trendIcon(Context context, float rate, boolean mmol) {
+        // Missing trend is unknown, not a flat arrow. Keep the existing neutral glyph.
+        if (!Float.isFinite(rate)) return Icon.createWithResource(context, R.drawable.novalue);
+        // Use the same direction and double-arrow thresholds as the chart notification.
+        // Fixed 24dp monochrome rendering keeps the status icon independent of chart styling.
+        return Icon.createWithBitmap(NotificationChartDrawer.drawArrow(
+                context, rate, mmol, Color.WHITE, 1.2f, false, false));
     }
 
     /** Keep API 37 class references out of the API 36 path. */
