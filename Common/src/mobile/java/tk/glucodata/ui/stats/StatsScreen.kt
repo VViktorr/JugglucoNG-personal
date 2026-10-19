@@ -2,6 +2,12 @@
 
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import androidx.compose.material3.LinearWavyProgressIndicator
+import tk.glucodata.ui.components.IconButtonTooltip
+import androidx.compose.material3.ButtonDefaults
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -91,7 +97,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
@@ -516,7 +521,7 @@ fun StatsScreen(
                         itemHeight = 36.dp,
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
@@ -541,7 +546,9 @@ fun StatsScreen(
                     )
                     androidx.compose.material3.FilledTonalButton(
                         onClick = { showPatientInfo = !showPatientInfo },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(
                             text = if (showPatientInfo) {
@@ -604,7 +611,9 @@ fun StatsScreen(
                             pdfLauncher.launch("cgm_report_$reportDate.pdf")
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = parsedReportDays != null
+                        enabled = parsedReportDays != null,
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.export_readable_report))
                     }
@@ -656,7 +665,9 @@ fun StatsScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isPublishing && workerUrl.isNotBlank() && parsedReportDays != null
+                        enabled = !isPublishing && workerUrl.isNotBlank() && parsedReportDays != null,
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = if (isPublishing) stringResource(R.string.loading_data) else stringResource(R.string.export))
                     }
@@ -830,7 +841,7 @@ private fun ArrangeSheet(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Button(onClick = onDismiss) {
+                Button(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
@@ -1185,12 +1196,14 @@ private fun HeaderBlock(
     onShareClick: () -> Unit
 ) {
     TabScreenHeader(title = stringResource(R.string.statistics_title)) {
-        IconButton(onClick = onShareClick) {
-            Icon(
-                imageVector = Icons.Filled.Share,
-                contentDescription = stringResource(R.string.export),
-                tint = MaterialTheme.colorScheme.primary
-            )
+        IconButtonTooltip(stringResource(R.string.export)) {
+            IconButton(onClick = onShareClick, shapes = appIconButtonShapes()) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = stringResource(R.string.export),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -1259,7 +1272,7 @@ private fun RangeLoadingCard() {
                     style = MaterialTheme.typography.labelLarge
                 )
             }
-            LinearProgressIndicator(
+            LinearWavyProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -1931,7 +1944,7 @@ private fun PatternsCard(
                     itemHeight = 38.dp,
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
@@ -2964,7 +2977,7 @@ private fun InsightRow(insight: StatsInsight) {
         ) {
             Text(
                 text = insight.title,
-                style = MaterialTheme.typography.titleMediumEmphasized,
+                style = MaterialTheme.typography.titleMedium,
                 color = contentColor
             )
             Text(

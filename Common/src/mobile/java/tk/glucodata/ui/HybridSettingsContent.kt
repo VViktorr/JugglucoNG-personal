@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -147,7 +150,7 @@ internal fun HybridSettingsContent(
                 title = stringResource(R.string.clone_network_title),
                 onNavigateBack = onBack,
                 actions = {
-                    IconButton(onClick = { showHelp = true }) {
+                    IconButton(onClick = { showHelp = true }, shapes = appIconButtonShapes()) {
                         Icon(Icons.Default.HelpOutline, stringResource(R.string.help))
                     }
                 },
@@ -222,7 +225,7 @@ internal fun HybridSettingsContent(
                     Modifier.verticalScroll(rememberScrollState()),
                 )
             },
-            confirmButton = { TextButton(onClick = { showHelp = false }) { Text(stringResource(R.string.ok)) } },
+            confirmButton = { TextButton(onClick = { showHelp = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.ok)) } },
         )
     }
 }
@@ -240,7 +243,7 @@ private fun ApplyRow(visible: Boolean, onApply: () -> Unit) {
         exit = shrinkVertically() + fadeOut(),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            Button(onClick = onApply) {
+            Button(onClick = onApply, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                 Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.clone_apply))
@@ -357,7 +360,7 @@ private fun TurnServerSetting(
             isError = !draft.turnPasswordValid,
             visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                IconButton(onClick = { visible = !visible }) {
+                IconButton(onClick = { visible = !visible }, shapes = appIconButtonShapes()) {
                     Icon(
                         if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                         stringResource(if (visible) R.string.hide_password else R.string.show_password),

@@ -126,6 +126,9 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     /** Opt in only for drivers whose silent connect failure is covered by this deadline. */
     protected long connectionAttemptTimeoutMillis() { return 0L; }
 
+    /** Let an opted-in driver adjust its retry policy after a silent connect attempt. */
+    protected void onConnectionAttemptTimeout() { }
+
     protected final void watchConnectionAttempt(BluetoothGatt attempt) {
         synchronized (this) {
             if (mBluetoothGatt != attempt || retired || stop) return;
@@ -140,6 +143,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
                 || CloneSensorRegistry.isCloneSensor(SerialNumber)
                 || SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)) return;
         Log.i(LOG_ID, SerialNumber + " no connection result before deadline; retrying");
+        onConnectionAttemptTimeout();
         closeGattTransport();
         connectDevice(0);
     }
@@ -536,6 +540,12 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
      */
     public static void processExternalCurrentReading(String sensorSerial, LiveReadingLanes reading, float rate,
             long timmsec, int sensorgen) {
+        processExternalCurrentReading(sensorSerial, reading, rate, timmsec, sensorgen, 0L);
+    }
+
+    /** Managed drivers with a known activation preserve it for the exchange feeds. */
+    public static void processExternalCurrentReading(String sensorSerial, LiveReadingLanes reading, float rate,
+            long timmsec, int sensorgen, long sensorStartMs) {
         if (reading == null || !reading.getHasValue() || timmsec <= 0L) {
             return;
         }
@@ -569,7 +579,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         }
         final int mgdlValue = Math.round(glucoseValue * (Applic.unit == 1 ? mgdLmult : 1.0f));
         dowithglucose(resolvedSensorSerial, mgdlValue, glucoseValue, rate, 0, timmsec,
-                0L, Notify.glucosetimeout, sensorgen, reading);
+                sensorStartMs, Notify.glucosetimeout, sensorgen, reading);
     }
 
     private static float stockPrimaryValue(LiveReadingLanes reading) {
@@ -1028,6 +1038,14 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         }
         var health = HealthConnectAccess.get();
         if (health != null) health.writeAll(sensorptr, SerialNumber);
+    }
+
+    /** Finish the accepted live path for a managed driver that publishes explicit lanes. */
+    protected final void completeManagedLiveReading(long timestampMs) {
+        markLocalReadingAccepted(timestampMs);
+        charcha[0] = timestampMs;
+        exportToHealthConnect();
+        SensorBluetooth.othersworking(this, timestampMs);
     }
 
     protected void handleGlucoseResult(long res, long timmsec) {

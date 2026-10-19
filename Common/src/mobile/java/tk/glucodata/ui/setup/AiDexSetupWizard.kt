@@ -1,5 +1,7 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
@@ -291,7 +293,7 @@ fun AiDexScanStep(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         tk.glucodata.ui.CgmReadinessSetupBanner(
             modifier = Modifier.padding(horizontal = ui.horizontalPadding, vertical = ui.spacerMedium),
             onOpenReadiness = onNavigateToReadiness
@@ -309,7 +311,9 @@ fun AiDexScanStep(
                 style = MaterialTheme.typography.titleMedium
             )
             TextButton(
-                onClick = { showAllDevices = !showAllDevices }
+                onClick = { showAllDevices = !showAllDevices },
+                shapes = appButtonShapes(),
+                contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(
                     if (showAllDevices) {
@@ -360,7 +364,9 @@ fun AiDexScanStep(
                                 }
                             }
                         },
-                        modifier = Modifier.height(ui.buttonHeight)
+                        modifier = Modifier.height(ui.buttonHeight),
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(stringResource(buttonRes))
                     }

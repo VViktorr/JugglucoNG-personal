@@ -1,5 +1,8 @@
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -79,7 +82,6 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -1631,13 +1633,12 @@ private fun MetricSheetRow(
     ) {
         Text(
             text = spec.title,
-            style = MaterialTheme.typography.titleSmall,
+            style = if (selected) MaterialTheme.typography.titleSmallEmphasized else MaterialTheme.typography.titleSmall,
             color = if (selected) {
                 MaterialTheme.colorScheme.onSurface
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             },
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -1650,21 +1651,24 @@ private fun MetricSheetRow(
             color = spec.tone.copy(alpha = if (selected) 1f else 0.55f),
             maxLines = 1
         )
-        IconButton(
-            onClick = onTogglePinned,
-            enabled = pinEnabled,
-            modifier = Modifier.size(38.dp)
-        ) {
-            Icon(
-                imageVector = if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
-                contentDescription = stringResource(R.string.stats_arrange_pin),
-                tint = when {
-                    pinned -> MaterialTheme.colorScheme.primary
-                    pinEnabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
-                },
-                modifier = Modifier.size(20.dp)
-            )
+        IconButtonTooltip(stringResource(R.string.stats_arrange_pin)) {
+            IconButton(
+                onClick = onTogglePinned,
+                enabled = pinEnabled,
+                modifier = Modifier.size(38.dp),
+                shapes = appIconButtonShapes()
+            ) {
+                Icon(
+                    imageVector = if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                    contentDescription = stringResource(R.string.stats_arrange_pin),
+                    tint = when {
+                        pinned -> MaterialTheme.colorScheme.primary
+                        pinEnabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                    },
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

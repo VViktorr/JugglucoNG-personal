@@ -19,7 +19,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import tk.glucodata.R
 import tk.glucodata.alerts.AlertConfig
@@ -30,16 +29,14 @@ import tk.glucodata.alerts.MIN_ALERT_DURATION_SECONDS
 import tk.glucodata.alerts.HapticProfile
 import tk.glucodata.alerts.maxSoundDelaySecondsFor
 import tk.glucodata.ui.components.StyledSwitch
-import tk.glucodata.ui.util.ConnectedButtonGroup
 
 /**
  * The body every alert shares: master, standard and custom.
  *
  * What most people set sits first and needs no label to be read - the three
- * feedback toggles, the intensity under them, the notification/alarm choice,
- * the duration, the sound. Everything a typical user never touches is under
- * one collapsed "Advanced" row: silent-mode override, delayed sound, active
- * hours, retries, the default snooze, and whatever the alert adds through
+ * feedback toggles and the sound choice. Overall intensity, sound volume,
+ * notification/alarm choice and duration sit under one collapsed "Advanced" row,
+ * alongside delayed sound, retries, the default snooze, and whatever the alert adds through
  * [advancedContent].
  */
 @Composable
@@ -80,7 +77,8 @@ fun CommonAlertSettings(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = sectionHorizontalPadding),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                contentPadding = PaddingValues(vertical = 8.dp),
+                shapes = alertButtonShapes()
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
@@ -88,7 +86,7 @@ fun CommonAlertSettings(
             }
         }
 
-        // === Feedback: sound / vibrate / flash, and how hard ===
+        // === Feedback: sound / vibrate / flash ===
         // The buttons say what they are; a label over them repeated them.
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -106,7 +104,7 @@ fun CommonAlertSettings(
                 "Flash" to stringResource(R.string.flash)
             )
 
-            ConnectedButtonGroup(
+            AlertOptionButtonGroup(
                 options = modes,
                 selectedOptions = selectedModes,
                 multiSelect = true,
@@ -137,10 +135,6 @@ fun CommonAlertSettings(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), // Transparent-ish on PrimaryContainer
-                unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
 
@@ -216,12 +210,18 @@ fun CommonAlertSettings(
             // still claim its 16dp gap and leave a blank band under the card.
             AnimatedVisibility(visible = advancedExpanded) {
                 Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // === Intensity: soft to escalating ===
+                    // === Overall alert intensity ===
                     AnimatedVisibility(visible = config.soundEnabled || config.vibrationEnabled) {
                         Column(modifier = Modifier.padding(horizontal = sectionHorizontalPadding)) {
                             run {
                                 val hapticProfileLabels = HapticProfile.entries.associateWith { it.localizedName() }
-                                ConnectedButtonGroup(
+                                Text(
+                                    text = stringResource(R.string.alert_profile_label),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                AlertOptionButtonGroup(
                                     options = listOf(
                                         HapticProfile.SOFT,
                                         HapticProfile.STEADY,
@@ -234,29 +234,39 @@ fun CommonAlertSettings(
                                     label = { Text(hapticProfileLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelMedium) },
                                     modifier = Modifier.fillMaxWidth(),
                                     itemHeight = 36.dp,
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    selectedContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                                    unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
                     }
 
+                    AnimatedVisibility(visible = config.soundEnabled) {
+                        DurationSlider(
+                            label = stringResource(R.string.alert_sound_volume),
+                            value = config.soundVolumePercent,
+                            range = tk.glucodata.alerts.AlertSoundVolume.MIN_PERCENT..tk.glucodata.alerts.AlertSoundVolume.MAX_PERCENT,
+                            stepSize = 5,
+                            onValueChange = { onConfigChange(config.copy(soundVolumePercent = it)) },
+                            modifier = Modifier.padding(horizontal = sectionHorizontalPadding),
+                            valueText = { "$it%" }
+                        )
+                    }
+
                     // === Notification / alarm / both ===
                     Column(modifier = Modifier.padding(horizontal = sectionHorizontalPadding)) {
                         val deliveryModeLabels = AlertDeliveryMode.entries.associateWith { it.localizedName() }
-                        ConnectedButtonGroup(
+                        Text(
+                            text = stringResource(R.string.alert_delivery_method_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        AlertOptionButtonGroup(
                             options = AlertDeliveryMode.entries,
                             selectedOption = config.deliveryMode,
                             onOptionSelected = { onConfigChange(config.copy(deliveryMode = it)) },
                             labelText = { deliveryModeLabels[it] ?: it.displayName },
                             label = { Text(deliveryModeLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelLarge) },
                             modifier = Modifier.fillMaxWidth(),
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                            unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
 
@@ -363,7 +373,8 @@ fun CommonAlertSettings(
                             .fillMaxWidth()
                             .padding(horizontal = sectionHorizontalPadding)
                             .padding(bottom = 16.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp)
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        shapes = alertButtonShapes()
                     ) {
                         Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))

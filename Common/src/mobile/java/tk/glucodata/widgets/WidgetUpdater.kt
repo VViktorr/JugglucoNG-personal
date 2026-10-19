@@ -38,11 +38,12 @@ object WidgetUpdater {
     fun requestUpdateAll(context:Context,done:(()->Unit)?=null){
         done?.let(pendingCallbacks::add)
         val app=context.applicationContext
-        if(!pending.compareAndSet(false,true)) {
-            // A glucose update that arrives while bitmaps are being rendered must not be
-            // dropped. Remember it and run one more pass with the newest snapshot.
-            rerunRequested.set(true)
-            return
+        synchronized(pending) {
+            if(!pending.compareAndSet(false,true)) {
+                // Record the rerun before the renderer can release its active state.
+                rerunRequested.set(true)
+                return
+            }
         }
         executor.execute {
             try {
@@ -52,8 +53,10 @@ object WidgetUpdater {
                 if(targets.isNotEmpty()) render(app,manager,targets)
             } catch(t:Throwable){ Log.stack(LOG_ID,"requestUpdateAll",t) }
             finally {
-                val rerun=rerunRequested.getAndSet(false)
-                pending.set(false)
+                val rerun=synchronized(pending) {
+                    pending.set(false)
+                    rerunRequested.getAndSet(false)
+                }
                 while(true){
                     val callback=pendingCallbacks.poll() ?: break
                     try { callback() } catch(_:Throwable) {}
@@ -107,74 +110,17 @@ object WidgetUpdater {
             ids.forEach { id ->
                 try {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
-                        RemoteViews(
-                            context.packageName,
-                            if (kind == WidgetKind.CLOCK_WEATHER) {
-                                when {
-                                    config.mainFontFamily == WidgetFontFamily.IBM_PLEX && config.detailFontFamily == WidgetFontFamily.IBM_PLEX ->
-                                        R.layout.home_widget_clock_weather_ibm
-                                    config.mainFontFamily == WidgetFontFamily.SYSTEM && config.detailFontFamily == WidgetFontFamily.IBM_PLEX ->
-                                        R.layout.home_widget_clock_weather_system_main_ibm_detail
-                                    config.mainFontFamily == WidgetFontFamily.IBM_PLEX && config.detailFontFamily == WidgetFontFamily.SYSTEM ->
-                                        R.layout.home_widget_clock_weather_ibm_main_system_detail
-                                    else -> R.layout.home_widget_clock_weather
-                                }
-                            } else {
-                                R.layout.home_widget
+                        val views = if (kind == WidgetKind.CLOCK_WEATHER) {
+                            ClockWeatherWidgetViews.create(context, config, snapshot, w, h, px, weather)
+                        } else {
+                            RemoteViews(context.packageName, R.layout.home_widget).apply {
+                                setImageViewBitmap(R.id.home_widget_image,
+                                    renderer.render(kind, config, snapshot, w, h, px, weather))
+                                setContentDescription(R.id.home_widget_image, description)
                             }
-                        ).apply{
-                            if(kind==WidgetKind.CLOCK_WEATHER){
-                                val clockSize=min(w*0.145f,h*0.46f)*config.glucoseScale/100f
-                                val dateSize=min(w*0.042f,h*0.19f)*config.detailScale/100f
-                                val textColor=if((context.resources.configuration.uiMode and 0x30)==0x20 || config.background==WidgetBackground.RANGE) android.graphics.Color.WHITE else 0xFF1D1B20.toInt()
-                                // Predefined TextClock variants retain system time updates.
-                                // RemoteViews visibility, size and color are supported operations.
-                                val weights = intArrayOf(300, 400, 500, 600, 700)
-                                val clockIds = intArrayOf(R.id.home_widget_clock_300, R.id.home_widget_clock_400, R.id.home_widget_clock_500, R.id.home_widget_clock_600, R.id.home_widget_clock_700)
-                                val dateIds = intArrayOf(R.id.home_widget_date_300, R.id.home_widget_date_400, R.id.home_widget_date_500, R.id.home_widget_date_600, R.id.home_widget_date_700)
-                                val glucoseIds = intArrayOf(R.id.home_widget_glucose_300, R.id.home_widget_glucose_400, R.id.home_widget_glucose_500, R.id.home_widget_glucose_600, R.id.home_widget_glucose_700)
-                                val detailIds = intArrayOf(R.id.home_widget_detail_300, R.id.home_widget_detail_400, R.id.home_widget_detail_500, R.id.home_widget_detail_600, R.id.home_widget_detail_700)
-                                val detailText = if (!snapshot.hasFreshReading) snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue) else buildList {
-                                    if (config.showDelta) snapshot.delta?.let { add(renderer.deltaText(it, snapshot.isMmol)) }
-                                    if (config.showUnit) add(snapshot.unitText)
-                                    if (config.showTime) snapshot.current?.let { add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis))) }
-                                }.joinToString("  ")
-                                val glucoseText = if (snapshot.hasFreshReading) snapshot.valueText else "—"
-                                val glucoseColor = if (snapshot.hasFreshReading) renderer.glucoseTextColor(snapshot, config) else textColor
-                                weights.indices.forEach { index ->
-                                    val clockId = clockIds[index]
-                                    val dateId = dateIds[index]
-                                    val detailId = detailIds[index]
-                                    val glucoseId = glucoseIds[index]
-                                    setViewVisibility(clockId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                                    setViewVisibility(glucoseId, if (weights[index] == config.primaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                                    setTextViewText(glucoseId, glucoseText)
-                                    setTextViewTextSize(glucoseId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
-                                    setTextColor(glucoseId, glucoseColor)
-                                    setViewVisibility(dateId, if (config.showDate && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                                    setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
-                                    setTextColor(clockId, textColor)
-                                    setViewVisibility(detailId, if (detailText.isNotBlank() && weights[index] == config.secondaryFontWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                                    setTextViewText(detailId, detailText)
-                                    val staleStatus = !snapshot.hasFreshReading
-                                    setInt(detailId, "setMaxLines", if (staleStatus) 3 else 1)
-                                    // Keep the wrapped status in its own half beside the date.
-                                    val density = context.resources.displayMetrics.density
-                                    val halfWidth = (w * 0.48f * density).roundToInt()
-                                    setViewPadding(detailId, if (staleStatus && config.showDate) halfWidth else 0,
-                                        0, (12f * density).roundToInt(), 0)
-                                    setViewPadding(dateId, (14f * density).roundToInt(), 0,
-                                        if (staleStatus) halfWidth else 0, 0)
-                                    val detailSize = if (staleStatus) min(dateSize, h * 0.42f / 3.6f) else dateSize
-                                    setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, detailSize)
-                                    setTextColor(detailId, textColor)
-                                    setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
-                                    setTextColor(dateId, textColor)
-                                }
-                            }
-                            setImageViewBitmap(R.id.home_widget_image,renderer.render(kind,config,snapshot,w,h,px,weather))
-                            setContentDescription(R.id.home_widget_image,description)
-                            setOnClickPendingIntent(R.id.home_widget_root,openAppIntent(context,id))
+                        }
+                        views.apply {
+                            setOnClickPendingIntent(R.id.home_widget_root, openAppIntent(context, id))
                         }
                     })
                 } catch(t:Throwable){ Log.stack(LOG_ID,"render $kind $id",t) }
@@ -245,3 +191,4 @@ object WidgetUpdater {
         return PendingIntent.getActivity(context,id,Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),flags)
     }
 }
+

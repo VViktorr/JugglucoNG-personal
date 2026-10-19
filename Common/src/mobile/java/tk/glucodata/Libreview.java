@@ -637,7 +637,7 @@ static boolean postmeasurements(boolean libre3,byte[] measurementdata) {
                   " host="+host+
                   " "+libreViewNetworkState());
          }
-
+ 
          stage = "open";
          urlConnection = openLibreViewConnection(url);
          urlConnection.setConnectTimeout(10000);
@@ -1258,8 +1258,3 @@ public static void  config(MainActivity act, View settingsview,CheckBox sendto,b
 
 
 }
-
-
-
-
-

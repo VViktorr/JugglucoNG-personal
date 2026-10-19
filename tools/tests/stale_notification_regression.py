@@ -75,4 +75,3 @@ with tempfile.TemporaryDirectory() as tmp:
     p.write_text(java.replace("// METHOD", method))
     subprocess.run(["javac", str(p)], check=True)
     subprocess.run(["java", "-cp", tmp, "StaleNotificationHarness"], check=True)
-

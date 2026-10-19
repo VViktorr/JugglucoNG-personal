@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -400,7 +403,12 @@ fun ExpressiveSettingsScreen(
             if (dataSmoothingExchangeOnly) {
                 add(stringResource(R.string.data_smoothing_exchange_only_title))
             } else if (dataSmoothingGraphOnly) {
-                add(stringResource(R.string.data_smoothing_graph_only_title))
+                add(stringResource(
+                    if (dataSmoothingCollapseChunks) R.string.data_smoothing_scope_graph_and_sent
+                    else R.string.data_smoothing_graph_only_title
+                ))
+            } else {
+                add(stringResource(R.string.data_smoothing_scope_all))
             }
             if (dataSmoothingCollapseChunks) {
                 add(stringResource(R.string.data_smoothing_collapse_summary_format, collapseIntervalMinutes))
@@ -520,7 +528,7 @@ fun ExpressiveSettingsScreen(
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (settingsQuery.isNotEmpty()) {
-                        IconButton(onClick = { settingsQuery = "" }) {
+                        IconButton(onClick = { settingsQuery = "" }, shapes = appIconButtonShapes()) {
                             Icon(Icons.Default.Close, contentDescription = stringResource(R.string.settings_search_clear))
                         }
                     }
@@ -886,7 +894,7 @@ fun ExpressiveSettingsScreen(
                     title = stringResource(R.string.xdripbroadcast),
                     subtitle = stringResource(R.string.patchedlibrebroadcast),
                     checked = patchedLibreEnabled,
-                    icon = Icons.Default.Share, 
+                    icon = Icons.Default.Share,
                     iconTint = exchangeColor,
                     position = CardPosition.SINGLE,
                     onCheckedChange = { viewModel.togglePatchedLibreBroadcast(it) }
@@ -899,7 +907,7 @@ fun ExpressiveSettingsScreen(
                     title = stringResource(R.string.xdrip_compatible_title),
                     subtitle = stringResource(R.string.xdrip_compatible_desc),
                     checked = xdripEnabled,
-                    icon = Icons.Default.Radio, 
+                    icon = Icons.Default.Radio,
                     iconTint = exchangeColor,
                     position = CardPosition.SINGLE,
                     onCheckedChange = { viewModel.toggleXDripBroadcast(it) }
@@ -1623,7 +1631,7 @@ private fun UnitPickerDialog(isMmol: Boolean, onSelect: (Int) -> Unit, onDismiss
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1663,7 +1671,7 @@ private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1718,7 +1726,7 @@ private fun SensorHandoverActionPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1774,7 +1782,7 @@ internal fun PreviewWindowPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1844,7 +1852,7 @@ private fun LanguagePickerDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1868,10 +1876,12 @@ private fun ConfirmActionDialog(
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                colors = if (isDestructive) ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.textButtonColors()
+                colors = if (isDestructive) ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.textButtonColors(),
+                shapes = appButtonShapes(),
+                contentPadding = ButtonDefaults.TextButtonContentPadding
             ) { Text(if (isDestructive) stringResource(R.string.delete) else stringResource(R.string.ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+        dismissButton = { TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
     )
 }
 

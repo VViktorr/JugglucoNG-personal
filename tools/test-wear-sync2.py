@@ -121,6 +121,11 @@ object WearSync2 {
     private const val VERSION = 1
     private const val doLog = false
     private object executor { fun execute(action: () -> Unit) = action() }
+    // Deterministic scheduler boundary; the actual coalescing policy is compiled below.
+    private val syncedUiRefresh = LeadingTrailingRefresh(
+        1_000L, { 0L }, { _, _ -> LeadingTrailingRefresh.Cancellation {} },
+        { UiRefreshBus.requestDataRefresh() },
+    )
     var enabled = true
     var removed = false
     var exchangedAt = 0L
@@ -239,7 +244,11 @@ with tempfile.TemporaryDirectory(prefix='wear-sync2-test-') as directory:
     temp = Path(directory)
     (temp / 'Replay.kt').write_text(kotlin)
     subprocess.run([
-        'kotlinc', str(temp / 'Replay.kt'), '-nowarn', '-include-runtime',
+        'kotlinc', str(temp / 'Replay.kt'),
+        str(root / 'Common/src/main/java/tk/glucodata/LeadingTrailingRefresh.kt'),
+        str(root / 'Common/src/main/java/tk/glucodata/WearHistoryLanes.kt'),
+        str(root / 'Common/src/main/java/tk/glucodata/GlucoseValuePlausibility.kt'),
+        '-nowarn', '-include-runtime',
         '-d', str(temp / 'replay.jar'),
     ], check=True)
     for scenario in scenarios:

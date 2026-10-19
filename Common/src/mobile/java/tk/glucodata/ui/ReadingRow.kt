@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
+import androidx.compose.material3.ButtonDefaults
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -55,7 +58,6 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -232,9 +234,8 @@ fun ReadingRow(
             }
             val leadingActionSlotWidth = 44.dp
             val trendSlotWidth = 30.dp
-            val timeStyle = MaterialTheme.typography.bodySmall
+            val timeStyle = if (isActive) MaterialTheme.typography.bodySmallEmphasized else MaterialTheme.typography.bodySmall
             val timeColor = if (isActive) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-            val timeWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
             val cloneTransport = GlucoseReadingSource.cloneTransport(point.source)
             val isNightscoutSource = point.source == GlucoseReadingSource.NIGHTSCOUT
             val isRawModeRR = viewMode == 1 || viewMode == 3
@@ -281,7 +282,6 @@ fun ReadingRow(
                     Text(
                         text = tk.glucodata.MinuteTimeFormat.format(point.timestamp),
                         style = timeStyle,
-                        fontWeight = timeWeight,
                         color = timeColor
                     )
                     if (cloneTransport != null) {
@@ -314,7 +314,9 @@ fun ReadingRow(
                         Text(
                             text = deltaText,
                             style = timeStyle.copy(fontFeatureSettings = "tnum"),
-                            color = tertiaryColor
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                alpha = if (isActive) 0.65f else 0.5f
+                            )
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -666,13 +668,15 @@ fun ReadingRow(
                     onClick = {
                         onDeleteReading(point)
                         showDeleteDialog = false
-                    }
+                    },
+                    shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(text = stringResource(R.string.delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(onClick = { showDeleteDialog = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(text = stringResource(R.string.cancel))
                 }
             }

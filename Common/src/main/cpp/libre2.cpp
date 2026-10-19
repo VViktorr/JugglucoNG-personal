@@ -1640,4 +1640,3 @@ void closedynlib(void) {
 extern "C" JNIEXPORT void  JNICALL   fromjava(closedynlib)(JNIEnv *env, jclass _cl) {
      closedynlib() ;
     }
-

@@ -496,8 +496,10 @@ object WearSync2 {
                     if (doLog) Log.i(LOG_ID, "ignored chunk for $serial: this device is reading it")
                     return@execute
                 }
-                // Phone Libre 2 history belongs in Room; minute-based native imports
-                // must not alter Abbott's BLE cursor or seed authentication state.
+                // Libre 2's Abbott BLE IDs are not elapsed minutes. Importing
+                // minute-derived IDs into its phone polls advances the live BLE
+                // cursor and rejects real readings when ownership returns.
+                // The phone keeps synced data in Room; Wear needs native history.
                 val mirrorNative = Applic.isWearable || !isLibre2NativeSensor(serial)
                 var written = 0
                 var earliest = 0L

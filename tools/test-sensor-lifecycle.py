@@ -189,6 +189,7 @@ struct SensorGlucoseData {ScanData poll;int streaminterval()const{return 1;}cons
 struct Info {int current=0;};
 struct Sensoren {Info info;SensorGlucoseData hist[2];Info*infoblockptr(){return &info;}SensorGlucoseData*getSensorData(int i){return &hist[i];}};
 Sensoren store;Sensoren*sensors=&store;std::vector<int>usedsensors{0,1};
+std::vector<int> usedsensorssnapshot(){return usedsensors;}
 void keepnet(uint32_t t,uint32_t now,int mins){}
 uint32_t fakeNow=1800000000;
 #define time(x) fakeNow

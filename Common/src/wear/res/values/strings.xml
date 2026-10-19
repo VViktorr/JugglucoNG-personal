@@ -49,6 +49,7 @@
     <string name="wear_sensor_forget">Forget sensor</string>
     <string name="wear_multi_sensor_complication">Multi-sensor values (text / image)</string>
     <string name="wear_multi_sensor_arrow_complication">Multi-sensor values + arrows (text / image)</string>
+
     <string name="wear_arrow_above_value_label">Arrow above value (text)</string>
     <string name="wear_arrow_above_value_description">Trend arrow in the title, glucose in the main text. The watch face must display titles; their position depends on the face.</string>
 </resources>

@@ -1,5 +1,7 @@
 package tk.glucodata.ui.alerts
 
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.ButtonDefaults
 import android.app.StatusBarManager
 import android.content.ComponentName
 import android.graphics.drawable.Icon
@@ -55,7 +57,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
 import java.util.Date
@@ -66,7 +67,6 @@ import tk.glucodata.R
 import tk.glucodata.alerts.QuietWindow
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.cardShape
-import tk.glucodata.ui.util.ConnectedButtonGroup
 
 /**
  * The start presets, in minutes: a film or a lecture (30 min to 3 h), a night
@@ -122,7 +122,6 @@ fun QuietWindowCard(
                     Text(
                         text = stringResource(R.string.quiet_window_title),
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -157,7 +156,9 @@ fun QuietWindowCard(
                     if (state.active) {
                         Button(
                             onClick = { QuietWindow.end(context) },
-                            modifier = inset.fillMaxWidth().heightIn(min = 56.dp)
+                            modifier = inset.fillMaxWidth().heightIn(min = 56.dp),
+                            shapes = alertButtonShapes(),
+                            contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Text(stringResource(R.string.quiet_window_end_now))
                         }
@@ -181,7 +182,9 @@ fun QuietWindowCard(
                                 pair.forEach { (label, start) ->
                                     FilledTonalButton(
                                         onClick = start,
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.weight(1f),
+                                        shapes = alertButtonShapes(),
+                                        contentPadding = ButtonDefaults.ContentPadding
                                     ) {
                                         Text(label)
                                     }
@@ -196,7 +199,7 @@ fun QuietWindowCard(
                             AlertDeliveryPolicy.QUIET_VIBRATE_ONLY to stringResource(R.string.quiet_window_mode_vibrate_only),
                             AlertDeliveryPolicy.QUIET_NOTIFICATION_ONLY to stringResource(R.string.quiet_window_mode_notification_only)
                         )
-                        ConnectedButtonGroup(
+                        AlertOptionButtonGroup(
                             options = listOf(AlertDeliveryPolicy.QUIET_VIBRATE_ONLY, AlertDeliveryPolicy.QUIET_NOTIFICATION_ONLY),
                             selectedOption = state.mode,
                             onOptionSelected = { QuietWindow.setMode(context, it) },
@@ -231,7 +234,7 @@ fun QuietWindowCard(
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
             title = { Text(stringResource(R.string.quiet_window_select_end_time)) },
-            text = { TimePicker(state = timePickerState, modifier = Modifier.fillMaxWidth()) },
+            text = { TimePicker(state = timePickerState, modifier = Modifier.fillMaxWidth(), shapes = TimePickerDefaults.shapes(), colors = TimePickerDefaults.colors()) },
             confirmButton = {
                 TextButton(onClick = {
                     val nowMs = System.currentTimeMillis()
@@ -242,12 +245,14 @@ fun QuietWindowCard(
                         nowMs = nowMs
                     )
                     showTimePicker = false
-                }) {
+                },
+                                        shapes = alertButtonShapes(),
+                contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
+                TextButton(onClick = { showTimePicker = false }, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -300,7 +305,7 @@ private fun QuietWindowAdvanced() {
                     AlertDeliveryPolicy.BREAKTHROUGH_ALL to stringResource(R.string.quiet_window_breakthrough_scope_all),
                     AlertDeliveryPolicy.BREAKTHROUGH_VERY_ONLY to stringResource(R.string.quiet_window_breakthrough_scope_very)
                 )
-                ConnectedButtonGroup(
+                AlertOptionButtonGroup(
                     options = listOf(AlertDeliveryPolicy.BREAKTHROUGH_ALL, AlertDeliveryPolicy.BREAKTHROUGH_VERY_ONLY),
                     selectedOption = breakthroughScope,
                     onOptionSelected = {
@@ -328,7 +333,7 @@ private fun QuietWindowAdvanced() {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                ConnectedButtonGroup(
+                AlertOptionButtonGroup(
                     options = QuietWindow.PRESET_MINUTES,
                     selectedOption = defaultMinutes,
                     onOptionSelected = {
@@ -345,7 +350,9 @@ private fun QuietWindowAdvanced() {
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = { requestAddQuietWindowTile(context) },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        shapes = alertButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(Icons.Default.AddCircleOutline, contentDescription = null)
                         Spacer(Modifier.width(8.dp))

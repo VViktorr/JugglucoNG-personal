@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -213,6 +216,8 @@ fun MQAccountSettingsContent(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasCredentials && !isBusy,
+                shapes = appButtonShapes(),
+                contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(signInLabel)
             }
@@ -250,6 +255,8 @@ fun MQAccountSettingsContent(
                         },
                         modifier = Modifier.weight(1f),
                         enabled = hasAuthToken && !isBusy,
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(checkSessionLabel) }
 
                     OutlinedButton(
@@ -275,6 +282,8 @@ fun MQAccountSettingsContent(
                         },
                         modifier = Modifier.weight(1f),
                         enabled = (hasAuthToken || hasCredentials) && !isBusy,
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(signOutLabel) }
                 }
             }
@@ -362,6 +371,8 @@ fun MQAccountSettingsContent(
                             },
                             modifier = Modifier.weight(1f),
                             enabled = phone.isNotBlank() && !isBusy,
+                            shapes = appButtonShapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(requestLoginCodeLabel) }
 
                         OutlinedButton(
@@ -381,6 +392,8 @@ fun MQAccountSettingsContent(
                             },
                             modifier = Modifier.weight(1f),
                             enabled = phone.isNotBlank() && !isBusy,
+                            shapes = appButtonShapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(requestSignupCodeLabel) }
                     }
 
@@ -401,6 +414,8 @@ fun MQAccountSettingsContent(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = phone.isNotBlank() && !isBusy,
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(requestResetCodeLabel) }
 
                     FilledTonalButton(
@@ -424,6 +439,8 @@ fun MQAccountSettingsContent(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = phone.isNotBlank() && hasVerificationCode && !isBusy,
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(signInWithCodeLabel) }
 
                     Row(
@@ -452,6 +469,8 @@ fun MQAccountSettingsContent(
                             },
                             modifier = Modifier.weight(1f),
                             enabled = phone.isNotBlank() && hasVerificationCode && password.isNotBlank() && !isBusy,
+                            shapes = appButtonShapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(createAccountLabel) }
 
                         OutlinedButton(
@@ -472,6 +491,8 @@ fun MQAccountSettingsContent(
                             },
                             modifier = Modifier.weight(1f),
                             enabled = phone.isNotBlank() && hasVerificationCode && password.isNotBlank() && !isBusy,
+                            shapes = appButtonShapes(),
+                            contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(resetPasswordLabel) }
                     }
                 }

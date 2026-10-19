@@ -315,5 +315,3 @@ static    private byte[] readoncedata(NfcV nfc, byte[] uid,int start, int len) {
     }
 
 }
-
-

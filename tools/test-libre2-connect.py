@@ -37,6 +37,7 @@ base_methods = '\n'.join(method(base, signature) for signature in [
     'public final synchronized void closeGattTransport(', 'public synchronized void disconnect(',
     'public synchronized void setPause(', 'public void onConnectionStateChange(',
     'public void close()', 'protected boolean useAutoConnect(',
+    'protected void onConnectionAttemptTimeout(',
 ])
 libre_methods = '\n'.join(method(libre, signature) for signature in [
     'protected boolean useAutoConnect(', 'protected long connectionAttemptTimeoutMillis(',
@@ -183,6 +184,7 @@ java += r'''
     BluetoothGattCharacteristic BLELogincharacteristic, CompositeRawDatacharacteristic, characteristic;
     static UUID mADCCustomServiceUUID=UUID.randomUUID(), mCharacteristicConfigDescriptor=UUID.randomUUID();
     static UUID mCharacteristicUUID_CompositeRawData=BluetoothGattCharacteristic.RAW, mCharacteristicUUID_BLELogin=UUID.randomUUID();
+    String bluetoothAdapterState(){return "ON";}
     boolean m2831x(){logins++;return true;}
     void writeBLELogin(){logins++;}
     void phase2(byte[] value){logins++;} void phase3(byte[] value){logins++;}
@@ -380,4 +382,3 @@ with tempfile.TemporaryDirectory(prefix='libre2-connect-') as directory:
                     str(directory / 'BluetoothProfile.java'), str(directory / 'SystemClock.java'), str(directory / 'TestClock.java'),
                     str(root / 'Common/src/main/java/tk/glucodata/GattConnectDeadline.java')], check=True)
     subprocess.run(['java', '-cp', str(directory), 'tk.glucodata.Libre2GattCallback'], check=True)
-

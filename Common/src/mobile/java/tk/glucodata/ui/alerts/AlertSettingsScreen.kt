@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,7 +64,6 @@ import tk.glucodata.ui.components.StyledSwitch
 import tk.glucodata.ui.components.CardPosition as SettingsItemPosition
 import tk.glucodata.ui.theme.displayLargeExpressive
 import tk.glucodata.ui.theme.labelLargeExpressive
-import tk.glucodata.ui.util.ConnectedButtonGroup
 import tk.glucodata.logic.CustomAlertManager
 import kotlinx.coroutines.delay
 
@@ -168,8 +166,8 @@ fun AlertSettingsScreen(
     // Track expanded states
     var expandedType by remember { mutableStateOf<AlertType?>(null) }
     var showPreemptiveSnooze by remember { mutableStateOf(false) }
-    // Track sound picker state (Generic: Current URI + AlertTypeId + Callback)
-    var soundPickerRequest by remember { mutableStateOf<Triple<String?, Int, (String?) -> Unit>?>(null) }
+    // Preview with the same gain and stream as the alert.
+    var soundPickerRequest by remember { mutableStateOf<AlertSoundPickerRequest?>(null) }
     var sameDirectionSuppressionMinutes by remember {
         mutableStateOf(AlertRepository.loadSameDirectionSuppressionMinutes())
     }
@@ -215,6 +213,7 @@ fun AlertSettingsScreen(
                         configs.values.toList().forEach { config ->
                             val updated = config.copy(
                                 soundEnabled = draft.soundEnabled,
+                                soundVolumePercent = draft.soundVolumePercent,
                                 vibrationEnabled = draft.vibrationEnabled,
                                 flashEnabled = draft.flashEnabled,
                                 deliveryMode = draft.deliveryMode,
@@ -241,6 +240,7 @@ fun AlertSettingsScreen(
                         val updatedCustomAlerts = customAlerts.map { alert ->
                             alert.copy(
                                 sound = draft.soundEnabled,
+                                soundVolumePercent = draft.soundVolumePercent,
                                 vibrate = draft.vibrationEnabled,
                                 flash = draft.flashEnabled,
                                 style = when (draft.deliveryMode) {
@@ -266,7 +266,7 @@ fun AlertSettingsScreen(
                         saveCustomAlerts(updatedCustomAlerts)
                     },
                     onPickSound = { draft, updateDraft ->
-                        soundPickerRequest = Triple(draft.customSoundUri, draft.type.id) { uri ->
+                        soundPickerRequest = draft.soundPickerRequest { uri ->
                             updateDraft(draft.copy(customSoundUri = uri))
                             soundPickerRequest = null
                         }
@@ -315,7 +315,7 @@ fun AlertSettingsScreen(
                         persistConfigIfChanged(updated)
                     },
                     onPickSound = {
-                        soundPickerRequest = Triple(config.customSoundUri, config.type.id) { uri ->
+                        soundPickerRequest = config.soundPickerRequest { uri ->
                             persistConfigIfChanged(config.copy(customSoundUri = uri))
                             soundPickerRequest = null
                         }
@@ -347,7 +347,7 @@ fun AlertSettingsScreen(
                             removeCustomAlert(alert.id)
                         },
                         onPickSound = { config ->
-                            soundPickerRequest = Triple(config.soundUri, if (config.type == CustomAlertType.HIGH) 1 else 0) { uri ->
+                            soundPickerRequest = config.soundPickerRequest { uri ->
                                 val updated = config.copy(soundUri = uri)
                                 upsertCustomAlert(updated)
                                 soundPickerRequest = null
@@ -392,7 +392,7 @@ fun AlertSettingsScreen(
                         persistConfigIfChanged(updated)
                     },
                     onPickSound = {
-                        soundPickerRequest = Triple(config.customSoundUri, config.type.id) { uri ->
+                        soundPickerRequest = config.soundPickerRequest { uri ->
                             persistConfigIfChanged(config.copy(customSoundUri = uri))
                             soundPickerRequest = null
                         }
@@ -424,7 +424,7 @@ fun AlertSettingsScreen(
                             removeCustomAlert(alert.id)
                         },
                         onPickSound = { config ->
-                            soundPickerRequest = Triple(config.soundUri, if (config.type == CustomAlertType.LOW) 0 else 1) { uri ->
+                            soundPickerRequest = config.soundPickerRequest { uri ->
                                 val updated = config.copy(soundUri = uri)
                                 upsertCustomAlert(updated)
                                 soundPickerRequest = null
@@ -466,7 +466,7 @@ fun AlertSettingsScreen(
                         persistConfigIfChanged(updated)
                     },
                     onPickSound = {
-                        soundPickerRequest = Triple(config.customSoundUri, config.type.id) { uri ->
+                        soundPickerRequest = config.soundPickerRequest { uri ->
                             persistConfigIfChanged(config.copy(customSoundUri = uri))
                             soundPickerRequest = null
                         }
@@ -522,7 +522,7 @@ fun AlertSettingsScreen(
                         persistConfigIfChanged(updated)
                     },
                     onPickSound = {
-                        soundPickerRequest = Triple(config.customSoundUri, config.type.id) { uri ->
+                        soundPickerRequest = config.soundPickerRequest { uri ->
                             persistConfigIfChanged(config.copy(customSoundUri = uri))
                             soundPickerRequest = null
                         }
@@ -576,11 +576,14 @@ fun AlertSettingsScreen(
 
         // Sound Picker Dialog
         if (soundPickerRequest != null) {
-            val (current, alertTypeId, callback) = soundPickerRequest!!
+            val request = soundPickerRequest!!
             SoundPicker(
-                currentUri = current,
-                alertTypeId = alertTypeId,
-                onSoundSelected = callback,
+                currentUri = request.uri,
+                alertTypeId = request.typeId,
+                soundVolumePercent = request.volumePercent,
+                intensityProfile = request.intensityProfile,
+                audioUsage = request.audioUsage,
+                onSoundSelected = request.onSelect,
                 onDismiss = { soundPickerRequest = null }
             )
         }
@@ -594,8 +597,11 @@ fun AddCustomAlertButton(text: String, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        shapes = alertButtonShapes(),
+        contentPadding = ButtonDefaults.ContentPadding
     ) {
         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
@@ -737,6 +743,7 @@ fun CustomAlertCard(
                         enabled = alert.enabled,
                         threshold = alert.threshold,
                         soundEnabled = alert.sound,
+                        soundVolumePercent = alert.soundVolumePercent,
                         customSoundUri = alert.soundUri,
                         vibrationEnabled = alert.vibrate,
                         flashEnabled = alert.flash,
@@ -764,7 +771,9 @@ fun CustomAlertCard(
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         ),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        shapes = alertButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -782,6 +791,7 @@ fun CustomAlertCard(
                                 enabled = newConfig.enabled,
                                 threshold = newConfig.threshold ?: alert.threshold,
                                 sound = newConfig.soundEnabled,
+                                soundVolumePercent = newConfig.soundVolumePercent,
                                 soundUri = newConfig.customSoundUri,
                                 vibrate = newConfig.vibrationEnabled,
                                 flash = newConfig.flashEnabled,
@@ -815,7 +825,8 @@ fun CustomAlertCard(
                                 sanitizeAlertDurationSeconds(alert.durationSeconds),
                                 alert.overrideDnd,
                                 alert.id,
-                                alert.name
+                                alert.name,
+                                alert.soundVolumePercent
                             )
                         },
                         headerContent = {
@@ -920,7 +931,7 @@ private fun SectionHeader(
         )
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMediumEmphasized,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,)
     }
 }
@@ -1264,7 +1275,7 @@ private fun SensorExpiryThresholdSelector(
         ) {
             EXPIRY_WARNING_PRESETS.forEach { minutes ->
                 val isSelected = minutes in selected
-                FilterChip(
+                AlertChoiceChip(
                     selected = isSelected,
                     onClick = { onToggle(minutes) },
                     label = {
@@ -1275,7 +1286,7 @@ private fun SensorExpiryThresholdSelector(
                     },
                     leadingIcon = if (isSelected) {
                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    } else null
+                    } else null,
                 )
             }
         }
@@ -1389,7 +1400,7 @@ private fun DeltaAlarmAdvancedSettings(
             1 to stringResource(R.string.delta_interval_1min),
             5 to stringResource(R.string.delta_interval_5min)
         )
-        tk.glucodata.ui.util.ConnectedButtonGroup(
+        AlertOptionButtonGroup(
             options = listOf(0, 1, 5),
             selectedOption = config.deltaIntervalMinutes ?: 0,
             onOptionSelected = { onConfigChange(config.copy(deltaIntervalMinutes = if (it == 0) null else it)) },
@@ -1447,7 +1458,6 @@ private fun ThresholdSlider(
             Text(
                 text = label,
                 style = if (prominent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-                fontWeight = if (prominent) FontWeight.Medium else null,
                 color = MaterialTheme.colorScheme.onSurface,
                 // A long (localised) label must wrap, not push the value out
                 // of the row.
@@ -1458,8 +1468,7 @@ private fun ThresholdSlider(
             Text(
                 // Use LOCAL sliderValue for real-time updates
                 formatThreshold(sliderValue, isMmol),
-                style = if (prominent) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.bodyMedium,
-                fontWeight = if (prominent) FontWeight.SemiBold else FontWeight.Bold,
+                style = if (prominent) MaterialTheme.typography.headlineSmallEmphasized else MaterialTheme.typography.bodyMediumEmphasized,
                 color = MaterialTheme.colorScheme.primary
             )
         }
@@ -1528,8 +1537,7 @@ internal fun DurationSlider(
             )
             Text(
                 valueText(displayValue),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyMediumEmphasized,
                 color = MaterialTheme.colorScheme.primary
             )
         }
@@ -1573,21 +1581,21 @@ private fun PreemptiveSnoozeDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = snoozeLow,
                         onClick = { snoozeLow = !snoozeLow },
                         label = { Text(stringResource(R.string.low_alerts)) },
                         leadingIcon = if (snoozeLow) {
                             { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                        } else null
+                        } else null,
                     )
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = snoozeHigh,
                         onClick = { snoozeHigh = !snoozeHigh },
                         label = { Text(stringResource(R.string.high_alerts)) },
                         leadingIcon = if (snoozeHigh) {
                             { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                        } else null
+                        } else null,
                     )
                 }
 
@@ -1608,13 +1616,15 @@ private fun PreemptiveSnoozeDialog(
                     }
                     onDismiss()
                 },
-                enabled = snoozeLow || snoozeHigh
+                enabled = snoozeLow || snoozeHigh,
+                shapes = alertButtonShapes(),
+                contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.snooze))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }
@@ -1857,7 +1867,7 @@ private fun TimeChip(
     // Time chip button
     Surface(
         onClick = { showTimePicker = true },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     ) {
@@ -1883,19 +1893,23 @@ private fun TimeChip(
             text = {
                 TimePicker(
                     state = timePickerState,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shapes = TimePickerDefaults.shapes(),
+                    colors = TimePickerDefaults.colors()
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     onTimeChange(timePickerState.hour, timePickerState.minute)
                     showTimePicker = false
-                }) {
+                },
+                shapes = alertButtonShapes(),
+                contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
+                TextButton(onClick = { showTimePicker = false }, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -1953,7 +1967,7 @@ internal fun RetrySettings(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = intervalMinutes <= 0,
                         onClick = { onIntervalChange(0) },
                         label = {
@@ -1962,13 +1976,13 @@ internal fun RetrySettings(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                        }
+                        },
                     )
                     listOf(1, 2, 3, 5, 10, 15).forEach { minutes ->
-                        FilterChip(
+                        AlertChoiceChip(
                             selected = intervalMinutes == minutes,
                             onClick = { onIntervalChange(minutes) },
-                            label = { Text(stringResource(R.string.minutes_short_format, minutes)) }
+                            label = { Text(stringResource(R.string.minutes_short_format, minutes)) },
                         )
                     }
                 }
@@ -1982,7 +1996,7 @@ internal fun RetrySettings(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(0 to stringResource(R.string.retry_forever), 1 to "1", 2 to "2", 3 to "3", 5 to "5").forEach { (count, label) ->
-                        FilterChip(
+                        AlertChoiceChip(
                             selected = retryCount == count,
                             onClick = { onCountChange(count) },
                             label = {
@@ -1991,7 +2005,7 @@ internal fun RetrySettings(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -2132,8 +2146,7 @@ internal fun ExpressiveToggleCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal,
+                    style = if (checked) MaterialTheme.typography.bodyLargeEmphasized else MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (subtitle != null) {
@@ -2273,3 +2286,29 @@ internal fun ClickableToggleRow(
         )
     }
 }
+
+internal data class AlertSoundPickerRequest(
+    val uri: String?,
+    val typeId: Int,
+    val volumePercent: Int,
+    val intensityProfile: String,
+    val audioUsage: Int,
+    val onSelect: (String?) -> Unit
+)
+
+internal fun AlertConfig.soundPickerRequest(onSelect: (String?) -> Unit) = AlertSoundPickerRequest(
+    customSoundUri, type.id, soundVolumePercent, hapticProfile.name,
+    Notify.getAlertSoundAudioUsage(
+        !AlertType.isLegacyOnlyId(type.id) &&
+            (overrideDND || deliveryMode != AlertDeliveryMode.NOTIFICATION_ONLY)
+    ), onSelect
+)
+
+internal fun CustomAlertConfig.soundPickerRequest(onSelect: (String?) -> Unit) = AlertSoundPickerRequest(
+    soundUri, if (type == CustomAlertType.HIGH) 1 else 0, soundVolumePercent, hapticProfile,
+    Notify.getAlertSoundAudioUsage(
+        tk.glucodata.AlertDeliveryPolicy.shouldUseAlarmAudioStream(
+            tk.glucodata.AlertDeliveryPolicy.normalize(style), overrideDnd
+        )
+    ), onSelect
+)

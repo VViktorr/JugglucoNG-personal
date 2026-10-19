@@ -64,6 +64,7 @@ class MessageSender(val activity: Context):CapabilityClient.OnCapabilityChangedL
         if (wasEmpty != ns.isEmpty()) {
             runCatching { SensorOwnershipRuntime.onPeerReachabilityChanged(!ns.isEmpty()) }
         }
+        ns.forEach { WearAlertSync.pushTo(it.id) }
         sendnetinfo();
     }
     public fun nulltimes() {
@@ -507,6 +508,36 @@ companion object {
         sender.nameSendMessage(target, WearMessagePath.PROTOCOL, WearProtocol.versionLine().toByteArray(Charsets.UTF_8))
     }
 
+    @JvmStatic
+    public fun sendAlertAcknowledgement(nodeId: String?, data: ByteArray) {
+        if (!outgoingAllowed()) return
+        val sender = messagesender ?: return
+        val targets = nodeId?.let { listOf(it) } ?: sender.nodes?.map { it.id }.orEmpty()
+        if (targets.isEmpty()) {
+            sender.finddevices() // Discovery replays the persisted action.
+            return
+        }
+        targets.forEach { target ->
+            scope.launch {
+                repeat(3) { attempt ->
+                    try {
+                        withTimeout(5_000) {
+                            sender.messageClient.sendMessage(target, WearMessagePath.ALERT_ACK.wire, data).await()
+                        }
+                        return@launch
+                    } catch (timeout: TimeoutCancellationException) {
+                        Log.w(LOG_ID, "alert acknowledgement timed out for $target")
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (failure: Throwable) {
+                        Log.stack(LOG_ID, "alert acknowledgement to $target", failure)
+                    }
+                    if (attempt < 2) delay(1_000)
+                }
+            }
+        }
+    }
+
     // Watch → phone: relay a fingerstick calibration (mg/dL) to the side that
     // owns the BLE connection in companion mode.
     @JvmStatic
@@ -573,10 +604,6 @@ companion object {
             Log.e(LOG_ID, "sendData messagesender==null")
             return
             }
-        if(sender.localnode==null) {
-             Log.d(LOG_ID,"localnode==null")
-             return
-             }
         val name=sender.localnode;
         Natives.watchBluetooth(name,sensor,nums);
         }
@@ -734,13 +761,9 @@ public fun sendDatawithInt(ident: Int, data: ByteArray) {
                 }
             var  othernode=nodes.elementAt(it)
             val nu = System.currentTimeMillis()
-            if(times!![it] > nu) {
-                Log.i(LOG_ID,"times!![it] > nu) it=$id times!![it]=${times!![it]} nu=$nu ")
+            if(times[it] > nu) {
+                Log.i(LOG_ID,"times!![it] > nu) it=$id times!![it]=${times[it]} nu=$nu ")
                 return
-                }
-            if(sender.localnode==null) {
-                Log.d(LOG_ID,"localnode==null")
-                    return
                 }
             val netinfo: ByteArray?
             // watchHasSensor: 1 = watch owns the sensor, -1 = it does not,
@@ -793,10 +816,6 @@ public fun sendDatawithInt(ident: Int, data: ByteArray) {
                 val node: Node = nodes.elementAt(i)
                 if(times!![i] < nu) {
                     val name = if (isWearable) sender.localnode else node.id
-                    if(name==null) {
-                        Log.d(LOG_ID,"name=null")
-                        continue
-                        }
                     val watchSensor = if (isWearable) WearSensorClaim.netInfoValue() else 0
                     val netinfo = Natives.getmynetinfo(name, isWearable, watchSensor, isGalaxy(node),0) ?: continue
                     sender.sendnetinfo(node, netinfo)

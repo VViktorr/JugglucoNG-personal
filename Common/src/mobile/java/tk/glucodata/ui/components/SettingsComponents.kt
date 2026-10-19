@@ -1,5 +1,8 @@
 package tk.glucodata.ui.components
 
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -521,13 +524,17 @@ fun AlarmItem(
                             selected = soundMode == 0,
                             onClick = { onSoundChange(0) },
                             label = { Text(stringResource(R.string.vibrate_only)) },
-                            leadingIcon = { if(soundMode == 0) Icon(Icons.Filled.Check, null) }
+                            leadingIcon = { if(soundMode == 0) Icon(Icons.Filled.Check, null) },
+                            shapes = appFilterChipShapes(),
+                            colors = appFilterChipColors()
                         )
                         FilterChip(
                             selected = soundMode == 1,
                             onClick = { onSoundChange(1) },
                             label = { Text(stringResource(R.string.sound_vibrate)) },
-                            leadingIcon = { if(soundMode == 1) Icon(Icons.Filled.Check, null) }
+                            leadingIcon = { if(soundMode == 1) Icon(Icons.Filled.Check, null) },
+                            shapes = appFilterChipShapes(),
+                            colors = appFilterChipColors()
                         )
                     }
                 }
@@ -606,7 +613,7 @@ fun DangerItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    style = MaterialTheme.typography.titleMedium,
                     color = contentColor
                 )
                 Text(

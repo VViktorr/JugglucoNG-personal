@@ -453,4 +453,3 @@ private fun snapRangeValue(value: Float, isMmol: Boolean): Float {
         value.roundToInt().toFloat()
     }
 }
-

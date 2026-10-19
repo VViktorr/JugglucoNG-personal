@@ -2,6 +2,12 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import androidx.compose.material3.LinearWavyProgressIndicator
+import tk.glucodata.ui.components.IconButtonTooltip
+import androidx.compose.material3.ButtonDefaults
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
@@ -32,7 +38,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -196,12 +201,14 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                         meters = GlucoseMeterManager.configuredMeters()
                         pendingForget = null
                     },
+                    shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) {
                     Text(stringResource(R.string.glucose_meter_forget))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingForget = null }) {
+                TextButton(onClick = { pendingForget = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -240,12 +247,14 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                         pendingSatellite = null
                     },
                     enabled = GlucoseMeterManager.isSatelliteCodeValid(satelliteCode),
+                    shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) {
                     Text(stringResource(R.string.pair))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingSatellite = null }) {
+                TextButton(onClick = { pendingSatellite = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -344,12 +353,14 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                             },
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { pendingForget = meter }) {
-                            Icon(
-                                Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.glucose_meter_forget),
-                                tint = MaterialTheme.colorScheme.error,
-                            )
+                        IconButtonTooltip(stringResource(R.string.glucose_meter_forget)) {
+                            IconButton(onClick = { pendingForget = meter }, shapes = appIconButtonShapes()) {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = stringResource(R.string.glucose_meter_forget),
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            }
                         }
                     }
                 }
@@ -370,12 +381,14 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                     },
                     enabled = !scanning,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Icon(Icons.AutoMirrored.Filled.BluetoothSearching, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
                     Text(stringResource(if (scanning) R.string.scanning_devices else R.string.finddevices))
                 }
-                if (scanning) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
+                if (scanning) LinearWavyProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
             }
             items(nearby, key = NearbyGlucoseMeter::address) { candidate ->
                 SettingsItem(

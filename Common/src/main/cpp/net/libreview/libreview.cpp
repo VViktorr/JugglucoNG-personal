@@ -1557,4 +1557,3 @@ int makesensorstarts(const LibreHist *list,const int len,char *buf) {
 extern void wakeaftermin(const int waitmin);
 void wakeaftermin(const int waitmin) {}
 #endif
-

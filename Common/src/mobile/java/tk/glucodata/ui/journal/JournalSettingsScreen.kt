@@ -2,6 +2,10 @@
 
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -99,7 +103,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
@@ -387,7 +390,8 @@ private fun JournalActionButton(
         } else {
             ButtonDefaults.filledTonalButtonColors()
         },
-        contentPadding = PaddingValues(horizontal = if (prominent) 16.dp else 16.dp)
+        contentPadding = PaddingValues(horizontal = if (prominent) 16.dp else 16.dp),
+        shapes = appButtonShapes()
     ) {
         Icon(
             imageVector = icon,
@@ -397,8 +401,7 @@ private fun JournalActionButton(
         Spacer(modifier = Modifier.width(if (prominent) 8.dp else 8.dp))
         Text(
             text = text,
-            style = if (prominent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
-            fontWeight = if (prominent) FontWeight.SemiBold else FontWeight.Medium,
+            style = if (prominent) MaterialTheme.typography.titleMediumEmphasized else MaterialTheme.typography.labelLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -476,7 +479,7 @@ private fun JournalIntelligenceRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMediumEmphasized,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
@@ -1097,7 +1100,7 @@ private fun JournalFoodImportRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = food.displayName,
-                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1110,22 +1113,25 @@ private fun JournalFoodImportRow(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                FilledTonalIconButton(
-                    onClick = {
-                        onAdd(
-                            if (expanded) {
-                                parseFoodPortionGrams(portionText)
-                            } else {
-                                null
-                            }
+                IconButtonTooltip(stringResource(R.string.journal_add_food)) {
+                    FilledTonalIconButton(
+                        onClick = {
+                            onAdd(
+                                if (expanded) {
+                                    parseFoodPortionGrams(portionText)
+                                } else {
+                                    null
+                                }
+                            )
+                        },
+                        modifier = Modifier.size(44.dp),
+                        shapes = appIconButtonShapes()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = stringResource(R.string.journal_add_food)
                         )
-                    },
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
-                    )
+                    }
                 }
             }
             AnimatedVisibility(
@@ -1206,16 +1212,19 @@ private fun JournalFoodLibrarySearchField(
                 }
             )
             if (onClose != null) {
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.clear),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                IconButtonTooltip(stringResource(R.string.clear)) {
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(42.dp),
+                        shapes = appIconButtonShapes()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.clear),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
@@ -1308,7 +1317,8 @@ private fun JournalFoodSheet(
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = containerColor,
                                 contentColor = contentColor
-                            )
+                            ),
+                            shapes = appButtonShapes()
                         ) {
                             Icon(
                                 imageVector = if (archived) Icons.Default.CheckCircle else Icons.Default.Block,
@@ -1401,14 +1411,18 @@ private fun JournalFoodSheet(
                     Button(
                         onClick = { saveDraft() },
                         enabled = canSave,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.save))
                     }
                     onDelete?.let {
                         OutlinedButton(
                             onClick = it,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            shapes = appButtonShapes(),
+                            contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Text(
                                 text = stringResource(R.string.delete),
@@ -1499,19 +1513,22 @@ private fun JournalFoodEditorField(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FilledTonalIconButton(
-                onClick = { onStep(-1) },
-                modifier = Modifier.size(44.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Remove,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+            IconButtonTooltip(stringResource(R.string.outbound_api_decrease_value)) {
+                FilledTonalIconButton(
+                    onClick = { onStep(-1) },
+                    modifier = Modifier.size(44.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shapes = appIconButtonShapes()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = stringResource(R.string.outbound_api_decrease_value),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             Column(
                 modifier = Modifier.weight(1f),
@@ -1556,19 +1573,22 @@ private fun JournalFoodEditorField(
                     )
                 }
             }
-            FilledTonalIconButton(
-                onClick = { onStep(1) },
-                modifier = Modifier.size(44.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = accentColor.copy(alpha = 0.18f),
-                    contentColor = accentColor
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+            IconButtonTooltip(stringResource(R.string.outbound_api_increase_value)) {
+                FilledTonalIconButton(
+                    onClick = { onStep(1) },
+                    modifier = Modifier.size(44.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = accentColor.copy(alpha = 0.18f),
+                        contentColor = accentColor
+                    ),
+                    shapes = appIconButtonShapes()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.outbound_api_increase_value),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
@@ -1686,7 +1706,8 @@ private fun JournalInsulinPresetSheet(
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = containerColor,
                                 contentColor = contentColor
-                            )
+                            ),
+                            shapes = appButtonShapes()
                         ) {
                             Icon(
                                 imageVector = if (archived) Icons.Default.CheckCircle else Icons.Default.Block,
@@ -1739,19 +1760,10 @@ private fun JournalInsulinPresetSheet(
                             modifier = Modifier.weight(1f),
                             singleLine = true
                         )
-                        FilledTonalIconButton(
-                            onClick = { showColorDialog = true },
-                            modifier = Modifier.size(56.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                            )
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(20.dp),
-                                shape = CircleShape,
-                                color = Color(draft.accentColor)
-                            ) {}
-                        }
+                        ColorSwatchButton(
+                            color = Color(draft.accentColor),
+                            onClick = { showColorDialog = true }
+                        )
                     }
                     draft.scientificName?.let { scientificName ->
                         OutlinedTextField(
@@ -1913,7 +1925,8 @@ private fun JournalInsulinPresetSheet(
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                                 modifier = Modifier
                                     .height(32.dp)
-                                    .widthIn(max = 132.dp)
+                                    .widthIn(max = 132.dp),
+                                shapes = appButtonShapes()
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Restore,
@@ -2032,7 +2045,9 @@ private fun JournalInsulinPresetSheet(
                             )
                             selectedPointIndex = insertedIndex
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -2045,7 +2060,9 @@ private fun JournalInsulinPresetSheet(
                     Button(
                         onClick = { saveDraft() },
                         enabled = canSave && hasChanges,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.save))
                     }
@@ -2053,7 +2070,9 @@ private fun JournalInsulinPresetSheet(
                         onDelete?.let {
                             OutlinedButton(
                                 onClick = it,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                shapes = appButtonShapes(),
+                                contentPadding = ButtonDefaults.ContentPadding
                             ) {
                                 Text(
                                     text = stringResource(R.string.delete),
@@ -2106,7 +2125,7 @@ private fun JournalCompactSwitchRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -2201,11 +2220,13 @@ private fun SelectedCurvePointEditor(
                 modifier = Modifier.weight(1f)
             )
             if (canDelete) {
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.delete)
-                    )
+                IconButtonTooltip(stringResource(R.string.delete)) {
+                    IconButton(onClick = onDelete, shapes = appIconButtonShapes()) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.delete)
+                        )
+                    }
                 }
             }
         }

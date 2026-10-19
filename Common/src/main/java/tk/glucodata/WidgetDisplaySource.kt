@@ -158,4 +158,3 @@ object WidgetDisplaySource {
         return NightscoutCalibration.hasCalibrationForViewMode(sensorSerial, viewMode)
     }
 }
-

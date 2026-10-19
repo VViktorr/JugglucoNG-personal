@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_live_update_title">Glikemia jako Live Update</string>
+    <string name="notification_live_update_summary">Pokazuj bieżącą glikemię w kapsułce paska stanu, jeśli telefon to obsługuje. Android 17 używa MetricStyle. Po włączeniu systemowy układ zastępuje powiadomienie z wykresem. Telefon może wymagać zgody na Live Updates w ustawieniach powiadomień.</string>
+    <string name="notification_live_update_glucose">Glikemia</string>
+    <string name="notification_live_update_unpin">Odepnij</string>
+    <string name="notification_live_update_system_settings">Systemowe ustawienia powiadomień</string>
+    <string name="notification_live_update_system_settings_summary">Zezwól tutaj na Live Updates lub Live Alerts, jeśli telefon udostępnia tę opcję.</string>
+</resources>

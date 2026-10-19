@@ -58,6 +58,8 @@
     <!-- Weather fallback requires an explicitly granted location permission on Android 12+. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:remove="android:maxSdkVersion" />
 
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+
     <application
         android:name=".Applic"
         android:icon="@mipmap/ic_launcher"
@@ -221,6 +223,7 @@
                 <data android:host="*" android:pathPrefix="/wake" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/wakestream" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/protocol" android:scheme="wear" />
+                <data android:host="*" android:pathPrefix="/alertack" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/askforstart" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/calibrate" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/sync2" android:scheme="wear" />
@@ -243,6 +246,10 @@
         <receiver
             android:name="tk.glucodata.update.AppUpdateInstallReceiver"
             android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".GlucoseLiveUpdateDismissReceiver"
             android:exported="false" />
 
     </application>

@@ -854,4 +854,3 @@ object CurrentDisplaySource {
         return (if (isMmol) value * MGDL_PER_MMOLL else value).roundToInt()
     }
 }
-

@@ -912,4 +912,3 @@ public static void  config(MainActivity act, View settingsview) {
     
     }
  }
-

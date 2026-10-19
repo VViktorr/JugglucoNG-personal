@@ -1,19 +1,17 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.view.HapticFeedbackConstants
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,14 +58,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp as lerpColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.key
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tk.glucodata.ui.theme.displayLargeExpressive
@@ -266,13 +260,14 @@ fun DashboardCombinedHeader(
             tk.glucodata.logic.TrendEngine.TrendResult(tk.glucodata.logic.TrendEngine.TrendState.Unknown, 0f, 0f, 0f, 0f)
         }
     }
-    // "Δ" readout: the measured change over the last ~5 minutes — a raw
+    // Signed change over the selected interval — a raw
     // number to sanity-check the estimated arrow against. Same computation as
     // the per-row deltas in the readings list, anchored at the newest point.
     val heroDeltaText = if (showDelta) {
-        remember(history, isMmol, deltaIntervalMinutes) {
+        remember(history, isMmol, deltaIntervalMinutes, viewMode) {
             history.lastOrNull()?.let { newest ->
-                readingDeltaTexts(listOf(newest.timestamp), history, isMmol, deltaIntervalMinutes)
+                readingDeltaTexts(listOf(newest.timestamp), history, isMmol, deltaIntervalMinutes,
+                    useRaw = viewMode == 1 || viewMode == 3)
                     .first()
             }
         }
@@ -476,8 +471,7 @@ fun DashboardCombinedHeader(
             val density = LocalDensity.current
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = (if (statusCopy == null) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
                     .onSizeChanged { heroContentWidthPx = it.width }
             ) {
                 val heroWidthDp = with(density) { heroContentWidthPx.toDp() }
@@ -504,6 +498,7 @@ fun DashboardCombinedHeader(
                 val resolvedEndPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 12.dp else 16.dp
                 // Reserve space for the peer strip within the fixed 80dp card.
                 val isMultiHero = peerReadings.isNotEmpty()
+                val singleValue = !hasSecondary && !hasTertiary
                 val heroMultiSensorScale = if (isMultiHero) 0.74f else 1f
                 val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 12.dp
                 val resolvedVerticalPadding = if (isMultiHero) 4.dp else singleVerticalPadding
@@ -528,6 +523,14 @@ fun DashboardCombinedHeader(
                 } * heroMultiSensorScale)
                 val resolvedClusterGap = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 12.dp
                 val primaryValueStyle = fullPrimaryStyle.scaleForHero(heroMultiSensorScale)
+                val singleDeltaFits = singleValue && heroDeltaText?.let { delta ->
+                    val primaryWidth = heroTextMeasurer.measure(primaryText, style = primaryValueStyle, maxLines = 1).size.width
+                    val deltaWidth = heroTextMeasurer.measure(delta, style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"), maxLines = 1).size.width
+                    val chromeWidth = with(density) {
+                        (resolvedStartPadding + resolvedEndPadding + resolvedClusterGap + resolvedTrendIconSize + 16.dp).roundToPx()
+                    }
+                    heroContentWidthPx > 0 && primaryWidth + deltaWidth + chromeWidth <= heroContentWidthPx
+                } == true
                 val secondaryInlineStyle = when (heroWidthClass) {
                     AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.headlineSmall
                     AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.headlineMedium
@@ -570,19 +573,20 @@ fun DashboardCombinedHeader(
                         )
                     }
                 ).copy(fontFeatureSettings = "tnum").scaleForHero(heroMultiSensorScale)
+                // Only the single-value layout places delta beside the value.
+                // Two and three values keep it beneath the trend arrow.
+                val deltaByArrow = !singleDeltaFits
                 val statusTitleStyle = when (heroWidthClass) {
                     AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.titleMedium
                     AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.titleLarge
                     AdaptiveContentWidthClass.Expanded -> MaterialTheme.typography.headlineSmall
-                }.copy(
-                    fontFeatureSettings = "tnum",
-                    fontWeight = FontWeight.Medium
-                )
+                }.copy(fontFeatureSettings = "tnum")
 
                 if (statusCopy != null) {
                     Row(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .heightIn(min = 80.dp)
                             .padding(
                                 start = resolvedStartPadding,
                                 end = resolvedEndPadding,
@@ -595,8 +599,7 @@ fun DashboardCombinedHeader(
                             text = statusCopy.title,
                             style = statusTitleStyle,
                             color = glucoseContentColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+                            softWrap = true,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Start
                         )
@@ -628,11 +631,28 @@ fun DashboardCombinedHeader(
                                 modifier = Modifier.weight(1f),
                                 horizontalAlignment = Alignment.Start
                             ) {
-                                DashboardHeroPrimaryText(
-                                    value = primaryText,
-                                    style = primaryValueStyle,
-                                    color = heroValueColor
-                                )
+                                if (singleValue || hasThreeValues) {
+                                    DashboardHeroPrimaryText(
+                                        value = primaryText,
+                                        style = primaryValueStyle,
+                                        color = heroValueColor,
+                                        deltaText = heroDeltaText.takeIf { singleDeltaFits },
+                                        deltaColor = glucoseContentColor
+                                    )
+                                } else {
+                                    DashboardHeroValueCluster(
+                                        primaryText = primaryText,
+                                        secondaryText = secondaryText,
+                                        tertiaryText = tertiaryText,
+                                        primaryStyle = primaryValueStyle,
+                                        secondaryInlineStyle = secondaryInlineStyle,
+                                        separatorStyle = slashStyle,
+                                        secondaryStackStyle = secondaryThreeValueStyle,
+                                        tertiaryStackStyle = tertiaryThreeValueStyle,
+                                        contentColor = glucoseContentColor,
+                                        primaryColor = heroValueColor
+                                    )
+                                }
                                 // Only when the estimator actually reports a
                                 // range, and deliberately quiet: low contrast,
                                 // label type, no label word. The number above
@@ -652,7 +672,7 @@ fun DashboardCombinedHeader(
                             HeroTrendWithDelta(
                                 trendResult = trendResult,
                                 arrowColor = heroArrowColor,
-                                deltaText = heroDeltaText,
+                                deltaText = heroDeltaText.takeIf { deltaByArrow },
                                 contentColor = glucoseContentColor,
                                 iconSize = resolvedTrendIconSize
                             )
@@ -686,24 +706,6 @@ fun DashboardCombinedHeader(
                                     maxLines = 1
                                 )
                             }
-                        } else if (hasSecondary) {
-                            Text(
-                                text = secondaryText ?: "",
-                                style = secondaryInlineStyle,
-                                color = glucoseContentColor.copy(alpha = 0.80f),
-                                softWrap = false,
-                                maxLines = 1,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        } else if (hasTertiary) {
-                            Text(
-                                text = tertiaryText ?: "",
-                                style = tertiaryThreeValueStyle,
-                                color = glucoseContentColor.copy(alpha = 0.60f),
-                                softWrap = false,
-                                maxLines = 1,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
                         }
 
                         if (peerReadings.isNotEmpty()) {
@@ -743,7 +745,8 @@ fun DashboardCombinedHeader(
                                 secondaryStackStyle = secondaryThreeValueStyle,
                                 tertiaryStackStyle = tertiaryThreeValueStyle,
                                 contentColor = glucoseContentColor,
-                                primaryColor = heroValueColor
+                                primaryColor = heroValueColor,
+                                deltaText = heroDeltaText.takeIf { singleDeltaFits }
                             )
 
                             Spacer(modifier = Modifier.width(resolvedClusterGap))
@@ -751,7 +754,7 @@ fun DashboardCombinedHeader(
                             HeroTrendWithDelta(
                                 trendResult = trendResult,
                                 arrowColor = heroArrowColor,
-                                deltaText = heroDeltaText,
+                                deltaText = heroDeltaText.takeIf { deltaByArrow },
                                 contentColor = glucoseContentColor,
                                 iconSize = resolvedTrendIconSize
                             )
@@ -782,7 +785,10 @@ fun DashboardCombinedHeader(
             containerColor = glucoseContainerColor,
             contentColor = glucoseContentColor
         )
-        val stabilizedModifier = modifier.height(80.dp)
+        // A stale/waiting message can need more than two lines on narrow cards
+        // or with larger system text. Let that card grow with the full message.
+        val stabilizedModifier = if (statusCopy == null) modifier.height(80.dp)
+            else modifier.heightIn(min = 80.dp)
         if (statusCopy == null) {
             Card(
                 onClick = onHeroClick,
@@ -1072,61 +1078,8 @@ private fun HeroTrendWithDelta(
             color = arrowColor
         )
         if (!deltaText.isNullOrEmpty()) {
-            val deltaReadout = buildAnnotatedString {
-                withStyle(
-                    SpanStyle(
-                        color = contentColor.copy(alpha = 0.45f),
-                        fontWeight = FontWeight.Normal
-                    )
-                ) {
-                    append("Δ")
-                }
-                append(" ")
-                append(deltaText)
-            }
-            Text(
-                text = deltaReadout,
-                style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
-                color = contentColor.copy(alpha = 0.75f),
-                softWrap = false,
-                maxLines = 1
-            )
+            HeroDeltaText(deltaText, contentColor)
         }
-    }
-}
-
-@Composable
-private fun DashboardHeroPrimaryText(
-    value: String,
-    style: TextStyle,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    AnimatedContent(
-        targetState = value,
-        transitionSpec = {
-            (slideInVertically(
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
-            ) { -it / 2 } + fadeIn(tween(200)))
-                .togetherWith(
-                    slideOutVertically(
-                        spring(stiffness = Spring.StiffnessMedium)
-                    ) { it / 2 } + fadeOut(tween(100))
-                )
-        },
-        label = "GlucoseHeroAnimation"
-    ) { animatedValue ->
-        Text(
-            text = animatedValue,
-            style = style,
-            color = color,
-            softWrap = false,
-            maxLines = 1,
-            modifier = modifier
-        )
     }
 }
 
@@ -1239,7 +1192,8 @@ private fun DashboardHeroValueCluster(
     tertiaryStackStyle: TextStyle,
     contentColor: Color,
     modifier: Modifier = Modifier,
-    primaryColor: Color = contentColor
+    primaryColor: Color = contentColor,
+    deltaText: String? = null
 ) {
     val hasSecondary = secondaryText != null
     val hasTertiary = tertiaryText != null
@@ -1270,17 +1224,21 @@ private fun DashboardHeroValueCluster(
             maxLines = 1
         ).size.width
         val inlinePairWidthPx = if (!hasThreeValues && pairText != null) {
-            // Same gaps as the InlinePair row below; a mismatch leaves the pair unscaled
-            // while it is still too wide, and the secondary value clips.
-            primaryWidthPx +
-                with(density) { 8.dp.roundToPx() } +
-                dotWidthPx +
-                with(density) { 4.dp.roundToPx() } +
+            // Preserve the original 8dp main-to-dot gap independently of
+            // the delta inset; the two lines share width, not spacing.
+            val supportWidth = dotWidthPx + with(density) { 4.dp.roundToPx() } +
+                textMeasurer.measure(pairText, style = secondaryInlineStyle, maxLines = 1).size.width
+            val deltaWidth = if (!deltaText.isNullOrEmpty()) {
                 textMeasurer.measure(
-                    text = pairText,
-                    style = secondaryInlineStyle,
+                    deltaText,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
                     maxLines = 1
                 ).size.width
+            } else 0
+            primaryWidthPx + maxOf(
+                supportWidth + with(density) { 8.dp.roundToPx() },
+                if (deltaWidth > 0) deltaWidth + with(density) { 16.dp.roundToPx() } else 0
+            )
         } else {
             0
         }
@@ -1318,7 +1276,9 @@ private fun DashboardHeroValueCluster(
                 DashboardHeroPrimaryText(
                     value = primaryText,
                     style = primaryStyle,
-                    color = primaryColor
+                    color = primaryColor,
+                    deltaText = deltaText,
+                    deltaColor = contentColor
                 )
             }
 
@@ -1326,34 +1286,21 @@ private fun DashboardHeroValueCluster(
                 val scaledPrimaryStyle = primaryStyle.scaleForHero(pairScale)
                 val scaledDotStyle = dotBaseStyle.scaleForHero(pairScale)
                 val scaledPairStyle = secondaryInlineStyle.scaleForHero(pairScale)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    DashboardHeroPrimaryText(
-                        value = primaryText,
-                        style = scaledPrimaryStyle,
-                        color = primaryColor
-                    )
-                    Spacer(modifier = Modifier.width(8.dp * pairScale))
-                    Text(
-                        text = "·",
-                        style = scaledDotStyle,
-                        color = contentColor.copy(alpha = 0.72f),
-                        softWrap = false,
-                        maxLines = 1
-                    )
-                    Spacer(modifier = Modifier.width(4.dp * pairScale))
-                    Text(
-                        text = pairText.orEmpty(),
-                        style = scaledPairStyle,
-                        color = inlinePairColor,
-                        softWrap = false,
-                        overflow = TextOverflow.Clip,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                }
+                DashboardHeroPairText(
+                    primary = primaryText,
+                    secondary = pairText.orEmpty(),
+                    primaryStyle = scaledPrimaryStyle,
+                    secondaryStyle = scaledPairStyle,
+                    dotStyle = scaledDotStyle,
+                    primaryColor = primaryColor,
+                    secondaryColor = inlinePairColor,
+                    contentColor = contentColor,
+                    deltaText = deltaText,
+                    deltaStyle = MaterialTheme.typography.bodySmall.scaleForHero(pairScale),
+                    beforeDot = 8.dp * pairScale,
+                    afterDot = 4.dp * pairScale,
+                    beforeDelta = 16.dp * pairScale
+                )
             }
 
             DashboardHeroValueLayoutMode.InlineStack -> {
@@ -1776,7 +1723,8 @@ fun CalibrationsCard(
             onClick = onAddCalibration,
             enabled = isCalibrationEnabled,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
+            shapes = appButtonShapes(),
+            contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
 //            elevation = androidx.compose.material3.ButtonDefaults.filledTonalButtonElevation(defaultElevation = 2.dp)
         ) {
             Icon(
@@ -1818,12 +1766,8 @@ fun CalibrationsCard(
 //                        modifier = Modifier
 //                            .weight(1f),
 //                            .heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(
-                            topStart = 12.dp,
-                            bottomStart = 12.dp,
-                            topEnd = 4.dp,
-                            bottomEnd = 4.dp
-                        ),
+                        shapes = appButtonShapes(),
+                        contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
                         colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1843,12 +1787,8 @@ fun CalibrationsCard(
                     onClick = onAddCalibration,
                     enabled = isCalibrationEnabled,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(
-                        topStart = 4.dp,
-                        bottomStart = 4.dp,
-                        topEnd = 12.dp,
-                        bottomEnd = 12.dp
-                    ),
+                    shapes = appButtonShapes(),
+                    contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
@@ -1893,20 +1833,11 @@ fun CalibrationsCard(
                     )
                 }
                 
-                androidx.compose.material3.Switch(
+                tk.glucodata.ui.components.StyledSwitch(
                     checked = isCalibrationEnabled,
                     onCheckedChange = { enabled ->
                         tk.glucodata.data.calibration.CalibrationManager.setEnabledForMode(isRawMode, enabled, currentSensor)
-                    },
-                    thumbContent = if (isCalibrationEnabled) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize),
-                            )
-                        }
-                    } else null
+                    }
                 )
             }
             
@@ -2031,7 +1962,8 @@ fun CalibrationsCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
-                        shape = RoundedCornerShape(28.dp),
+                        shapes = appButtonShapes(),
+                        contentPadding = androidx.compose.material3.ButtonDefaults.ContentPadding,
                         colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -2342,14 +2274,14 @@ private fun DashboardClearOptionsBottomSheet(
                     Icon(Icons.Filled.Delete, null, tint = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.clear), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.clear), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                         Text(stringResource(R.string.calibrations_count, totalCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            androidx.compose.material3.TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.cancel)) }
+            androidx.compose.material3.TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth(), shapes = appButtonShapes(), contentPadding = androidx.compose.material3.ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
         }
     }
 }

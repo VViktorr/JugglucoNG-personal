@@ -1163,4 +1163,3 @@ public void setGattOptions(BluetoothGatt gatt) {
         } */
 
 }
-

@@ -2,6 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LoadingIndicator
 import android.text.format.Formatter
 import androidx.compose.foundation.clickable
@@ -24,7 +28,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
@@ -169,11 +172,13 @@ internal fun CloneHistoryRecoverySheet(
                     onClick = {
                         showFullHistoryConfirmation = false
                         startSelectedRecovery()
-                    }
+                    },
+                    shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.ContentPadding
                 ) { Text(stringResource(R.string.clone_history_send_action)) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showFullHistoryConfirmation = false }) {
+                OutlinedButton(onClick = { showFullHistoryConfirmation = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -242,6 +247,8 @@ internal fun CloneHistoryRecoverySheet(
                         },
                         enabled = !actionRunning,
                         modifier = Modifier.fillMaxWidth(),
+                        shapes = appButtonShapes(),
+                        contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         if (actionRunning) {
                             CircularProgressIndicator(
@@ -447,9 +454,9 @@ private fun CloneHistoryRecoveryProgress(
     Text(phaseText, style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
     if (progress != null && state.phase in setOf(CloneOutgoingPhase.PUTTING_PACKAGE, CloneOutgoingPhase.GETTING_PACKAGE)) {
-        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+        LinearWavyProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
     } else if (!state.phase.isTerminal) {
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
     }
     manifest?.let {
         Spacer(Modifier.height(8.dp))
@@ -481,16 +488,18 @@ private fun CloneHistoryRecoveryProgress(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
         ) {
-            OutlinedButton(onClick = onStartAnother, enabled = !actionRunning) {
+            OutlinedButton(onClick = onStartAnother, enabled = !actionRunning, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                 Text(stringResource(R.string.clone_history_start_another))
             }
-            Button(onClick = onDone) { Text(stringResource(R.string.clone_history_done)) }
+            Button(onClick = onDone, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) { Text(stringResource(R.string.clone_history_done)) }
         }
         CloneOutgoingPhase.CANCELLED,
         CloneOutgoingPhase.FAILED -> Button(
             onClick = onStartAnother,
             enabled = !actionRunning,
             modifier = Modifier.fillMaxWidth(),
+            shapes = appButtonShapes(),
+            contentPadding = ButtonDefaults.ContentPadding,
         ) { Text(stringResource(R.string.clone_history_try_again)) }
         else -> {
             val cancellable = state.jobId != null && state.phase in setOf(
@@ -507,6 +516,8 @@ private fun CloneHistoryRecoveryProgress(
                     onClick = onCancel,
                     enabled = !actionRunning,
                     modifier = Modifier.fillMaxWidth(),
+                    shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.ContentPadding,
                 ) { Text(stringResource(R.string.clone_history_cancel_transfer)) }
             }
         }

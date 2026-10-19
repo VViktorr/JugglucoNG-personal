@@ -37,4 +37,3 @@ internal fun rememberChartScaleLimits(isMmol: Boolean): ChartScaleLimits {
     }
     return limits
 }
-

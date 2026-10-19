@@ -137,7 +137,7 @@ object HistoryChartModelBuilder {
                 val differs = live != null && kotlin.math.abs(live - value) > PREVIEW_DIFFERENCE
                 if (differs) {
                     if (previewLast != Long.MIN_VALUE && point.timestamp - previewLast > gapThresholdMs) flushPreview()
-                    preview.add(ChartPointModel(point.timestamp, live!!))
+                    preview.add(ChartPointModel(point.timestamp, live))
                     previewLast = point.timestamp
                 } else if (preview.isNotEmpty()) {
                     flushPreview()
@@ -149,7 +149,8 @@ object HistoryChartModelBuilder {
                 false -> ChartLook.SECONDARY
                 null -> defaultLook
             }
-            val model = ChartPointModel(point.timestamp, value, sensorId, look)
+            val interval = if (isRawMode) null else point.uncertainty?.takeIf { it.isUsable }?.shifted(value - point.value)
+            val model = ChartPointModel(point.timestamp, value, sensorId, look, interval)
 
             val gap = lastTimestamp != Long.MIN_VALUE && (point.timestamp - lastTimestamp) > gapThresholdMs
             if (gap || sensorChanged) {
@@ -200,7 +201,8 @@ object HistoryChartModelBuilder {
                 if (current.isNotEmpty()) runs.add(ChartRun(ChartLook.SECONDARY, current))
                 current = ArrayList()
             }
-            current.add(ChartPointModel(point.timestamp, value))
+            current.add(ChartPointModel(point.timestamp, value, point.sensorSerial,
+                uncertainty = if (kind == ChartLaneKind.AUTO) point.uncertainty?.takeIf { it.isUsable } else null))
             lastTimestamp = point.timestamp
             lastSensorId = point.sensorSerial
         }
