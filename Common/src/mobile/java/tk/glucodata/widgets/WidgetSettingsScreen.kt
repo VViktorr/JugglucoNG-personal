@@ -198,14 +198,14 @@ private fun WidgetDetailSettings(
         }
 
 
-        Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) stringResource(R.string.widget_clock_detail_size_value, config.detailScale) else stringResource(R.string.widget_detail_size_value, config.detailScale))
+        Text(if (kind.hasWeather) stringResource(R.string.widget_clock_detail_size_value, config.detailScale) else stringResource(R.string.widget_detail_size_value, config.detailScale))
         Slider(
             value = config.detailScale.toFloat(),
             onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
 
-        Text(if (kind == WidgetSettingsKind.CLOCK_WEATHER) stringResource(R.string.widget_clock_glucose_size_value, config.glucoseScale) else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
+        Text(if (kind.hasWeather) stringResource(R.string.widget_clock_glucose_size_value, config.glucoseScale) else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
         Slider(
             value = config.glucoseScale.toFloat(),
             onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
@@ -248,13 +248,11 @@ private fun WidgetDetailSettings(
             }
         }
 
-        if (kind == WidgetSettingsKind.BASIC || kind == WidgetSettingsKind.RANGE || kind == WidgetSettingsKind.CLOCK_WEATHER) {
-            WidgetSwitch(stringResource(R.string.widget_show_time), config.showTime) {
-                onChange(config.copy(showTime = it))
-            }
+        WidgetSwitch(stringResource(R.string.widget_show_time), config.showTime) {
+            onChange(config.copy(showTime = it))
         }
 
-        if (kind == WidgetSettingsKind.RANGE || kind == WidgetSettingsKind.CLOCK_WEATHER) {
+        if (kind != WidgetSettingsKind.BASIC) {
             WidgetSwitch(stringResource(R.string.widget_show_delta), config.showDelta) {
                 onChange(config.copy(showDelta = it))
             }
@@ -391,3 +389,4 @@ private fun WidgetSwitch(title: String, checked: Boolean, onCheckedChange: (Bool
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
+

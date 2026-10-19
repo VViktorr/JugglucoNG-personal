@@ -19,8 +19,12 @@ class ClockWeatherWidgetWiringTests {
         assertTrue(layout.contains("home_widget_clock"))
         assertTrue(layout.contains("home_widget_date"))
         assertTrue(layout.contains("EEEE, d MMMM"))
-        assertTrue(updater.contains("R.layout.home_widget_clock_weather"))
-        assertTrue(updater.contains("config.glucoseScale"))
+        val header = mobile("java/tk/glucodata/widgets/ClockWeatherWidgetViews.kt")
+        val chart = mobile("java/tk/glucodata/widget/ExpressiveAppWidget.kt")
+        assertTrue(header.contains("R.layout.home_widget_clock_weather"))
+        assertTrue(header.contains("config.glucoseScale"))
+        assertTrue(updater.contains("ClockWeatherWidgetViews.create"))
+        assertTrue(chart.contains("ClockWeatherWidgetViews.create"))
     }
 
     @Test
@@ -51,3 +55,4 @@ class ClockWeatherWidgetWiringTests {
         assertTrue(screen.contains("widget_weather_shift_value"))
     }
 }
+

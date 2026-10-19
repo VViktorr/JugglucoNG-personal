@@ -26,13 +26,14 @@ class WidgetRenderer(private val context: Context) {
         widthDp: Float,
         heightDp: Float,
         pxPerDp: Float,
-        weather: WidgetWeather? = null
+        weather: WidgetWeather? = null,
+        includeBackground: Boolean = true
     ): Bitmap {
         val width = max(1, (widthDp * pxPerDp).roundToInt())
         val height = max(1, (heightDp * pxPerDp).roundToInt())
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        drawBackground(canvas, width.toFloat(), height.toFloat(), config, snapshot)
+        if (includeBackground) drawBackground(canvas, width.toFloat(), height.toFloat(), config, snapshot)
 
         snapshot.statusText?.let {
             if (!snapshot.hasFreshReading && kind != WidgetKind.CLOCK_WEATHER) {
@@ -431,3 +432,4 @@ class WidgetRenderer(private val context: Context) {
         return if (isMmol) sign + String.format("%.1f", delta) else sign + delta.roundToInt()
     }
 }
+
