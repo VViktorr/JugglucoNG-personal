@@ -306,7 +306,12 @@ fun StatsScreen(
         val requestedStyle = StatsReportExporter.PdfVisualStyle.fromPref(pendingReportStylePref)
         val requestedGroups = LibreViewReportGroup.fromKeys(pendingReportGroupKeys.split(","))
         coroutineScope.launch {
-            val reportState = viewModel.buildReportUiState(requestedDays)
+            val clinicalReport = requestedStyle == StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE
+            val reportState = viewModel.buildReportUiState(
+                requestedDays,
+                clinicalReport = clinicalReport,
+                includeCalendarContext = clinicalReport && LibreViewReportGroup.MONTHLY_SUMMARY in requestedGroups
+            )
             val result = StatsReportExporter.exportComprehensivePdf(
                 context = context,
                 uri = uri,
