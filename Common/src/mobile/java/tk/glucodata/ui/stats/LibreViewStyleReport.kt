@@ -794,7 +794,21 @@ internal object LibreViewStyleReport {
                 }
                 line(c, 38f, 230f + offset + nRows * 16f, 574f, 230f + offset + nRows * 16f)
             }
+            reportLegend(c, 694f, modern = true)
         }
+
+        private fun reportLegend(c: Canvas, y: Float, modern: Boolean = false) {
+            if (modern) fill(c, RectF(38f, y, 574f, y + 26f), pale, 5f)
+            text(c, s(R.string.lv_ref_legend), 43f, y + 10f, 6.5f, true, width = 54f)
+            fill(c, RectF(100f, y + 4f, 106f, y + 11f), orange, 1f)
+            val high = if (modern) targets.veryHighMgDl else targets.highMgDl
+            text(c, "${s(R.string.lv_ref_high)} (> ${glucose(high)})", 110f, y + 10f, 6.5f, color = gray, width = 160f)
+            fill(c, RectF(276f, y + 4f, 282f, y + 11f), red, 1f)
+            text(c, "${s(R.string.lv_ref_low)} (< ${glucose(targets.lowMgDl)})", 286f, y + 10f, 6.5f, color = gray, width = 145f)
+            fill(c, RectF(439f, y + 4f, 445f, y + 11f), if (modern) Color.rgb(166, 38, 126) else green, 1f)
+            text(c, s(R.string.lv_ref_recorded_insulin), 449f, y + 10f, 6.5f, color = gray, width = 120f)
+        }
+
         private fun mealPart(time: Long) = when (Instant.ofEpochMilli(time).atZone(zone).hour) { in 4..9 -> 0; in 10..15 -> 1; in 16..21 -> 2; else -> 3 }
         private fun mealPage(c: Canvas, dates: List<LocalDate>) {
             val samples = meals.filter { date(it.timestamp) in dates }
