@@ -38,6 +38,19 @@ OEM's system font does not determine report typography.
 - Both SIL OFL license texts accompany the fonts in the APK under
   `assets/report_fonts/`.
 
+## Chart rendering
+
+Modern AGP and insight medians are green within the target band, orange above
+and red below. The same smoothed path is clipped at the two target lines,
+including isolated median points; no data interpolation is changed. The median
+is drawn after the grid so its stroke remains visible. Legacy blue percentile
+profiles retain their original palette.
+
+Percentile shading retains the two nested smooth bands and threshold colours.
+Rounded daily tiles and the time-in-range bar clip their contents to their
+rounded outlines. Period headers, goal chips and target badges use rounded
+fills as well as rounded borders.
+
 ## Verification limits
 
 Policy tests cover calendar boundaries (including DST), seven-day pagination,

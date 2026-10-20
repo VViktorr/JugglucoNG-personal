@@ -146,10 +146,23 @@ internal object LibreViewStyleReport {
             }
             return y
         }
-        private fun fill(c: Canvas, r: RectF, color: Int) { paint.style = Paint.Style.FILL; paint.pathEffect = null; paint.color = color; c.drawRect(r, paint) }
+        private fun fill(c: Canvas, r: RectF, color: Int, radius: Float = 0f) {
+            paint.style = Paint.Style.FILL; paint.pathEffect = null; paint.color = color
+            c.drawRoundRect(r, radius, radius, paint)
+        }
+        private fun clipRounded(c: Canvas, r: RectF, radius: Float) {
+            val path = Path().apply { addRoundRect(r, radius, radius, Path.Direction.CW) }
+            c.clipPath(path)
+        }
+        private fun clinicalColor(value: Float): Int = when {
+            value > targets.highMgDl -> orange
+            value < targets.lowMgDl -> red
+            else -> green
+        }
         private fun line(c: Canvas, x1: Float, y1: Float, x2: Float, y2: Float, color: Int = border,
                          width: Float = 0.4f, dashed: Boolean = false) {
             paint.style = Paint.Style.STROKE; paint.strokeWidth = width; paint.color = color
+            paint.strokeCap = Paint.Cap.BUTT; paint.strokeJoin = Paint.Join.ROUND
             paint.pathEffect = if (dashed) DashPathEffect(floatArrayOf(2f, 2f), 0f) else null
             c.drawLine(x1, y1, x2, y2, paint); paint.pathEffect = null
         }
@@ -176,7 +189,7 @@ internal object LibreViewStyleReport {
                 text(c, patient?.dateOfBirth.orEmpty().let { if (it.isBlank()) "" else "${s(R.string.patient_dob_label)}: $it" }, 38f, 61f, 7f, width = 370f)
                 right(c, "JugglucoNG", 574f, 54f, 14f, true, width = 160f)
                 text(c, s(spec.group.labelResId), 38f, 94f, 18f, true, width = 536f)
-                fill(c, RectF(38f, 110f, if (spec.group == LibreViewReportGroup.DAILY_LOG) 574f else 302f, 128f), pale)
+                fill(c, RectF(38f, 110f, if (spec.group == LibreViewReportGroup.DAILY_LOG) 574f else 302f, 128f), pale, 3f)
                 text(c, period, 45f, 122f, 8f, width = 520f)
             } else {
                 text(c, s(spec.group.labelResId), 66f, 70f, 15f, true, cyan, 400f)
@@ -205,15 +218,18 @@ internal object LibreViewStyleReport {
         }
 
         private fun rangeCards(c: Canvas, insights: Boolean = false) {
-            fill(c, RectF(310f, 110f, 574f, 128f), pale)
+            fill(c, RectF(310f, 110f, 574f, 128f), pale, 3f)
             text(c, "${s(R.string.lv_report_coverage)} ${pct(summary.coverage.percent)}", 317f, 122f, 8f, width = 250f)
             card(c, "agp.ranges", s(R.string.lv_match_time_ranges))
             text(c, s(R.string.lv_match_standard_targets), 187f, 151f, 5f, color = gray, width = 107f)
             val colors = listOf(orange, Color.rgb(255, 220, 0), green, red, Color.rgb(165, 0, 35))
             val values = listOf(summary.tir.veryHighPercent, summary.tir.highPercent, summary.tir.inRangePercent, summary.tir.lowPercent, summary.tir.veryLowPercent)
             val labels = listOf(R.string.lv_report_very_high, R.string.lv_report_high, R.string.lv_report_target, R.string.lv_report_low, R.string.lv_report_very_low)
+            val barClip = c.save()
+            clipRounded(c, RectF(63f, 166f, 104f, 308f), 3f)
             var top = 166f
             values.forEachIndexed { i, p -> val h = p * 1.42f; fill(c, RectF(63f, top, 104f, top + h), colors[i]); top += h }
+            c.restoreToCount(barClip)
             outline(c, RectF(62f, 165f, 105f, 309f), 3f)
             listOf(targets.veryHighMgDl to 175f, targets.highMgDl to 201f,
                 targets.lowMgDl to 294f, targets.veryLowMgDl to 305f).forEach { (value, y) ->
@@ -230,7 +246,7 @@ internal object LibreViewStyleReport {
             right(c, pct(summary.tir.inRangePercent), 295f, 241f, 14f, true, width = 70f)
             right(c, pct(summary.tir.belowRangePercent), 295f, 291f, 14f, true, width = 70f)
             fun goal(value: String, x: Float, y: Float, width: Float = 51f) {
-                fill(c, RectF(x, y - 7f, x + width, y + 3f), pale)
+                fill(c, RectF(x, y - 7f, x + width, y + 3f), pale, 2f)
                 text(c, "${s(R.string.lv_match_goal)} $value", x + 2f, y, 6f, width = width - 4f)
             }
             goal("< 5%", 114f, 184f, 44f)
@@ -306,7 +322,7 @@ internal object LibreViewStyleReport {
                 line(c, r.left, y, r.right, y, if (target && modern) green else border, if (target) 0.7f else 0.35f, !target)
                 if (printed.none { abs(it - y) < if (modern) 5.5f else 8f }) {
                     if (target && modern) {
-                        fill(c, RectF(r.left - 69f, y - 5f, r.left - 49f, y + 5f), green)
+                        fill(c, RectF(r.left - 69f, y - 5f, r.left - 49f, y + 5f), green, 2f)
                         text(c, glucose(tick), r.left - 67f, y + 2f, 6f, true, Color.WHITE, 19f)
                     } else right(c, glucose(tick), r.left - 6f, y + 2f, if (compact) 5.5f else 6.5f, color = gray, width = 35f)
                     printed.add(y)
@@ -339,7 +355,8 @@ internal object LibreViewStyleReport {
                 curvePath(segment.asReversed().map { x(it) to valueY(lower(it), r) }, path, false); path.close()
                 paint.style = Paint.Style.FILL; paint.pathEffect = null; paint.color = color; c.drawPath(path, paint)
             }
-            AgpReportProfile.segments(bins).forEach { segment ->
+            val segments = AgpReportProfile.segments(bins)
+            segments.forEach { segment ->
                 band(segment, { it.p05 }, { it.p95 }, if (modern) Color.rgb(213, 236, 204) else Color.rgb(220, 227, 239))
                 band(segment, { it.p25 }, { it.p75 }, if (modern) Color.rgb(151, 199, 132) else Color.rgb(156, 178, 209))
                 if (modern) {
@@ -350,15 +367,31 @@ internal object LibreViewStyleReport {
                     band(segment, { it.p05 }, { it.p95 }, Color.rgb(252, 218, 223))
                     band(segment, { it.p25 }, { it.p75 }, Color.rgb(244, 147, 163)); c.restoreToCount(below)
                 }
-                val path = curvePath(segment.map { x(it) to valueY(it.median, r) })
-                paint.style = Paint.Style.STROKE; paint.strokeWidth = 1.15f; paint.color = if (modern) green else blue; c.drawPath(path, paint)
-                if (segment.size == 1) {
-                    paint.style = Paint.Style.FILL
-                    c.drawCircle(x(segment.first()), valueY(segment.first().median, r), 1f, paint)
-                }
             }
             c.restoreToCount(saved)
             axes(c, r, interval = interval, modern = modern, compact = compact, timesTop = timesTop, timeLabelY = timeLabelY)
+            // Keep the median in front of the grid. Clip the same smoothed path at
+            // each target, so colours meet exactly where the curve crosses it.
+            val medianClip = c.save(); c.clipRect(r)
+            segments.forEach { segment ->
+                val path = curvePath(segment.map { x(it) to valueY(it.median, r) })
+                paint.style = Paint.Style.STROKE; paint.pathEffect = null
+                paint.strokeWidth = 1.15f; paint.strokeCap = Paint.Cap.ROUND; paint.strokeJoin = Paint.Join.ROUND
+                paint.color = if (modern) green else blue
+                c.drawPath(path, paint)
+                if (modern) {
+                    val above = c.save(); c.clipRect(r.left, r.top, r.right, valueY(targets.highMgDl, r))
+                    paint.color = orange; c.drawPath(path, paint); c.restoreToCount(above)
+                    val below = c.save(); c.clipRect(r.left, valueY(targets.lowMgDl, r), r.right, r.bottom)
+                    paint.color = red; c.drawPath(path, paint); c.restoreToCount(below)
+                }
+                if (segment.size == 1) {
+                    val bin = segment.first()
+                    paint.style = Paint.Style.FILL; paint.color = if (modern) clinicalColor(bin.median) else blue
+                    c.drawCircle(x(bin), valueY(bin.median, r), 1f, paint)
+                }
+            }
+            c.restoreToCount(medianClip)
             text(c, unit, if (compact) r.left - 20f else r.left - 29f,
                 if (compact) r.top - 9f else r.top + 12f, 6f, color = gray, width = 28f)
             if (legend) {
@@ -378,6 +411,9 @@ internal object LibreViewStyleReport {
         }
 
         private fun trace(c: Canvas, day: LocalDate, r: RectF, modern: Boolean = false, compact: Boolean = false, timesTop: Boolean = false) {
+            // Clip the content as well as the border of the rounded daily tiles.
+            val tileClip = c.save()
+            if (compact) clipRounded(c, r, 4f)
             fill(c, RectF(r.left, valueY(targets.highMgDl, r), r.right, valueY(targets.lowMgDl, r)), Color.rgb(221, 223, 225))
             if (!compact) axes(c, r, interval = if (modern) 2 else 6, modern = false, compact = true, timesTop = timesTop)
             val save = c.save(); c.clipRect(r)
@@ -400,12 +436,13 @@ internal object LibreViewStyleReport {
                     val under = c.save(); c.clipRect(r.left, valueY(targets.lowMgDl, r), r.right, r.bottom)
                     line(c, previousX, valueY(old.value, r), x, y, red, 0.8f); c.restoreToCount(under)
                 } else {
-                    paint.style = Paint.Style.FILL; paint.color = if (modern) green else blue
+                    paint.style = Paint.Style.FILL; paint.color = if (modern) clinicalColor(point.value) else blue
                     c.drawCircle(x, y, 0.65f, paint)
                 }
                 previous = point; previousX = x
             }
             c.restoreToCount(save)
+            c.restoreToCount(tileClip)
             if (compact) {
                 outline(c, r, 4f)
                 if (recent.indexOf(day) % 7 == 0) listOf(targets.lowMgDl, targets.highMgDl).forEach {
@@ -648,3 +685,4 @@ internal object LibreViewStyleReport {
         }
     }
 }
+
