@@ -119,5 +119,6 @@
     <string name="lv_ref_version">Full software version</string>
     <string name="lv_ref_os">Operating system version</string>
     <string name="lv_ref_phone_model">Smartphone model</string>
+    <string name="lv_ref_dose_anchor_note">Syringe: nearby glucose trace; at the top: no nearby CGM data.</string>
 </resources>
 

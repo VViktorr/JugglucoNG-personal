@@ -98,10 +98,14 @@ individual dose badges along the insulin row. The insulin row no longer sums
 all entries into an hourly cell. Hourly maximum/minimum and carbohydrate rows,
 weekly totals and summary calculations retain their previous meaning.
 
-A marker may attach to a CGM segment only when the timestamp is an existing
-sample or lies between two samples within the same permitted plotting gap.
-No CGM value is fabricated across missing data; in that case a baseline time
-tick is shown. Markers identify recorded insulin without inferring its class,
+A marker first attaches to a valid CGM segment at the dose timestamp. If that
+segment is unavailable, its endpoint is the nearest recorded sample within
+15 minutes, at that sample's own x/y coordinates. The dose badge and line
+origin keep the exact injection time. No glucose value or line is fabricated
+across a CGM gap. With no nearby sample, draw the syringe separately at the
+top of the plot, with no stem to zero/baseline. The same syringe is used for
+every weekly/daily injection, totals and legends, mirrored at plot edges so
+it remains fully visible. Draw weekly syringes after the dose badges. Markers identify recorded insulin without inferring its class,
 meal relationship or a dosing recommendation.
 
 ## Verification limits

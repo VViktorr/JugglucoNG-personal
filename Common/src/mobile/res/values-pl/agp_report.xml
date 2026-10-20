@@ -119,5 +119,6 @@
     <string name="lv_ref_version">Pełna wersja oprogramowania</string>
     <string name="lv_ref_os">Wersja systemu operacyjnego</string>
     <string name="lv_ref_phone_model">Model smartfona</string>
+    <string name="lv_ref_dose_anchor_note">Strzykawka: pobliski fragment wykresu; u góry: brak pobliskich danych CGM.</string>
 </resources>
 

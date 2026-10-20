@@ -754,13 +754,33 @@ internal object LibreViewStyleReport {
             return a.value + (b.value - a.value) * ((timestamp - a.timestamp).toDouble() / span).toFloat()
         }
 
-        private fun insulinPen(c: Canvas, x: Float, y: Float, color: Int) {
-            // The needle tip (x,y) is the exact event anchor on the glucose curve.
-            line(c, x, y, x + 2f, y - 2f, color, 0.6f)
-            line(c, x + 2f, y - 2f, x + 5f, y - 5f, color, 1.8f)
-            line(c, x + 4f, y - 6f, x + 6f, y - 4f, color, 0.6f)
-            line(c, x + 5f, y - 5f, x + 6.5f, y - 6.5f, color, 0.6f)
-            line(c, x + 5.5f, y - 7.5f, x + 7.5f, y - 5.5f, color, 0.6f)
+        private data class DoseCurveAnchor(val x: Float, val y: Float)
+
+        /** Actual curve position, or the nearest real sample within 15 minutes of the dose. */
+        private fun doseCurveAnchor(day: LocalDate, timestamp: Long, r: RectF): DoseCurveAnchor? {
+            glucoseAtDose(day, timestamp)?.let { return DoseCurveAnchor(clockX(timestamp, r), valueY(it, r)) }
+            val data = daily[day].orEmpty()
+            val index = data.binarySearchBy(timestamp) { it.timestamp }
+            val next = if (index >= 0) index else -index - 1
+            val nearest = listOfNotNull(data.getOrNull(next - 1), data.getOrNull(next))
+                .minByOrNull { abs(it.timestamp - timestamp) } ?: return null
+            if (abs(nearest.timestamp - timestamp) > 15 * 60_000L) return null
+            // End at the sample's own x as well as y, never invent glucose in a gap.
+            return DoseCurveAnchor(clockX(nearest.timestamp, r), valueY(nearest.value, r))
+        }
+
+        private fun insulinPen(c: Canvas, x: Float, y: Float, color: Int, bounds: RectF? = null,
+                               preferLeft: Boolean = false) {
+            // Mirror at plot edges so the complete syringe remains visible.
+            val sx = if (preferLeft || (bounds != null && x + 8f > bounds.right)) -1f else 1f
+            val sy = if (bounds != null && y - 8f < bounds.top) -1f else 1f
+            fun stroke(ax: Float, ay: Float, bx: Float, by: Float, width: Float) =
+                line(c, x + sx * ax, y - sy * ay, x + sx * bx, y - sy * by, color, width)
+            stroke(0f, 0f, 2f, 2f, 0.6f)
+            stroke(2f, 2f, 5f, 5f, 1.8f)
+            stroke(4f, 6f, 6f, 4f, 0.6f)
+            stroke(5f, 5f, 6.5f, 6.5f, 0.6f)
+            stroke(5.5f, 7.5f, 7.5f, 5.5f, 0.6f)
         }
 
         private fun weekly(c: Canvas, dates: List<LocalDate>) {
@@ -777,15 +797,13 @@ internal object LibreViewStyleReport {
                 val badgeHeight = minOf(10f, laneStep * 0.9f)
                 val badgeSize = minOf(6.5f, badgeHeight * 0.75f)
                 val markerClip = c.save(); c.clipRect(r)
-                annotations.forEach { dose ->
-                    val glucose = glucoseAtDose(day, dose.entry.timestamp)
-                    val curveY = glucose?.let { valueY(it, r) } ?: r.bottom
+                val anchors = annotations.map { doseCurveAnchor(day, it.entry.timestamp, r) }
+                annotations.forEachIndexed { i, dose ->
+                    val anchor = anchors[i]
                     val top = r.top + 4f + dose.lane * laneStep
-                    // Solid stem points to the actual minute/second, independently of label width.
-                    line(c, dose.x, top + badgeHeight, dose.x, curveY, green, 0.9f)
-                    if (glucose != null) {
-                        paint.style = Paint.Style.FILL; paint.color = green
-                        c.drawCircle(dose.x, curveY, 1f, paint)
+                    if (anchor != null) {
+                        // Origin is the exact injection time; endpoint is a real part of the trace.
+                        line(c, dose.x, top + badgeHeight, anchor.x, anchor.y, green, 0.9f)
                     }
                 }
                 // Draw all labels after the stems so leaders cannot run through another label.
@@ -794,6 +812,12 @@ internal object LibreViewStyleReport {
                     fill(c, RectF(dose.left, top, dose.left + dose.width, top + badgeHeight), Color.rgb(162, 209, 89), 2f)
                     text(c, doseText(dose.entry, true), dose.left + 2f, top + badgeHeight * 0.75f, badgeSize, true, width = dose.width - 4f)
                     line(c, dose.x, top + badgeHeight, dose.x + 0.5f, top + badgeHeight, green, 0.9f)
+                }
+                // Syringes go last, above stems and dose badges, in both report types.
+                annotations.forEachIndexed { i, dose ->
+                    val anchor = anchors[i]
+                    if (anchor != null) insulinPen(c, anchor.x, anchor.y, green, r)
+                    else insulinPen(c, dose.x, r.top + 11f, green, r, preferLeft = true)
                 }
                 c.restoreToCount(markerClip)
                 val values = listOf(dayDetails[day]?.let { glucose(it.averageMgDl) }.orEmpty(), journalTotal(day, "carbs"),
@@ -807,7 +831,10 @@ internal object LibreViewStyleReport {
                         outline(c, RectF(382f, y + 15f, 387f, y + 22f), 0.7f, blue)
                         text(c, unit, 377f, y + 56f, 5.6f, color = gray, width = 34f)
                     }
-                    if (col == 2 && value.isNotBlank()) text(c, s(R.string.lv_report_units), 465f, y + 56f, 5.6f, color = gray, width = 34f)
+                    if (col == 2 && value.isNotBlank()) {
+                        insulinPen(c, 474f, y + 22f, green)
+                        text(c, s(R.string.lv_report_units), 465f, y + 56f, 5.6f, color = gray, width = 34f)
+                    }
                     if (col == 3 && value.isNotBlank()) {
                         outline(c, RectF(517f, y + 15f, 524f, y + 22f), color = red)
                         line(c, 520.5f, y + 16f, 520.5f, y + 21f, red, 0.7f)
@@ -865,10 +892,9 @@ internal object LibreViewStyleReport {
                 val color = Color.rgb(166, 38, 126)
                 val markerClip = c.save(); c.clipRect(r)
                 doses.forEach { dose ->
-                    val glucose = glucoseAtDose(day, dose.entry.timestamp)
-                    // In a CGM gap show only the time tick at the baseline, not a fabricated reading.
-                    if (glucose != null) insulinPen(c, dose.x, valueY(glucose, r), color)
-                    else line(c, dose.x, r.bottom - 5f, dose.x, r.bottom, color, 1f)
+                    val anchor = doseCurveAnchor(day, dose.entry.timestamp, r)
+                    if (anchor != null) insulinPen(c, anchor.x, anchor.y, color, r)
+                    else insulinPen(c, dose.x, r.top + 11f, color, r)
                 }
                 c.restoreToCount(markerClip)
                 val readings = daily[day].orEmpty().groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).hour }
@@ -881,6 +907,7 @@ internal object LibreViewStyleReport {
                 val labels = listOf("${s(R.string.lv_groups_max)} $unit", "${s(R.string.lv_groups_min)} $unit", s(R.string.lv_match_insulin), s(R.string.lv_match_carbs))
                 rowTops.forEachIndexed { i, top ->
                     right(c, labels[i], 137f, top + 12f, 7.6f, width = 97f)
+                    if (i == 2) insulinPen(c, 46f, top + 12f, color)
                     line(c, 38f, top, 574f, top)
                 }
                 for (hour in 0 until 24) {
@@ -919,8 +946,9 @@ internal object LibreViewStyleReport {
             text(c, "${s(R.string.lv_ref_high)} (> ${glucose(high)})", 110f, y + 10f, 6.5f, color = gray, width = 160f)
             fill(c, RectF(276f, y + 4f, 282f, y + 11f), red, 1f)
             text(c, "${s(R.string.lv_ref_low)} (< ${glucose(targets.lowMgDl)})", 286f, y + 10f, 6.5f, color = gray, width = 145f)
-            fill(c, RectF(439f, y + 4f, 445f, y + 11f), if (modern) Color.rgb(166, 38, 126) else green, 1f)
+            insulinPen(c, 439f, y + 11f, if (modern) Color.rgb(166, 38, 126) else green)
             text(c, s(R.string.lv_ref_recorded_insulin), 449f, y + 10f, 6.5f, color = gray, width = 120f)
+            text(c, s(R.string.lv_ref_dose_anchor_note), 43f, y + 22f, 6f, color = gray, width = 526f)
         }
 
         private fun mealPart(time: Long) = when (Instant.ofEpochMilli(time).atZone(zone).hour) { in 4..9 -> 0; in 10..15 -> 1; in 16..21 -> 2; else -> 3 }
@@ -1006,4 +1034,5 @@ internal object LibreViewStyleReport {
         }
     }
 }
+
 
