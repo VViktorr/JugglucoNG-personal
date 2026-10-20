@@ -322,11 +322,12 @@ object StatsReportExporter {
             ?: uiState.activeRange?.daySpan?.takeIf { it > 0 }
             ?: 90,
         patientInfo: PatientInfo? = null,
-        reportStyle: PdfVisualStyle = PdfVisualStyle.CURRENT
+        reportStyle: PdfVisualStyle = PdfVisualStyle.CURRENT,
+        reportGroups: Set<LibreViewReportGroup> = LibreViewReportGroup.defaults
     ): Result<Unit> = withContext(Dispatchers.IO) {
         if (reportStyle == PdfVisualStyle.LIBREVIEW_STYLE) {
             return@withContext runCatching {
-                LibreViewStyleReport.write(context, uri, uiState, reportDays, patientInfo)
+                LibreViewStyleReport.write(context, uri, uiState, reportDays, patientInfo, reportGroups)
             }.onFailure { Log.e(TAG, "Libreviev style export failed", it) }
         }
         runCatching {

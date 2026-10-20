@@ -40,4 +40,34 @@
     <string name="lv_report_journal_note_2" formatted="false">Średnie dobowe to sumy podzielone przez okres raportu, nie zalecenia leczenia.</string>
     <string name="lv_report_two_hour" formatted="false">ŚREDNIA GLUKOZA W PRZEDZIAŁACH DWUGODZINNYCH</string>
     <string name="lv_report_recorded_trends" formatted="false">ZAPISANE ILOŚCI DOBOWE W PRZEDZIAŁACH DWUGODZINNYCH</string>
+    <string name="lv_group_insights" formatted="false">Wgląd w tendencje glukozy</string>
+    <string name="lv_group_weekly" formatted="false">Podsumowanie tygodniowe</string>
+    <string name="lv_group_monthly" formatted="false">Podsumowanie miesięczne</string>
+    <string name="lv_group_daily_log" formatted="false">Dziennik dobowy</string>
+    <string name="lv_group_meals" formatted="false">Okołoposiłkowe trendy glukozy</string>
+    <string name="lv_group_device" formatted="false">Informacje o urządzeniu</string>
+    <string name="lv_groups_title" formatted="false">Grupy raportu PDF</string>
+    <string name="lv_groups_all" formatted="false">Zaznacz wszystkie</string>
+    <string name="lv_groups_clear" formatted="false">Odznacz wszystkie</string>
+    <string name="lv_groups_choose" formatted="false">Wybierz co najmniej jedną grupę raportu.</string>
+    <string name="lv_groups_pdf_only" formatted="false">Ten wybór dotyczy pliku PDF.</string>
+    <string name="lv_groups_day_parts" formatted="false">GLUKOZA W PORACH DNIA</string>
+    <string name="lv_groups_observations" formatted="false">OBSERWACJE</string>
+    <string name="lv_groups_no_observations" formatted="false">Brak dodatkowych obserwacji dla tego okresu.</string>
+    <string name="lv_groups_mean_short" formatted="false">Średnia</string>
+    <string name="lv_groups_lows_short" formatted="false">Niskie</string>
+    <string name="lv_groups_markers" formatted="false">Znaczniki u góry wykresu: fiolet = zapisana insulina; bursztyn = zapisane węglowodany.</string>
+    <string name="lv_groups_hourly_totals" formatted="false">Kolumny godzinowe: maksimum, minimum, sumy zapisanej insuliny i węglowodanów. Brak danych: -.</string>
+    <string name="lv_groups_max" formatted="false">Maks.</string>
+    <string name="lv_groups_min" formatted="false">Min.</string>
+    <string name="lv_groups_meal_method" formatted="false">Średnia glukoza przed zapisanym posiłkiem oraz po 1, 2 i 3 godzinach.</string>
+    <string name="lv_groups_meal_table" formatted="false">Średnie dobowe: przed / 1 godzinę po posiłku</string>
+    <string name="lv_groups_meal_missing" formatted="false">Tylko zapisane węglowodany. Najbliższy odczyt CGM do 15 min; brak pomiaru: -.</string>
+    <string name="lv_groups_morning" formatted="false">Rano</string>
+    <string name="lv_groups_midday" formatted="false">Południe</string>
+    <string name="lv_groups_evening" formatted="false">Wieczór</string>
+    <string name="lv_groups_night" formatted="false">Noc</string>
+    <string name="lv_groups_app_version" formatted="false">Wersja aplikacji</string>
+    <string name="lv_groups_phone" formatted="false">Telefon</string>
+    <string name="lv_groups_data_sources" formatted="false">IDENTYFIKATORY SENSORÓW W WYBRANEJ HISTORII</string>
 </resources>

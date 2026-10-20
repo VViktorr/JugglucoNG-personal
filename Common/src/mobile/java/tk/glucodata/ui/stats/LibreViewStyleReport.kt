@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import android.os.Build
 import androidx.annotation.StringRes
 import tk.glucodata.R
 import tk.glucodata.data.HistoryDatabase
@@ -18,6 +19,8 @@ import tk.glucodata.ui.util.GlucoseFormatter
 import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.TextStyle
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -31,24 +34,35 @@ internal object LibreViewStyleReport {
         uri: Uri,
         state: StatsUiState,
         reportDays: Int,
-        patient: StatsReportExporter.PatientInfo?
+        patient: StatsReportExporter.PatientInfo?,
+        groups: Set<LibreViewReportGroup>
     ) {
-        require(state.readings.isNotEmpty()) { context.getString(R.string.lv_report_no_data) }
+        require(groups.isNotEmpty()) { context.getString(R.string.lv_groups_choose) }
+        val deviceOnly = groups == setOf(LibreViewReportGroup.DEVICE)
+        require(state.readings.isNotEmpty() || deviceOnly) { context.getString(R.string.lv_report_no_data) }
         val now = System.currentTimeMillis()
         val end = state.activeRange?.endMillis ?: state.summary.lastTimestamp.takeIf { it > 0L } ?: now
         val start = state.activeRange?.startMillis ?: (end - reportDays.coerceAtLeast(1) * 86_400_000L)
         val points = state.readings.filter {
             it.timestamp in start..end && it.value.isFinite() && it.value > 0f
         }.sortedBy { it.timestamp }
-        require(points.isNotEmpty()) { context.getString(R.string.lv_report_no_data) }
-        // A failed journal query must fail the export, rather than claim there were no doses.
-        val journal = HistoryDatabase.getInstance(context).journalDao().getEntriesBetween(start, end)
+        require(points.isNotEmpty() || deviceOnly) { context.getString(R.string.lv_report_no_data) }
+        // Only sections that consume journal entries need the query. A failed query
+        // must fail their export rather than claim there were no doses.
+        val journalGroups = setOf(LibreViewReportGroup.SNAPSHOT, LibreViewReportGroup.DAILY_TRENDS,
+            LibreViewReportGroup.WEEKLY_SUMMARY, LibreViewReportGroup.DAILY_LOG, LibreViewReportGroup.MEAL_PATTERNS)
+        val journal = if (groups.any { it in journalGroups })
+            HistoryDatabase.getInstance(context).journalDao().getEntriesBetween(start, end) else emptyList()
+        val zone = ZoneId.systemDefault()
+        val pages = LibreViewReportPages.plan(groups,
+            Instant.ofEpochMilli(start).atZone(zone).toLocalDate(),
+            Instant.ofEpochMilli(end).atZone(zone).toLocalDate())
         val renderer = Renderer(context, state, points, journal, start, end, patient?.sanitized())
         val document = PdfDocument()
         try {
-            repeat(3) { index ->
+            pages.forEachIndexed { index, spec ->
                 val page = document.startPage(PdfDocument.PageInfo.Builder(595, 842, index + 1).create())
-                renderer.page(page.canvas, index)
+                renderer.page(page.canvas, spec, index, pages.size)
                 document.finishPage(page)
             }
             context.contentResolver.openOutputStream(uri)?.use { document.writeTo(it) }
@@ -157,10 +171,10 @@ internal object LibreViewStyleReport {
             text(c, title, x + 5f, y + 12f, 9f, true, Color.WHITE, width - 10f)
         }
 
-        fun page(c: Canvas, index: Int) {
+        fun page(c: Canvas, spec: LibreViewReportPage, index: Int, total: Int) {
             c.drawColor(Color.WHITE)
             text(c, patient?.name?.takeIf { it.isNotBlank() } ?: "JugglucoNG", 30f, 27f, 10f, true, width = 330f)
-            right(c, "${index + 1} / 3", 565f, 27f)
+            right(c, "${index + 1} / $total", 565f, 27f)
             val metadata = listOfNotNull(
                 patient?.dateOfBirth?.takeIf { it.isNotBlank() }?.let { s(R.string.patient_dob_label) + ": " + it },
                 patient?.identifier?.takeIf { it.isNotBlank() }?.let { "ID: $it" },
@@ -168,13 +182,18 @@ internal object LibreViewStyleReport {
             ).joinToString("  |  ")
             text(c, metadata, 30f, 41f, 7f, color = gray, width = 365f)
             right(c, date(System.currentTimeMillis()).format(dateFormat), 565f, 41f, 8f, color = gray)
-            val titles = listOf(R.string.lv_report_title, R.string.lv_report_snapshot, R.string.lv_report_daily_trends)
-            text(c, s(titles[index]), 30f, 65f, 18f, true, blue)
+            text(c, s(spec.group.labelResId), 30f, 65f, 18f, true, blue)
             text(c, "${date(start).format(dateFormat)} - ${date(end).format(dateFormat)}", 30f, 82f, 10f, color = gray)
-            when (index) {
-                0 -> overview(c)
-                1 -> snapshot(c)
-                else -> trends(c)
+            when (spec.group) {
+                LibreViewReportGroup.AGP -> overview(c)
+                LibreViewReportGroup.GLUCOSE_INSIGHTS -> insights(c)
+                LibreViewReportGroup.SNAPSHOT -> snapshot(c)
+                LibreViewReportGroup.DAILY_TRENDS -> trends(c)
+                LibreViewReportGroup.WEEKLY_SUMMARY -> weekly(c, spec.dates)
+                LibreViewReportGroup.MONTHLY_SUMMARY -> monthly(c, checkNotNull(spec.month))
+                LibreViewReportGroup.DAILY_LOG -> dailyLog(c, spec.dates)
+                LibreViewReportGroup.MEAL_PATTERNS -> meals(c, spec.dates)
+                LibreViewReportGroup.DEVICE -> device(c)
             }
             text(c, s(R.string.lv_report_footer), 30f, 816f, 6.5f, color = gray)
             text(c, s(R.string.lv_report_method), 30f, 827f, 6.5f, color = gray)
@@ -387,6 +406,235 @@ internal object LibreViewStyleReport {
             metric(c, s(R.string.lv_report_insulin), recorded(insulin, s(R.string.lv_report_units)), 727f, width = 535f)
             text(c, s(R.string.lv_report_journal_note), 30f, 760f, 8f, color = gray)
             text(c, s(R.string.lv_report_journal_note_2), 30f, 774f, 8f, color = gray)
+        }
+
+        private val dayDetails by lazy { StatsAnalytics.dayBreakdowns(points, targets).associateBy { it.date } }
+        private val lowEventsByDay by lazy {
+            summary.episodes.filter { it.kind == EpisodeKind.LOW }.groupingBy { date(it.startMillis) }.eachCount()
+        }
+        private val journalByDay by lazy { journal.groupBy { date(it.timestamp) } }
+        private val mealSamples by lazy { LibreViewMealProfile.build(points, journal) }
+
+        private fun wrapped(c: Canvas, value: String, x: Float, top: Float, width: Float,
+                            size: Float = 10f, maxLines: Int = 5): Float {
+            var remaining = value.trim()
+            var y = top
+            repeat(maxLines) { index ->
+                if (remaining.isEmpty()) return y
+                paint.textSize = size
+                paint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+                var count = paint.breakText(remaining, true, width, null).coerceAtLeast(1)
+                if (count < remaining.length) {
+                    val space = remaining.lastIndexOf(' ', count - 1)
+                    if (space > 0) count = space
+                }
+                val part = if (index == maxLines - 1) remaining else remaining.take(count)
+                text(c, part, x, y, size, width = width)
+                remaining = remaining.drop(count).trimStart()
+                y += size + 5f
+            }
+            return y
+        }
+
+        private fun journalTotal(day: LocalDate, type: String): String {
+            val entries = journalByDay[day].orEmpty().filter { it.entryType == type && validAmount(it) }
+            return if (entries.isEmpty()) "-" else number(entries.sumOf { it.amount!!.toDouble() }.toFloat())
+        }
+
+        private fun insights(c: Canvas) {
+            section(c, s(R.string.lv_report_profile), 100f)
+            profile(c, RectF(75f, 145f, 520f, 350f))
+            section(c, s(R.string.lv_groups_day_parts), 390f)
+            summary.dayParts.forEachIndexed { i, part ->
+                val x = 30f + i * 134f
+                text(c, s(part.part.labelResId), x, 435f, 10f, true, width = 125f)
+                text(c, "%02d-%02d".format(locale, part.part.startHour, (part.part.startHour + 6) % 24), x, 452f, 8f, color = gray, width = 125f)
+                text(c, if (part.readingCount == 0) "-" else "${glucose(part.averageMgDl)} $unit", x, 477f, 12f, true, blue, 125f)
+                text(c, if (part.readingCount == 0) "-" else "TIR ${percent(part.tir.inRangePercent)}", x, 496f, 9f, width = 125f)
+            }
+            section(c, s(R.string.lv_groups_observations), 535f)
+            val observations = summary.insights.take(3)
+            if (observations.isEmpty()) wrapped(c, s(R.string.lv_groups_no_observations), 30f, 577f, 535f)
+            observations.forEachIndexed { i, insight ->
+                val top = 575f + i * 75f
+                text(c, insight.title, 30f, top, 10f, true, width = 535f)
+                wrapped(c, insight.message, 30f, top + 17f, 535f, 9f, 3)
+            }
+        }
+
+        private fun dayChart(c: Canvas, day: LocalDate, r: RectF) {
+            miniDay(c, day, r)
+            for (hour in 6..18 step 6) {
+                val x = r.left + hour / 24f * r.width()
+                line(c, x, r.top, x, r.bottom, Color.LTGRAY, 0.3f)
+                text(c, "%02d:00".format(locale, hour), x - 10f, r.bottom + 10f, 6f, color = gray, width = 26f)
+            }
+            journalByDay[day].orEmpty().filter {
+                validAmount(it) && it.entryType in setOf("insulin", "carbs")
+            }.forEach { entry ->
+                val time = Instant.ofEpochMilli(entry.timestamp).atZone(zone)
+                val x = r.left + (time.hour * 60 + time.minute) / 1440f * r.width()
+                paint.style = Paint.Style.FILL
+                paint.color = if (entry.entryType == "insulin") Color.rgb(160, 50, 130) else Color.rgb(210, 140, 0)
+                c.drawCircle(x.coerceIn(r.left + 2f, r.right - 2f), r.top + 4f, 2f, paint)
+            }
+        }
+
+        private fun weekly(c: Canvas, dates: List<LocalDate>) {
+            text(c, "${dates.first().format(dateFormat)} - ${dates.last().format(dateFormat)}", 30f, 106f, 9f, true)
+            listOf(s(R.string.lv_groups_mean_short), "g", s(R.string.lv_report_units), s(R.string.lv_groups_lows_short))
+                .forEachIndexed { i, label -> text(c, label, 370f + i * 49f, 124f, 7f, true, width = 48f) }
+            text(c, unit, 370f, 135f, 6f, color = gray, width = 48f)
+            dates.forEachIndexed { i, day ->
+                val top = 143f + i * 90f
+                text(c, day.format(DateTimeFormatter.ofPattern("EEE", locale)), 30f, top + 9f, 8f, true, width = 42f)
+                text(c, day.format(DateTimeFormatter.ofPattern("dd.MM", locale)), 30f, top + 22f, 8f, width = 42f)
+                dayChart(c, day, RectF(83f, top, 350f, top + 57f))
+                val details = dayDetails[day]
+                val values = listOf(details?.let { glucose(it.averageMgDl) } ?: "-", journalTotal(day, "carbs"),
+                    journalTotal(day, "insulin"), if (details == null) "-" else (lowEventsByDay[day] ?: 0).toString())
+                values.forEachIndexed { col, value -> text(c, value, 370f + col * 49f, top + 33f, 10f, true, width = 48f) }
+                line(c, 30f, top + 76f, 565f, top + 76f)
+            }
+            text(c, s(R.string.lv_groups_markers), 30f, 793f, 7f, color = gray)
+        }
+
+        private fun monthly(c: Canvas, month: YearMonth) {
+            text(c, month.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)), 30f, 112f, 13f, true, blue)
+            val width = 535f / 7f
+            (1..7).forEach { day ->
+                val label = java.time.DayOfWeek.of(day).getDisplayName(TextStyle.SHORT, locale)
+                text(c, label, 34f + (day - 1) * width, 144f, 8f, true, width = width - 8f)
+            }
+            val offset = month.atDay(1).dayOfWeek.value - 1
+            (1..month.lengthOfMonth()).forEach { number ->
+                val day = month.atDay(number)
+                val cell = offset + number - 1
+                val x = 30f + cell % 7 * width
+                val y = 158f + cell / 7 * 96f
+                val selected = !day.isBefore(date(start)) && !day.isAfter(date(end))
+                rect(c, RectF(x, y, x + width - 2f, y + 94f), if (selected) Color.rgb(246, 248, 250) else Color.rgb(235, 235, 235))
+                text(c, number.toString(), x + 5f, y + 14f, 9f, true, if (selected) Color.BLACK else gray, width - 10f)
+                if (selected) {
+                    val detail = dayDetails[day]
+                    text(c, detail?.let { glucose(it.averageMgDl) } ?: "-", x + 5f, y + 37f, 12f, true, blue, width - 10f)
+                    text(c, if (detail == null) "-" else "TIR ${percent(detail.tir.inRangePercent)}", x + 5f, y + 55f, 7f, width = width - 10f)
+                    text(c, if (detail == null) "-" else "${s(R.string.lv_groups_lows_short)}: ${lowEventsByDay[day] ?: 0}",
+                        x + 5f, y + 73f, 7f, width = width - 10f)
+                }
+            }
+            text(c, "${s(R.string.lv_report_mean)}: $unit", 30f, 766f, 8f, color = gray)
+        }
+
+        private fun dailyLog(c: Canvas, dates: List<LocalDate>) {
+            text(c, unit, 30f, 107f, 8f, color = gray)
+            dates.forEachIndexed { row, day ->
+                val top = 135f + row * 215f
+                dayChart(c, day, RectF(85f, top, 555f, top + 107f))
+                val readings = daily[day].orEmpty().groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).hour }
+                val entries = journalByDay[day].orEmpty().filter { validAmount(it) }
+                    .groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).hour }
+                val labels = listOf(s(R.string.lv_groups_max), s(R.string.lv_groups_min), s(R.string.lv_report_units), "g")
+                labels.forEachIndexed { i, label -> text(c, label, 30f, top + 146f + i * 14f, 7f, width = 50f) }
+                for (hour in 0 until 24) {
+                    val x = 85f + hour * (470f / 24f)
+                    text(c, "%02d".format(locale, hour), x, top + 131f, 6f, color = gray, width = 19f)
+                    val values = readings[hour].orEmpty()
+                    val amounts = entries[hour].orEmpty()
+                    fun amount(type: String): String {
+                        val matches = amounts.filter { it.entryType == type }
+                        return if (matches.isEmpty()) "-" else number(matches.sumOf { it.amount!!.toDouble() }.toFloat())
+                    }
+                    val cells = listOf(values.maxOfOrNull { it.value }?.let(::glucose) ?: "-",
+                        values.minOfOrNull { it.value }?.let(::glucose) ?: "-", amount("insulin"), amount("carbs"))
+                    cells.forEachIndexed { i, value -> text(c, value, x, top + 146f + i * 14f, 6f, width = 19f) }
+                }
+                line(c, 30f, top + 201f, 565f, top + 201f)
+            }
+            text(c, s(R.string.lv_groups_hourly_totals), 30f, 793f, 7f, color = gray)
+        }
+
+        private fun mealPart(timestamp: Long): Int = when (Instant.ofEpochMilli(timestamp).atZone(zone).hour) {
+            in 4..9 -> 0
+            in 10..15 -> 1
+            in 16..21 -> 2
+            else -> 3
+        }
+
+        private fun meals(c: Canvas, dates: List<LocalDate>) {
+            val samples = mealSamples.filter { date(it.timestamp) in dates }
+            text(c, s(R.string.lv_groups_meal_method), 30f, 107f, 8f, color = gray)
+            text(c, unit, 30f, 119f, 7f, color = gray)
+            val names = listOf(R.string.lv_groups_morning, R.string.lv_groups_midday, R.string.lv_groups_evening, R.string.lv_groups_night)
+            val max = maxGlucose()
+            for (part in 0..3) {
+                val x = 30f + part * (535f / 4f)
+                text(c, s(names[part]), x + 5f, 135f, 10f, true, width = 125f)
+                val matches = samples.filter { mealPart(it.timestamp) == part }
+                text(c, "n = ${matches.size}", x + 5f, 150f, 8f, color = gray, width = 125f)
+                text(c, listOf("04:00-10:00", "10:00-16:00", "16:00-22:00", "22:00-04:00")[part],
+                    x + 5f, 162f, 6.5f, color = gray, width = 125f)
+                val r = RectF(x + 27f, 173f, x + 122f, 295f)
+                listOf(0f, targets.lowMgDl, targets.highMgDl, max).distinct().forEach {
+                    val py = y(it, r, max)
+                    line(c, r.left, py, r.right, py)
+                    right(c, glucose(it), r.left - 3f, py + 3f, 6f, width = 25f)
+                }
+                val path = Path()
+                var connected = false
+                for (step in 0..3) {
+                    val values = matches.mapNotNull { it.glucose[step] }
+                    val px = r.left + step / 3f * r.width()
+                    text(c, if (step == 0) "0" else "+$step", px - 3f, 309f, 7f, width = 22f)
+                    if (values.isEmpty()) connected = false else {
+                        val py = y(values.average().toFloat(), r, max)
+                        if (connected) path.lineTo(px, py) else path.moveTo(px, py)
+                        paint.style = Paint.Style.FILL
+                        paint.color = blue
+                        c.drawCircle(px, py, 2f, paint)
+                        connected = true
+                    }
+                }
+                paint.style = Paint.Style.STROKE
+                paint.color = blue
+                paint.strokeWidth = 1.2f
+                c.drawPath(path, paint)
+            }
+            text(c, s(R.string.lv_groups_meal_table), 30f, 340f, 9f, true)
+            names.forEachIndexed { i, name -> text(c, s(name), 88f + i * 119f, 359f, 8f, true, width = 113f) }
+            dates.forEachIndexed { row, day ->
+                val top = 379f + row * 27f
+                text(c, day.format(DateTimeFormatter.ofPattern("dd.MM", locale)), 30f, top, 8f, width = 48f)
+                for (part in 0..3) {
+                    val matches = samples.filter { date(it.timestamp) == day && mealPart(it.timestamp) == part }
+                    fun mean(step: Int): String {
+                        val values = matches.mapNotNull { it.glucose[step] }
+                        return if (values.isEmpty()) "-" else glucose(values.average().toFloat())
+                    }
+                    text(c, "${mean(0)} / ${mean(1)}", 88f + part * 119f, top, 9f, width = 113f)
+                }
+                line(c, 30f, top + 9f, 565f, top + 9f)
+            }
+            text(c, s(R.string.lv_groups_meal_missing), 30f, 778f, 8f, color = gray)
+        }
+
+        private fun device(c: Canvas) {
+            section(c, s(R.string.lv_group_device), 100f)
+            val version = context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
+            val rows = listOf(
+                s(R.string.lv_groups_app_version) to version,
+                s(R.string.lv_groups_phone) to "${Build.MANUFACTURER} ${Build.MODEL}",
+                "Android" to "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+                s(R.string.lv_report_target) to "${glucose(targets.lowMgDl)} - ${glucose(targets.highMgDl)} $unit",
+                s(R.string.lv_report_very_low) to "${glucose(targets.veryLowMgDl)} $unit",
+                s(R.string.lv_report_very_high) to "${glucose(targets.veryHighMgDl)} $unit"
+            )
+            rows.forEachIndexed { i, (label, value) -> metric(c, label, value, 151f + i * 34f, width = 535f) }
+            section(c, s(R.string.lv_groups_data_sources), 390f)
+            val sources = points.mapNotNull { it.sensorSerial?.takeIf(String::isNotBlank) }.distinct()
+            if (sources.isEmpty()) text(c, s(R.string.lv_report_no_data_short), 30f, 430f, 10f, color = gray)
+            sources.take(18).forEachIndexed { i, source -> text(c, source, 30f, 430f + i * 18f, 9f, width = 535f) }
+            if (sources.size > 18) text(c, "+${sources.size - 18}", 30f, 765f, 9f, color = gray)
         }
 
         private fun validAmount(entry: JournalEntryEntity) = entry.amount?.let { it.isFinite() && it > 0f } == true

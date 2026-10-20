@@ -40,4 +40,34 @@
     <string name="lv_report_journal_note_2" formatted="false">Daily amounts are totals divided by the selected period, not a treatment recommendation.</string>
     <string name="lv_report_two_hour" formatted="false">MEAN GLUCOSE IN TWO-HOUR BLOCKS</string>
     <string name="lv_report_recorded_trends" formatted="false">RECORDED DAILY AMOUNTS IN TWO-HOUR BLOCKS</string>
+    <string name="lv_group_insights" formatted="false">Glucose pattern insights</string>
+    <string name="lv_group_weekly" formatted="false">Weekly summary</string>
+    <string name="lv_group_monthly" formatted="false">Monthly summary</string>
+    <string name="lv_group_daily_log" formatted="false">Daily log</string>
+    <string name="lv_group_meals" formatted="false">Mealtime glucose patterns</string>
+    <string name="lv_group_device" formatted="false">Device information</string>
+    <string name="lv_groups_title" formatted="false">PDF report groups</string>
+    <string name="lv_groups_all" formatted="false">Select all</string>
+    <string name="lv_groups_clear" formatted="false">Clear selection</string>
+    <string name="lv_groups_choose" formatted="false">Choose at least one report group.</string>
+    <string name="lv_groups_pdf_only" formatted="false">This selection applies to the PDF file.</string>
+    <string name="lv_groups_day_parts" formatted="false">GLUCOSE BY TIME OF DAY</string>
+    <string name="lv_groups_observations" formatted="false">OBSERVATIONS</string>
+    <string name="lv_groups_no_observations" formatted="false">No additional observations for this period.</string>
+    <string name="lv_groups_mean_short" formatted="false">Mean</string>
+    <string name="lv_groups_lows_short" formatted="false">Lows</string>
+    <string name="lv_groups_markers" formatted="false">Markers at chart top: purple = recorded insulin; amber = recorded carbohydrates.</string>
+    <string name="lv_groups_hourly_totals" formatted="false">Hourly columns: maximum, minimum, recorded insulin and carbohydrate totals. Missing data: -.</string>
+    <string name="lv_groups_max" formatted="false">Max.</string>
+    <string name="lv_groups_min" formatted="false">Min.</string>
+    <string name="lv_groups_meal_method" formatted="false">Mean glucose before a recorded meal and at +1, +2 and +3 hours.</string>
+    <string name="lv_groups_meal_table" formatted="false">Daily means: before / +1 hour after the meal</string>
+    <string name="lv_groups_meal_missing" formatted="false">Recorded carbohydrate entries only. Nearest CGM within 15 min; missing measurements: -.</string>
+    <string name="lv_groups_morning" formatted="false">Morning</string>
+    <string name="lv_groups_midday" formatted="false">Midday</string>
+    <string name="lv_groups_evening" formatted="false">Evening</string>
+    <string name="lv_groups_night" formatted="false">Night</string>
+    <string name="lv_groups_app_version" formatted="false">Application version</string>
+    <string name="lv_groups_phone" formatted="false">Phone</string>
+    <string name="lv_groups_data_sources" formatted="false">SENSOR IDENTIFIERS IN THE SELECTED HISTORY</string>
 </resources>
