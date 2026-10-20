@@ -61,13 +61,15 @@ class ExpressiveAppWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val initialRevision = WidgetConfigStore.revision.value
         val initialTick = GlucoseUpdateBroadcaster.tick.value
         val initialState = withContext(Dispatchers.IO) { loadWidgetState(context) }
         provideContent {
             GlanceTheme {
                 val tick by GlucoseUpdateBroadcaster.tick.collectAsState()
-                val state by produceState(initialValue = initialState, key1 = tick) {
-                    if (tick != initialTick) {
+                val revision by WidgetConfigStore.revision.collectAsState()
+                val state by produceState(initialValue = initialState, key1 = tick, key2 = revision) {
+                    if (tick != initialTick || revision != initialRevision) {
                         value = withContext(Dispatchers.IO) { loadWidgetState(context) }
                     }
                 }

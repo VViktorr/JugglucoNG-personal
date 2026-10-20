@@ -1,6 +1,8 @@
 package tk.glucodata.widgets
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 import tk.glucodata.R
 
@@ -194,6 +196,8 @@ private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
 
 object WidgetConfigStore {
     private const val PREFS = "home_widget_defaults"
+    private val mutableRevision = MutableStateFlow(0L)
+    val revision = mutableRevision.asStateFlow()
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -245,6 +249,10 @@ object WidgetConfigStore {
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {
         prefs(context).edit().putString(kind.name, config.toJson().toString()).apply()
+        // Active Glance sessions must reload settings even without a glucose tick.
+        synchronized(mutableRevision) {
+            mutableRevision.value = mutableRevision.value + 1L
+        }
     }
 
     fun load(context: Context, kind: WidgetKind): WidgetConfig =

@@ -967,7 +967,7 @@ fun InteractiveGlucoseChart(
     val chartPlotBottomGapPx = with(LocalDensity.current) { (4.dp * safeExpandedProgress).toPx() }
     val bottomAxisHeightPx = with(LocalDensity.current) { 32.dp.toPx() }
     val axisLabelBackgroundColor =
-        MaterialTheme.colorScheme.surfaceContainerHigh
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
 
     val TirLowColor = Color(GlucoseRangeColors.low(isDark))
     val TirHighColor = Color(GlucoseRangeColors.high(isDark))

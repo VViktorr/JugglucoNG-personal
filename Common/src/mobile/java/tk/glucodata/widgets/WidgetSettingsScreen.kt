@@ -151,8 +151,8 @@ private fun refreshWidget(context: android.content.Context, kind: WidgetSettings
     when (kind) {
         WidgetSettingsKind.BASIC -> GlucoseWidget.refreshSettings()
         WidgetSettingsKind.CHART -> ExpressiveWidgetReceiver.updateAll(context)
-        WidgetSettingsKind.RANGE -> WidgetUpdater.updateAllOfKind(context, WidgetKind.RANGE)
-        WidgetSettingsKind.CLOCK_WEATHER -> WidgetUpdater.updateAllOfKind(context, WidgetKind.CLOCK_WEATHER)
+        WidgetSettingsKind.RANGE, WidgetSettingsKind.CLOCK_WEATHER ->
+            WidgetUpdater.requestUpdateAll(context)
     }
 }
 
