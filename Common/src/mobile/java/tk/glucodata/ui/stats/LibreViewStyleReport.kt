@@ -19,6 +19,7 @@ import tk.glucodata.data.journal.JournalEntryEntity
 import tk.glucodata.ui.GlucosePoint
 import tk.glucodata.ui.util.GlucoseFormatter
 import java.io.IOException
+import java.text.Normalizer
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -68,16 +69,18 @@ internal object LibreViewStyleReport {
         private val locale = Locale.getDefault()
         private val summary = state.summary
         private val targets = state.targets
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG or Paint.LINEAR_TEXT_FLAG).apply {
+            hinting = Paint.HINTING_OFF
+        }
         private fun font(id: Int, bold: Boolean = false): Typeface =
             runCatching { ResourcesCompat.getFont(context, id) }.getOrNull()
                 ?: Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
-        private val interRegular = font(R.font.report_inter_regular)
-        private val interBold = font(R.font.report_inter_bold, true)
-        private val legacyRegular = font(R.font.report_arial_compatible_regular)
-        private val legacyBold = font(R.font.report_arial_compatible_bold, true)
-        private var regularFont = interRegular
-        private var boldFont = interBold
+        // Static, fully bundled Latin Extended fonts also used by legacy report pages.
+        // Keep one family throughout the PDF; avoid OEM fallback for Polish accents.
+        private val reportRegular = font(R.font.report_arial_compatible_regular)
+        private val reportBold = font(R.font.report_arial_compatible_bold, true)
+        private var regularFont = reportRegular
+        private var boldFont = reportBold
         private val ink = Color.rgb(20, 23, 29)
         private val gray = Color.rgb(85, 89, 96)
         private val border = Color.rgb(167, 170, 177)
@@ -122,20 +125,22 @@ internal object LibreViewStyleReport {
             paint.style = Paint.Style.FILL; paint.pathEffect = null; paint.color = color
             paint.typeface = if (bold) boldFont else regularFont
             paint.textSize = size
-            val shown = if (paint.measureText(value) <= width) value else {
-                val count = paint.breakText(value, true, (width - paint.measureText("…")).coerceAtLeast(0f), null)
-                value.take(count) + "…"
+            val normalized = Normalizer.normalize(value, Normalizer.Form.NFC)
+            val shown = if (paint.measureText(normalized) <= width) normalized else {
+                val count = paint.breakText(normalized, true, (width - paint.measureText("…")).coerceAtLeast(0f), null)
+                normalized.take(count) + "…"
             }
             c.drawText(shown, x, y, paint)
         }
         private fun right(c: Canvas, value: String, x: Float, y: Float, size: Float = 8f,
                           bold: Boolean = false, color: Int = ink, width: Float = 100f) {
             paint.typeface = if (bold) boldFont else regularFont; paint.textSize = size
-            text(c, value, x - minOf(width, paint.measureText(value)), y, size, bold, color, width)
+            val normalized = Normalizer.normalize(value, Normalizer.Form.NFC)
+            text(c, normalized, x - minOf(width, paint.measureText(normalized)), y, size, bold, color, width)
         }
         private fun wrap(c: Canvas, value: String, x: Float, top: Float, width: Float,
                          size: Float = 7f, maxLines: Int = 3, color: Int = ink): Float {
-            var rest = value.trim(); var y = top
+            var rest = Normalizer.normalize(value, Normalizer.Form.NFC).trim(); var y = top
             repeat(maxLines) { index ->
                 if (rest.isEmpty()) return y
                 paint.typeface = regularFont; paint.textSize = size
@@ -182,8 +187,8 @@ internal object LibreViewStyleReport {
             c.drawColor(Color.WHITE)
             val modern = spec.group in setOf(LibreViewReportGroup.AGP, LibreViewReportGroup.GLUCOSE_INSIGHTS,
                 LibreViewReportGroup.DAILY_LOG, LibreViewReportGroup.DEVICE)
-            regularFont = if (modern) interRegular else legacyRegular
-            boldFont = if (modern) interBold else legacyBold
+            regularFont = reportRegular
+            boldFont = reportBold
             if (modern) {
                 text(c, patient?.name.orEmpty().ifBlank { "JugglucoNG" }, 38f, 48f, 10.9f, width = 370f)
                 text(c, patient?.dateOfBirth.orEmpty().replace("-", "/").let { if (it.isBlank()) "" else "${s(R.string.lv_ref_dob).removeSuffix(":")}: $it" }, 38f, 62f, 8.7f, width = 370f)
@@ -239,30 +244,42 @@ internal object LibreViewStyleReport {
             text(c, "${s(R.string.lv_ref_coverage)} ${pct(summary.coverage.percent)}", 317f, 122f, 8.7f, width = 250f)
             card(c, "agp.ranges", s(R.string.lv_match_time_ranges))
             text(c, s(R.string.lv_ref_standard), 188f, 149f, 6.5f, color = gray, width = 107f)
-            val colors = listOf(orange, Color.rgb(255, 220, 0), green, red, Color.rgb(165, 0, 35))
+            val colors = listOf(orange, Color.rgb(255, 220, 0), green, red, Color.rgb(80, 0, 16))
             val values = listOf(summary.tir.veryHighPercent, summary.tir.highPercent, summary.tir.inRangePercent, summary.tir.lowPercent, summary.tir.veryLowPercent)
             val labels = listOf(R.string.lv_report_very_high, R.string.lv_report_high, R.string.lv_report_target, R.string.lv_report_low, R.string.lv_report_very_low)
-            // Give zero/tiny categories a visible outline, as in the reference.
-            // Printed percentages remain the quantitative values.
-            var top = 165f
-            val edges = mutableListOf(top)
-            values.forEachIndexed { i, p ->
-                val h = 8f + p * 1.02f
-                val r = RectF(63f, top, 104f, top + h)
+            // Reference geometry: 8.187 pt minimum category, proportional remainder,
+            // and a 1.638 pt white gap. All five categories total 145.187 pt at 100%.
+            // Outlined zero categories remain visible without painting a nonzero fill.
+            var top = 164.086f
+            val boundaries = mutableListOf<Float>()
+            values.forEachIndexed { i, percent ->
+                val height = 8.187f + percent.coerceIn(0f, 100f) * 0.977f
+                val r = RectF(62.016f, top, 104.59f, top + height)
                 fill(c, r, Color.WHITE, 2f)
-                if (p > 0f) fill(c, RectF(r.left, r.top + 1f, r.right, r.bottom - 1f), colors[i], 2f)
-                outline(c, r, 2f, colors[i]); top += h; edges.add(top)
+                if (percent > 0f) fill(c, RectF(r.left, r.top + 0.6f, r.right, r.bottom - 0.6f), colors[i], 1.1f)
+                outline(c, r, if (i == 0 || i == 4) 3f else 1.1f, colors[i])
+                boundaries.add(r.bottom + 0.819f)
+                top = r.bottom + 1.638f
             }
-            listOf(targets.veryHighMgDl, targets.highMgDl, targets.lowMgDl, targets.veryLowMgDl).forEachIndexed { i, value ->
-                val y = edges[listOf(1, 2, 3, 4)[i]]
-                fill(c, RectF(46f, y - 4f, 63f, y + 4f), Color.WHITE, 1f)
-                outline(c, RectF(46f, y - 4f, 63f, y + 4f), 1f)
-                right(c, glucose(value), 62f, y + 2.3f, 6.5f, width = 17f)
-            }
-            // Leaders join the dynamic bar heights to the fixed category table.
-            listOf(1 to 174f, 2 to 212f, 3 to 262f, 4 to 287f).forEach { (i, y) ->
-                line(c, 105f, edges[i], 110f, y)
-                line(c, 110f, y, 194f, y)
+            // Upper and lower pairs have a two-column split; the central row spans it.
+            val dividers = listOf(186.46f, 211.572f, 261.788f, 286.90f)
+            boundaries.take(4).forEachIndexed { i, boundary ->
+                val endX = if (i == 1 || i == 2) 302.18f else 194.38f
+                val path = Path().apply {
+                    moveTo(62.016f, boundary); lineTo(104.5f, boundary)
+                    val direction = if (dividers[i] > boundary) 1f else -1f
+                    quadTo(105.3f, boundary, 105.6f, boundary + direction)
+                    lineTo(109.8f, dividers[i] - direction)
+                    quadTo(110.1f, dividers[i], 111f, dividers[i])
+                    lineTo(endX, dividers[i])
+                }
+                paint.style = Paint.Style.STROKE; paint.pathEffect = null
+                paint.strokeWidth = 0.55f; paint.color = border
+                c.drawPath(path, paint)
+                val value = listOf(targets.veryHighMgDl, targets.highMgDl, targets.lowMgDl, targets.veryLowMgDl)[i]
+                val badge = RectF(46.73f, boundary - 4.094f, 64.2f, boundary + 4.094f)
+                fill(c, badge, Color.WHITE, 1f); outline(c, badge, 1f)
+                right(c, glucose(value), 62f, boundary + 2.3f, 6.5f, width = 17f)
             }
             val ys = listOf(171f, 202f, 233f, 277f, 297f)
             values.forEachIndexed { i, value ->
@@ -270,19 +287,20 @@ internal object LibreViewStyleReport {
                 if (i != 2) right(c, pct(value), 193f, ys[i] + 2f, 9.8f, true, width = 45f)
             }
             text(c, "${glucose(targets.lowMgDl)} - ${glucose(targets.highMgDl)} ($unit)", 114f, 247f, 7.6f, width = 105f)
-            line(c, 194f, 161f, 194f, 313f)
+            line(c, 194.38f, 161.36f, 194.38f, 211.572f)
+            line(c, 194.38f, 261.788f, 194.38f, 312f)
             right(c, pct(summary.tir.aboveRangePercent), 295f, 190f, 14f, true, width = 70f)
             right(c, pct(summary.tir.inRangePercent), 295f, 241f, 14f, true, width = 70f)
             right(c, pct(summary.tir.belowRangePercent), 295f, 291f, 14f, true, width = 70f)
-            fun goal(value: String, x: Float, y: Float, width: Float = 51f) {
-                val label = "${s(R.string.lv_match_goal)} $value"
+            fun goal(value: String, x: Float, y: Float, width: Float = 51f, prefix: Boolean = true) {
+                val label = if (prefix) "${s(R.string.lv_match_goal)} $value" else value
                 paint.typeface = regularFont; paint.textSize = 7.6f
                 val chipWidth = minOf(width, paint.measureText(label) + 4f)
                 fill(c, RectF(x, y - 8f, x + chipWidth, y + 3f), Color.rgb(229, 230, 233), 2f)
                 text(c, label, x + 2f, y, 7.6f, width = chipWidth - 4f)
             }
-            goal("< 5%", 114f, 182f, 49f)
-            goal("< 1%", 114f, 308f, 49f)
+            goal("< 5%", 114f, 182f, 49f, prefix = false)
+            goal("< 1%", 114f, 308f, 49f, prefix = false)
             goal("< 25%", 200f, 188f)
             goal("> 70%", 200f, 239f)
             goal("< 4%", 200f, 289f)

@@ -25,9 +25,11 @@ identified as JugglucoNG; no third-party logo or patient data is bundled.
 
 ## Fonts
 
-Inter is used for the modern cards; Liberation Sans provides Arial-compatible
-metrics for the legacy layouts. Fonts are bundled, with system fallbacks, so an
-OEM's system font does not determine report typography.
+The complete report uses the bundled static Liberation Sans regular and bold
+fonts (Arial-compatible), including Latin Extended / Polish glyphs. Modern
+pages no longer use Inter. Text is normalized to NFC before measuring,
+wrapping, aligning or drawing. PDF text uses linear/subpixel positioning with
+hinting disabled, avoiding whole-point glyph placement at small report sizes.
 
 - Inter: `google/fonts`, `ofl/inter/Inter[opsz,wght].ttf`, git blob
   `047c92f6e2212473dc436020afed689527076d44`. Static instances at optical size
@@ -75,6 +77,16 @@ The device card is narrow and rounded, with actual app/phone metadata.
 No supplied patient identifiers, readings, proprietary clinical advice or
 third-party branding are embedded. Data, aggregation, calibration and missing
 scan/treatment policies are unchanged.
+
+## Time-in-range table correction
+
+The five stacked bands use 8.187 pt minimum height plus 0.977 pt per percent,
+with 1.638 pt gaps. The 100% stack spans 164.086 to 309.273 pt. This reproduces
+the measured reference stack at 0/16/84/0/0 without importing its data.
+Leader lines meet category dividers at 186.46, 211.572, 261.788 and 286.90 pt.
+Only the upper and lower category pairs have a vertical column divider;
+the central range row is not bisected. Printed percentages and source
+glucose calculations are unchanged.
 
 ## Verification limits
 
