@@ -1,6 +1,7 @@
 package tk.glucodata.ui
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,5 +40,18 @@ class ChartAxisLayoutTests {
         val (a, b) = chartExtremaLabelCenters(0f, 10f, 10f, 20f, 8f)
         assertEquals(5f, a, 0.001f)
         assertEquals(5f, b, 0.001f)
+    }
+
+    @Test fun extremaMoveAwayFromReservedTargetLimits() {
+        val reserved = listOf(60f, 180f)
+        val center = chartFreeLabelCenter(62f, reserved, 240f, 20f, 8f)!!
+        assertEquals(88f, center, 0.001f)
+        assertTrue(reserved.all { kotlin.math.abs(it - center) >= 28f })
+    }
+
+    @Test fun lowerPriorityLabelIsHiddenWhenTargetLimitsUseAllSpace() {
+        assertNull(chartFreeLabelCenter(20f, listOf(10f, 38f), 48f, 20f, 8f))
+        assertNull(chartFreeLabelCenter(5f, emptyList(), 10f, 20f, 8f))
+        assertEquals(100f, chartFreeLabelCenter(100f, emptyList(), 240f, 20f, 8f)!!, 0.001f)
     }
 }

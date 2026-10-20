@@ -63,3 +63,30 @@ internal fun chartExtremaLabelCenters(
     }
     return top to bottom
 }
+
+/** Place a lower-priority label without covering target-range labels; hide if no room. */
+internal fun chartFreeLabelCenter(
+    preferred: Float,
+    reserved: List<Float>,
+    plotHeight: Float,
+    labelHeight: Float,
+    gap: Float
+): Float? {
+    if (!preferred.isFinite() || plotHeight < labelHeight) return null
+    val half = labelHeight / 2f
+    val low = half
+    val high = plotHeight - half
+    val spacing = labelHeight + gap
+    val candidates = buildList {
+        add(preferred.coerceIn(low, high))
+        add(low)
+        add(high)
+        reserved.forEach { center ->
+            add(center - spacing)
+            add(center + spacing)
+        }
+    }
+    return candidates.filter { candidate ->
+        candidate in low..high && reserved.all { kotlin.math.abs(it - candidate) >= spacing - 0.01f }
+    }.minByOrNull { kotlin.math.abs(it - preferred) }
+}

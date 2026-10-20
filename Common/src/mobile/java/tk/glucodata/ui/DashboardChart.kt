@@ -2723,14 +2723,36 @@ fun InteractiveGlucoseChart(
                 val fontMetrics = axisTextPaint.fontMetrics
                 val labelHeight = fontMetrics.descent - fontMetrics.ascent
                 val labelGap = 8.dp.toPx()
-                val extremaCenters = if (hasMaxIndicator && hasMinIndicator) {
-                    chartExtremaLabelCenters(valToY(maxVal), valToY(minVal),
+                // Always label the configured target boundaries, even when they are
+                // not ordinary Y ticks. Reserve their space before extrema/grid labels.
+                val validTargetRange = targetLow.isFinite() && targetHigh.isFinite() && targetHigh > targetLow
+                val highBoundaryY = valToY(targetHigh)
+                val lowBoundaryY = valToY(targetLow)
+                val showHighBoundary = validTargetRange && highBoundaryY in 0f..chartHeight
+                val showLowBoundary = validTargetRange && lowBoundaryY in 0f..chartHeight
+                val targetCenters = if (showHighBoundary && showLowBoundary) {
+                    chartExtremaLabelCenters(highBoundaryY, lowBoundaryY,
                         chartHeight, labelHeight + 6.dp.toPx(), labelGap)
-                } else valToY(maxVal) to valToY(minVal)
-                val indicatorLabelYs = buildList {
-                    if (hasMaxIndicator) add(extremaCenters.first)
-                    if (hasMinIndicator) add(extremaCenters.second)
+                } else {
+                    val half = labelHeight / 2f + 3.dp.toPx()
+                    val low = half.coerceAtMost(chartHeight / 2f)
+                    val high = (chartHeight - half).coerceAtLeast(chartHeight / 2f)
+                    highBoundaryY.coerceIn(low, high) to lowBoundaryY.coerceIn(low, high)
                 }
+                val targetLabels = buildList {
+                    if (showHighBoundary) add(targetHigh to targetCenters.first)
+                    if (showLowBoundary) add(targetLow to targetCenters.second)
+                }
+                val indicatorLabelYs = targetLabels.map { it.second }.toMutableList()
+                fun reserveExtremum(value: Float, visible: Boolean): Float? {
+                    if (!visible || targetLabels.any { abs(it.first - value) < 0.001f }) return null
+                    return chartFreeLabelCenter(valToY(value), indicatorLabelYs,
+                        chartHeight, labelHeight + 6.dp.toPx(), labelGap)?.also {
+                        indicatorLabelYs.add(it)
+                    }
+                }
+                val maxIndicatorLabelY = reserveExtremum(maxVal, hasMaxIndicator)
+                val minIndicatorLabelY = reserveExtremum(minVal, hasMinIndicator)
 
                 // Geometry and grid go underneath; all text is deferred until after
                 // traces, prediction fills, event marks and the scrub cursor.
@@ -2828,8 +2850,8 @@ fun InteractiveGlucoseChart(
                         }
                     }
                     // Guides first, then every number and its opaque backing.
-                    if (hasMaxIndicator) drawIndicator(maxPoint, maxVal, extremaCenters.first, false)
-                    if (hasMinIndicator) drawIndicator(minPoint, minVal, extremaCenters.second, false)
+                    maxIndicatorLabelY?.let { drawIndicator(maxPoint, maxVal, it, false) }
+                    minIndicatorLabelY?.let { drawIndicator(minPoint, minVal, it, false) }
                     yTicks.forEach { tick ->
                         val y = valToY(tick)
                         if (y in 0f..chartHeight &&
@@ -2862,8 +2884,12 @@ fun InteractiveGlucoseChart(
                         previousRight = right
                     }
                     xTextPaint.typeface = graphFont
-                    if (hasMaxIndicator) drawIndicator(maxPoint, maxVal, extremaCenters.first, true)
-                    if (hasMinIndicator) drawIndicator(minPoint, minVal, extremaCenters.second, true)
+                    maxIndicatorLabelY?.let { drawIndicator(maxPoint, maxVal, it, true) }
+                    minIndicatorLabelY?.let { drawIndicator(minPoint, minVal, it, true) }
+                    // Highest-priority text, on the same opaque foreground as the axes.
+                    targetLabels.forEach { (value, y) ->
+                        drawForegroundYLabel(GlucoseFormatter.format(value, isMmol), y, true)
+                    }
                 }
 
                 // Sensor intervals belong to Auto, including a secondary Auto
