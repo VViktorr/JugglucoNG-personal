@@ -11,6 +11,7 @@ import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /** One appearance for phone settings; ranges, snapping and persistence stay at call sites. */
@@ -36,7 +37,7 @@ fun AppSlider(
     )
 }
 
-/** Two handles use the same track, thumb, ticks and disabled palette as a single handle. */
+/** Two handles use the same continuous track, thumb and disabled palette as a single handle. */
 @Composable
 fun AppRangeSlider(
     value: ClosedFloatingPointRange<Float>,
@@ -64,6 +65,9 @@ private fun appSliderColors(): SliderColors = SliderDefaults.colors(
     thumbColor = MaterialTheme.colorScheme.primary,
     activeTrackColor = MaterialTheme.colorScheme.primary,
     inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
-    activeTickColor = MaterialTheme.colorScheme.onPrimary,
-    inactiveTickColor = MaterialTheme.colorScheme.onSecondaryContainer
+    // Keep discrete snapping without drawing dots over the continuous track.
+    activeTickColor = Color.Transparent,
+    inactiveTickColor = Color.Transparent,
+    disabledActiveTickColor = Color.Transparent,
+    disabledInactiveTickColor = Color.Transparent
 )
