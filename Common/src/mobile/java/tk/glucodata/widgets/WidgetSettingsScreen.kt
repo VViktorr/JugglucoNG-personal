@@ -35,7 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
+import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import tk.glucodata.ui.components.AppTopBar
@@ -387,7 +387,7 @@ private fun WidgetSwitch(title: String, checked: Boolean, onCheckedChange: (Bool
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(title, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        StyledSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
