@@ -718,6 +718,51 @@ internal object LibreViewStyleReport {
             val entries = journalByDay[day].orEmpty().filter { it.entryType == type && valid(it) }
             return if (entries.isEmpty()) "" else number(entries.sumOf { it.amount!!.toDouble() }.toFloat())
         }
+        private data class DoseLabel(val entry: JournalEntryEntity, val x: Float,
+                                     val left: Float, val width: Float, val lane: Int)
+
+        /** Labels may move into another lane; their event anchors never move or round to an hour. */
+        private fun doseLabels(day: LocalDate, r: RectF, units: Boolean = false): List<DoseLabel> {
+            val laneEnds = mutableListOf<Float>()
+            return journalByDay[day].orEmpty().filter { it.entryType == "insulin" && valid(it) }
+                .sortedBy { it.timestamp }.map { entry ->
+                    val label = doseText(entry, units)
+                    paint.typeface = boldFont; paint.textSize = if (units) 6.5f else 7.6f
+                    val width = (paint.measureText(label) + 4f).coerceIn(14f, r.width())
+                    val x = clockX(entry.timestamp, r)
+                    val left = (x + 0.5f).coerceIn(r.left, r.right - width)
+                    var lane = laneEnds.indexOfFirst { left >= it + 2f }
+                    if (lane < 0) { lane = laneEnds.size; laneEnds.add(r.left) }
+                    laneEnds[lane] = left + width
+                    DoseLabel(entry, x, left, width, lane)
+                }
+        }
+
+        private fun doseText(entry: JournalEntryEntity, units: Boolean) =
+            number(entry.amount!!) + if (units) " ${s(R.string.lv_report_units)}" else ""
+
+        /** Use the plotted CGM segment only; do not invent a value across a recording gap. */
+        private fun glucoseAtDose(day: LocalDate, timestamp: Long): Float? {
+            val data = daily[day].orEmpty()
+            val index = data.binarySearchBy(timestamp) { it.timestamp }
+            if (index >= 0) return data[index].value
+            val next = -index - 1
+            if (next <= 0 || next >= data.size) return null
+            val a = data[next - 1]; val b = data[next]
+            val span = b.timestamp - a.timestamp
+            if (span <= 0L || span > gapLimit) return null
+            return a.value + (b.value - a.value) * ((timestamp - a.timestamp).toDouble() / span).toFloat()
+        }
+
+        private fun insulinPen(c: Canvas, x: Float, y: Float, color: Int) {
+            // The needle tip (x,y) is the exact event anchor on the glucose curve.
+            line(c, x, y, x + 2f, y - 2f, color, 0.6f)
+            line(c, x + 2f, y - 2f, x + 5f, y - 5f, color, 1.8f)
+            line(c, x + 4f, y - 6f, x + 6f, y - 4f, color, 0.6f)
+            line(c, x + 5f, y - 5f, x + 6.5f, y - 6.5f, color, 0.6f)
+            line(c, x + 5.5f, y - 7.5f, x + 7.5f, y - 5.5f, color, 0.6f)
+        }
+
         private fun weekly(c: Canvas, dates: List<LocalDate>) {
             val labels = listOf(R.string.lv_groups_mean_short, R.string.lv_match_carbs, R.string.lv_match_insulin, R.string.lv_groups_lows_short)
             labels.forEachIndexed { i, id -> wrap(c, s(id), 365f + i * 45.5f, 124f, 43f, 6f, 2, gray) }
@@ -726,12 +771,31 @@ internal object LibreViewStyleReport {
                 text(c, day.dayOfWeek.getDisplayName(TextStyle.SHORT, locale), 66f, y + 10f, 9f, true, cyan, 40f)
                 text(c, day.format(DateTimeFormatter.ofPattern("d MMM", locale)), 66f, y + 23f, 9f, true, cyan, 40f)
                 trace(c, day, r, timesTop = true)
-                val entries = journalByDay[day].orEmpty().filter { it.entryType == "insulin" && valid(it) }
-                var lastLabel = Float.NEGATIVE_INFINITY
-                entries.forEach { entry ->
-                    val x = clockX(entry.timestamp, r)
-                    if (x - lastLabel >= 24f) { fill(c, RectF(x - 9f, r.top + 10f, x + 15f, r.top + 21f), Color.rgb(203, 233, 144)); text(c, number(entry.amount!!), x - 7f, r.top + 18f, 6.5f, true, width = 22f); lastLabel = x }
+                val annotations = doseLabels(day, r, units = true)
+                val laneCount = (annotations.maxOfOrNull { it.lane } ?: 0) + 1
+                val laneStep = minOf(12f, (r.height() - 8f) / laneCount)
+                val badgeHeight = minOf(10f, laneStep * 0.9f)
+                val badgeSize = minOf(6.5f, badgeHeight * 0.75f)
+                val markerClip = c.save(); c.clipRect(r)
+                annotations.forEach { dose ->
+                    val glucose = glucoseAtDose(day, dose.entry.timestamp)
+                    val curveY = glucose?.let { valueY(it, r) } ?: r.bottom
+                    val top = r.top + 4f + dose.lane * laneStep
+                    // Solid stem points to the actual minute/second, independently of label width.
+                    line(c, dose.x, top + badgeHeight, dose.x, curveY, green, 0.9f)
+                    if (glucose != null) {
+                        paint.style = Paint.Style.FILL; paint.color = green
+                        c.drawCircle(dose.x, curveY, 1f, paint)
+                    }
                 }
+                // Draw all labels after the stems so leaders cannot run through another label.
+                annotations.forEach { dose ->
+                    val top = r.top + 4f + dose.lane * laneStep
+                    fill(c, RectF(dose.left, top, dose.left + dose.width, top + badgeHeight), Color.rgb(162, 209, 89), 2f)
+                    text(c, doseText(dose.entry, true), dose.left + 2f, top + badgeHeight * 0.75f, badgeSize, true, width = dose.width - 4f)
+                    line(c, dose.x, top + badgeHeight, dose.x + 0.5f, top + badgeHeight, green, 0.9f)
+                }
+                c.restoreToCount(markerClip)
                 val values = listOf(dayDetails[day]?.let { glucose(it.averageMgDl) }.orEmpty(), journalTotal(day, "carbs"),
                     journalTotal(day, "insulin"), if (dayDetails[day] == null) "" else (lows[day] ?: 0).toString())
                 outline(c, RectF(362f, y, 544f, y + 66f))
@@ -783,34 +847,66 @@ internal object LibreViewStyleReport {
         }
 
         private fun dailyLog(c: Canvas, dates: List<LocalDate>) {
+            val shape = RectF(141.7f, 148.3f, 574f, 230.4f)
+            val annotations = dates.associateWith { doseLabels(it, shape) }
+            val insulinHeight = annotations.mapValues { (_, doses) ->
+                maxOf(16f, ((doses.maxOfOrNull { it.lane } ?: 0) + 1) * 12f + 4f)
+            }
+            val hasCarbs = dates.associateWith { day -> journalByDay[day].orEmpty().any { it.entryType == "carbs" && valid(it) } }
+            val extraHeight = dates.maxOfOrNull { (insulinHeight[it] ?: 16f) - 16f + if (hasCarbs[it] == true) 16f else 0f } ?: 0f
+            val rowPitch = 156.3f + extraHeight
             dates.forEachIndexed { row, day ->
-                val rowPitch = if (dates.any { day -> journalByDay[day].orEmpty().any { it.entryType == "carbs" && valid(it) } }) 172.3f else 156.3f
-                val offset = row * rowPitch; val r = RectF(141.7f, 148.3f + offset, 574f, 230.4f + offset)
+                val offset = row * rowPitch
+                val r = RectF(shape.left, shape.top + offset, shape.right, shape.bottom + offset)
+                val doses = annotations[day].orEmpty()
                 text(c, day.format(DateTimeFormatter.ofPattern("EEE d LLLL", locale)).uppercase(locale), 44.5f, 144f + offset, 8.7f, width = 400f)
                 trace(c, day, r, modern = true, timesTop = true)
                 text(c, "${s(R.string.lv_ref_glucose_short)} $unit", 44.5f, 192f + offset, 7.6f, width = 92f)
+                val color = Color.rgb(166, 38, 126)
+                val markerClip = c.save(); c.clipRect(r)
+                doses.forEach { dose ->
+                    val glucose = glucoseAtDose(day, dose.entry.timestamp)
+                    // In a CGM gap show only the time tick at the baseline, not a fabricated reading.
+                    if (glucose != null) insulinPen(c, dose.x, valueY(glucose, r), color)
+                    else line(c, dose.x, r.bottom - 5f, dose.x, r.bottom, color, 1f)
+                }
+                c.restoreToCount(markerClip)
                 val readings = daily[day].orEmpty().groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).hour }
-                val entries = journalByDay[day].orEmpty().filter { valid(it) }.groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).hour }
+                val entries = journalByDay[day].orEmpty().filter { it.entryType == "carbs" && valid(it) }
+                    .groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).hour }
+                val insulinTop = 262f + offset
+                val insulinBottom = insulinTop + (insulinHeight[day] ?: 16f)
+                val bottom = insulinBottom + if (hasCarbs[day] == true) 16f else 0f
+                val rowTops = listOf(230f + offset, 246f + offset, insulinTop) + if (hasCarbs[day] == true) listOf(insulinBottom) else emptyList()
                 val labels = listOf("${s(R.string.lv_groups_max)} $unit", "${s(R.string.lv_groups_min)} $unit", s(R.string.lv_match_insulin), s(R.string.lv_match_carbs))
-                val hasCarbs = journalByDay[day].orEmpty().any { it.entryType == "carbs" && valid(it) }
-                val nRows = if (hasCarbs) 4 else 3
-                for (i in 0 until nRows) { right(c, labels[i], 137f, 242f + offset + i * 16f, 7.6f, width = 97f); line(c, 38f, 230f + offset + i * 16f, 574f, 230f + offset + i * 16f) }
+                rowTops.forEachIndexed { i, top ->
+                    right(c, labels[i], 137f, top + 12f, 7.6f, width = 97f)
+                    line(c, 38f, top, 574f, top)
+                }
                 for (hour in 0 until 24) {
-                    val values = readings[hour].orEmpty(); val amounts = entries[hour].orEmpty()
-                    fun sum(type: String): String { val matched = amounts.filter { it.entryType == type }; return if (matched.isEmpty()) "" else number(matched.sumOf { it.amount!!.toDouble() }.toFloat()) }
-                    val cells = listOf(values.maxOfOrNull { it.value }?.let(::glucose).orEmpty(), values.minOfOrNull { it.value }?.let(::glucose).orEmpty(), sum("insulin"), sum("carbs"))
+                    val values = readings[hour].orEmpty()
                     val x = r.left + hour / 24f * r.width(); val w = r.width() / 24f
-                    line(c, x, 230f + offset, x, 230f + offset + nRows * 16f)
-                    for (i in 0 until nRows) {
-                        val sample = if (i == 0) values.maxOfOrNull { it.value } else if (i == 1) values.minOfOrNull { it.value } else null
+                    line(c, x, rowTops.first(), x, bottom)
+                    for (i in 0..1) {
+                        val sample = if (i == 0) values.maxOfOrNull { it.value } else values.minOfOrNull { it.value }
+                        val top = rowTops[i]
                         val alert = sample != null && sample < targets.lowMgDl
-                        val cell = RectF(x + 1f, 233f + offset + i * 16f, x + w - 1f, 244f + offset + i * 16f)
-                        if (alert) fill(c, cell, red, 2f)
-                        else if (i == 2 && cells[i].isNotBlank()) fill(c, cell, Color.rgb(251, 231, 244), 2f)
-                        text(c, cells[i], x + 1f, 242f + offset + i * 16f, 6.5f, true, if (alert) Color.WHITE else if (i == 2) Color.rgb(166, 38, 126) else ink, w - 1f)
+                        if (alert) fill(c, RectF(x + 1f, top + 3f, x + w - 1f, top + 14f), red, 2f)
+                        text(c, sample?.let(::glucose).orEmpty(), x + 1f, top + 12f, 6.5f, true, if (alert) Color.WHITE else ink, w - 1f)
+                    }
+                    if (hasCarbs[day] == true) {
+                        val carbs = entries[hour].orEmpty()
+                        if (carbs.isNotEmpty()) text(c, number(carbs.sumOf { it.amount!!.toDouble() }.toFloat()), x + 1f, insulinBottom + 12f, 6.5f, true, width = w - 1f)
                     }
                 }
-                line(c, 38f, 230f + offset + nRows * 16f, 574f, 230f + offset + nRows * 16f)
+                // Each injection gets its own badge at its actual clock x, rather than an hourly sum.
+                doses.forEach { dose ->
+                    val top = insulinTop + 2f + dose.lane * 12f
+                    line(c, dose.x, insulinTop, dose.x, top + 2f, color, 0.6f)
+                    fill(c, RectF(dose.left, top, dose.left + dose.width, top + 11f), Color.rgb(251, 231, 244), 2f)
+                    text(c, doseText(dose.entry, false), dose.left + 2f, top + 8.5f, 7.6f, true, color, dose.width - 4f)
+                }
+                line(c, 38f, bottom, 574f, bottom)
             }
             reportLegend(c, 694f, modern = true)
         }

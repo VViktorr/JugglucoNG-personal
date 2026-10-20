@@ -64,8 +64,8 @@ including outlined zero categories; printed percentages remain authoritative.
 
 Daily mini profiles share a single rounded container with internal day and
 noon separators. The insight profile uses dotted outer percentiles and a
-segmented day-part strip. Daily logs use 156.3 pt day spacing (172.3 pt when
-carbohydrates need an extra row), hourly guides, compact coloured low-value
+segmented day-part strip. Daily logs use 156.3 pt base day spacing, expanded for extra
+carbohydrate rows and collision lanes for individual insulin entries, hourly guides, compact coloured low-value
 cells and a legend. Ordinary high daily-log readings have coloured strokes;
 the high fill begins at the very-high threshold. Weekly legacy traces retain
 blue strokes and use a horizontal patient header; other legacy sheets have
@@ -87,6 +87,22 @@ Leader lines meet category dividers at 186.46, 211.572, 261.788 and 286.90 pt.
 Only the upper and lower category pairs have a vertical column divider;
 the central range row is not bisected. Printed percentages and source
 glucose calculations are unchanged.
+
+## Injection timing
+
+Weekly dose badges have a solid stem anchored to the journal entry's exact
+local clock position, including minutes and seconds. Every valid insulin entry
+is retained; nearby labels use separate lanes rather than being skipped.
+Daily logs draw a pen marker at the same time on the glucose trace and place
+individual dose badges along the insulin row. The insulin row no longer sums
+all entries into an hourly cell. Hourly maximum/minimum and carbohydrate rows,
+weekly totals and summary calculations retain their previous meaning.
+
+A marker may attach to a CGM segment only when the timestamp is an existing
+sample or lies between two samples within the same permitted plotting gap.
+No CGM value is fabricated across missing data; in that case a baseline time
+tick is shown. Markers identify recorded insulin without inferring its class,
+meal relationship or a dosing recommendation.
 
 ## Verification limits
 
