@@ -132,7 +132,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val chartBitmap = remember(
             snapshot, showChart, size.width, chartHeightDp, config.graphHours, config.showTargetBand
         ) {
-            if (!showChart) null else NotificationChartDrawer.drawChart(
+            if (!showChart) null else NotificationChartDrawer.drawWidgetChart(
                 context,
                 snapshot.history,
                 (size.width.value.coerceAtLeast(1f) * density).roundToInt().coerceAtLeast(1),
@@ -141,7 +141,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 snapshot.viewMode,
                 config.showTargetBand,
                 snapshot.hasCalibration,
-                true,
                 snapshot.sensorSerial,
                 config.graphHours * 3_600_000L
             )
