@@ -92,4 +92,32 @@
     <string name="lv_match_scans_per_day" formatted="false">Średnia skanów/widoków na dobę</string>
     <string name="lv_match_goal" formatted="false">Cel:</string>
     <string name="lv_match_standard_targets" formatted="false">Standardowe cele T1/T2</string>
+
+    <!-- Labels scoped to the reference-shaped PDF layout. -->
+    <string name="lv_ref_dob">Data ur.:</string>
+    <string name="lv_ref_coverage">Czas aktywności czujnika</string>
+    <string name="lv_ref_standard">Cele dla cukrzycy typu 1 lub typu 2</string>
+    <string name="lv_ref_mean">Średnie stęż. glukozy</string>
+    <string name="lv_ref_variability">Zmienność stęż. glukozy</string>
+    <string name="lv_ref_cv">Zdefiniowane jako procentowy współczynnik zmienności (CV)</string>
+    <string name="lv_ref_range">Zakres docelowy</string>
+    <string name="lv_ref_range_short">Zakres</string>
+    <string name="lv_ref_agp">AGP to suma wartości stęż. glukozy w raportowanym okresie z medianą (50%) i innymi percentylami pokazanymi jakby wystąpiły jednego dnia.</string>
+    <string name="lv_ref_daily">Profil dzienny prezentuje okres od północy do północy z datą w górnym lewym rogu.</string>
+    <string name="lv_ref_median">Mediana</string>
+    <string name="lv_ref_percentiles_inner">Od 25. do 75. percentyla</string>
+    <string name="lv_ref_percentiles_outer">Percentyle od 5. do 95.</string>
+    <string name="lv_ref_high">Wysokie stężenie glukozy</string>
+    <string name="lv_ref_low">Niskie stężenie glukozy</string>
+    <string name="lv_ref_legend">Objaśnienia</string>
+    <string name="lv_ref_recorded_insulin">Zarejestrowana insulina</string>
+    <string name="lv_ref_daily_average">Codziennie Średnia</string>
+    <string name="lv_ref_glucose_short">Stęż. glukozy</string>
+    <string name="lv_ref_insights_profile">Tendencje stężeń glukozy</string>
+    <string name="lv_ref_night">Przez noc</string>
+    <string name="lv_ref_app">Aplikacja</string>
+    <string name="lv_ref_version">Pełna wersja oprogramowania</string>
+    <string name="lv_ref_os">Wersja systemu operacyjnego</string>
+    <string name="lv_ref_phone_model">Model smartfona</string>
 </resources>
+

@@ -19,13 +19,14 @@ internal object LibreViewReportLayout {
         "snapshot.lows" to RectF(244f, 297f, 445f, 408f),
         "snapshot.coverage" to RectF(244f, 484f, 445f, 562f),
         "trends.glucose" to RectF(163f, 147f, 567f, 309f),
-        "trends.carbs" to RectF(163f, 355f, 567f, 439f),
+        "trends.carbs" to RectF(163f, 336f, 567f, 439f),
         "trends.insulin" to RectF(163f, 467f, 567f, 505f),
         "monthly.calendar" to RectF(175f, 128f, 578f, 419f),
         "meals.panels" to RectF(140f, 120f, 547f, 197f),
         "meals.table" to RectF(140f, 246f, 547f, 349f),
-        "device.settings" to RectF(38f, 130f, 351f, 310f),
-        "device.phone" to RectF(359f, 150f, 574f, 310f)
+        "device.settings" to RectF(38f, 130f, 389f, 310f),
+        "device.phone" to RectF(408f, 143f, 574f, 326f)
     )
     fun frame(name: String): RectF = RectF(checkNotNull(frames[name]) { name })
 }
+

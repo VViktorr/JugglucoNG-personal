@@ -51,6 +51,31 @@ Rounded daily tiles and the time-in-range bar clip their contents to their
 rounded outlines. Period headers, goal chips and target badges use rounded
 fills as well as rounded borders.
 
+## Refinement from paired seven-day exports
+
+The supplied eleven-page reference and Android export were rendered and compared
+page by page. Further changes match measured typography (10.9/8.7 pt modern
+patient header, 17.5 pt title, 8.7 pt plot labels and 1.64 pt clinical median),
+two-level metric captions and compact unit suffixes. Shaded goal chips fit their
+text. The time-in-range bar has a visible minimum height for each category,
+including outlined zero categories; printed percentages remain authoritative.
+
+Daily mini profiles share a single rounded container with internal day and
+noon separators. The insight profile uses dotted outer percentiles and a
+segmented day-part strip. Daily logs use 156.3 pt day spacing (172.3 pt when
+carbohydrates need an extra row), hourly guides, compact coloured low-value
+cells and a legend. Ordinary high daily-log readings have coloured strokes;
+the high fill begins at the very-high threshold. Weekly legacy traces retain
+blue strokes and use a horizontal patient header; other legacy sheets have
+rotated metadata. Monthly headings no longer overprint the period.
+Snapshot plots gain a low threshold, clock guides and a coverage outline;
+daily trends gain dense y labels, the target bracket and percentile keys.
+The device card is narrow and rounded, with actual app/phone metadata.
+
+No supplied patient identifiers, readings, proprietary clinical advice or
+third-party branding are embedded. Data, aggregation, calibration and missing
+scan/treatment policies are unchanged.
+
 ## Verification limits
 
 Policy tests cover calendar boundaries (including DST), seven-day pagination,

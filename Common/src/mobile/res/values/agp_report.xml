@@ -92,4 +92,32 @@
     <string name="lv_match_scans_per_day" formatted="false">Mean scans/views per day</string>
     <string name="lv_match_goal" formatted="false">Goal:</string>
     <string name="lv_match_standard_targets" formatted="false">Standard targets for T1/T2</string>
+
+    <!-- Labels scoped to the reference-shaped PDF layout. -->
+    <string name="lv_ref_dob">Date of birth:</string>
+    <string name="lv_ref_coverage">Sensor active time</string>
+    <string name="lv_ref_standard">Goals for type 1 or type 2 diabetes</string>
+    <string name="lv_ref_mean">Average glucose</string>
+    <string name="lv_ref_variability">Glucose variability</string>
+    <string name="lv_ref_cv">Defined as percent coefficient of variation (CV)</string>
+    <string name="lv_ref_range">Target range</string>
+    <string name="lv_ref_range_short">Range</string>
+    <string name="lv_ref_agp">AGP summarizes glucose values from the reporting period, with the median (50%) and other percentiles shown as if they occurred in a single day.</string>
+    <string name="lv_ref_daily">The daily profile shows midnight to midnight, with the date in the upper left corner.</string>
+    <string name="lv_ref_median">Median</string>
+    <string name="lv_ref_percentiles_inner">25th to 75th percentile</string>
+    <string name="lv_ref_percentiles_outer">5th to 95th percentile</string>
+    <string name="lv_ref_high">High glucose</string>
+    <string name="lv_ref_low">Low glucose</string>
+    <string name="lv_ref_legend">Legend</string>
+    <string name="lv_ref_recorded_insulin">Recorded insulin</string>
+    <string name="lv_ref_daily_average">Daily average</string>
+    <string name="lv_ref_glucose_short">Glucose</string>
+    <string name="lv_ref_insights_profile">Glucose trends</string>
+    <string name="lv_ref_night">Overnight</string>
+    <string name="lv_ref_app">Application</string>
+    <string name="lv_ref_version">Full software version</string>
+    <string name="lv_ref_os">Operating system version</string>
+    <string name="lv_ref_phone_model">Smartphone model</string>
 </resources>
+
