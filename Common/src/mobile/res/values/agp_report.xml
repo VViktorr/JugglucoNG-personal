@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_style_libreviev" formatted="false">Libreviev style</string>
+    <string name="lv_report_no_data" formatted="false">No glucose data in the selected report period.</string>
+    <string name="lv_report_no_data_short" formatted="false">No data</string>
+    <string name="lv_report_title" formatted="false">AGP report</string>
+    <string name="lv_report_snapshot" formatted="false">Snapshot</string>
+    <string name="lv_report_daily_trends" formatted="false">Daily trends</string>
+    <string name="lv_report_statistics" formatted="false">GLUCOSE STATISTICS</string>
+    <string name="lv_report_ranges" formatted="false">GLUCOSE RANGES</string>
+    <string name="lv_report_coverage" formatted="false">Estimated sensor activity</string>
+    <string name="lv_report_readings" formatted="false">Glucose readings</string>
+    <string name="lv_report_mean" formatted="false">Mean glucose</string>
+    <string name="lv_report_variability" formatted="false">Glucose variability (CV)</string>
+    <string name="lv_report_target" formatted="false">Target range</string>
+    <string name="lv_report_thresholds" formatted="false">Thresholds follow the application settings.</string>
+    <string name="lv_report_very_high" formatted="false">Very high</string>
+    <string name="lv_report_high" formatted="false">High</string>
+    <string name="lv_report_low" formatted="false">Low</string>
+    <string name="lv_report_very_low" formatted="false">Very low</string>
+    <string name="lv_report_profile" formatted="false">AMBULATORY GLUCOSE PROFILE (AGP)</string>
+    <string name="lv_report_percentiles" formatted="false">Median (50%), 25-75% and 5-95% percentiles; 15-minute clock bins.</string>
+    <string name="lv_report_daily_profiles" formatted="false">DAILY GLUCOSE PROFILES</string>
+    <string name="lv_report_last_14" formatted="false">Up to 14 final calendar days of the selected period.</string>
+    <string name="lv_report_footer" formatted="false">JugglucoNG | Report generated from recorded glucose and journal data.</string>
+    <string name="lv_report_method" formatted="false">Range percentages: share of readings. Daily times: 24-hour equivalents. Gaps remain unfilled.</string>
+    <string name="lv_report_glucose" formatted="false">GLUCOSE</string>
+    <string name="lv_report_above" formatted="false">Above target</string>
+    <string name="lv_report_below" formatted="false">Below target</string>
+    <string name="lv_report_low_events" formatted="false">LOW GLUCOSE EVENTS</string>
+    <string name="lv_report_event_count" formatted="false">Number of events</string>
+    <string name="lv_report_median_duration" formatted="false">Median event duration</string>
+    <string name="lv_report_sensor_use" formatted="false">SENSOR USE</string>
+    <string name="lv_report_days_with_data" formatted="false">Days with data</string>
+    <string name="lv_report_journal" formatted="false">RECORDED CARBOHYDRATES AND INSULIN</string>
+    <string name="lv_report_carbs" formatted="false">Recorded carbohydrates (g/day)</string>
+    <string name="lv_report_insulin" formatted="false">Recorded insulin (units/day)</string>
+    <string name="lv_report_units" formatted="false">U</string>
+    <string name="lv_report_journal_note" formatted="false">Only recorded amounts are included; missing entries do not mean zero intake or dose.</string>
+    <string name="lv_report_journal_note_2" formatted="false">Daily amounts are totals divided by the selected period, not a treatment recommendation.</string>
+    <string name="lv_report_two_hour" formatted="false">MEAN GLUCOSE IN TWO-HOUR BLOCKS</string>
+    <string name="lv_report_recorded_trends" formatted="false">RECORDED DAILY AMOUNTS IN TWO-HOUR BLOCKS</string>
+</resources>
