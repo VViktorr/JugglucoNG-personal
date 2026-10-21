@@ -314,6 +314,11 @@ private fun JournalRoute(
     val timelineExtents by dashboardViewModel.timelineExtents.collectAsStateWithLifecycle()
     // The ledger's readings come from bounded reads around the entries, not from
     // the loaded list; nothing else needs them, so they start with this screen.
+    // Refresh Health Connect activities whenever the journal route is entered.
+    // The import is asynchronous and deduplicates records by their Health Connect ID.
+    LaunchedEffect(dashboardViewModel) {
+        tk.glucodata.HealthConnectAccess.get()?.importActivity()
+    }
     LaunchedEffect(dashboardViewModel) { dashboardViewModel.ensureJournalGlucoseAnchorsObserved() }
     val journalGlucoseAnchors by dashboardViewModel.journalGlucoseAnchors.collectAsStateWithLifecycle()
     val unit by dashboardViewModel.unit.collectAsStateWithLifecycle()
