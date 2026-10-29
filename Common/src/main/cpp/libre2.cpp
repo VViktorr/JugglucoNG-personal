@@ -536,6 +536,9 @@ LOGGER("timeleft=%d\n",timeleft);
             startsincebase+=daysecs;
         }
     outobj person,starttime,endtime;
+    LOGGER("NFC_DIAG begin serial=%s scanTime=%lu pollcount=%d lastPollTime=%u startsincebase=%d timeleft=%d\n",
+        serial.data(), static_cast<unsigned long>(nutime), hist->pollcount(),
+        hist->getlastpolltime(), startsincebase, timeleft);
     AlgorithmResults *res=callAbbottAlg(startsincebase,state,data,newstate,&starttime,&endtime,person);
     if(res) {
         time_t newnu=basesecs+reinterpret_cast<intptr_t>(endtime.ptr);
@@ -546,6 +549,9 @@ LOGGER("timeleft=%d\n",timeleft);
         decltype(auto) gl=res->currentglucose();
         int gid=gl.getId();
         decltype(auto) reshist=res->history();
+    LOGGER("NFC_DIAG result serial=%s current{id=%d quality=%d value=%d} historySize=%d resultTime=%lu pollcount=%d lastPollTime=%u\n",
+            serial.data(), gid, gl.getQuality(), gl.getValue(), reshist.size(),
+            static_cast<unsigned long>(newnu), hist->pollcount(), hist->getlastpolltime());
 extern bool saveSputnik_PG2(const jniHistory &hist,time_t nutime,int nuid,const nfcdata  *nfcptr, SensorGlucoseData &save) ;
         saveSputnik_PG2(reshist,newnu,gid, data, *hist);
 extern int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) ;
@@ -1634,4 +1640,3 @@ void closedynlib(void) {
 extern "C" JNIEXPORT void  JNICALL   fromjava(closedynlib)(JNIEnv *env, jclass _cl) {
      closedynlib() ;
     }
-

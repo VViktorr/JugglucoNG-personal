@@ -2,13 +2,16 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.AppSlider
+
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.TimePickerDefaults
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuPopup
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.Context
 import android.media.AudioAttributes
@@ -56,7 +59,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
@@ -353,7 +355,7 @@ fun TalkerSettingsScreen(navController: NavController) {
                                             Talker.previewVoice(index)
                                         }
                                     },
-                                    shapes = IconButtonDefaults.shapes()) {
+                                    shapes = appIconButtonShapes()) {
                                         Icon(
                                             if (isPreviewing) Icons.Default.Pause else Icons.Default.PlayArrow,
                                             contentDescription = if (isPreviewing) stringResource(R.string.stop) else stringResource(R.string.preview)
@@ -499,7 +501,7 @@ fun TalkerSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                shapes = ButtonDefaults.shapes()
+                shapes = alertButtonShapes()
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = null)
                 Spacer(Modifier.size(8.dp))
@@ -708,7 +710,7 @@ private fun SliderCard(
             }
 
             Spacer(Modifier.height(8.dp))
-            Slider(
+            AppSlider(
                 value = sliderValue,
                 onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
@@ -774,12 +776,12 @@ private fun ScheduleTimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour, state.minute) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = { onConfirm(state.hour, state.minute) }, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(android.R.string.ok))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(android.R.string.cancel))
             }
         },

@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <stdio.h>
+#include <time.h>
 #include <jni.h>
 #include "SensorGlucoseData.hpp"
 #include "sensoren.hpp"
@@ -69,7 +70,8 @@ std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
    uint32_t mintime=0;
    const SensorGlucoseData *take=nullptr;
    int pos=-1;
-   const int total=usedsensors.size();
+   const auto active = usedsensorssnapshot();
+   const int total=active.size();
    int  minutes=15;
 
    // Multi-sensor fix: Prefer the user-selected main sensor (infoblockptr()->current)
@@ -82,7 +84,7 @@ std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
    const uint32_t maxStaleAge = 10 * 60; // 10 minutes — if main sensor data is older, fall back
 
     for(int i=0;i<total ;i++) {
-        const int index=usedsensors[i];
+        const int index=active[i];
         const SensorGlucoseData *hist=sensors->getSensorData(index);
         const int hiermin=hist->streaminterval();
         if(hiermin<minutes)
@@ -123,7 +125,7 @@ std::pair<const SensorGlucoseData *,int> getlaststream(const uint32_t nu) {
     }
 
 extern "C" JNIEXPORT jlong  JNICALL   fromjava(lastglucosetime)(JNIEnv *env, jclass cl) {
-    const auto [hist,index]=getlaststream(maxwatchage);
+    const auto [hist,index]=getlaststream(static_cast<uint32_t>(time(nullptr)));
     if(hist) 
         return hist->lastValidStream()->t*1000LL;
         
@@ -185,7 +187,7 @@ static jobject lastGlucoseForHistory(JNIEnv *env, const SensorGlucoseData *hist,
        }
 
 extern "C" JNIEXPORT jobject JNICALL fromjava(lastglucose)(JNIEnv *env, jclass cl) {
-    const auto [hist,index]=getlaststream(maxwatchage);
+    const auto [hist,index]=getlaststream(static_cast<uint32_t>(time(nullptr)));
     return lastGlucoseForHistory(env, hist, index);
 }
 

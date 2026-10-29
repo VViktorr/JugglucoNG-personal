@@ -206,7 +206,7 @@ fun GlobalAlertSettingsCard(
                                 disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                             ),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = alertButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Icon(Icons.Default.DoneAll, contentDescription = null)

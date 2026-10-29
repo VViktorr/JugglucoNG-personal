@@ -1,5 +1,7 @@
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.ButtonDefaults
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
@@ -234,7 +236,7 @@ fun JournalCalculationsSettingsScreen(
                         viewModel.setJournalBodyWeightKg(parsedWeight)
                         showBodyWeightDialog = false
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(stringResource(R.string.save))
@@ -249,13 +251,13 @@ fun JournalCalculationsSettingsScreen(
                                 bodyWeightText = ""
                                 showBodyWeightDialog = false
                             },
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.TextButtonContentPadding
                         ) {
                             Text(stringResource(R.string.clear))
                         }
                     }
-                    TextButton(onClick = { showBodyWeightDialog = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = { showBodyWeightDialog = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(stringResource(R.string.cancel))
                     }
                 }

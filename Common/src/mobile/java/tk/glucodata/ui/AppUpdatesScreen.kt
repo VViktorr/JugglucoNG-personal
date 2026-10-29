@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.ButtonDefaults
 import android.text.format.DateUtils
 import android.text.format.Formatter
@@ -252,9 +254,9 @@ private fun CheckForUpdatesButton(
         }
     }
     if (emphasised) {
-        Button(onClick = onClick, enabled = !checking, modifier = modifier, content = content, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding)
+        Button(onClick = onClick, enabled = !checking, modifier = modifier, content = content, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding)
     } else {
-        OutlinedButton(onClick = onClick, enabled = !checking, modifier = modifier, content = content, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding)
+        OutlinedButton(onClick = onClick, enabled = !checking, modifier = modifier, content = content, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding)
     }
 }
 
@@ -335,19 +337,19 @@ private fun UpdateSourceDialog(
                 )
                 if (!isDefault) {
                     Spacer(Modifier.height(4.dp))
-                    TextButton(onClick = { onSave(null) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = { onSave(null) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(stringResource(R.string.app_updates_source_reset))
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(enabled = valid, onClick = { onSave(text) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(enabled = valid, onClick = { onSave(text) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.app_updates_action_save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

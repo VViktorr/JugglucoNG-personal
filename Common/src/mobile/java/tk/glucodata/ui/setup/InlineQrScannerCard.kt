@@ -1,7 +1,9 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.Manifest
 import android.annotation.SuppressLint
@@ -437,7 +439,7 @@ fun InlineQrScannerCard(
                                     scannerError = throwable.message ?: throwable.javaClass.simpleName
                                 }
                             },
-                            shapes = IconButtonDefaults.shapes()
+                            shapes = appIconButtonShapes()
                         ) {
                             Icon(
                                 imageVector = if (torchEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
@@ -469,7 +471,7 @@ fun InlineQrScannerCard(
                             previewInstanceNonce++
                             onManualFallback()
                         },
-                        shapes = IconButtonDefaults.shapes()) {
+                        shapes = appIconButtonShapes()) {
                             Icon(
                                 imageVector = Icons.Filled.OpenInFull,
                                 contentDescription = stringResource(R.string.scan_qr_button),
@@ -506,12 +508,12 @@ fun InlineQrScannerCard(
                         )
                     }
 
-                    Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                    Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                         Text(stringResource(R.string.permission))
                     }
 
                     if (onManualFallback != null) {
-                        OutlinedButton(onClick = onManualFallback, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                        OutlinedButton(onClick = onManualFallback, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                             Text(manualFallbackLabel ?: stringResource(R.string.scanname))
                         }
                     }
