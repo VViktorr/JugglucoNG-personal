@@ -175,7 +175,7 @@ object CurrentGlucoseSource {
             return null
         }
         val timeMillis = normalizeTimeMillis(latest.time)
-        if (kotlin.math.abs(now - timeMillis) > maxAgeMillis) {
+        if (now - timeMillis < 0L || now - timeMillis > maxAgeMillis) {
             return null
         }
         return Snapshot.of(
@@ -194,7 +194,7 @@ object CurrentGlucoseSource {
         val targetSensor = preferredSensorId ?: SensorIdentity.resolveMainSensor()
         val managed = ManagedSensorRuntime.resolveCurrentSnapshot(targetSensor, maxAgeMillis) ?: return null
         val timeMillis = normalizeTimeMillis(managed.timeMillis)
-        if (kotlin.math.abs(now - timeMillis) > maxAgeMillis) {
+        if (now - timeMillis < 0L || now - timeMillis > maxAgeMillis) {
             return null
         }
         return Snapshot(
@@ -229,7 +229,7 @@ object CurrentGlucoseSource {
             ?.takeIf { it.isFinite() && it > 0.1f }
             ?: return null
         val timeMillis = normalizeTimeMillis(latest.time)
-        if (kotlin.math.abs(now - timeMillis) > maxAgeMillis) {
+        if (now - timeMillis < 0L || now - timeMillis > maxAgeMillis) {
             return null
         }
         return Snapshot(
