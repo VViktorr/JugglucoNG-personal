@@ -279,6 +279,9 @@ object AlertRepository {
                     threshold = Natives.alarmhigh()
                 )
             }
+            AlertType.AVAILABLE -> loadLegacyConfig(type, default) {
+                copy(enabled = Natives.hasvaluealarm())
+            }
             AlertType.VERY_LOW -> loadLegacyConfig(type, default) {
                 copy(
                     enabled = Natives.hasalarmverylow(),
@@ -522,9 +525,9 @@ object AlertRepository {
     private fun syncNativeAlarmSettings(config: AlertConfig) {
         val typeId = config.type.id
 
-        // Compose alert settings must not silently toggle hidden legacy-only alert types
-        // like AVAILABLE(2) / AMOUNT(3).
-        if (typeId == AlertType.LOW.id || typeId == AlertType.HIGH.id || typeId == AlertType.LOSS.id) {
+        // Native-backed legacy alert types exposed by the Compose settings.
+        if (typeId == AlertType.LOW.id || typeId == AlertType.HIGH.id ||
+            typeId == AlertType.AVAILABLE.id || typeId == AlertType.LOSS.id) {
             Natives.setAlertConfig(
                 typeId,
                 config.threshold ?: 0f,
