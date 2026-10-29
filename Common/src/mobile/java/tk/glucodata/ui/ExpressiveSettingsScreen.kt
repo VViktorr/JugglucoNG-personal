@@ -2,6 +2,11 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -100,12 +105,176 @@ import java.util.Locale
  * one, otherwise what the screen behind it holds. Rows with a switch don't repeat
  * "on"/"off" there; the switch already says it.
  */
+private val settingsSearchTopicStrings = mapOf(
+    "cgm_readiness_title" to intArrayOf(
+        R.string.cgm_readiness_title, R.string.refresh, R.string.cgm_readiness_dashboard_title, R.string.cgm_readiness_setup_title,
+        R.string.cgm_readiness_setup_body, R.string.cgm_readiness_ready_title, R.string.cgm_readiness_attention_title, R.string.cgm_readiness_ready_body,
+        R.string.cgm_readiness_attention_body, R.string.cgm_readiness_fix_action, R.string.cgm_readiness_summary_body, R.string.cgm_readiness_dismiss_action,
+        R.string.cgm_readiness_review_action, R.string.cgm_readiness_critical_count, R.string.cgm_readiness_warning_count, R.string.cgm_readiness_attention_count,
+        R.string.cgm_readiness_status_ready, R.string.cgm_readiness_status_critical, R.string.cgm_readiness_status_warning, R.string.cgm_readiness_status_recommended,
+        R.string.cgm_readiness_status_manual, R.string.cgm_readiness_bluetooth_title, R.string.cgm_readiness_bluetooth_ready_detail, R.string.cgm_readiness_bluetooth_detail,
+        R.string.cgm_readiness_enable_bluetooth_action, R.string.cgm_readiness_nearby_title, R.string.cgm_readiness_location_permission_title, R.string.cgm_readiness_nearby_ready_detail,
+        R.string.cgm_readiness_location_permission_ready_detail, R.string.cgm_readiness_nearby_detail, R.string.cgm_readiness_location_permission_detail, R.string.cgm_readiness_allow_action,
+        R.string.cgm_readiness_weather_location_title, R.string.cgm_readiness_weather_location_ready_detail, R.string.cgm_readiness_weather_location_detail, R.string.cgm_readiness_open_location_permission_action,
+        R.string.cgm_readiness_location_services_title, R.string.cgm_readiness_location_services_ready_detail, R.string.cgm_readiness_location_services_detail, R.string.cgm_readiness_open_location_action,
+        R.string.cgm_readiness_notification_permission_title, R.string.cgm_readiness_notification_permission_ready_detail, R.string.cgm_readiness_notification_permission_detail, R.string.cgm_readiness_notifications_title,
+        R.string.cgm_readiness_notifications_ready_detail, R.string.cgm_readiness_notifications_detail, R.string.cgm_readiness_open_notifications_action, R.string.cgm_readiness_exact_alarm_title,
+        R.string.cgm_readiness_exact_alarm_ready_detail, R.string.cgm_readiness_exact_alarm_detail, R.string.cgm_readiness_open_alarm_action, R.string.cgm_readiness_full_screen_title,
+        R.string.cgm_readiness_full_screen_ready_detail, R.string.cgm_readiness_full_screen_detail, R.string.cgm_readiness_open_full_screen_action, R.string.cgm_readiness_battery_title,
+        R.string.cgm_readiness_battery_ready_detail, R.string.cgm_readiness_battery_detail, R.string.cgm_readiness_open_battery_action, R.string.cgm_readiness_background_activity_title,
+        R.string.cgm_readiness_background_activity_restricted_detail, R.string.cgm_readiness_background_activity_detail, R.string.cgm_readiness_open_battery_usage_action, R.string.cgm_readiness_dnd_title,
+        R.string.cgm_readiness_dnd_ready_detail, R.string.cgm_readiness_dnd_detail, R.string.cgm_readiness_open_dnd_action, R.string.cgm_readiness_overlay_title,
+        R.string.cgm_readiness_overlay_not_needed_detail, R.string.cgm_readiness_overlay_ready_detail, R.string.cgm_readiness_overlay_detail, R.string.cgm_readiness_open_overlay_action,
+        R.string.cgm_readiness_data_saver_title, R.string.cgm_readiness_data_saver_detail, R.string.cgm_readiness_data_saver_ready_detail, R.string.cgm_readiness_open_data_saver_action,
+        R.string.cgm_readiness_nfc_title, R.string.cgm_readiness_nfc_ready_detail, R.string.cgm_readiness_nfc_detail, R.string.cgm_readiness_open_nfc_action,
+        R.string.cgm_readiness_manufacturer_title, R.string.cgm_readiness_manufacturer_detail, R.string.cgm_readiness_settings_unavailable,
+    ),
+    "display_colors_title" to intArrayOf(
+        R.string.position_top, R.string.position_center, R.string.position_bottom, R.string.alignment_left,
+        R.string.alignment_center, R.string.alignment_right, R.string.notification_settings_title, R.string.typography,
+        R.string.font_app_plex, R.string.font_system_google_sans, R.string.font_weight_label, R.string.theme_light,
+        R.string.regular, R.string.medium, R.string.font_size_percent, R.string.status_bar_icon_size_percent,
+        R.string.appearance, R.string.show_trend_arrow, R.string.notification_large_arrow_title, R.string.notification_large_arrow_desc,
+        R.string.arrow_size_percent, R.string.notification_charts_section, R.string.show_chart_expanded, R.string.show_chart_expanded_desc,
+        R.string.show_chart_collapsed, R.string.show_chart_collapsed_desc, R.string.show_target_range, R.string.show_target_range_desc,
+        R.string.notification_chart_pause_screen_off, R.string.notification_chart_pause_screen_off_summary, R.string.notification_status_line_section, R.string.notification_show_delta_title,
+        R.string.notification_show_delta_minutes_desc, R.string.notification_show_iob_title, R.string.notification_show_iob_desc, R.string.notification_show_cob_title,
+        R.string.notification_show_cob_desc, R.string.notification_iob_cob_risk_title, R.string.notification_iob_cob_risk_desc, R.string.notification_iob_risk_without_cob_title,
+        R.string.notification_iob_risk_without_cob_desc, R.string.preview_window_always, R.string.preview_window_never, R.string.preview_window_expanded_only,
+        R.string.display_colors_title, R.string.dashboard_bars_section, R.string.dashboard_bars_stacked_title, R.string.dashboard_bars_stacked_desc,
+        R.string.dashboard_bars_ratio_title, R.string.dashboard_bars_ratio_desc, R.string.dashboard_bars_ratio_value, R.string.glucose_palette_edit_title,
+        R.string.glucose_range_colors_title, R.string.glucose_range_colors_desc, R.string.glucose_arrow_forecast_title, R.string.glucose_arrow_forecast_desc,
+        R.string.glucose_chart_range_colors_title, R.string.glucose_chart_range_colors_desc, R.string.glucose_app_chart_range_colors_title, R.string.glucose_app_chart_range_colors_desc,
+        R.string.display_readouts_section, R.string.preview_window_title, R.string.dashboard_show_delta_title, R.string.dashboard_show_delta_desc,
+        R.string.dashboard_rows_show_delta_title, R.string.dashboard_rows_show_delta_desc, R.string.dashboard_show_reading_age_title, R.string.dashboard_show_reading_age_desc,
+        R.string.floatglucose, R.string.enable_overlay, R.string.enable_overlay_desc, R.string.floating_permission_required,
+        R.string.background, R.string.filled, R.string.transparent, R.string.corner_radius_dp,
+        R.string.background_opacity_percent, R.string.use_subtle_outline, R.string.use_subtle_outline_desc, R.string.position_layout,
+        R.string.dynamic_island_mode, R.string.dynamic_island_desc, R.string.offset, R.string.dp_value,
+        R.string.auto, R.string.gap_width_value, R.string.metrics, R.string.display_secondary_values,
+        R.string.display_secondary_values_desc, R.string.font_source, R.string.font_system_sans, R.string.size_sp,
+        R.string.aod_settings_title, R.string.enable_overlay_service, R.string.accessibility_service_enabled, R.string.open_accessibility_settings,
+        R.string.aod_show_on_lockscreen, R.string.aod_show_on_lockscreen_desc, R.string.visuals, R.string.active_positions_randomized,
+        R.string.text_alignment, R.string.show_chart, R.string.opacity_percent, R.string.text_size_percent,
+        R.string.chart_size_percent,
+    ),
+    "glucose_alerts_title" to intArrayOf(
+        R.string.custom_high, R.string.custom_low, R.string.glucose_alerts_title, R.string.high_alerts_title,
+        R.string.add_high_alert, R.string.low_alerts_title, R.string.add_low_alert, R.string.predictive_alerts,
+        R.string.same_direction_suppression_title, R.string.same_direction_suppression_summary, R.string.off, R.string.minutes_short_format,
+        R.string.other_alerts, R.string.preemptive_snooze, R.string.preemptive_snooze_desc, R.string.talker,
+        R.string.speakglucose, R.string.speakalarms, R.string.high_alert, R.string.low_alert,
+        R.string.disabled_status, R.string.collapse_action, R.string.expand_action, R.string.delete_custom_alert,
+        R.string.alert_name, R.string.threshold_label, R.string.alert_after, R.string.look_ahead,
+        R.string.rearm_margin_label, R.string.rearm_min_interval_label, R.string.pre_high_iob_coverage_label, R.string.alert_feature_off,
+        R.string.persistent_high_fall_suppress_label, R.string.sensor_expiry_warnings_title, R.string.days_short, R.string.hours_short,
+        R.string.sensor_expiry_warnings_desc, R.string.delta_change_label, R.string.delta_count_label, R.string.delta_border_below_label,
+        R.string.delta_border_above_label, R.string.falling_fast_explanation, R.string.rising_fast_explanation, R.string.delta_alarm_interval_label,
+        R.string.delta_alarm_interval_follow, R.string.delta_interval_1min, R.string.delta_interval_5min, R.string.delta_early_trigger_label,
+        R.string.delta_early_trigger_desc, R.string.unit_mmol, R.string.unit_mg, R.string.low_alerts,
+        R.string.high_alerts, R.string.duration_label, R.string.snooze, R.string.cancel,
+        R.string.active_time_range_title, R.string.time_range_summary, R.string.only_alert_during_hours, R.string.start,
+        R.string.end, R.string.alert_active_from_to, R.string.alert_active_from_to_next_day, R.string.select_time_for_label,
+        R.string.ok, R.string.retry_summary_constant_forever, R.string.retry_summary_constant, R.string.retry_summary_forever,
+        R.string.retry_summary, R.string.realert_if_not_dismissed, R.string.retry_if_no_reaction, R.string.retry_every,
+        R.string.retry_constantly, R.string.max_retries, R.string.retry_forever, R.string.soundname,
+        R.string.app_default_sound, R.string.system_default_sound, R.string.custom_sound_selected, R.string.tap_to_change,
+    ),
+    "journal_title" to intArrayOf(
+        R.string.journal_manage_title, R.string.journal_title, R.string.journal_gate_desc, R.string.journal_show_tab_title,
+        R.string.journal_show_tab_desc, R.string.journal_dashboard_quickadd_title, R.string.journal_dashboard_quickadd_desc, R.string.journal_quickadd_always_now_title,
+        R.string.journal_quickadd_always_now_desc, R.string.journal_dose_math_title, R.string.journal_dose_calculator_desc, R.string.journal_calculations_title,
+        R.string.journal_calculations_desc, R.string.journal_import_health_activity, R.string.journal_aaps_import_title, R.string.journal_aaps_import_desc,
+        R.string.journal_food_library, R.string.journal_food_library_count, R.string.journal_insulin_library, R.string.journal_insulin_library_count,
+        R.string.historyname, R.string.journal_food_macros_title, R.string.journal_food_macros_desc, R.string.journal_food_choose_desc,
+        R.string.journal_add_food, R.string.journal_food_disabled_library, R.string.journal_add_preset, R.string.journal_archived_presets,
+        R.string.disabled_status, R.string.journal_active_window, R.string.minutes_short_format, R.string.journal_active_insulin,
+        R.string.journal_use_for_calculation, R.string.carbo, R.string.unit_carbs_value, R.string.journal_food_protein,
+        R.string.journal_food_fat, R.string.journal_food_search, R.string.clear, R.string.journal_edit_food,
+        R.string.enable, R.string.disable, R.string.name, R.string.unit_carbs_short,
+        R.string.journal_food_absorption, R.string.minutes, R.string.save, R.string.delete,
+        R.string.journal_edit_preset, R.string.journal_scientific_name, R.string.journal_active_insulin_subtitle, R.string.journal_use_for_calculation_subtitle,
+        R.string.journal_curve_unverified, R.string.journal_curve_steady_state, R.string.journal_curve_reference_only, R.string.journal_curve_source_backed,
+        R.string.journal_curve_unverified_desc, R.string.journal_curve_steady_state_desc, R.string.journal_curve_reference_only_desc, R.string.journal_curve_source_backed_desc,
+        R.string.journal_curve_preview, R.string.journal_curve_use_source, R.string.journal_curve_reset, R.string.journal_curve_activity_desc,
+        R.string.journal_curve_add_point, R.string.journal_curve_point, R.string.journal_curve_minutes, R.string.journal_curve_activity,
+        R.string.colors,
+    ),
+    "manual_calibration" to intArrayOf(
+        R.string.raw, R.string.auto, R.string.unable_to_open_destination_file, R.string.calibration_profile_exported,
+        R.string.export_failed_with_error, R.string.unknown_error, R.string.unable_to_open_source_file, R.string.import_summary,
+        R.string.import_failed_with_error, R.string.invalid_profile, R.string.no_active_sensor_selected, R.string.no_calibrations_to_export,
+        R.string.selected_count, R.string.cancel, R.string.deselect_all, R.string.select_all,
+        R.string.calibration_with_mode, R.string.calibration_model_table_action, R.string.calibration_import_export_action, R.string.calibration_deleted,
+        R.string.undo, R.string.delete_calibrations_count, R.string.this_action_can_be_undone, R.string.calibrations_deleted_count,
+        R.string.delete, R.string.disabled_calibrations_cleared, R.string.all_calibrations_cleared, R.string.enable_calibration,
+        R.string.enabled_status, R.string.disabled_status, R.string.calibration_hide_initial_values, R.string.calibration_initial_hidden_status,
+        R.string.calibration_initial_shown_status, R.string.calibratepast, R.string.calibration_apply_past_subtitle, R.string.calibration_lock_past_history_title,
+        R.string.calibration_lock_past_history_subtitle, R.string.calibration_keep_disabled_history_title, R.string.calibration_keep_disabled_history_subtitle, R.string.calibration_overwrite_values_title,
+        R.string.calibration_overwrite_values_subtitle, R.string.calibration_from_journal_title, R.string.calibration_from_journal_subtitle, R.string.calibrate_a,
+        R.string.calibration_visual_continuity_subtitle, R.string.calibration_algorithm, R.string.calibration_weight_fresh_desc, R.string.calibration_weight_balanced_desc,
+        R.string.calibration_weight_stable_desc, R.string.calibration_weight_title, R.string.calibration_weight_fresh, R.string.calibration_weight_balanced,
+        R.string.calibration_weight_stable, R.string.points, R.string.slope, R.string.offset,
+        R.string.intercept, R.string.anchor, R.string.confidence, R.string.calibration_from_journal_badge,
+        R.string.clear, R.string.calibrate_action, R.string.disable, R.string.enable,
+        R.string.calibration_import_export_title, R.string.calibration_import_export_desc, R.string.export_profile, R.string.calibration_export_profile_desc,
+        R.string.import_profile_merge, R.string.calibration_import_merge_desc, R.string.import_profile_replace, R.string.calibration_import_replace_desc,
+        R.string.clear_calibrations_title, R.string.choose_what_to_clear, R.string.clear_disabled_only, R.string.disabled_calibrations_count,
+        R.string.calibrations_will_be_removed_count,
+    ),
+    "watches" to intArrayOf(
+        R.string.watches, R.string.helpname, R.string.watch_transport_section, R.string.notify,
+        R.string.separate, R.string.watch_wearos_enable_desc, R.string.watch_gms_unavailable, R.string.watch_gms_unavailable_device,
+        R.string.wentwrong, R.string.config, R.string.watch_wearos_config_desc, R.string.watch_wearos_config_disabled,
+        R.string.watch_kerfstok_bridge, R.string.status, R.string.watch_garmin_status_desc, R.string.watch_garmin_enable_hint,
+        R.string.watch_help_wearos, R.string.watch_help_config, R.string.watch_help_garmin, R.string.never,
+        R.string.wearos_config_title, R.string.watch_status_section, R.string.watch_none_found, R.string.watch_none_found_hint,
+        R.string.watchappinstalled, R.string.wear_watch_app_missing, R.string.wear_claim_state_phone_owns, R.string.wear_claim_state_requesting,
+        R.string.wear_claim_state_connected, R.string.wear_watch_app_missing_hint, R.string.watch_routing_section, R.string.wear_auto_sensor_switch,
+        R.string.wear_auto_sensor_switch_on_desc, R.string.wear_auto_sensor_switch_off_desc, R.string.wear_direct_sensor_on_watch, R.string.wear_direct_sensor_watch_desc,
+        R.string.wear_direct_sensor_phone_desc, R.string.watch_enter_amounts, R.string.watch_enter_amounts_on, R.string.watch_enter_amounts_off,
+        R.string.actions_section, R.string.watch_none_selected, R.string.saved, R.string.watch_sync_now,
+        R.string.watch_restart_app, R.string.watch_send_defaults, R.string.garmin_status_title, R.string.garmin_state_section,
+        R.string.garmin_sdk_ready, R.string.answer_yes, R.string.answer_no, R.string.garmin_registered,
+        R.string.garmin_last_send, R.string.garmin_last_received, R.string.garmin_queued_messages, R.string.garmin_queue_waiting,
+        R.string.garmin_queue_empty, R.string.reinit, R.string.sync, R.string.sendqueue,
+        R.string.darkmode, R.string.kerfstok_watch_ui, R.string.getkerfstok, R.string.toolongsecret,
+        R.string.invalidport, R.string.nomirrorport, R.string.nohttpport, R.string.portrange,
+        R.string.invalid_interval, R.string.webserver_cert_created, R.string.webserver_cert_export, R.string.sendto,
+        R.string.webserver, R.string.active, R.string.webserver_running, R.string.webserver_paused,
+        R.string.secret, R.string.localonly, R.string.webserver_local_only_desc, R.string.port,
+        R.string.usessl, R.string.webserver_https_subtitle, R.string.webserver_cert_generating, R.string.webserver_cert_needs_update,
+        R.string.webserver_certificate, R.string.webserver_cert_none, R.string.webserver_cert_expired, R.string.webserver_cert_address_changed,
+        R.string.webserver_cert_selfsigned, R.string.webserver_cert_custom, R.string.webserver_cert_expires, R.string.webserver_cert_generate,
+        R.string.webserver_cert_update, R.string.webserver_cert_regenerate, R.string.webserver_cert_import, R.string.ssl_port,
+        R.string.interval, R.string.webserver_wifi_unavailable, R.string.webserver_loopback, R.string.webserver_endpoint_current,
+        R.string.webserver_endpoint_entries, R.string.webserver_endpoint_report, R.string.webserver_cert_export_hint, R.string.webserver_cert_export_certificate,
+        R.string.webserver_cert_export_with_key, R.string.webserver_cert_export_key_warning, R.string.close, R.string.webserver_cert_import_hint,
+        R.string.privatekey, R.string.fullchain, R.string.webserver_help_endpoints, R.string.webserver_help_paths,
+        R.string.webserver_help_local, R.string.webserver_help_ssl,
+    ),
+    "widget_settings_title" to intArrayOf(
+        R.string.widget_settings_title, R.string.widget_settings_data_note, R.string.widget_section_appearance, R.string.widget_font,
+        R.string.widget_font_ibm_plex, R.string.widget_font_system, R.string.widget_font_weight, R.string.widget_clock_detail_size_value,
+        R.string.widget_detail_size_value, R.string.widget_clock_glucose_size_value, R.string.widget_glucose_size_value, R.string.widget_corner_radius_value,
+        R.string.widget_background, R.string.widget_bg_surface, R.string.widget_bg_range, R.string.widget_bg_none,
+        R.string.widget_opacity_value, R.string.widget_section_visibility, R.string.widget_show_arrow, R.string.widget_range_colors,
+        R.string.widget_show_time, R.string.widget_show_delta, R.string.widget_show_unit, R.string.widget_section_components,
+        R.string.widget_show_date, R.string.widget_show_weather, R.string.widget_weather_size_value, R.string.widget_weather_icon_size_value,
+        R.string.widget_temperature_size_value, R.string.widget_weather_shift_value, R.string.widget_show_weather_icon, R.string.widget_show_temperature,
+        R.string.widget_weather_permission, R.string.widget_weather_note, R.string.widget_graph_hours, R.string.widget_hours_short,
+        R.string.widget_target_band, R.string.widget_period, R.string.widget_period_today, R.string.widget_period_24h,
+        R.string.widget_period_7d,
+    ),
+)
+
 @Composable
 fun ExpressiveSettingsScreen(
     navController: NavController,
     themeMode: ThemeMode,
     onThemeChanged: (ThemeMode) -> Unit,
-    viewModel: DashboardViewModel = viewModel()
+    viewModel: DashboardViewModel = viewModel(),
+    category: String? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -339,13 +508,19 @@ fun ExpressiveSettingsScreen(
     }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(), // Add status bar padding
-        contentPadding = TabScreenDefaults.contentPadding()
+        modifier = Modifier.fillMaxSize().statusBarsPadding(),
+        contentPadding = TabScreenDefaults.contentPadding(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item(key = "title") {
-            TabScreenHeader(title = stringResource(R.string.settings))
+            if (category == null) {
+                TabScreenHeader(title = stringResource(R.string.settings))
+            } else {
+                AppTopBar(
+                    title = stringResource(categoryTitle),
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
         }
 
         item(key = "search") {
@@ -377,7 +552,7 @@ fun ExpressiveSettingsScreen(
                     subtitle = themeLabel,
                     icon = if(themeMode == ThemeMode.LIGHT) Icons.Default.LightMode else Icons.Default.DarkMode,
                     iconTint = generalColor,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                     onClick = { showThemeDialog = true }
                 )
                 SettingsItem(
@@ -421,7 +596,7 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/alerts") },
                     icon = Icons.Default.AddAlert,
                     iconTint = MaterialTheme.colorScheme.error,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                 )
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.settings_calibration_title),
@@ -436,7 +611,8 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/calibrations") },
                     icon = Icons.Default.WaterDrop,
                     iconTint = everydayColor,
-                    position = CardPosition.MIDDLE
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/widgets") }
                 )
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.journal_title),
@@ -490,9 +666,13 @@ fun ExpressiveSettingsScreen(
                     subtitle = stringResource(R.string.notification_settings_subtitle),
                     icon = Icons.Default.ClearAll,
                     iconTint = displayColor,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/notification-display") }
                 )
+                }
+            }
+            if ((category == null || category == "appearance") && matches(R.string.floatglucose, R.string.floating_permission_required, R.string.enabled_status, R.string.disabled_status)) {
+                item(key = "floatglucose") {
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.floatglucose),
                     subtitle = stringResource(
@@ -517,8 +697,12 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/floating-display") },
                     icon = Icons.Default.PictureInPicture,
                     iconTint = displayColor,
-                    position = CardPosition.MIDDLE
+                    position = CardPosition.SINGLE
                 )
+                }
+            }
+            if ((category == null || category == "appearance") && matches(R.string.lock_screen_aod, R.string.accessibility_service_enabled, R.string.open_accessibility_settings)) {
+                item(key = "lock_screen_aod") {
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.settings_lock_screen_title),
                     subtitle = stringResource(
@@ -537,8 +721,9 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/aod-display") },
                     icon = Icons.Default.ScreenLockPortrait,
                     iconTint = displayColor,
-                    position = CardPosition.BOTTOM
+                    position = CardPosition.SINGLE
                 )
+                }
             }
         }
 
@@ -553,7 +738,7 @@ fun ExpressiveSettingsScreen(
                     subtitle = phoneAppsLabel,
                     icon = Icons.Default.PhoneAndroid,
                     iconTint = sharingColor,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/phone-apps") }
                 )
                 SettingsNavSwitchItem(
@@ -567,15 +752,19 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/nightscout") },
                     icon = Icons.Default.CloudUpload,
                     iconTint = sharingColor,
-                    position = CardPosition.MIDDLE
+                    position = CardPosition.SINGLE
                 )
+                }
+            }
+            if (showLibreView && (category == null || category == "connections") && matches(R.string.libreview_config, R.string.libreview_desc)) {
+                item(key = "libreview_config") {
                 if (showLibreView) {
                     SettingsItem(
                         title = stringResource(R.string.libreview_config),
                         subtitle = stringResource(R.string.libreview_desc),
                         icon = Icons.Default.Cloud,
                         iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
+                        position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/libreview") }
                     )
                 }
@@ -595,17 +784,21 @@ fun ExpressiveSettingsScreen(
                         subtitle = stringResource(R.string.settings_mq_account_desc),
                         icon = Icons.Default.AccountCircle,
                         iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
+                        position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/mq-account") }
                     )
                 }
+                }
+            }
+            if (showOttaiSettings && (category == null || category == "connections") && matches(R.string.ottai_setup_title, R.string.ottai_settings_desc)) {
+                item(key = "ottai_setup_title") {
                 if (showOttaiSettings) {
                     SettingsItem(
                         title = stringResource(R.string.ottai_setup_title),
                         subtitle = stringResource(R.string.settings_ottai_desc),
                         icon = Icons.Default.Sensors,
                         iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
+                        position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/ottai") }
                     )
                 }
@@ -695,7 +888,7 @@ fun ExpressiveSettingsScreen(
                     subtitle = stringResource(R.string.export_data_settings_desc),
                     icon = Icons.Default.Upload,
                     iconTint = backupColor,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     onClick = { showExportDialog = true }
                 )
                 SettingsItem(
@@ -759,8 +952,10 @@ fun ExpressiveSettingsScreen(
                     onClick = { showSealGraceDialog = true },
                     icon = Icons.Default.Lock,
                     iconTint = advancedColor,
-                    position = CardPosition.BOTTOM
+                    position = CardPosition.SINGLE,
+                    onOpen = { navController.navigate("settings/app-updates") }
                 )
+                }
             }
         }
 
@@ -773,38 +968,85 @@ fun ExpressiveSettingsScreen(
                     title = stringResource(R.string.restart_app),
                     subtitle = stringResource(R.string.restart_app_desc),
                     icon = Icons.Filled.Refresh,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                     severity = DangerSeverity.LOW,
                     onClick = { context.findActivity()?.fullRestart() }
                 )
+                }
+            }
+            if ((category == null || category == "reset") && matches(R.string.clear_history, R.string.clear_history_desc_short)) {
+                item(key = "clear_history") {
                 DangerItem(
                     title = stringResource(R.string.clear_history),
                     subtitle = stringResource(R.string.clear_history_desc_short),
                     icon = Icons.Filled.History,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     severity = DangerSeverity.LOW,
                     onClick = { showClearHistoryDialog = true }
                 )
+                }
+            }
+            if ((category == null || category == "reset") && matches(R.string.clear_app_data, R.string.clear_app_data_desc)) {
+                item(key = "clear_app_data") {
                 DangerItem(
                     title = stringResource(R.string.clear_app_data),
                     subtitle = stringResource(R.string.clear_app_data_desc),
                     icon = Icons.Filled.Delete,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     severity = DangerSeverity.MEDIUM,
                     onClick = { showClearDataDialog = true }
                 )
+                }
+            }
+            if ((category == null || category == "reset") && matches(R.string.factory_reset, R.string.factory_reset_desc)) {
+                item(key = "factory_reset") {
                 DangerItem(
                     title = stringResource(R.string.factory_reset),
                     subtitle = stringResource(R.string.factory_reset_desc),
                     icon = Icons.Filled.Warning,
-                    position = CardPosition.BOTTOM,
+                    position = CardPosition.SINGLE,
                     severity = DangerSeverity.HIGH,
                     onClick = { showFactoryResetDialog = true }
                 )
+                }
             }
-        }
-
-        // === ABOUT ===
+            if ((category == null || category == "connections") && matches(R.string.api_source_settings_title)) {
+                item(key = "direct_api_source_settings_title") {
+                    SettingsItem(
+                        title = stringResource(R.string.api_source_settings_title),
+                        subtitle = stringResource(R.string.settings_category_connections_description),
+                        icon = Icons.Default.Cloud,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/api-source") },
+                    )
+                }
+            }
+            if ((category == null || category == "alarms") && matches(R.string.talker)) {
+                item(key = "direct_talker") {
+                    SettingsItem(
+                        title = stringResource(R.string.talker),
+                        subtitle = stringResource(R.string.settings_category_alarms_description),
+                        icon = Icons.Default.VolumeUp,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/alerts/talker") },
+                    )
+                }
+            }
+            if (category == "app" && normalizedQuery.isEmpty()) {
+                item(key = "reset_link") {
+                    SettingsItem(
+                        title = stringResource(R.string.settings_category_reset),
+                        subtitle = stringResource(R.string.settings_reset_description),
+                        icon = Icons.Default.Warning,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/category/reset") },
+                    )
+                }
+            }
+            if (category == "app" || (category == null && normalizedQuery.isNotEmpty() && matches(R.string.about_text))) {
         item(key = "about") {
             Column(
                 modifier = Modifier
@@ -821,6 +1063,8 @@ fun ExpressiveSettingsScreen(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
             }
         }
     }
@@ -1126,7 +1370,7 @@ internal fun PredictiveSimulationParameterRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Slider(
+        AppSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,
@@ -1256,7 +1500,7 @@ private fun UnitPickerDialog(isMmol: Boolean, onSelect: (Int) -> Unit, onDismiss
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1296,7 +1540,7 @@ private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1351,7 +1595,7 @@ internal fun SensorHandoverActionPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1407,7 +1651,7 @@ internal fun PreviewWindowPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1477,7 +1721,7 @@ private fun LanguagePickerDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1502,11 +1746,11 @@ private fun ConfirmActionDialog(
             TextButton(
                 onClick = onConfirm,
                 colors = if (isDestructive) ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.textButtonColors(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) { Text(if (isDestructive) stringResource(R.string.delete) else stringResource(R.string.ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
+        dismissButton = { TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
     )
 }
 

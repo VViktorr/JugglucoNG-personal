@@ -111,6 +111,12 @@ fun NotificationSettingsScreen(
     var showDelta by rememberSaveable { mutableStateOf(prefs.getBoolean("notification_show_delta", false)) }
     var iobCobRiskColored by rememberSaveable { mutableStateOf(prefs.getBoolean("notification_iob_cob_risk_colored", false)) }
     var iobRiskWithoutCob by rememberSaveable { mutableStateOf(prefs.getBoolean("notification_iob_risk_without_cob", false)) }
+    var glucoseLiveUpdate by rememberSaveable {
+        mutableStateOf(prefs.getBoolean("notification_glucose_live_update", false))
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        glucoseLiveUpdate = prefs.getBoolean("notification_glucose_live_update", false)
+    }
     var statusIconScale by rememberSaveable { mutableFloatStateOf(prefs.getFloat("notification_status_icon_scale", 1.0f)) }
 
     fun save() {
@@ -130,6 +136,7 @@ fun NotificationSettingsScreen(
             .putBoolean("notification_iob_cob_risk_colored", iobCobRiskColored)
             .putBoolean("notification_iob_risk_without_cob", iobRiskWithoutCob)
             .putFloat("notification_status_icon_scale", statusIconScale)
+            .putBoolean("notification_glucose_live_update", glucoseLiveUpdate)
             .apply()
         viewModel.refreshNotificationSurfaces()
     }
@@ -219,6 +226,34 @@ fun NotificationSettingsScreen(
                     )
                 }
             }
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= 36) {
+            SettingsSwitchItem(
+                title = stringResource(R.string.notification_live_update_title),
+                subtitle = stringResource(R.string.notification_live_update_summary),
+                checked = glucoseLiveUpdate,
+                onCheckedChange = { glucoseLiveUpdate = it; save() },
+                position = CardPosition.SINGLE
+            )
+            SettingsItem(
+                title = stringResource(R.string.notification_live_update_system_settings),
+                subtitle = stringResource(R.string.notification_live_update_system_settings_summary),
+                icon = Icons.Default.Layers,
+                iconTint = MaterialTheme.colorScheme.primary,
+                position = CardPosition.SINGLE,
+                onClick = {
+                    val intent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    try {
+                        context.startActivity(intent)
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        context.startActivity(android.content.Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            android.net.Uri.parse("package:" + context.packageName)))
+                    }
+                }
+            )
         }
 
         val showAnyChart = notificationChartEnabled || collapsedChart
@@ -336,6 +371,9 @@ fun DisplayAndColorSettingsScreen(
     navController: NavController,
     viewModel: DashboardViewModel
 ) {
+    val barsStacked by viewModel.dashboardBarsStacked.collectAsStateWithLifecycle()
+    val barsCustomRatio by viewModel.dashboardBarsCustomRatio.collectAsStateWithLifecycle()
+    val glucoseWidthPercent by viewModel.dashboardGlucoseWidthPercent.collectAsStateWithLifecycle()
     val rangeColorsEnabled by viewModel.glucoseValueRangeColorsEnabled.collectAsStateWithLifecycle()
     val arrowForecastEnabled by viewModel.glucoseArrowForecastColorsEnabled.collectAsStateWithLifecycle()
     val chartRangeColorsEnabled by viewModel.glucoseChartRangeColorsEnabled.collectAsStateWithLifecycle()
@@ -356,6 +394,42 @@ fun DisplayAndColorSettingsScreen(
         title = stringResource(R.string.settings_dashboard_charts_title)
     ) {
         GlucoseRangeDisplaySettings(viewModel)
+
+        SectionLabel(
+            stringResource(R.string.dashboard_bars_section),
+            modifier = Modifier.padding(horizontal = legacySettingsHorizontalPadding)
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.padding(horizontal = legacySettingsHorizontalPadding)
+        ) {
+            SettingsSwitchItem(
+                title = stringResource(R.string.dashboard_bars_stacked_title),
+                subtitle = stringResource(R.string.dashboard_bars_stacked_desc),
+                checked = barsStacked,
+                onCheckedChange = viewModel::setDashboardBarsStacked,
+                position = if (barsStacked) CardPosition.SINGLE else CardPosition.TOP
+            )
+            if (!barsStacked) {
+                SettingsSwitchItem(
+                    title = stringResource(R.string.dashboard_bars_ratio_title),
+                    subtitle = stringResource(R.string.dashboard_bars_ratio_desc),
+                    checked = barsCustomRatio,
+                    onCheckedChange = viewModel::setDashboardBarsCustomRatio,
+                    position = CardPosition.BOTTOM
+                )
+            }
+        }
+        if (!barsStacked && barsCustomRatio) {
+            LegacySliderControl(
+                label = stringResource(R.string.dashboard_bars_ratio_value, glucoseWidthPercent, 100 - glucoseWidthPercent),
+                value = glucoseWidthPercent.toFloat(),
+                onValueChange = { viewModel.setDashboardGlucoseWidthPercent(it.toInt()) },
+                range = 40f..70f,
+                steps = 29
+            )
+        }
+
 
         SectionLabel(
             stringResource(R.string.glucose_palette_edit_title),
