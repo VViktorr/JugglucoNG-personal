@@ -1374,6 +1374,25 @@ private    void mksettings(MainActivity context) {
         glucosenotify.setText(R.string.glucosestatusbar);
         glucosenotify.setChecked(Natives.getshowalways()) ;
         glucosenotify.setOnCheckedChangeListener( (buttonView,  isChecked) -> Notify.glucosestatus(isChecked) );
+
+      final android.content.SharedPreferences notificationPreferences = context.getSharedPreferences(
+              "tk.glucodata_preferences", Context.MODE_PRIVATE);
+      CheckBox liveUpdateToggle = new CheckBox(context);
+      liveUpdateToggle.setText(R.string.notification_live_update_toggle);
+      liveUpdateToggle.setChecked(notificationPreferences.getBoolean( tk.glucodata.GlucoseLiveUpdate.PREFERENCE, false));
+      liveUpdateToggle.setVisibility(Build.VERSION.SDK_INT >= 36 ? VISIBLE : GONE);
+      liveUpdateToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
+              notificationPreferences.edit().putBoolean(tk.glucodata.GlucoseLiveUpdate.PREFERENCE, isChecked).apply());
+
+      CheckBox metricStyleToggle = new CheckBox(context);
+      metricStyleToggle.setText(R.string.notification_metric_style_toggle);
+      metricStyleToggle.setChecked(notificationPreferences.getBoolean(
+              tk.glucodata.GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, false));
+      metricStyleToggle.setVisibility(Build.VERSION.SDK_INT >= 37 ? VISIBLE : GONE);
+      metricStyleToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
+              notificationPreferences.edit().putBoolean(
+                      tk.glucodata.GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, isChecked).apply());
+
       var floatconfig=getbutton(context,R.string.floatglucose);
       View[] numdis;
 
@@ -1391,8 +1410,8 @@ private    void mksettings(MainActivity context) {
                 if (floating != null) floating.show(context,thelayout[0]); });
 
         View[] rowglu=new View[]{floatconfig,calibration,glucosenotify};
-//        View[] rowglu=new View[]{floatconfig,glucosenotify};
-        views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,new View[]{exchanges,numalarm,alarmbut},numdis, row9};
+        View[] notificationStyleRow = new View[]{liveUpdateToggle, metricStyleToggle};
+        views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,notificationStyleRow,new View[]{exchanges,numalarm,alarmbut},numdis, row9};
         }
 
     help.setFocusableInTouchMode(true);
