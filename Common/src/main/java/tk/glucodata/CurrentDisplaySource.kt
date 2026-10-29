@@ -83,7 +83,7 @@ object CurrentDisplaySource {
 
     /** Whether [points] holds a reading no older than [maxAgeMs] at [nowMs]. */
     internal fun hasReadingWithin(points: List<GlucosePoint>, nowMs: Long, maxAgeMs: Long): Boolean =
-        points.any { nowMs - it.timestamp <= maxAgeMs }
+        points.any { (nowMs - it.timestamp) in 0L..maxAgeMs }
 
     /**
      * The current reading as measured. A fingerstick is paired with this, never with a smoothed
