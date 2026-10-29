@@ -1139,6 +1139,46 @@ public class Notify {
         }
     }
 
+    // ONGOING-HISTORY-BEGIN: phone display selection only; alarm resolvers stay unchanged.
+    private static CurrentDisplaySource.Snapshot resolveOngoingNotificationCurrentSnapshot(String activeSensorSerial) {
+        final CurrentDisplaySource.Snapshot current = resolveNotificationCurrentSnapshot(activeSensorSerial);
+        if (isWearable || activeSensorSerial == null || activeSensorSerial.isEmpty()) return current;
+        try {
+            final long now = System.currentTimeMillis();
+            final boolean isMmol = Applic.unit == 1;
+            final int viewMode = CurrentDisplaySource.resolveViewModeForSensor(activeSensorSerial);
+            final List<GlucosePoint> history = NotificationHistorySource.getDisplayHistory(
+                    now - DisplayTrendSource.TREND_WINDOW_MS, isMmol, activeSensorSerial);
+            GlucosePoint newest = null;
+            for (GlucosePoint point : history) {
+                if (point.timestamp <= 0L || Math.abs(now - point.timestamp) > glucosetimeout
+                        || (current != null && point.timestamp <= current.getTimeMillis())) continue;
+                final float primary = tk.glucodata.ui.DisplayValueResolver.resolve(
+                        point.value, point.rawValue, viewMode, isMmol).getPrimaryValue();
+                if (!Float.isFinite(primary) || primary <= 0.1f) continue;
+                if (newest == null || point.timestamp > newest.timestamp) newest = point;
+            }
+            if (newest == null) return current;
+            final CurrentDisplaySource.Snapshot fromHistory = CurrentDisplaySource.resolveIncomingReading(
+                    LiveReadingLanes.stock(newest.value, newest.rawValue), Float.NaN, newest.timestamp,
+                    activeSensorSerial, current != null ? current.getSensorGen() : 0,
+                    current != null ? current.getIndex() : 0, "history",
+                    DisplayTrendSource.TREND_WINDOW_MS, true);
+            if (fromHistory == null || fromHistory.getTimeMillis() != newest.timestamp
+                    || !Float.isFinite(fromHistory.getPrimaryValue()) || fromHistory.getPrimaryValue() <= 0.1f) {
+                return current;
+            }
+            if (doLog) Log.i(LOG_ID, "ongoing history selected sensor=" + activeSensorSerial
+                    + " time=" + newest.timestamp + " previousTime="
+                    + (current != null ? current.getTimeMillis() : 0L) + " mode=" + viewMode);
+            return fromHistory;
+        } catch (Throwable th) {
+            Log.stack(LOG_ID, "ongoingHistorySelection", th);
+            return current;
+        }
+    }
+    // ONGOING-HISTORY-END
+
     private static long latestNotificationTimestamp(List<GlucosePoint> historyPoints) {
         if (historyPoints == null || historyPoints.isEmpty()) {
             return 0L;
@@ -1241,7 +1281,7 @@ public class Notify {
         final CurrentDisplaySource.Snapshot resolved;
         try {
             activeSensorSerial = resolveNotificationSensorSerial();
-            resolved = resolveNotificationCurrentSnapshot(activeSensorSerial);
+            resolved = resolveOngoingNotificationCurrentSnapshot(activeSensorSerial);
         } catch (Throwable th) {
             Log.stack(LOG_ID, "screenOnFreshnessResolve", th);
             return;
@@ -1452,7 +1492,7 @@ public class Notify {
         final CurrentDisplaySource.Snapshot resolved;
         try {
             activeSensorSerial = resolveNotificationSensorSerial();
-            resolved = resolveNotificationCurrentSnapshot(activeSensorSerial);
+            resolved = resolveOngoingNotificationCurrentSnapshot(activeSensorSerial);
         } catch (Throwable th) {
             Log.stack(LOG_ID, "reconcileResolve", th);
             return;
@@ -1663,6 +1703,9 @@ public class Notify {
                 freshnessDeadlineService = null;
                 scheduleVisualNotificationRefresh();
             }
+            // Expiration has no new glucose event. Restore the hybrid invalidation
+            // so the launcher replaces cached numbers with the stale-data status.
+            GlucoseUpdateBroadcaster.send(Applic.app);
         }
     };
 
@@ -1732,7 +1775,8 @@ public class Notify {
             return;
         }
         glucoseRefreshHandler.removeCallbacks(glucoseRefreshRunnable);
-        final CurrentDisplaySource.Snapshot pinned = resolveNotificationCurrentSnapshot();
+        final CurrentDisplaySource.Snapshot pinned = resolveOngoingNotificationCurrentSnapshot(
+                resolveNotificationSensorSerial());
         final GlucoseNotificationContent content = renderGlucoseNotification(
                 kind, glvalue, message, glucose, GLUCOSENOTIFICATION, once, pinned, true);
         final CurrentDisplaySource.Snapshot displayed = content.snapshot;
@@ -4172,7 +4216,7 @@ public class Notify {
 
         final CurrentDisplaySource.Snapshot resolvedDisplay = snapshotAlreadyResolved ? startupSnapshot
                 : GLUCOSENOTIFICATION.equals(type)
-                ? resolveNotificationCurrentSnapshot(activeSensorSerial)
+                ? resolveOngoingNotificationCurrentSnapshot(activeSensorSerial)
                 : null;
 
         java.util.List<GlucosePoint> chartPoints;
@@ -4234,6 +4278,23 @@ public class Notify {
 
         CharSequence valueText = buildFormattedGlucoseText(fallbackDisplay, glvalue);
         final float displayGlucoseValue = fallbackDisplay != null ? fallbackDisplay.getPrimaryValue() : glvalue;
+
+        // The system Live Update template cannot contain custom RemoteViews.
+        // Return before chart/peer rendering, using the same resolved primary reading.
+        final boolean liveUpdateEnabled = Applic.app
+                .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                .getBoolean(GlucoseLiveUpdate.PREFERENCE, false);
+        if (GlucoseLiveUpdatePolicy.canUse(liveUpdateEnabled, Build.VERSION.SDK_INT,
+                isWearable, customPhone, displayGlucoseValue,
+                fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L,
+                System.currentTimeMillis(), glucosetimeout)) {
+            final Notification live = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
+                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate);
+            if (live != null) {
+                return new GlucoseNotificationContent(live, fallbackDisplay);
+            }
+        }
+
         // One snapshot resolution per peer per update; reused for the value row
         // and (when enabled) the chart series below.
         final java.util.List<NotificationMultiSensorSource.PeerCurrent> peerCurrents =
@@ -5090,6 +5151,7 @@ public class Notify {
         }
         builder.setPriority(Notification.PRIORITY_DEFAULT);
         applyReadingHeaderTimestamp(builder, actualMillis);
+        if (!isWearable) CustomGlucoseNotification.applyStatus(builder, app, status);
         final Notification not = builder.build();
         not.flags |= FLAG_ONGOING_EVENT;
         return not;
@@ -5229,6 +5291,7 @@ public class Notify {
         final Notification.Builder builder = mkbuilder(GLUCOSENOTIFICATION);
         builder.setSmallIcon(R.drawable.novalue).setOnlyAlertOnce(true)
                 .setContentTitle(message).setWhen(0L).setShowWhen(false).setOngoing(true);
+        if (!isWearable) CustomGlucoseNotification.applyStatus(builder, app, message);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setVisibility(VISIBILITY_PUBLIC);
             builder.setCategory(Notification.CATEGORY_SERVICE);
@@ -5256,7 +5319,7 @@ public class Notify {
         final String activeSensorSerial = NotificationHistorySource
                 .resolveSensorSerial(resolvePrimarySensorName());
         final boolean sensorPresent = activeSensorSerial != null && !activeSensorSerial.isEmpty();
-        final CurrentDisplaySource.Snapshot snapshot = resolveNotificationCurrentSnapshot(
+        final CurrentDisplaySource.Snapshot snapshot = resolveOngoingNotificationCurrentSnapshot(
                 activeSensorSerial);
         final long nowMillis = System.currentTimeMillis();
         if (snapshot != null && snapshot.getPrimaryValue() >= 2.0f) {
