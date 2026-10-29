@@ -125,12 +125,12 @@ public class Libre2GattCallback extends SuperGattCallback {
         }
     }
 
-    private void watchStream(BluetoothGatt gatt) {
+    private synchronized void watchStream(BluetoothGatt gatt) {
         if (!isWearable && canRecoverLocally() && !recoveryInProgress && gatt == mBluetoothGatt)
             streamDeadline.arm(gatt, GATT_WATCHDOG_MS);
     }
 
-    private void streamExpired(BluetoothGatt gatt) {
+    private synchronized void streamExpired(BluetoothGatt gatt) {
         if (gatt != mBluetoothGatt || !canRecoverLocally()) return;
         hardRecoverGatt("120s without a complete sensor packet");
     }
@@ -152,14 +152,14 @@ public class Libre2GattCallback extends SuperGattCallback {
         return now - failedHandshakeSinceMs >= GATT_WATCHDOG_MS;
     }
 
-    private void releaseRecoveryWakeLock() {
+    private synchronized void releaseRecoveryWakeLock() {
         if (recoveryWakeLock != null) {
             if (recoveryWakeLock.isHeld()) recoveryWakeLock.release();
             recoveryWakeLock = null;
         }
     }
 
-    private void cancelRecovery(String reason) {
+    private synchronized void cancelRecovery(String reason) {
         recoveryDeadline.cancel();
         streamDeadline.cancel();
         if (recoveryInProgress) libre2Diag("hard-recovery-cancelled", mBluetoothGatt, "reason=" + reason);
@@ -168,7 +168,7 @@ public class Libre2GattCallback extends SuperGattCallback {
         releaseRecoveryWakeLock();
     }
 
-    private void hardRecoverGatt(String reason) {
+    private synchronized void hardRecoverGatt(String reason) {
         if (isWearable || recoveryInProgress || !canRecoverLocally()) return;
         recoveryInProgress = true;
         failedHandshakeSinceMs = android.os.SystemClock.elapsedRealtime();
@@ -201,7 +201,7 @@ public class Libre2GattCallback extends SuperGattCallback {
         }
     }
 
-    private void resumeRecovery() {
+    private synchronized void resumeRecovery() {
         libre2Diag("hard-recovery-resume", mBluetoothGatt,
                 "schedulerLateMs=" + Math.max(0L, android.os.SystemClock.elapsedRealtime() - recoveryDueMs));
         recoveryInProgress = false;
