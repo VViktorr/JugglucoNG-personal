@@ -15,7 +15,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, main2, main3]
+    branches: [main, main2, main3, main4, main4-port]
   push:
     branches: [main, main2, main3]
   workflow_dispatch:
