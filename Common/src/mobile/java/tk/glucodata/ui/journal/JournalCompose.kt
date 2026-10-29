@@ -2,10 +2,13 @@
 
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.TimePickerDefaults
-import androidx.compose.material3.FilterChipDefaults
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.animation.AnimatedContent
@@ -575,7 +578,7 @@ fun JournalEntrySheet(
                     }
                     existingEntry?.id?.let { entryId ->
                         IconButtonTooltip(stringResource(R.string.delete)) {
-                            IconButton(onClick = { onDelete?.invoke(entryId) }, shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = { onDelete?.invoke(entryId) }, shapes = appIconButtonShapes()) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = stringResource(R.string.delete),
@@ -904,13 +907,13 @@ fun JournalEntrySheet(
                     }
                     showDatePicker = false
                 },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(text = stringResource(R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showDatePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(text = stringResource(R.string.cancel))
                 }
             }
@@ -949,7 +952,7 @@ fun JournalEntrySheet(
                     )
                     showTimePicker = false
                 },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(text = stringResource(R.string.ok))
                 }
@@ -961,12 +964,12 @@ fun JournalEntrySheet(
                             draft = draft.copy(timestamp = System.currentTimeMillis())
                             showTimePicker = false
                         },
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.TextButtonContentPadding
                     ) {
                         Text(text = stringResource(R.string.now))
                     }
-                    TextButton(onClick = { showTimePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = { showTimePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(text = stringResource(R.string.cancel))
                     }
                 }
@@ -1533,7 +1536,7 @@ private fun JournalDoseAssistCard(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 ),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Icon(
@@ -1628,8 +1631,8 @@ private fun JournalMealShapeSelector(
                 MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             selectedContentColor = MaterialTheme.colorScheme.onSurface,
-            unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.78f),
-            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+            unselectedContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -1834,7 +1837,7 @@ private fun JournalFoodLibrarySelector(
                                         query = ""
                                     },
                                     modifier = Modifier.size(42.dp),
-                                    shapes = IconButtonDefaults.shapes()
+                                    shapes = appIconButtonShapes()
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
@@ -1851,7 +1854,7 @@ private fun JournalFoodLibrarySelector(
                                 query = ""
                                 expanded = false
                             },
-                            shapes = ButtonDefaults.shapes(shape = RoundedCornerShape(20.dp)),
+                            shapes = appButtonShapes(),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                         ) {
                             Text(
@@ -1962,7 +1965,7 @@ private fun JournalFoodLibrarySelector(
                                                 }
                                             },
                                             modifier = Modifier.size(40.dp),
-                                            shapes = IconButtonDefaults.shapes()
+                                            shapes = appIconButtonShapes()
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Add,
@@ -2052,7 +2055,7 @@ private fun JournalSelectedFoodChip(
                 IconButton(
                     onClick = onRemove,
                     modifier = Modifier.size(34.dp),
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Remove,
@@ -2207,7 +2210,7 @@ internal fun JournalFoodCompositionDetails(
                     FilledTonalIconButton(
                         onClick = { updatePortion(portionGrams - 10f) },
                         modifier = Modifier.size(44.dp),
-                        shapes = IconButtonDefaults.shapes()
+                        shapes = appIconButtonShapes()
                     ) {
                         Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.outbound_api_decrease_value))
                     }
@@ -2258,7 +2261,7 @@ internal fun JournalFoodCompositionDetails(
                     FilledTonalIconButton(
                         onClick = { updatePortion(portionGrams + 10f) },
                         modifier = Modifier.size(44.dp),
-                        shapes = IconButtonDefaults.shapes()
+                        shapes = appIconButtonShapes()
                     ) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.outbound_api_increase_value))
                     }
@@ -2274,7 +2277,7 @@ internal fun JournalFoodCompositionDetails(
                 TextButton(
                     onClick = saveToLibrary,
                     colors = ButtonDefaults.textButtonColors(contentColor = color),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Icon(
@@ -2528,7 +2531,7 @@ private fun JournalActionRow(
             FilledTonalButton(
                 onClick = { onAction(action) },
                 modifier = Modifier.weight(1f),
-                shapes = ButtonDefaults.shapes(shape = RoundedCornerShape(16.dp)),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -2583,8 +2586,8 @@ private fun JournalTypeSelector(
         selectedContainerColorFor = { type -> journalTypeSelectedContainerColor(type, selectedContainerBase) },
         selectedContentColorFor = { selectedContentColor },
         iconTint = { type, _ -> journalTypeColor(type) },
-        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.78f),
-        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+        unselectedContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
     )
 }
 
@@ -2602,8 +2605,8 @@ private fun JournalIntensitySelector(
                 selected = selectedIntensity == intensity,
                 onClick = { onIntensitySelected(intensity) },
                 label = { Text(text = stringResource(intensity.labelRes())) },
-                shapes = FilterChipDefaults.shapes(),
-                colors = FilterChipDefaults.filterChipColors()
+                shapes = appFilterChipShapes(),
+                colors = appFilterChipColors()
             )
         }
     }
@@ -3409,7 +3412,7 @@ private fun JournalStepperField(
                 FilledTonalIconButton(
                     onClick = { stepWithFeedback(-1) },
                     modifier = if (prominent) Modifier.size(56.dp) else Modifier,
-                    shapes = IconButtonDefaults.shapes(shape = RoundedCornerShape(if (prominent) 16.dp else 12.dp))
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Remove,
@@ -3536,7 +3539,7 @@ private fun JournalStepperField(
                 FilledTonalIconButton(
                     onClick = { stepWithFeedback(1) },
                     modifier = if (prominent) Modifier.size(56.dp) else Modifier,
-                    shapes = IconButtonDefaults.shapes(shape = RoundedCornerShape(if (prominent) 16.dp else 12.dp))
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
