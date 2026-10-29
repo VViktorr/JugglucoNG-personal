@@ -138,7 +138,11 @@ object CurrentDisplaySource {
             isMmol = isMmol,
             smoothingMode = smoothingMode,
             sensorId = resolvedSensorId
-        )
+        )?.takeIf {
+            // Smoothing/chunk collapsing can select an older history timestamp.
+            // Validate the value actually displayed, not just the live input.
+            it.timeMillis > 0L && kotlin.math.abs(now - it.timeMillis) <= maxAgeMillis
+        }
     }
 
     @JvmStatic
@@ -784,7 +788,11 @@ object CurrentDisplaySource {
             runCatching {
                 val dataptr = Natives.getdataptr(sensorName)
                 if (dataptr != 0L) {
-                    Natives.setViewMode(dataptr, normalized)
+                    try {
+                        Natives.setViewMode(dataptr, normalized)
+                    } finally {
+                        Natives.freedataptr(dataptr)
+                    }
                 }
             }
         }
