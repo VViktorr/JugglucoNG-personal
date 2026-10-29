@@ -6,6 +6,8 @@
 
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.ButtonDefaults
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -260,7 +262,7 @@ private fun ICanHealthOnboardingStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = ui.buttonHeight),
-            shapes = ButtonDefaults.shapes(),
+            shapes = appButtonShapes(),
             contentPadding = ButtonDefaults.ContentPadding
         ) {
             Text(stringResource(R.string.enter_code_manually))
@@ -306,14 +308,14 @@ private fun ICanHealthManualEntryDialog(
             TextButton(
                 onClick = { onConfirm(normalized) },
                 enabled = isValid,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }
