@@ -2110,7 +2110,10 @@ static void appendStoredHistory(const SensorGlucoseData *hist, jlong starttime,
     if (!item->valid() || item->gettime() <= starttime)
       continue;
     if (!libreLanes) {
-      samples[item->gettime()] = {(jlong)item->getsputnik(), 0};
+      // Preserve the sensor's stored raw lane when it contains a plausible value.
+      const uint16_t raw = item->getraw();
+      const jlong valRaw = raw >= 380 && raw <= 5020 ? (jlong)raw : 0;
+      samples[item->gettime()] = {(jlong)item->getsputnik(), valRaw};
       continue;
     }
     if (std::binary_search(streamed.begin(), streamed.end(),
