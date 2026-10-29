@@ -185,7 +185,7 @@ object SmsEscalation {
         }
 
         if (policy.criticalEnabled && state.readingMgdl > 0 && state.readingAtMs > 0L &&
-            nowMs - state.readingAtMs <= CRITICAL_READING_MAX_AGE_MS
+            nowMs - state.readingAtMs in 0L..CRITICAL_READING_MAX_AGE_MS
         ) {
             val key = when {
                 state.readingMgdl <= policy.criticalLowMgdl -> EPISODE_CRITICAL_LOW
@@ -206,9 +206,17 @@ object SmsEscalation {
             }
         }
 
-        if (policy.noDataEnabled && state.readingAtMs > 0L) {
-            val silentSince = state.readingAtMs + policy.noDataMinutes * 60_000L
-            if (nowMs >= silentSince) {
+        if (policy.noDataEnabled) {
+            // Once a no-data episode has started, keep it active if the 12-hour stale
+            // reading lookup expires. Otherwise the watchdog would close it and may send
+            // a false "all clear" even though no new reading arrived.
+            val previousNoData = state.episodes[EPISODE_NO_DATA]
+            val silentSince = if (state.readingAtMs > 0L) {
+                state.readingAtMs + policy.noDataMinutes * 60_000L
+            } else {
+                previousNoData?.openedAtMs ?: 0L
+            }
+            if (silentSince > 0L && nowMs >= silentSince) {
                 out += Condition(
                     key = EPISODE_NO_DATA,
                     kind = SmsEventKind.NO_DATA,
