@@ -370,12 +370,12 @@
 <string name="complications">Complications</string>
     <string name="colors_style_setting_description">Watchface color</string>
 
-   <string name="glucosenumbercomplicationlabel">Glucose value</string>
-   <string name="glucosearrowcomplicationlabel">Glucose arrow</string>
-   <string name="glucosearrowvaluecomplicationlabel">Value + arrow</string>
- <string name="glucosevalueiconcomplicationlabel">Glucose Value small</string>
- <string name="glucosearrowiconcomplicationlabel">Glucose Arrow small</string>
- <string name="glucoseshortcomplicationlabel">Value + arrow small</string>
+   <string name="glucosenumbercomplicationlabel">Glucose value (text / image)</string>
+   <string name="glucosearrowcomplicationlabel">Glucose arrow (image)</string>
+   <string name="glucosearrowvaluecomplicationlabel">Value + arrow (text / image)</string>
+ <string name="glucosevalueiconcomplicationlabel">Glucose Value small (text / image)</string>
+ <string name="glucosearrowiconcomplicationlabel">Glucose Arrow small (image)</string>
+ <string name="glucoseshortcomplicationlabel">Value + arrow small (text / image)</string>
 
    <string name="text">Text</string>
    <string name="arrow">Arrow</string>
@@ -2991,7 +2991,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="wear_prediction_title">Prediction</string>
     <string name="wear_prediction_on">On — set on phone</string>
     <string name="wear_prediction_off">Off — set on phone</string>
-    <string name="glucosechartcomplicationlabel">Glucose chart</string>
+    <string name="glucosechartcomplicationlabel">Glucose chart (text / image)</string>
     <string name="wear_chart_complication">Glucose chart</string>
     <string name="wear_glucose_tile_label">Glucose</string>
     <string name="wear_exchange_title">Exchange</string>
@@ -3004,9 +3004,9 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="exchange_toggle_patched_libre">Patched Libre</string>
     <string name="exchange_toggle_glucodata">GlucoDataHandler / AAPS</string>
     <string name="exchange_toggle_separate">Separate on watch</string>
-    <string name="glucosechartvaluecomplicationlabel">Chart + value</string>
-    <string name="glucosechartvaluearrowcomplicationlabel">Chart + value + arrow</string>
-    <string name="glucosechartfullcomplicationlabel">Chart + value + arrow + time</string>
+    <string name="glucosechartvaluecomplicationlabel">Chart + value (text / image)</string>
+    <string name="glucosechartvaluearrowcomplicationlabel">Chart + value + arrow (text / image)</string>
+    <string name="glucosechartfullcomplicationlabel">Chart + value + arrow + time (text / image)</string>
     <string name="sensor_vendor_abbott">Abbott</string>
     <string name="sensor_vendor_sibionics">Sibionics</string>
     <string name="sensor_vendor_dexcom">Dexcom</string>
