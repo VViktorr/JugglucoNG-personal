@@ -441,6 +441,22 @@ fun ExpressiveSettingsScreen(
             }
         }.joinToString(" · ")
     }
+
+    val normalizedQuery = searchQuery.trim()
+    fun matches(vararg ids: Int): Boolean = normalizedQuery.isEmpty() ||
+        ids.any { context.getString(it).contains(normalizedQuery, ignoreCase = true) }
+    val categoryTitles = linkedMapOf(
+        "appearance" to R.string.settings_category_appearance,
+        "alarms" to R.string.settings_category_alarms,
+        "devices" to R.string.settings_category_devices,
+        "processing" to R.string.settings_category_processing,
+        "journal" to R.string.settings_category_journal,
+        "connections" to R.string.settings_category_connections,
+        "data" to R.string.settings_category_data,
+        "app" to R.string.settings_category_app,
+        "reset" to R.string.settings_category_reset,
+    )
+    val categoryTitle = categoryTitles[category] ?: R.string.settings
     // Names of the apps on this phone that currently receive readings, so the row
     // answers "who gets my glucose?" without opening it.
     val phoneAppsLabel = buildList {
@@ -636,7 +652,7 @@ fun ExpressiveSettingsScreen(
                     title = stringResource(R.string.settings_dashboard_charts_title),
                     subtitle = stringResource(R.string.settings_dashboard_charts_desc),
                     icon = Icons.Default.Palette,
-                    iconTint = displayColor,
+                    iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.TOP,
                     onClick = { navController.navigate("settings/display-colors") }
                 )
@@ -735,7 +751,7 @@ fun ExpressiveSettingsScreen(
                     title = stringResource(R.string.settings_phone_apps_title),
                     subtitle = phoneAppsLabel,
                     icon = Icons.Default.PhoneAndroid,
-                    iconTint = sharingColor,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
                     position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/phone-apps") }
                 )
