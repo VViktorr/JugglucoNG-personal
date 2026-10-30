@@ -1388,7 +1388,8 @@ private    void mksettings(MainActivity context) {
       metricStyleToggle.setText(R.string.notification_metric_style_toggle);
       metricStyleToggle.setChecked(notificationPreferences.getBoolean(
               tk.glucodata.GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, false));
-      metricStyleToggle.setVisibility(Build.VERSION.SDK_INT >= 37 ? VISIBLE : GONE);
+      // Keep the preference visible on preview builds too; Notify gates the API 37 implementation at runtime.
+      metricStyleToggle.setVisibility(VISIBLE);
       metricStyleToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
               notificationPreferences.edit().putBoolean(
                       tk.glucodata.GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, isChecked).apply());
