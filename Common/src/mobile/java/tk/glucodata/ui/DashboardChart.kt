@@ -2886,6 +2886,7 @@ fun InteractiveGlucoseChart(
 
                 // --- 1. DRAW Y-AXIS GRID ---
                 val yStep = if (cYRange < 25) 2f else 50f
+                val yTicks = chartYAxisTicks(cYMin, cYMax, yStep)
                 var yVal = (kotlin.math.ceil(cYMin / yStep) * yStep).toInt() // integer steps
                 if (drawBackdrop && cYRange >= 0.001f) {
                     val stepPx = yStep * chartHeight / cYRange
@@ -2916,6 +2917,7 @@ fun InteractiveGlucoseChart(
                     if (y in 0f..chartHeight) {
                         drawLine(gridColor, Offset(0f, y), Offset(width, y), 0.7.dp.toPx())
                     }
+                    yVal += yStep.toInt().coerceAtLeast(1)
                 }
 
                 xTextPaint.typeface = graphFont
@@ -2938,6 +2940,7 @@ fun InteractiveGlucoseChart(
                             val m = cal.get(java.util.Calendar.MINUTE)
                             val isMidnight = h == 0 && m == 0
                             
+                            var axisLabel = ""
                             if (isMidnight) {
                                 // Date Line
                                 drawLine(gridColor.copy(alpha=0.8f), Offset(x, 0f), Offset(x, chartHeight), 3f)
@@ -2949,6 +2952,7 @@ fun InteractiveGlucoseChart(
                                     reusableDate.time = tGrid
                                     formatDate.format(reusableDate)
                                 }
+                                axisLabel = dateLabel
                                 xTextPaint.typeface = graphFontBold
                                 val halfDateLabel = xTextPaint.measureText(dateLabel) / 2f
                                 if (x - halfDateLabel >= 0f && x + halfDateLabel <= width) {
@@ -2969,10 +2973,93 @@ fun InteractiveGlucoseChart(
                                     val mm = if (m < 10) "0$m" else m.toString()
                                     "$hh:$mm"
                                 }
+                                axisLabel = timeLabel
                             }
-                            xLabels.add(Triple(timeLabel, x, isMidnight))
+                            xLabels.add(Triple(axisLabel, x, isMidnight))
                         }
                         tGrid += gridInterval
+                    }
+                }
+
+                fun drawForegroundYLabel(label: String, centerY: Float, indicator: Boolean) {
+                    val padH = 8.dp.toPx()
+                    val padV = 3.dp.toPx()
+                    val halfHeight = labelHeight / 2f + padV
+                    val center = centerY.coerceIn(halfHeight.coerceAtMost(chartHeight / 2f),
+                        (chartHeight - halfHeight).coerceAtLeast(chartHeight / 2f))
+                    val baseline = center - (fontMetrics.ascent + fontMetrics.descent) / 2f
+                    val left = 16.dp.toPx()
+                    drawRoundRect(
+                        color = axisLabelBackgroundColor,
+                        topLeft = Offset(left - padH, center - halfHeight),
+                        size = Size(axisTextPaint.measureText(label) + padH * 2f, halfHeight * 2f),
+                        cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                    )
+                    axisTextPaint.color = if (indicator) indicatorTextColorArgb else axisTextColorArgb
+                    drawContext.canvas.nativeCanvas.drawText(label, left, baseline, axisTextPaint)
+                }
+
+                fun drawForegroundAxes() {
+                    fun drawIndicator(point: GlucosePoint?, value: Float, labelY: Float, drawLabel: Boolean) {
+                        if (point == null) return
+                        val y = valToY(value)
+                        val x = timeToDataX(point.timestamp)
+                        if (!x.isFinite() || y !in 0f..chartHeight || x !in 0f..width) return
+                        val label = GlucoseFormatter.format(value, isMmol)
+                        if (drawLabel) {
+                            drawForegroundYLabel(label, labelY, true)
+                            return
+                        }
+                        val lineStartX = 16.dp.toPx() + axisTextPaint.measureText(label) + 8.dp.toPx()
+                        if (x > lineStartX) {
+                            drawLine(minMaxLineColor, Offset(lineStartX, y), Offset(x, y),
+                                0.7.dp.toPx(), pathEffect = dashEffect)
+                            if (abs(labelY - y) > 1f) {
+                                drawLine(minMaxLineColor, Offset(lineStartX, labelY), Offset(lineStartX, y),
+                                    0.7.dp.toPx(), pathEffect = dashEffect)
+                            }
+                        }
+                    }
+                    // Guides first, then every number and its opaque backing.
+                    maxIndicatorLabelY?.let { drawIndicator(maxPoint, maxVal, it, false) }
+                    minIndicatorLabelY?.let { drawIndicator(minPoint, minVal, it, false) }
+                    yTicks.forEach { tick ->
+                        val y = valToY(tick)
+                        if (y in 0f..chartHeight &&
+                            indicatorLabelYs.none { abs(it - y) < labelHeight + labelGap }) {
+                            val label = if (isMmol && tick % 1f != 0f)
+                                GlucoseFormatter.format(tick, true) else tick.roundToInt().toString()
+                            drawForegroundYLabel(label, y, false)
+                        }
+                    }
+                    var previousRight = Float.NEGATIVE_INFINITY
+                    xTextPaint.color = axisTextColorArgb
+                    for ((label, x, date) in xLabels) {
+                        xTextPaint.typeface = if (date) graphFontBold else graphFont
+                        val halfWidth = xTextPaint.measureText(label) / 2f
+                        val pad = 4.dp.toPx()
+                        val left = x - halfWidth - pad
+                        val right = x + halfWidth + pad
+                        if (left < 0f || right > width || left < previousRight + labelGap) continue
+                        val metrics = xTextPaint.fontMetrics
+                        // Fit font-scaled labels in the reserved time-axis band.
+                        val centerY = (chartHeight + contentHeight - labelsLiftPx) / 2f
+                        val baseline = centerY - (metrics.ascent + metrics.descent) / 2f
+                        drawRoundRect(
+                            color = axisLabelBackgroundColor,
+                            topLeft = Offset(left, baseline + metrics.ascent - 2.dp.toPx()),
+                            size = Size(right - left, metrics.descent - metrics.ascent + 4.dp.toPx()),
+                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                        )
+                        drawContext.canvas.nativeCanvas.drawText(label, x, baseline, xTextPaint)
+                        previousRight = right
+                    }
+                    xTextPaint.typeface = graphFont
+                    maxIndicatorLabelY?.let { drawIndicator(maxPoint, maxVal, it, true) }
+                    minIndicatorLabelY?.let { drawIndicator(minPoint, minVal, it, true) }
+                    // Highest-priority text, on the same opaque foreground as the axes.
+                    targetLabels.forEach { (value, y) ->
+                        drawForegroundYLabel(GlucoseFormatter.format(value, isMmol), y, true)
                     }
                 }
 
