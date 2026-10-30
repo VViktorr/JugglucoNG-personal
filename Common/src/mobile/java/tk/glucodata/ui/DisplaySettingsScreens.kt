@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
@@ -72,6 +74,8 @@ import tk.glucodata.ui.components.SettingsChoice
 import tk.glucodata.ui.components.SettingsControlsCard
 import tk.glucodata.ui.components.SettingsSlider
 import tk.glucodata.ui.viewmodel.DashboardViewModel
+
+private val legacySettingsHorizontalPadding = 16.dp
 
 private val screenHorizontalPadding = 16.dp
 private val aodPositionOptions = listOf(
@@ -998,5 +1002,24 @@ internal fun isAodAccessibilityEnabled(context: Context): Boolean {
     return manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).any { info ->
         info.resolveInfo?.serviceInfo?.packageName == context.packageName &&
             info.resolveInfo?.serviceInfo?.name == tk.glucodata.accessibility.AODOverlayService::class.java.name
+    }
+}
+
+@Composable
+private fun LegacySliderControl(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    range: ClosedFloatingPointRange<Float>,
+    steps: Int = 0
+) {
+    Column(Modifier.padding(horizontal = legacySettingsHorizontalPadding, vertical = 8.dp)) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        AppSlider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = range,
+            steps = steps
+        )
     }
 }
