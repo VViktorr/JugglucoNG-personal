@@ -533,6 +533,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="chart_short_title">Chart</string>
     <string name="target_range_title">Target range</string>
     <string name="chart_limits_title">Chart range</string>
+    <string name="chart_scale_limits_title">Chart scale limits</string>
+    <string name="chart_scale_limits_description">Minimum and maximum drawn values, including automatic scaling. Drag vertically on the values at the left edge to adjust the scale.</string>
     <string name="dashboard_range_hours">%1$dH</string>
     <string name="dashboard_range_days">%1$dD</string>
     <string name="sensor_age_hours_compact">%1$dh</string>
