@@ -18,6 +18,8 @@
     <string name="loss_description">Aplikacja Juggluco utraciła kontakt z sensorem</string>
     <string name="numalarm_description">Przypomnienie o dawce, jedzeniu lub ćwiczeniach</string>
     <string name="notification_description">Informuje o aktualnej wartości stęż. glukozy</string>
+    <string name="notification_live_update_toggle">Glikemia jako Live Update</string>
+    <string name="notification_metric_style_toggle">Powiadomienie MetricStyle (Android 17+)</string>
     <string name="ongoing_description">Program w toku</string>
     <string name="scan_permission">Uprawnienie</string>
     <string name="scanname">Skan</string>
