@@ -663,7 +663,7 @@ fun ExpressiveSettingsScreen(
                     onCheckedChange = { viewModel.setDataSmoothingEnabled(it) },
                     onClick = { navController.navigate("settings/data-smoothing") },
                     icon = Icons.AutoMirrored.Filled.TrendingUp,
-                    iconTint = displayColor,
+                    iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.MIDDLE
                 )
                 SettingsNavSwitchItem(
@@ -673,14 +673,14 @@ fun ExpressiveSettingsScreen(
                     onCheckedChange = { viewModel.setPredictiveSimulationEnabled(it) },
                     onClick = { navController.navigate("settings/predictive-simulation") },
                     icon = Icons.AutoMirrored.Filled.ShowChart,
-                    iconTint = displayColor,
+                    iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.MIDDLE
                 )
                 SettingsItem(
                     title = stringResource(R.string.notification_settings_title),
                     subtitle = stringResource(R.string.notification_settings_subtitle),
                     icon = Icons.Default.ClearAll,
-                    iconTint = displayColor,
+                    iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/notification-display") }
                 )
@@ -711,7 +711,7 @@ fun ExpressiveSettingsScreen(
                     },
                     onClick = { navController.navigate("settings/floating-display") },
                     icon = Icons.Default.PictureInPicture,
-                    iconTint = displayColor,
+                    iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.SINGLE
                 )
                 }
@@ -735,7 +735,7 @@ fun ExpressiveSettingsScreen(
                     },
                     onClick = { navController.navigate("settings/aod-display") },
                     icon = Icons.Default.ScreenLockPortrait,
-                    iconTint = displayColor,
+                    iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.SINGLE
                 )
                 }
@@ -765,7 +765,7 @@ fun ExpressiveSettingsScreen(
                     },
                     onClick = { navController.navigate("settings/nightscout") },
                     icon = Icons.Default.CloudUpload,
-                    iconTint = sharingColor,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
                     position = CardPosition.SINGLE
                 )
                 }
@@ -777,7 +777,7 @@ fun ExpressiveSettingsScreen(
                         title = stringResource(R.string.libreview_config),
                         subtitle = stringResource(R.string.libreview_desc),
                         icon = Icons.Default.Cloud,
-                        iconTint = sharingColor,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
                         position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/libreview") }
                     )
@@ -787,7 +787,7 @@ fun ExpressiveSettingsScreen(
                         title = stringResource(R.string.dexcom_share_title),
                         subtitle = stringResource(R.string.dexcom_share_desc),
                         icon = Icons.Default.CloudUpload,
-                        iconTint = sharingColor,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
                         position = CardPosition.MIDDLE,
                         onClick = { navController.navigate("settings/dexcom-share") }
                     )
@@ -797,7 +797,7 @@ fun ExpressiveSettingsScreen(
                         title = stringResource(R.string.mq_account_title),
                         subtitle = stringResource(R.string.settings_mq_account_desc),
                         icon = Icons.Default.AccountCircle,
-                        iconTint = sharingColor,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
                         position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/mq-account") }
                     )
@@ -811,7 +811,7 @@ fun ExpressiveSettingsScreen(
                         title = stringResource(R.string.ottai_setup_title),
                         subtitle = stringResource(R.string.settings_ottai_desc),
                         icon = Icons.Default.Sensors,
-                        iconTint = sharingColor,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
                         position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/ottai") }
                     )
@@ -820,7 +820,7 @@ fun ExpressiveSettingsScreen(
                     title = stringResource(R.string.mirror),
                     subtitle = stringResource(R.string.settings_mirror_desc),
                     icon = Icons.Default.Devices,
-                    iconTint = sharingColor,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
                     position = CardPosition.MIDDLE,
                     onClick = { navController.navigate("settings/mirror") }
                 )
@@ -834,14 +834,14 @@ fun ExpressiveSettingsScreen(
                     },
                     onClick = { navController.navigate("settings/webserver") },
                     icon = Icons.Default.Dns,
-                    iconTint = sharingColor,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
                     position = CardPosition.MIDDLE
                 )
                 SettingsItem(
                     title = stringResource(R.string.outbound_api_title),
                     subtitle = stringResource(R.string.outbound_api_desc),
                     icon = Icons.Default.Webhook,
-                    iconTint = sharingColor,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
                     position = CardPosition.BOTTOM,
                     onClick = { navController.navigate("settings/outbound-api") }
                 )
