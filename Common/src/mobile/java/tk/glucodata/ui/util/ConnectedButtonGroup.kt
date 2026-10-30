@@ -1,6 +1,7 @@
 package tk.glucodata.ui.util
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -85,6 +86,9 @@ fun <T> ConnectedButtonGroup(
     selectedContainerColorFor: ((T) -> Color)? = null,
     selectedContentColorFor: ((T) -> Color)? = null,
     iconTint: ((T, Boolean) -> Color)? = null,
+    selectedBorder: BorderStroke? = null,
+    unselectedBorder: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    pillShapeForAll: Boolean = true,
 ) {
     // Each label's own height, measured unclipped. The buttons' intrinsic height can't tell this:
     // it never reports less than the 40dp minimum or the 48dp touch target, which hides a label
@@ -131,6 +135,11 @@ fun <T> ConnectedButtonGroup(
                     .weight(1f)
                     .fillMaxHeight(),
                 shapes = when {
+                    pillShapeForAll -> ToggleButtonDefaults.shapesFor(itemHeight).copy(
+                        shape = AppButtonShape,
+                        pressedShape = AppButtonShape,
+                        checkedShape = AppButtonShape
+                    )
                     options.size == 1 -> ToggleButtonDefaults.shapesFor(itemHeight)
                     index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
                     index == options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
@@ -144,6 +153,7 @@ fun <T> ConnectedButtonGroup(
                     checkedContentColor = contentColor
                 ),
                 elevation = null,
+                border = if (isSelected) selectedBorder else unselectedBorder,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 var availableWidthPx by remember(option) { mutableIntStateOf(0) }
