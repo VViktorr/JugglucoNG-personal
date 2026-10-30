@@ -2970,7 +2970,7 @@ fun InteractiveGlucoseChart(
                                     "$hh:$mm"
                                 }
                             }
-                            xLabels.add(Triple(label, x, isMidnight))
+                            xLabels.add(Triple(timeLabel, x, isMidnight))
                         }
                         tGrid += gridInterval
                     }
