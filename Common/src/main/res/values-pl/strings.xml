@@ -3143,4 +3143,9 @@
     <string name="settings_search_hint">Szukaj w ustawieniach</string>
     <string name="settings_search_no_results">Brak ustawień pasujących do „%1$s”</string>
     <string name="settings_search_clear">Wyczyść wyszukiwanie</string>
+    <string name="libreview_reregistering_libre2_device">Ponowna rejestracja urządzenia Libre 2…</string>
+    <string name="libreview_reregister_libre2_device">Zarejestruj ponownie urządzenie Libre 2</string>
+    <string name="libreview_region_value">Region LibreView: %1$s</string>
+    <string name="libreview_uom_value">Jednostki wysyłane do LibreView: %1$s</string>
+    <string name="libreview_model_value">Model aplikacji LibreView: %1$s</string>
 </resources>
