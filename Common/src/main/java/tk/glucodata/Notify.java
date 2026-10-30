@@ -4295,7 +4295,12 @@ public class Notify {
                     displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate,
                     false, metricStyleEnabled);
             if (styled != null) {
-                return new GlucoseNotificationContent(styled, fallbackDisplay);
+                final long metricFingerprint = new NotificationFingerprint()
+                        .add(type).add("metric-style").add(displayGlucoseValue)
+                        .add(isMmol).add(rate)
+                        .add(fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L)
+                        .value();
+                return new GlucoseNotificationContent(styled, fallbackDisplay, metricFingerprint, 0L);
             }
         }
 
