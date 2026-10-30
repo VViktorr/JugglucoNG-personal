@@ -189,6 +189,32 @@ class SmsEscalationTests {
         assertFalse(plan.messages.any { it.kind == SmsEventKind.CRITICAL })
     }
 
+    @Test
+    fun aFutureDatedReadingNeverTriggersACriticalPage() {
+        val policy = policy(*contacts(0).toTypedArray()).copy(criticalGraceMinutes = 0)
+        val state = SmsWatchState(readingMgdl = 40, readingAtMs = t0 + 5 * minute)
+
+        val plan = SmsEscalation.plan(policy, state, t0)
+
+        assertFalse(plan.messages.any { it.kind == SmsEventKind.CRITICAL })
+    }
+
+    @Test
+    fun noDataEpisodeRemainsActiveWhenTheStaleReadingLookupExpires() {
+        val policy = policy(*contacts(0).toTypedArray()).copy(noDataMinutes = 45, criticalEnabled = false)
+        val state = SmsWatchState(
+            readingAtMs = 0L,
+            episodes = mapOf(
+                SmsEscalation.EPISODE_NO_DATA to EpisodeProgress(openedAtMs = t0 + 45 * minute)
+            )
+        )
+
+        val plan = SmsEscalation.plan(policy, state, t0 + 13 * 60 * minute)
+
+        assertTrue(plan.activeEpisodes.containsKey(SmsEscalation.EPISODE_NO_DATA))
+        assertFalse(plan.closedEpisodes.contains(SmsEscalation.EPISODE_NO_DATA))
+    }
+
     // ----------------------------------------------------------- no data
 
     @Test
