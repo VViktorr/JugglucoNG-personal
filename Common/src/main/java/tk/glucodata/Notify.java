@@ -4158,20 +4158,17 @@ public class Notify {
         // Return before chart/peer rendering, using the same resolved primary reading.
         final android.content.SharedPreferences notificationPreferences = Applic.app
                 .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
-        final boolean liveUpdateEnabled = notificationPreferences
-                .getBoolean(GlucoseLiveUpdate.PREFERENCE, false);
         final boolean metricStyleEnabled = Build.VERSION.SDK_INT >= 37
                 && notificationPreferences.getBoolean(GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, false);
-        // MetricStyle is an independent option. It can use a standard notification without
-        // requesting Live Update promotion when the Live Update switch is off.
-        if ((liveUpdateEnabled || metricStyleEnabled)
+        // MetricStyle runs on its own; do not promote this notification as a Live Update.
+        if (metricStyleEnabled
                 && GlucoseLiveUpdatePolicy.canUse(true, Build.VERSION.SDK_INT,
                 isWearable, customPhone, displayGlucoseValue,
                 fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L,
                 System.currentTimeMillis(), glucosetimeout)) {
             final Notification styled = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
                     displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate,
-                    liveUpdateEnabled, metricStyleEnabled);
+                    false, metricStyleEnabled);
             if (styled != null) {
                 return new GlucoseNotificationContent(styled, fallbackDisplay);
             }
