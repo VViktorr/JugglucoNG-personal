@@ -254,6 +254,7 @@ fun DashboardCombinedHeader(
             .compositeOver(MaterialTheme.colorScheme.background)
     }
     val sensorContentColor = if (isExpiring) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+    val sensorAgedColor = MaterialTheme.colorScheme.surfaceVariant
 
     // Advanced Trend
     val trendResult = remember(history, latestPoint, currentSnapshot) {
