@@ -1,6 +1,7 @@
 package tk.glucodata.ui
 
 import tk.glucodata.ui.components.AdaptiveTrailingRow
+import tk.glucodata.ui.components.AppSlider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -69,6 +69,13 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
     val targetHighValue by viewModel.targetHigh.collectAsStateWithLifecycle()
     val veryLowValue by viewModel.veryLowThreshold.collectAsStateWithLifecycle()
     val veryHighValue by viewModel.veryHighThreshold.collectAsStateWithLifecycle()
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scaleLimits = rememberChartScaleLimits(isMmol)
+    val scaleFactor = if (isMmol) GlucoseFormatter.mmolToMg(1f) else 1f
+    var scaleLow by remember(scaleLimits) { mutableFloatStateOf(scaleLimits.low) }
+    var scaleHigh by remember(scaleLimits) { mutableFloatStateOf(scaleLimits.high) }
+    val scaleMinimumSpan = scaleLimits.minimumSpan
 
     val valueStep = if (isMmol) 0.1f else 1f
     val targetLowBounds = if (isMmol) 2.0f..8.0f else 40f..140f
@@ -166,6 +173,39 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
                 },
                 onHighValueChangeFinished = {
                     viewModel.setGraphRange(chartLowSlider, chartHighSlider)
+                }
+            )
+            HorizontalDivider()
+            Text(
+                text = stringResource(R.string.chart_scale_limits_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.chart_scale_limits_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            GlucoseRangeSliderSection(
+                lowLabel = stringResource(R.string.low_label),
+                highLabel = stringResource(R.string.high_label),
+                lowValue = scaleLow,
+                highValue = scaleHigh,
+                lowBounds = 0f..(216f / scaleFactor),
+                highBounds = (108f / scaleFactor)..(1000f / scaleFactor),
+                isMmol = isMmol,
+                onLowValueChange = { candidate ->
+                    scaleLow = snapRangeValue(candidate, isMmol)
+                        .coerceIn(0f, minOf(216f / scaleFactor, scaleHigh - scaleMinimumSpan))
+                },
+                onHighValueChange = { candidate ->
+                    scaleHigh = snapRangeValue(candidate, isMmol)
+                        .coerceIn(scaleLow + scaleMinimumSpan, 1000f / scaleFactor)
+                },
+                onLowValueChangeFinished = {
+                    saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
+                },
+                onHighValueChangeFinished = {
+                    saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
                 }
             )
         }
@@ -341,7 +381,7 @@ private fun GlucoseRangeSliderRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Slider(
+            AppSlider(
                 value = value,
                 onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
