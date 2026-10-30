@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.AdaptiveButtonRow
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.animation.AnimatedContent
