@@ -30,6 +30,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Locale
 import tk.glucodata.Applic
 import tk.glucodata.BatteryTrace
 import tk.glucodata.DisplayTrendSource
@@ -714,7 +715,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
                 statusView.visibility = View.VISIBLE
             } else {
                 statusView.visibility = View.GONE
-                statusView.text = statusText
+                statusView.text = ""
             }
         }
         applyBurnInProtection()
