@@ -23,4 +23,8 @@
     <string name="settings_bars_stacked_summary">Belki jedna pod drugą</string>
     <string name="settings_bars_side_summary">Belki obok siebie</string>
     <string name="settings_reset_description">Usuwanie historii, danych aplikacji i reset fabryczny</string>
+    <string name="widget_classic">Klasyczny widżet glukozy</string>
+    <string name="widget_expressive">Ekspresyjny widżet glukozy</string>
+    <string name="widget_range">Widżet zakresu glikemii</string>
+    <string name="widget_clock_weather">Widżet glikemii z zegarem i pogodą</string>
 </resources>
