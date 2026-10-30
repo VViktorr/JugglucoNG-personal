@@ -73,6 +73,11 @@ class SuperGattCallback {
  synchronized void setPause(boolean pause){if(!retired)stop=pause;}
  synchronized void closeGattTransport(){}
 }
+class CloneSensorRegistry {
+ static boolean isCloneSensor(String sensorId){return "secondary".equals(sensorId);}
+ static boolean isReceptionEnabled(){return false;}
+ static boolean isMirrorDelivering(String sensorId){return false;}
+}
 class SensorIdentity {
  static String main="main";
  static boolean matches(String a,String b){return Objects.equals(a,b);}
