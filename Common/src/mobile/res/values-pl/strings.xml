@@ -27,4 +27,8 @@
     <string name="widget_expressive">Ekspresyjny widżet glukozy</string>
     <string name="widget_range">Widżet zakresu glikemii</string>
     <string name="widget_clock_weather">Widżet glikemii z zegarem i pogodą</string>
+    <string name="widget_classic_description">Pokazuje aktualną glikemię i trend.</string>
+    <string name="widget_expressive_description">Ekspresyjny widżet glukozy z aktualną wartością i trendem.</string>
+    <string name="widget_range_description">Pokazuje glikemię, trend i zakres docelowy.</string>
+    <string name="widget_clock_weather_description">Pokazuje glikemię razem z zegarem i pogodą.</string>
 </resources>
