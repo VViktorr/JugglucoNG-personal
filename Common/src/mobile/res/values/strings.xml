@@ -23,4 +23,8 @@
     <string name="settings_bars_stacked_summary">Stacked bars</string>
     <string name="settings_bars_side_summary">Side-by-side bars</string>
     <string name="settings_reset_description">Clear history, clear app data and factory reset</string>
+    <string name="widget_classic">Classic glucose widget</string>
+    <string name="widget_expressive">Expressive glucose widget</string>
+    <string name="widget_range">Glucose range widget</string>
+    <string name="widget_clock_weather">Glucose widget with clock and weather</string>
 </resources>
