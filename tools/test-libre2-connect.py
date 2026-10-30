@@ -50,10 +50,10 @@ libre_methods = '\n'.join(method(libre, signature) for signature in [
     'public synchronized void onCharacteristicWrite(', 'public synchronized void onCharacteristicChanged(',
     'public synchronized void onReadRemoteRssi(', 'public synchronized void close()',
     'private Runnable forCurrentGatt(', 'private void endBLEHandler(',
-    'private boolean canRecoverLocally(', 'private void libre2Diag(', 'private void watchStream(',
-    'private void streamExpired(', 'private void markPacketReceived(', 'private boolean failedHandshakeNeedsRecovery(',
-    'private void releaseRecoveryWakeLock(', 'private void cancelRecovery(',
-    'private void hardRecoverGatt(', 'private void resumeRecovery(',
+    'private boolean canRecoverLocally(', 'private void libre2Diag(', 'private synchronized void watchStream(',
+    'private synchronized void streamExpired(', 'private void markPacketReceived(', 'private boolean failedHandshakeNeedsRecovery(',
+    'private synchronized void releaseRecoveryWakeLock(', 'private synchronized void cancelRecovery(',
+    'private synchronized void hardRecoverGatt(', 'private synchronized void resumeRecovery(',
     'public synchronized long resetdataptr(', 'synchronized void diagnoseReset(',
 ])
 
