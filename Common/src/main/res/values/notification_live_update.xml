@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_live_update_title">Glucose as a Live Update</string>
+    <string name="notification_live_update_summary">Show the current glucose in a status-bar chip when supported. Android 17 uses MetricStyle. Replaces the chart notification with a system layout while enabled. The phone may require allowing Live Updates in notification settings.</string>
+    <string name="notification_live_update_glucose">Glucose</string>
+    <string name="notification_live_update_unpin">Unpin</string>
+    <string name="notification_live_update_system_settings">System notification settings</string>
+    <string name="notification_live_update_system_settings_summary">Allow Live Updates or Live Alerts here if your phone provides this option.</string>
+</resources>

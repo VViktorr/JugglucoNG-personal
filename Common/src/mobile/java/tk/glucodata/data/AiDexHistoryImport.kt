@@ -27,7 +27,9 @@ internal class AiDexHistoryImport private constructor(
 
     private fun currentCalibrationInputs(id: String) = Pair(
         AiDexAlgorithmReferences.decode(
-            CalibrationManager.getActiveCalibrationAnchors(id, false), Applic.unit == 1,
+            CalibrationManager.getActiveCalibrationAnchors(id, true),
+            CalibrationManager.getActiveCalibrationAnchors(id, false),
+            Applic.unit == 1,
         ),
         CalibrationManager.getIntegratedCalibrationFingerprint(id, false),
     )

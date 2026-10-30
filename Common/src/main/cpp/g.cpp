@@ -1276,6 +1276,8 @@ static jlong getalarmonly(const uint32_t mgL, float drate,
                                                                       hist->waiting
                                                                   ? isAgain
                                                                   : 0))))))));
+  LOGGER("mgL=%u, high=%d, low=%d res=%" PRId64 "\n",
+         mgL, settings->highAlarm(mgL), settings->lowAlarm(mgL), res);
   return res;
 }
 int getalarmcode(const uint32_t mgL, float drate, SensorGlucoseData *hist) {
@@ -1501,7 +1503,7 @@ static bool storeGlucoseStreamSample(SensorGlucoseData *hist, const char *sensor
   int lifeCount = 0;
   if (start > 0 && timestamp >= start)
     lifeCount = (timestamp - start) / 60;
-  const uint16_t mgVal = (uint16_t)(glucose * 10.0f);
+  uint16_t mgVal = (uint16_t)(glucose * 10.0f);
 
   if (!hist->validPollIndex(lifeCount)) {
     // Capacity failures remain loud even for a bulk reconciliation: unlike a
@@ -1517,7 +1519,18 @@ static bool storeGlucoseStreamSample(SensorGlucoseData *hist, const char *sensor
   uint16_t preservedTemp = 0;
   const ScanData *pollsbuf = hist->getPollsData();
   const bool fillsPollGap = pollsbuf && pollsbuf[lifeCount].g <= 0;
-  if (hist->hasStreamID(lifeCount)) {
+  const ScanData *existing = pollsbuf && pollsbuf[lifeCount].id == lifeCount &&
+                                     pollsbuf[lifeCount].t > 0
+                                 ? &pollsbuf[lifeCount] : nullptr;
+  // Raw-only history must not erase Auto or attach an old Auto value to a
+  // newer timestamp. Missing lanes can be combined only for the same sample.
+  if (mgVal == 0 && rawGlucose > 0.0f && existing && existing->g > 0) {
+    if (existing->t != timestamp)
+      return false;
+    mgVal = existing->g;
+  }
+  if (hist->hasStreamID(lifeCount) ||
+      (existing && existing->t == timestamp)) {
     const RawData *rawbuf = hist->getRawPollsData();
     if (rawbuf)
       preservedRaw = rawbuf[lifeCount].raw;
@@ -1528,8 +1541,9 @@ static bool storeGlucoseStreamSample(SensorGlucoseData *hist, const char *sensor
   if (overwriteTemp && temperatureC > 0.0f)
     preservedTemp = static_cast<uint16_t>(temperatureC * 10.0f);
 
-  const float change = derivechangeforsample(hist->getPollsData(), 0, lifeCount,
-                                             mgVal, timestamp);
+  const float change = mgVal > 0
+      ? derivechangeforsample(hist->getPollsData(), 0, lifeCount, mgVal, timestamp)
+      : NAN;
   const bool stored = quiet
                           ? hist->savepollallIDsQuiet<60>(
                                 timestamp, lifeCount, mgVal, 0, change,
@@ -2096,7 +2110,10 @@ static void appendStoredHistory(const SensorGlucoseData *hist, jlong starttime,
     if (!item->valid() || item->gettime() <= starttime)
       continue;
     if (!libreLanes) {
-      samples[item->gettime()] = {(jlong)item->getsputnik(), 0};
+      // Preserve the sensor's stored raw lane when it contains a plausible value.
+      const uint16_t raw = item->getraw();
+      const jlong valRaw = raw >= 380 && raw <= 5020 ? (jlong)raw : 0;
+      samples[item->gettime()] = {(jlong)item->getsputnik(), valRaw};
       continue;
     }
     if (std::binary_search(streamed.begin(), streamed.end(),
@@ -2193,6 +2210,25 @@ static void appendScanHistory(const SensorGlucoseData *hist, jlong starttime,
   }
 }
 
+static void appendNfcRawHistory(const SensorGlucoseData *hist, jlong starttime,
+                                HistorySamples &samples) {
+  const auto rawHistory = hist->getNfcRawHistory();
+  if (rawHistory.empty()) return;
+  std::map<int32_t, uint32_t> pollTimes;
+  for (const auto &poll : hist->getPolldata()) {
+    if (poll.id >= 0 && poll.t > 1598911200u && poll.t < 2145909600u)
+      pollTimes.emplace(poll.id, poll.t);
+  }
+  for (const auto &row : rawHistory) {
+    const auto found = pollTimes.find(row.id);
+    const jlong time = found == pollTimes.end() ? row.time : found->second;
+    if (time <= starttime) continue;
+    auto &value = samples[time];
+    // Never manufacture Auto from Raw, and never overwrite a real BLE raw value.
+    if (value.second <= 0) value.second = row.rawMgdlTimes10;
+  }
+}
+
 static jlongArray historySamplesToJava(JNIEnv *env,
                                        const HistorySamples &samples) {
   if (samples.empty())
@@ -2227,6 +2263,7 @@ fromjava(getGlucoseHistory)(JNIEnv *env, jclass cl, jlong starttime) {
   appendStoredHistory(hist, starttime, samples);
   appendScanHistory(hist, starttime, samples);
   appendPollHistory(hist, starttime, samples);
+  appendNfcRawHistory(hist, starttime, samples);
   return historySamplesToJava(env, samples);
 }
 
@@ -2261,6 +2298,7 @@ extern "C" JNIEXPORT jlongArray JNICALL fromjava(getGlucoseHistoryForSensor)(
   appendStoredHistory(hist, starttime, samples);
   appendScanHistory(hist, starttime, samples);
   appendPollHistory(hist, starttime, samples);
+  appendNfcRawHistory(hist, starttime, samples);
   return historySamplesToJava(env, samples);
 }
 

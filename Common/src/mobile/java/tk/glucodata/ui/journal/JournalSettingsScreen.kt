@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
@@ -1090,7 +1093,7 @@ private fun JournalFoodImportRow(
                             )
                         },
                         modifier = Modifier.size(44.dp),
-                        shapes = IconButtonDefaults.shapes()
+                        shapes = appIconButtonShapes()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -1181,7 +1184,7 @@ private fun JournalFoodLibrarySearchField(
                     IconButton(
                         onClick = onClose,
                         modifier = Modifier.size(42.dp),
-                        shapes = IconButtonDefaults.shapes()
+                        shapes = appIconButtonShapes()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -1283,7 +1286,7 @@ private fun JournalFoodSheet(
                                 containerColor = containerColor,
                                 contentColor = contentColor
                             ),
-                            shapes = ButtonDefaults.shapes()
+                            shapes = appButtonShapes()
                         ) {
                             Icon(
                                 imageVector = if (archived) Icons.Default.CheckCircle else Icons.Default.Block,
@@ -1377,7 +1380,7 @@ private fun JournalFoodSheet(
                         onClick = { saveDraft() },
                         enabled = canSave,
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.save))
@@ -1386,7 +1389,7 @@ private fun JournalFoodSheet(
                         OutlinedButton(
                             onClick = it,
                             modifier = Modifier.fillMaxWidth(),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Text(
@@ -1486,7 +1489,7 @@ private fun JournalFoodEditorField(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Remove,
@@ -1546,7 +1549,7 @@ private fun JournalFoodEditorField(
                         containerColor = accentColor.copy(alpha = 0.18f),
                         contentColor = accentColor
                     ),
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -1672,7 +1675,7 @@ private fun JournalInsulinPresetSheet(
                                 containerColor = containerColor,
                                 contentColor = contentColor
                             ),
-                            shapes = ButtonDefaults.shapes()
+                            shapes = appButtonShapes()
                         ) {
                             Icon(
                                 imageVector = if (archived) Icons.Default.CheckCircle else Icons.Default.Block,
@@ -1891,7 +1894,7 @@ private fun JournalInsulinPresetSheet(
                                 modifier = Modifier
                                     .heightIn(min = 32.dp)
                                     .widthIn(max = 132.dp),
-                                shapes = ButtonDefaults.shapes()
+                                shapes = appButtonShapes()
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Restore,
@@ -2011,7 +2014,7 @@ private fun JournalInsulinPresetSheet(
                             selectedPointIndex = insertedIndex
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(
@@ -2026,7 +2029,7 @@ private fun JournalInsulinPresetSheet(
                         onClick = { saveDraft() },
                         enabled = canSave && hasChanges,
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.save))
@@ -2036,7 +2039,7 @@ private fun JournalInsulinPresetSheet(
                             OutlinedButton(
                                 onClick = it,
                                 modifier = Modifier.fillMaxWidth(),
-                                shapes = ButtonDefaults.shapes(),
+                                shapes = appButtonShapes(),
                                 contentPadding = ButtonDefaults.ContentPadding
                             ) {
                                 Text(
@@ -2186,7 +2189,7 @@ private fun SelectedCurvePointEditor(
             )
             if (canDelete) {
                 IconButtonTooltip(stringResource(R.string.delete)) {
-                    IconButton(onClick = onDelete, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onDelete, shapes = appIconButtonShapes()) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.delete)

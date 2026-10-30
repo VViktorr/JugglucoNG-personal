@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.AppSlider
+import tk.glucodata.ui.components.AppRangeSlider
+
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -68,7 +71,6 @@ import tk.glucodata.ui.components.StyledSwitch
 import tk.glucodata.ui.components.CardPosition as SettingsItemPosition
 import tk.glucodata.ui.theme.displayLargeExpressive
 import tk.glucodata.ui.theme.labelLargeExpressive
-import tk.glucodata.ui.util.ConnectedButtonGroup
 import tk.glucodata.logic.CustomAlertManager
 import kotlinx.coroutines.delay
 
@@ -161,6 +163,7 @@ fun AlertSettingsScreen(
         listOf(
             AlertType.MISSED_READING,
             AlertType.LOSS,
+            AlertType.AVAILABLE,
             AlertType.SENSOR_EXPIRY
         )
     }
@@ -617,9 +620,10 @@ fun AddCustomAlertButton(text: String, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        shapes = ButtonDefaults.shapes(),
+        shapes = alertButtonShapes(),
         contentPadding = ButtonDefaults.ContentPadding
     ) {
         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -710,7 +714,7 @@ fun CustomAlertCard(
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
@@ -791,7 +795,7 @@ fun CustomAlertCard(
                             contentColor = MaterialTheme.colorScheme.error
                         ),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = alertButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
@@ -1036,7 +1040,7 @@ private fun AlertCard(
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
                         text = stringResource(config.type.nameResId),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     val subtitle = buildString {
@@ -1303,7 +1307,7 @@ private fun SensorExpiryThresholdSelector(
         ) {
             EXPIRY_WARNING_PRESETS.forEach { minutes ->
                 val isSelected = minutes in selected
-                FilterChip(
+                AlertChoiceChip(
                     selected = isSelected,
                     onClick = { onToggle(minutes) },
                     label = {
@@ -1315,8 +1319,6 @@ private fun SensorExpiryThresholdSelector(
                     leadingIcon = if (isSelected) {
                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
                 )
             }
         }
@@ -1430,7 +1432,7 @@ private fun DeltaAlarmAdvancedSettings(
             1 to stringResource(R.string.delta_interval_1min),
             5 to stringResource(R.string.delta_interval_5min)
         )
-        tk.glucodata.ui.util.ConnectedButtonGroup(
+        AlertOptionButtonGroup(
             options = listOf(0, 1, 5),
             selectedOption = config.deltaIntervalMinutes ?: 0,
             onOptionSelected = { onConfigChange(config.copy(deltaIntervalMinutes = if (it == 0) null else it)) },
@@ -1503,7 +1505,7 @@ private fun ThresholdSlider(
             )
         }
         
-        Slider(
+        AppSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1512,14 +1514,7 @@ private fun ThresholdSlider(
             },
             valueRange = range,
             steps = steps.coerceAtLeast(0),
-            modifier = Modifier.fillMaxWidth(),
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary,
-                activeTickColor = MaterialTheme.colorScheme.onPrimary,
-                inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
-                inactiveTickColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
-            )
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
@@ -1572,7 +1567,7 @@ internal fun DurationSlider(
             )
         }
         
-        Slider(
+        AppSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1661,25 +1656,21 @@ private fun PreemptiveSnoozeDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = snoozeLow,
                         onClick = { snoozeLow = !snoozeLow },
                         label = { Text(stringResource(R.string.low_alerts)) },
                         leadingIcon = if (snoozeLow) {
                             { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
                         } else null,
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
                     )
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = snoozeHigh,
                         onClick = { snoozeHigh = !snoozeHigh },
                         label = { Text(stringResource(R.string.high_alerts)) },
                         leadingIcon = if (snoozeHigh) {
                             { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
                         } else null,
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
                     )
                 }
 
@@ -1701,14 +1692,14 @@ private fun PreemptiveSnoozeDialog(
                     onDismiss()
                 },
                 enabled = snoozeLow || snoozeHigh,
-                shapes = ButtonDefaults.shapes(),
+                shapes = alertButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.snooze))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }
@@ -1908,7 +1899,7 @@ private fun TimeRangeSlider(
         mutableStateOf(startHour.toFloat()..endHour.toFloat())
     }
 
-    RangeSlider(
+    AppRangeSlider(
         value = sliderValues,
         onValueChange = { range ->
             sliderValues = range
@@ -1951,7 +1942,7 @@ private fun TimeChip(
     // Time chip button
     Surface(
         onClick = { showTimePicker = true },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     ) {
@@ -1987,13 +1978,13 @@ private fun TimeChip(
                     onTimeChange(timePickerState.hour, timePickerState.minute)
                     showTimePicker = false
                 },
-                shapes = ButtonDefaults.shapes(),
+                shapes = alertButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showTimePicker = false }, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -2051,7 +2042,7 @@ internal fun RetrySettings(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(
+                    AlertChoiceChip(
                         selected = intervalMinutes <= 0,
                         onClick = { onIntervalChange(0) },
                         label = {
@@ -2061,16 +2052,12 @@ internal fun RetrySettings(
                                 overflow = TextOverflow.Ellipsis
                             )
                         },
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
                     )
                     listOf(1, 2, 3, 5, 10, 15).forEach { minutes ->
-                        FilterChip(
+                        AlertChoiceChip(
                             selected = intervalMinutes == minutes,
                             onClick = { onIntervalChange(minutes) },
                             label = { Text(stringResource(R.string.minutes_short_format, minutes)) },
-                            shapes = FilterChipDefaults.shapes(),
-                            colors = FilterChipDefaults.filterChipColors()
                         )
                     }
                 }
@@ -2084,7 +2071,7 @@ internal fun RetrySettings(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(0 to stringResource(R.string.retry_forever), 1 to "1", 2 to "2", 3 to "3", 5 to "5").forEach { (count, label) ->
-                        FilterChip(
+                        AlertChoiceChip(
                             selected = retryCount == count,
                             onClick = { onCountChange(count) },
                             label = {
@@ -2094,8 +2081,6 @@ internal fun RetrySettings(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             },
-                            shapes = FilterChipDefaults.shapes(),
-                            colors = FilterChipDefaults.filterChipColors()
                         )
                     }
                 }

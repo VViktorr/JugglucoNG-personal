@@ -700,7 +700,6 @@ object AlertRepository {
                 return
             }
             val hiddenPrefixes = listOf(
-                "alert_${AlertType.AVAILABLE.id}_",
                 "alert_${AlertType.AMOUNT.id}_"
             )
             val hiddenKeys = prefs.all.keys.filter { key ->
@@ -711,10 +710,6 @@ object AlertRepository {
                     hiddenKeys.forEach(::remove)
                 }
             }
-            // Compose should never have been the owner of the legacy "value available" alert.
-            // Force-disable the old native flag on every startup so later alarm saves can't
-            // silently resurrect it.
-            Natives.setAlertConfig(AlertType.AVAILABLE.id, 0f, false)
             hiddenLegacyAlertCleanupDone = true
         }
     }

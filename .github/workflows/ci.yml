@@ -15,9 +15,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, main2, main3, main4, main4-port]
   push:
-    branches: [main]
+    branches: [main, main2, main3]
   workflow_dispatch:
 
 permissions:
@@ -82,6 +82,12 @@ jobs:
           java-version: '21'
 
       - uses: gradle/actions/setup-gradle@v6
+
+      - name: Replay sensor lifecycle regression checks
+        run: |
+          python3 tools/test-libre2-connect.py
+          python3 tools/test-sensor-lifecycle.py
+          python3 tools/test-libreview-config.py
 
       - name: Run both flavours' debug unit suites
         run: |

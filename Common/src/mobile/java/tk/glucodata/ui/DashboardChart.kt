@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import tk.glucodata.ui.util.toSharedGlucosePoint
 import androidx.compose.material3.ButtonDefaults
@@ -99,7 +101,6 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Badge
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -1009,7 +1010,7 @@ fun InteractiveGlucoseChart(
     val secondaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     val tertiaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) // Lighter shade for 3rd line
     val pointColor = MaterialTheme.colorScheme.onSurface
-    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.125f)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
     // A dedicated override may replace the in-range hue; without one, the band
     // follows IN_RANGE. The 0.12 alpha restores the original target-band weight.
     val targetBandColor =
@@ -1265,8 +1266,6 @@ fun InteractiveGlucoseChart(
     // Label Cache to avoid SimpleDateFormat overhead during scroll
     // Maps Timestamp -> Formatted String
     val labelCache = remember { mutableMapOf<Long, String>() }
-    val axisLabelBounds = remember { android.graphics.Rect() }
-    val indicatorLabelBounds = remember { android.graphics.Rect() }
 
     // --- VIEWPORT STATE ---
     val now = System.currentTimeMillis()
@@ -1590,6 +1589,7 @@ fun InteractiveGlucoseChart(
         fallbackHigh = fallbackMax
     )
     val minYAxisSpan = if (isMmol) 6f else 108f
+    val scaleLimits = rememberChartScaleLimits(isMmol)
 
     fun predictionBand(series: GlucosePredictionSeries): tk.glucodata.chart.PredictionBand {
         val first = series.points.first()
@@ -1704,9 +1704,10 @@ fun InteractiveGlucoseChart(
     var baselineYMax by rememberSaveable { mutableFloatStateOf(graphRangeDefaults.second) }
     var isYAxisAdjusting by remember { mutableStateOf(false) }
 
-    LaunchedEffect(graphRangeDefaults) {
-        baselineYMin = graphRangeDefaults.first
-        baselineYMax = graphRangeDefaults.second
+    LaunchedEffect(graphRangeDefaults, scaleLimits) {
+        val bounded = scaleLimits.constrain(graphRangeDefaults.first, graphRangeDefaults.second)
+        baselineYMin = bounded.first
+        baselineYMax = bounded.second
     }
 
     val automaticYRange = remember(
@@ -1746,8 +1747,12 @@ fun InteractiveGlucoseChart(
         animationSpec = yRangeAnimationSpec,
         label = "ChartYMaxAutoRange"
     )
-    val renderedYMin = if (isYAxisAdjusting) baselineYMin else displayYMin
-    val renderedYMax = if (isYAxisAdjusting) baselineYMax else displayYMax
+    val boundedRenderedRange = scaleLimits.constrain(
+        if (isYAxisAdjusting) baselineYMin else displayYMin,
+        if (isYAxisAdjusting) baselineYMax else displayYMax
+    )
+    val renderedYMin = boundedRenderedRange.first
+    val renderedYMax = boundedRenderedRange.second
 
     // --- INTERACTION STATE ---
     var selectedPoint by remember { mutableStateOf<GlucosePoint?>(null) }
@@ -1889,6 +1894,7 @@ fun InteractiveGlucoseChart(
     val currentChartModel by rememberUpdatedState(chartModel)
     val currentRenderedYMin by rememberUpdatedState(renderedYMin)
     val currentRenderedYMax by rememberUpdatedState(renderedYMax)
+    val currentScaleLimits by rememberUpdatedState(scaleLimits)
     // The pointerInput lambda below is keyed on previewWindowReservedIntPx and otherwise
     // long-lived, so it would otherwise capture these as stale snapshots — when the
     // prediction horizon, zoom level, or expansion progress change, gesture clamping
@@ -2184,6 +2190,13 @@ fun InteractiveGlucoseChart(
                                 (contentHeight - 32.dp.toPx() - chartPlotBottomGapPx).coerceAtLeast(
                                     1f
                                 )
+                            // Match the left label column, including its background padding.
+                            // Eligibility is fixed at touch-down; entering the axis later never scales.
+                            val axisTouchWidth = 24.dp.toPx() + axisTextPaint.measureText(
+                                currentScaleLimits.high.toInt().toString()
+                            )
+                            val startedOnYAxis = down.position.x in 0f..axisTouchWidth &&
+                                down.position.y in 0f..chartHeight && !startedOnJournalMarker
                             val downDuration = visibleDuration
                             val downCenterTime = centerTime
                             val viewportStart = downCenterTime - downDuration / 2
@@ -2244,7 +2257,7 @@ fun InteractiveGlucoseChart(
 
                             // Only allow scrubbing if purely single tap start (not double tap sequence)
                             isScrubbing = if (
-                                !startedOnJournalMarker && pointAtTouch != null && !isOneFingerZoom
+                                !startedOnYAxis && !startedOnJournalMarker && pointAtTouch != null && !isOneFingerZoom
                             ) {
                                 val timeDiff = timeAtTouch - pointAtTouch.timestamp
                                 if (timeDiff > 15 * 60 * 1000) false else {
@@ -2380,7 +2393,11 @@ fun InteractiveGlucoseChart(
                                             longPressJob?.cancel()
                                             dismissJournalActionIfNeeded()
                                             if (lockedPanAxis == 0) {
-                                                lockedPanAxis = if (abs(accumulatedPanX) > abs(accumulatedPanY)) 1 else 2
+                                                lockedPanAxis = when {
+                                                    abs(accumulatedPanX) > abs(accumulatedPanY) -> 1
+                                                    startedOnYAxis -> 2
+                                                    else -> 3 // Vertical drag outside the axis never changes scale.
+                                                }
                                                 if (lockedPanAxis == 2) {
                                                     yGestureStartMin = currentRenderedYMin
                                                     yGestureStartMax = currentRenderedYMax
@@ -2405,11 +2422,14 @@ fun InteractiveGlucoseChart(
                                                 adjustsMax = yGestureAdjustsMax,
                                                 minimumSpan = minYAxisSpan
                                             )
-                                            baselineYMin = manualRange.min
-                                            baselineYMax = manualRange.max
+                                            val bounded = currentScaleLimits.constrain(manualRange.min, manualRange.max)
+                                            baselineYMin = bounded.first
+                                            baselineYMax = bounded.second
                                         }
                                     }
-                                    newChange.consume()
+                                    if (isScrubbing || lockedPanAxis == 1 || lockedPanAxis == 2) {
+                                        newChange.consume()
+                                    }
                                 }
                                 change = newChange
                                 lastPointerCount = pointerCount
@@ -2479,7 +2499,7 @@ fun InteractiveGlucoseChart(
                                             }
                                         }
                                     }
-                                } else if (!isOneFingerZoom && lockedPanAxis != 2) {
+                                } else if (!isOneFingerZoom && lockedPanAxis == 1) {
                                     // FLING - simple defaults
                                     val velocity = velocityTracker.calculateVelocity()
                                     val vx = velocity.x
@@ -2734,18 +2754,12 @@ fun InteractiveGlucoseChart(
                 val searchStart = viewportStart - padding
                 val searchEnd = viewportEnd + padding
 
-                // 3. BINARY SEARCH (Standard Library)
-                // binarySearchBy returns: index if found, or -(insertion point) - 1
-                // Calculate visible range indices with padding for connecting lines
-                // startIdx: Include point just BEFORE viewport start
-                val startIdx = renderData.binarySearchBy(searchStart) { it.timestamp }
-                    .let { if (it < 0) -it - 2 else it } // if not found, insertion point - 1
-                    .coerceIn(0, renderData.size)
-                
-                // endIdx: Include point just AFTER viewport end (for exclusive loop)
-                val endIdx = renderData.binarySearchBy(searchEnd) { it.timestamp }
-                    .let { if (it < 0) -it else it + 1 } // if not found, insertion point + 1
-                    .coerceIn(startIdx, renderData.size)
+                // Extrema use only on-screen readings. The larger search window above
+                // is retained for line continuity, never for min/max labels.
+                val startIdx = renderData.binarySearchBy(viewportStart) { it.timestamp }
+                    .let { if (it < 0) -it - 1 else it }
+                val endIdx = renderData.binarySearchBy(viewportEnd) { it.timestamp }
+                    .let { if (it < 0) -it - 1 else it + 1 }
 
                 // 4. COORDINATE MAPPING (Inline for performance)
                 // Maps timestamp to X relative to CURRENT viewport
@@ -2773,6 +2787,17 @@ fun InteractiveGlucoseChart(
                     return (normalized * cYRange) + cYMin
                 }
 
+                // Target band is a background, below the grid and every data line.
+                val yHigh = valToY(targetHigh)
+                val yLow = valToY(targetLow)
+                // Only draw if valid
+                if (yHigh.isFinite() && yLow.isFinite() && yLow > yHigh) {
+                    val top = yHigh.coerceIn(0f, chartHeight)
+                    val bottom = yLow.coerceIn(0f, chartHeight)
+                    drawRect(targetBandColor, topLeft = Offset(0f, top), size = Size(width, bottom - top))
+                }
+
+
                 // Min/max of the visible series, found before the axis is drawn: the min/max
                 // labels sit in the axis label column, and an axis label at nearly the same
                 // height ("3,8" over "4") has to step aside rather than print underneath.
@@ -2784,27 +2809,49 @@ fun InteractiveGlucoseChart(
                     // Single fast pass for min/max
                     for (i in startIdx until endIdx) {
                         val p = renderData[i]
-                        // Determine value based on mode commonality
-                        // If showing Raw (Mode 1) or Raw-Primary (Mode 3), prioritize Raw
-                        val useRaw = viewMode == 1 || viewMode == 3
-                        val v = if (hasCalibration && hideInitialWhenCalibrated) {
-                            chartModel.primary?.valueAt(p.timestamp) ?: Float.NaN
-                        } else {
-                            if (useRaw) p.rawValue else p.value
-                        }
-
-                        if (v.isNaN() || v < 0.1f) continue
+                        // Match the exact displayed lane, including calibration.
+                        val v = chartModel.primary?.valueAt(p.timestamp) ?: Float.NaN
+                        if (!v.isFinite() || v < 0.1f) continue
 
                         if (v < minVal) { minVal = v; minPoint = p }
                         if (v > maxVal) { maxVal = v; maxPoint = p }
                     }
                 }
-                val hasMaxIndicator = maxPoint != null
-                val hasMinIndicator = minPoint != null && minVal != maxVal
-                val indicatorLabelYs = buildList {
-                    if (hasMaxIndicator) add(valToY(maxVal))
-                    if (hasMinIndicator) add(valToY(minVal))
+                val hasMaxIndicator = maxPoint != null && valToY(maxVal) in 0f..chartHeight
+                val hasMinIndicator = minPoint != null && minVal != maxVal && valToY(minVal) in 0f..chartHeight
+                val fontMetrics = axisTextPaint.fontMetrics
+                val labelHeight = fontMetrics.descent - fontMetrics.ascent
+                val labelGap = 8.dp.toPx()
+                // Always label the configured target boundaries, even when they are
+                // not ordinary Y ticks. Reserve their space before extrema/grid labels.
+                val validTargetRange = targetLow.isFinite() && targetHigh.isFinite() && targetHigh > targetLow
+                val highBoundaryY = valToY(targetHigh)
+                val lowBoundaryY = valToY(targetLow)
+                val showHighBoundary = validTargetRange && highBoundaryY in 0f..chartHeight
+                val showLowBoundary = validTargetRange && lowBoundaryY in 0f..chartHeight
+                val targetCenters = if (showHighBoundary && showLowBoundary) {
+                    chartExtremaLabelCenters(highBoundaryY, lowBoundaryY,
+                        chartHeight, labelHeight + 6.dp.toPx(), labelGap)
+                } else {
+                    val half = labelHeight / 2f + 3.dp.toPx()
+                    val low = half.coerceAtMost(chartHeight / 2f)
+                    val high = (chartHeight - half).coerceAtLeast(chartHeight / 2f)
+                    highBoundaryY.coerceIn(low, high) to lowBoundaryY.coerceIn(low, high)
                 }
+                val targetLabels = buildList {
+                    if (showHighBoundary) add(targetHigh to targetCenters.first)
+                    if (showLowBoundary) add(targetLow to targetCenters.second)
+                }
+                val indicatorLabelYs = targetLabels.map { it.second }.toMutableList()
+                fun reserveExtremum(value: Float, visible: Boolean): Float? {
+                    if (!visible || targetLabels.any { abs(it.first - value) < 0.001f }) return null
+                    return chartFreeLabelCenter(valToY(value), indicatorLabelYs,
+                        chartHeight, labelHeight + 6.dp.toPx(), labelGap)?.also {
+                        indicatorLabelYs.add(it)
+                    }
+                }
+                val maxIndicatorLabelY = reserveExtremum(maxVal, hasMaxIndicator)
+                val minIndicatorLabelY = reserveExtremum(minVal, hasMinIndicator)
 
                 // --- 0. BACKDROP ---
                 // Past the top and bottom edges the grid carries on, unlabelled, behind the
@@ -2839,6 +2886,7 @@ fun InteractiveGlucoseChart(
 
                 // --- 1. DRAW Y-AXIS GRID ---
                 val yStep = if (cYRange < 25) 2f else 50f
+                val yTicks = chartYAxisTicks(cYMin, cYMax, yStep)
                 var yVal = (kotlin.math.ceil(cYMin / yStep) * yStep).toInt() // integer steps
                 if (drawBackdrop && cYRange >= 0.001f) {
                     val stepPx = yStep * chartHeight / cYRange
@@ -2867,68 +2915,32 @@ fun InteractiveGlucoseChart(
                 while (yVal < cYMax) {
                     val y = valToY(yVal.toFloat())
                     if (y in 0f..chartHeight) {
-                        drawLine(gridColor, Offset(0f, y), Offset(width, y), 1f)
-                        // Text - Vertically centered with grid line, 4dp left padding
-                        val labelText = yVal.toString()
-                        axisTextPaint.color = axisTextColorArgb
-                        axisTextPaint.getTextBounds(labelText, 0, labelText.length, axisLabelBounds)
-                        val labelClearance = axisLabelBounds.height() + 8f * density
-                        if (indicatorLabelYs.any { abs(it - y) < labelClearance }) {
-                            yVal += yStep.toInt()
-                            continue
-                        }
-                        val centeredY = y + (axisLabelBounds.height() / 2f)
-                        val labelPadding = 16f * density
-                        val textWidth = axisTextPaint.measureText(labelText)
-                        val backgroundPadH = 8f * density
-                        val backgroundPadV = 3f * density
-                        drawRoundRect(
-                            color = axisLabelBackgroundColor,
-                            topLeft = Offset(
-                                x = labelPadding - backgroundPadH,
-                                y = centeredY - axisLabelBounds.height() - backgroundPadV
-                            ),
-                            size = androidx.compose.ui.geometry.Size(
-                                width = textWidth + (backgroundPadH * 2f),
-                                height = axisLabelBounds.height().toFloat() + (backgroundPadV * 2f)
-                            ),
-                            cornerRadius = CornerRadius(8f * density, 8f * density)
-                        )
-                        drawContext.canvas.nativeCanvas.drawText(
-                            labelText, labelPadding, centeredY, axisTextPaint
-                        )
+                        drawLine(gridColor, Offset(0f, y), Offset(width, y), 0.7.dp.toPx())
                     }
-                    yVal += yStep.toInt()
+                    yVal += yStep.toInt().coerceAtLeast(1)
                 }
 
-                // --- 2. DRAW X-AXIS GRID ---
-                xTextPaint.color = axisTextColorArgb
-                // Intervals: 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 24h
-                // Pick interval keeping labels ~120px apart
+                xTextPaint.typeface = graphFont
+                val timeLabelSpacing = maxOf(64.dp.toPx(),
+                    xTextPaint.measureText("23:59") + 24.dp.toPx())
                 val pxPerMs = width / animDur
-                val minMs = (120f / pxPerMs).toLong()
+                val minMs = (timeLabelSpacing / pxPerMs).toLong()
                 val gridInterval = gridIntervals.firstOrNull { it >= minMs } ?: gridIntervals.last()
-
-                // Align t to timezone day boundary
                 val tzOffset = java.util.TimeZone.getDefault().getOffset(viewportStart).toLong()
-                
-                // Start drawing from just before viewport to cover edge
                 var tGrid = ((viewportStart + tzOffset) / gridInterval) * gridInterval - tzOffset
                 if (tGrid < viewportStart) tGrid += gridInterval
-
-                // Limit loop to prevent freeze if interval is tiny (sanity check)
-                val loopLimit = viewportEnd + gridInterval
-                
-                // Safety: Don't draw if interval is dangerously small 
-                 if (gridInterval > 1000L) {
-                    while (tGrid <= loopLimit) {
+                // Text, center X, and date-vs-time font. Small and bounded by the grid interval.
+                val xLabels = ArrayList<Triple<String, Float, Boolean>>()
+                if (gridInterval > 1000L) {
+                    while (tGrid <= viewportEnd + gridInterval) {
                         val x = timeToX(tGrid)
-                        if (x > -50f && x < width + 50f) {
+                        if (x in 0f..width) {
                             cal.timeInMillis = tGrid
                             val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
                             val m = cal.get(java.util.Calendar.MINUTE)
                             val isMidnight = h == 0 && m == 0
                             
+                            var axisLabel = ""
                             if (isMidnight) {
                                 // Date Line
                                 drawLine(gridColor.copy(alpha=0.8f), Offset(x, 0f), Offset(x, chartHeight), 3f)
@@ -2940,14 +2952,7 @@ fun InteractiveGlucoseChart(
                                     reusableDate.time = tGrid
                                     formatDate.format(reusableDate)
                                 }
-                                xTextPaint.typeface = graphFontBold
-                                val halfDateLabel = xTextPaint.measureText(dateLabel) / 2f
-                                if (x - halfDateLabel >= 0f && x + halfDateLabel <= width) {
-                                    drawContext.canvas.nativeCanvas.drawText(
-                                        dateLabel, x, contentHeight - labelsLiftPx - 25f, xTextPaint
-                                    )
-                                }
-                                xTextPaint.typeface = graphFont
+                                axisLabel = dateLabel
                             } else {
                                 // Time Line
                                 drawLine(gridColor, Offset(x, 0f), Offset(x, chartHeight), 1f)
@@ -2960,15 +2965,93 @@ fun InteractiveGlucoseChart(
                                     val mm = if (m < 10) "0$m" else m.toString()
                                     "$hh:$mm"
                                 }
-                                // A label centred on a line near either edge would be cut in half
-                                // (":15", "19:"); keep the line, drop the half-label.
-                                val halfLabel = xTextPaint.measureText(timeLabel) / 2f
-                                if (x - halfLabel >= 0f && x + halfLabel <= width) {
-                                    drawContext.canvas.nativeCanvas.drawText(timeLabel, x, contentHeight - labelsLiftPx - 28f, xTextPaint)
-                                }
+                                axisLabel = timeLabel
                             }
+                            xLabels.add(Triple(axisLabel, x, isMidnight))
                         }
                         tGrid += gridInterval
+                    }
+                }
+
+                fun drawForegroundYLabel(label: String, centerY: Float, indicator: Boolean) {
+                    val padH = 8.dp.toPx()
+                    val padV = 3.dp.toPx()
+                    val halfHeight = labelHeight / 2f + padV
+                    val center = centerY.coerceIn(halfHeight.coerceAtMost(chartHeight / 2f),
+                        (chartHeight - halfHeight).coerceAtLeast(chartHeight / 2f))
+                    val baseline = center - (fontMetrics.ascent + fontMetrics.descent) / 2f
+                    val left = 16.dp.toPx()
+                    drawRoundRect(
+                        color = axisLabelBackgroundColor,
+                        topLeft = Offset(left - padH, center - halfHeight),
+                        size = Size(axisTextPaint.measureText(label) + padH * 2f, halfHeight * 2f),
+                        cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                    )
+                    axisTextPaint.color = if (indicator) indicatorTextColorArgb else axisTextColorArgb
+                    drawContext.canvas.nativeCanvas.drawText(label, left, baseline, axisTextPaint)
+                }
+
+                fun drawForegroundAxes() {
+                    fun drawIndicator(point: GlucosePoint?, value: Float, labelY: Float, drawLabel: Boolean) {
+                        if (point == null) return
+                        val y = valToY(value)
+                        val x = timeToDataX(point.timestamp)
+                        if (!x.isFinite() || y !in 0f..chartHeight || x !in 0f..width) return
+                        val label = GlucoseFormatter.format(value, isMmol)
+                        if (drawLabel) {
+                            drawForegroundYLabel(label, labelY, true)
+                            return
+                        }
+                        val lineStartX = 16.dp.toPx() + axisTextPaint.measureText(label) + 8.dp.toPx()
+                        if (x > lineStartX) {
+                            drawLine(minMaxLineColor, Offset(lineStartX, y), Offset(x, y),
+                                0.7.dp.toPx(), pathEffect = dashEffect)
+                            if (abs(labelY - y) > 1f) {
+                                drawLine(minMaxLineColor, Offset(lineStartX, labelY), Offset(lineStartX, y),
+                                    0.7.dp.toPx(), pathEffect = dashEffect)
+                            }
+                        }
+                    }
+                    // Guides first, then every number and its opaque backing.
+                    maxIndicatorLabelY?.let { drawIndicator(maxPoint, maxVal, it, false) }
+                    minIndicatorLabelY?.let { drawIndicator(minPoint, minVal, it, false) }
+                    yTicks.forEach { tick ->
+                        val y = valToY(tick)
+                        if (y in 0f..chartHeight &&
+                            indicatorLabelYs.none { abs(it - y) < labelHeight + labelGap }) {
+                            val label = if (isMmol && tick % 1f != 0f)
+                                GlucoseFormatter.format(tick, true) else tick.roundToInt().toString()
+                            drawForegroundYLabel(label, y, false)
+                        }
+                    }
+                    var previousRight = Float.NEGATIVE_INFINITY
+                    xTextPaint.color = axisTextColorArgb
+                    for ((label, x, date) in xLabels) {
+                        xTextPaint.typeface = if (date) graphFontBold else graphFont
+                        val halfWidth = xTextPaint.measureText(label) / 2f
+                        val pad = 4.dp.toPx()
+                        val left = x - halfWidth - pad
+                        val right = x + halfWidth + pad
+                        if (left < 0f || right > width || left < previousRight + labelGap) continue
+                        val metrics = xTextPaint.fontMetrics
+                        // Fit font-scaled labels in the reserved time-axis band.
+                        val centerY = (chartHeight + contentHeight - labelsLiftPx) / 2f
+                        val baseline = centerY - (metrics.ascent + metrics.descent) / 2f
+                        drawRoundRect(
+                            color = axisLabelBackgroundColor,
+                            topLeft = Offset(left, baseline + metrics.ascent - 2.dp.toPx()),
+                            size = Size(right - left, metrics.descent - metrics.ascent + 4.dp.toPx()),
+                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                        )
+                        drawContext.canvas.nativeCanvas.drawText(label, x, baseline, xTextPaint)
+                        previousRight = right
+                    }
+                    xTextPaint.typeface = graphFont
+                    maxIndicatorLabelY?.let { drawIndicator(maxPoint, maxVal, it, true) }
+                    minIndicatorLabelY?.let { drawIndicator(minPoint, minVal, it, true) }
+                    // Highest-priority text, on the same opaque foreground as the axes.
+                    targetLabels.forEach { (value, y) ->
+                        drawForegroundYLabel(GlucoseFormatter.format(value, isMmol), y, true)
                     }
                 }
 
@@ -3370,52 +3453,6 @@ fun InteractiveGlucoseChart(
                             )
                         }
                     }
-                }
-
-                // --- 4. MIN/MAX INDICATORS (Restored & Optimized) ---
-                if (endIdx > startIdx) {
-                    // Helper to draw
-                    fun drawIndicator(point: GlucosePoint, valToDraw: Float) {
-                        val y = valToY(valToDraw)
-                        val x = timeToDataX(point.timestamp)
-
-                        if (y.isFinite() && x.isFinite() && y in 0f..chartHeight && x in 0f..width) {
-                            val label = tk.glucodata.ui.util.GlucoseFormatter.format(valToDraw, isMmol)
-
-                            // Text - Vertically centered with guide line, 4dp left padding
-                            axisTextPaint.getTextBounds(label, 0, label.length, indicatorLabelBounds)
-                            val centeredY = y + (indicatorLabelBounds.height() / 2f)
-                            val indicatorPadding = 16f * density
-                            val textWidth = axisTextPaint.measureText(label)
-
-                            drawContext.canvas.nativeCanvas.drawText(
-                                label, indicatorPadding, centeredY,
-                                axisTextPaint.apply { color = indicatorTextColorArgb }
-                            )
-                            // Guide line - starts after text
-                            val lineStartX = indicatorPadding + textWidth + 8f * density
-                            drawLine(
-                                color = minMaxLineColor,
-                                start = Offset(lineStartX, y),
-                                end = Offset(x, y),
-                                strokeWidth = 1f,
-                                pathEffect = dashEffect
-                            )
-                            // Restore paint color (axisTextPaint is shared)
-                            axisTextPaint.color = axisTextColorArgb
-                        }
-                    }
-
-                    maxPoint?.let { drawIndicator(it, maxVal) }
-                    if (hasMinIndicator) minPoint?.let { drawIndicator(it, minVal) }
-                }
-
-                // --- 5. TARGET RANGE ---
-                val yHigh = valToY(targetHigh)
-                val yLow = valToY(targetLow)
-                // Only draw if valid
-                if (yHigh.isFinite() && yLow.isFinite()) {
-                    drawRect(targetBandColor, topLeft = Offset(0f, yHigh), size = Size(width, yLow - yHigh))
                 }
 
                 // --- 6. CALIBRATION MARKERS ---
@@ -3918,6 +3955,8 @@ fun InteractiveGlucoseChart(
                         }
                     }
                 }
+                // Foreground labels are last: no trace, fill or cursor can paint over them.
+                drawForegroundAxes()
                 } finally { android.os.Trace.endSection() }
             }
 
@@ -4614,14 +4653,15 @@ fun InteractiveGlucoseChart(
                 }
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 12.dp, top = 12.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(end = 2.dp, top = 2.dp)
                         .widthIn(max = activeInsulinMaxWidth)
                         .zIndex(1.6f)
                         .clip(activeInsulinShape)
                         .clickable(enabled = summary != null || activeCarbsGrams != null) { isActiveInsulinExpanded = !isActiveInsulinExpanded },
                     shape = activeInsulinShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
@@ -4643,7 +4683,7 @@ fun InteractiveGlucoseChart(
                                     Text(
                                         text = stringResource(R.string.dashboard_eiob_full, eiobValue),
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                     )
                                 }
                             } else {
@@ -4660,7 +4700,7 @@ fun InteractiveGlucoseChart(
                                         Text(
                                             text = stringResource(R.string.dashboard_eiob_short, eiobValue),
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                             maxLines = 1
                                         )
                                     }
@@ -4686,7 +4726,7 @@ fun InteractiveGlucoseChart(
                             Text(
                                 text = doseHintLabel,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                 maxLines = if (isActiveInsulinExpanded) 2 else 1
                             )
                         } else if (remainingLabel != null && !isActiveInsulinExpanded) {
@@ -4694,14 +4734,14 @@ fun InteractiveGlucoseChart(
                                 Icon(
                                     imageVector = Icons.Default.AccessTime,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = remainingLabel,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                                     maxLines = 1
                                 )
                             }
@@ -4715,7 +4755,7 @@ fun InteractiveGlucoseChart(
                                     summary.weightedActivityPercent
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                             )
                             summary.activeUntil?.let { activeUntil ->
                                 Text(
@@ -4725,14 +4765,14 @@ fun InteractiveGlucoseChart(
                                             .format(java.util.Date(activeUntil))
                                     ),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                             if (activeInsulinFromRemote) {
                                 Text(
                                     text = stringResource(R.string.journal_iob_source_remote),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                                 )
                             }
                         }
@@ -5687,14 +5727,14 @@ fun InteractiveGlucoseChart(
                         }
                         showDatePicker = false
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(stringResource(R.string.go))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showDatePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }

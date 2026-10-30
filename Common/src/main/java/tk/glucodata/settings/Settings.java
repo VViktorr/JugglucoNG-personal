@@ -1375,6 +1375,19 @@ private    void mksettings(MainActivity context) {
         glucosenotify.setText(R.string.glucosestatusbar);
         glucosenotify.setChecked(Natives.getshowalways()) ;
         glucosenotify.setOnCheckedChangeListener( (buttonView,  isChecked) -> Notify.glucosestatus(isChecked) );
+
+      final android.content.SharedPreferences notificationPreferences = context.getSharedPreferences(
+              "tk.glucodata_preferences", Context.MODE_PRIVATE);
+      CheckBox metricStyleToggle = new CheckBox(context);
+      metricStyleToggle.setText(R.string.notification_metric_style_toggle);
+      metricStyleToggle.setChecked(notificationPreferences.getBoolean(
+              tk.glucodata.GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, false));
+      // Keep the preference visible on preview builds too; Notify gates the API 37 implementation at runtime.
+      metricStyleToggle.setVisibility(VISIBLE);
+      metricStyleToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
+              notificationPreferences.edit().putBoolean(
+                      tk.glucodata.GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, isChecked).apply());
+
       var floatconfig=getbutton(context,R.string.floatglucose);
       View[] numdis;
 
@@ -1393,7 +1406,9 @@ private    void mksettings(MainActivity context) {
 
         View[] rowglu=new View[]{floatconfig,calibration,glucosenotify};
 //        View[] rowglu=new View[]{floatconfig,glucosenotify};
-        views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,new View[]{exchanges,numalarm,alarmbut},numdis, row9};
+        views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,
+                new View[]{metricStyleToggle},
+                new View[]{exchanges,numalarm,alarmbut},numdis, row9};
         }
 
     help.setFocusableInTouchMode(true);

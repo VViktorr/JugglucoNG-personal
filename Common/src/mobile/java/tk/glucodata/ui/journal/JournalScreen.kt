@@ -2,8 +2,9 @@
 
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import android.view.HapticFeedbackConstants
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
@@ -453,7 +454,7 @@ private fun JournalHeader(
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButtonTooltip(stringResource(R.string.journal_food_library)) {
-                IconButton(onClick = onOpenFoodLibrary, modifier = Modifier.size(40.dp), shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = onOpenFoodLibrary, modifier = Modifier.size(40.dp), shapes = appIconButtonShapes()) {
                     Icon(
                         imageVector = Icons.Default.Restaurant,
                         contentDescription = stringResource(R.string.journal_food_library),
@@ -462,7 +463,7 @@ private fun JournalHeader(
                 }
             }
             IconButtonTooltip(stringResource(R.string.journal_insulin_library)) {
-                IconButton(onClick = onOpenInsulinLibrary, modifier = Modifier.size(40.dp), shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = onOpenInsulinLibrary, modifier = Modifier.size(40.dp), shapes = appIconButtonShapes()) {
                     Icon(
                         imageVector = Icons.Default.Vaccines,
                         contentDescription = stringResource(R.string.journal_insulin_library),
@@ -766,8 +767,8 @@ private fun JournalTypeFilter(
         },
         selectedContentColorFor = { selectedContentColor },
         iconTint = { type, _ -> journalTypeColor(type) },
-        unselectedContainerColor = unselectedContainerColor,
-        unselectedContentColor = unselectedContentColor
+        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+        unselectedContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
     )
 }
 

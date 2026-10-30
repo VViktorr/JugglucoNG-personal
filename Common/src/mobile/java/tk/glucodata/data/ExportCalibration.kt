@@ -75,7 +75,13 @@ object ExportCalibration {
         sealedDisplayViewMode: Int? = null
     ): Float? {
         val raw = isRawMode(viewMode)
-        sealedDisplayValue?.takeIf { it.isFinite() && it > 0.1f }?.let { return it }
+        sealedDisplayValue?.takeIf { it.isFinite() && it > 0.1f }
+            ?.takeIf {
+                tk.glucodata.chart.HistoryChartModelBuilder.recordAppliesToLane(
+                    sealedDisplayViewMode ?: -1, raw
+                )
+            }
+            ?.let { return it }
         val base = laneBaseValue(autoDisplayValue, rawDisplayValue, viewMode) ?: return null
         val calSensorId = sensorId?.takeIf { it.isNotBlank() }
         if (!CalibrationManager.hasActiveCalibration(raw, calSensorId)) return null

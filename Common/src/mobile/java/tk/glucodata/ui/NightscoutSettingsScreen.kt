@@ -1,8 +1,11 @@
 package tk.glucodata.ui
 
-import androidx.compose.material3.FilterChipDefaults
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -542,8 +545,8 @@ fun NightscoutSettingsScreen(navController: NavController) {
                     itemHeight = 48.dp,
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                    unselectedContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -585,7 +588,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             keyboardActions = KeyboardActions(onDone = { persistSettings(connectFollower = isActive && mode == NightscoutModePreference.Mode.FOLLOW) }),
                             trailingIcon = {
                                 IconButtonTooltip(if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                                    IconButton(onClick = { showSecret = !showSecret }, shapes = IconButtonDefaults.shapes()) {
+                                    IconButton(onClick = { showSecret = !showSecret }, shapes = appIconButtonShapes()) {
                                         Icon(
                                             imageVector = if (showSecret) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                             contentDescription = if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
@@ -607,7 +610,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             onClick = { testConnection() },
                             enabled = isActive && testState !is TestState.Testing,
                             modifier = actionModifier.heightIn(min = 56.dp),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             if (testState is TestState.Testing) {
@@ -626,7 +629,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             onClick = { refreshToken() },
                             enabled = isActive && tokenState !is TokenState.Refreshing,
                             modifier = actionModifier.heightIn(min = 56.dp),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             if (tokenState is TokenState.Refreshing) {
@@ -736,8 +739,8 @@ fun NightscoutSettingsScreen(navController: NavController) {
                                             NightscoutFollowerRegistry.savePollMinutes(context, minutes)
                                         },
                                         label = { Text(stringResource(R.string.minutes_short_format, minutes)) },
-                                        shapes = FilterChipDefaults.shapes(),
-                                        colors = FilterChipDefaults.filterChipColors()
+                                        shapes = appFilterChipShapes(),
+                                        colors = appFilterChipColors()
                                     )
                                 }
                             }
@@ -899,7 +902,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                         ),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(Icons.Default.Send, contentDescription = null)
@@ -920,7 +923,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 56.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = null)
@@ -992,7 +995,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { help = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.close)) }
+                TextButton(onClick = { help = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.close)) }
             }
         )
     }
@@ -1000,7 +1003,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
 
 @Composable
 private fun NightscoutHelpButton(topic: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(48.dp), shapes = IconButtonDefaults.shapes()) {
+    IconButton(onClick = onClick, modifier = Modifier.size(48.dp), shapes = appIconButtonShapes()) {
         Icon(
             Icons.AutoMirrored.Filled.HelpOutline,
             contentDescription = "$topic: ${stringResource(R.string.help)}",

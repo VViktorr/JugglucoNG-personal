@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_style_libreviev" formatted="false">Libreviev style</string>
+    <string name="lv_report_no_data" formatted="false">Brak danych glukozy w wybranym okresie raportu.</string>
+    <string name="lv_report_no_data_short" formatted="false">Brak danych</string>
+    <string name="lv_report_title" formatted="false">Raport AGP</string>
+    <string name="lv_report_snapshot" formatted="false">Migawka</string>
+    <string name="lv_report_daily_trends" formatted="false">Tendencje dobowe</string>
+    <string name="lv_report_statistics" formatted="false">STATYSTYKI STĘŻENIA GLUKOZY</string>
+    <string name="lv_report_ranges" formatted="false">ZAKRESY STĘŻENIA GLUKOZY</string>
+    <string name="lv_report_coverage" formatted="false">Szacowana aktywność sensora</string>
+    <string name="lv_report_readings" formatted="false">Liczba odczytów</string>
+    <string name="lv_report_mean" formatted="false">Średnie stężenie glukozy</string>
+    <string name="lv_report_variability" formatted="false">Zmienność glukozy (CV)</string>
+    <string name="lv_report_target" formatted="false">Zakres docelowy</string>
+    <string name="lv_report_thresholds" formatted="false">Progi odpowiadają ustawieniom aplikacji.</string>
+    <string name="lv_report_very_high" formatted="false">Bardzo wysoki</string>
+    <string name="lv_report_high" formatted="false">Wysoki</string>
+    <string name="lv_report_low" formatted="false">Niski</string>
+    <string name="lv_report_very_low" formatted="false">Bardzo niski</string>
+    <string name="lv_report_profile" formatted="false">Ambulatoryjny profil stężenia glukozy (AGP)</string>
+    <string name="lv_report_percentiles" formatted="false">Mediana (50%), percentyle 25-75% i 5-95%; przedziały 15-minutowe.</string>
+    <string name="lv_report_daily_profiles" formatted="false">Dzienne profile glukozy</string>
+    <string name="lv_report_last_14" formatted="false">Do 14 ostatnich dni kalendarzowych wybranego okresu.</string>
+    <string name="lv_report_footer" formatted="false">JugglucoNG | Raport na podstawie zapisanych pomiarów glukozy i wpisów dziennika.</string>
+    <string name="lv_report_method" formatted="false">Procenty zakresów: udział odczytów. Czasy dobowe: przeliczenie na 24 h. Luki bez uzupełniania.</string>
+    <string name="lv_report_glucose" formatted="false">Stężenie glukozy</string>
+    <string name="lv_report_above" formatted="false">Powyżej zakresu</string>
+    <string name="lv_report_below" formatted="false">Poniżej zakresu</string>
+    <string name="lv_report_low_events" formatted="false">Zdarzenia niskiego stężenia glukozy</string>
+    <string name="lv_report_event_count" formatted="false">Liczba zdarzeń</string>
+    <string name="lv_report_median_duration" formatted="false">Mediana czasu zdarzenia</string>
+    <string name="lv_report_sensor_use" formatted="false">Użycie czujnika</string>
+    <string name="lv_report_days_with_data" formatted="false">Dni z danymi</string>
+    <string name="lv_report_journal" formatted="false">ZAPISANE WĘGLOWODANY I INSULINA</string>
+    <string name="lv_report_carbs" formatted="false">Zapisane węglowodany (g/dobę)</string>
+    <string name="lv_report_insulin" formatted="false">Zapisana insulina (j./dobę)</string>
+    <string name="lv_report_units" formatted="false">j.</string>
+    <string name="lv_report_journal_note" formatted="false">Uwzględniono zapisane ilości. Brak wpisów nie oznacza braku posiłków ani dawek.</string>
+    <string name="lv_report_journal_note_2" formatted="false">Średnie dobowe to sumy podzielone przez okres raportu, nie zalecenia leczenia.</string>
+    <string name="lv_report_two_hour" formatted="false">ŚREDNIA GLUKOZA W PRZEDZIAŁACH DWUGODZINNYCH</string>
+    <string name="lv_report_recorded_trends" formatted="false">ZAPISANE ILOŚCI DOBOWE W PRZEDZIAŁACH DWUGODZINNYCH</string>
+    <string name="lv_group_insights" formatted="false">Wgląd w tendencje stężeń glukozy</string>
+    <string name="lv_group_weekly" formatted="false">Podsumowanie tygodniowe</string>
+    <string name="lv_group_monthly" formatted="false">Podsumowanie miesięczne</string>
+    <string name="lv_group_daily_log" formatted="false">Dziennik dobowy</string>
+    <string name="lv_group_meals" formatted="false">Okołoposiłkowe trendy glukozy</string>
+    <string name="lv_group_device" formatted="false">Szczegółowe informacje o urządzeniu</string>
+    <string name="lv_groups_title" formatted="false">Grupy raportu PDF</string>
+    <string name="lv_groups_all" formatted="false">Zaznacz wszystkie</string>
+    <string name="lv_groups_clear" formatted="false">Odznacz wszystkie</string>
+    <string name="lv_groups_choose" formatted="false">Wybierz co najmniej jedną grupę raportu.</string>
+    <string name="lv_groups_pdf_only" formatted="false">PDF: dni kalendarzowe i standardowe progi AGP (54/70/180/250 mg/dL). Cele w aplikacji pozostają bez zmian.</string>
+    <string name="lv_groups_day_parts" formatted="false">GLUKOZA W PORACH DNIA</string>
+    <string name="lv_groups_observations" formatted="false">OBSERWACJE</string>
+    <string name="lv_groups_no_observations" formatted="false">Brak dodatkowych obserwacji dla tego okresu.</string>
+    <string name="lv_groups_mean_short" formatted="false">Średnia</string>
+    <string name="lv_groups_lows_short" formatted="false">Niskie</string>
+    <string name="lv_groups_markers" formatted="false">Znaczniki u góry wykresu: fiolet = zapisana insulina; bursztyn = zapisane węglowodany.</string>
+    <string name="lv_groups_hourly_totals" formatted="false">Kolumny godzinowe: maksimum, minimum, sumy zapisanej insuliny i węglowodanów. Brak danych: -.</string>
+    <string name="lv_groups_max" formatted="false">Maks.</string>
+    <string name="lv_groups_min" formatted="false">Min.</string>
+    <string name="lv_groups_meal_method" formatted="false">Średnia glukoza przed zapisanym posiłkiem oraz po 1, 2 i 3 godzinach.</string>
+    <string name="lv_groups_meal_table" formatted="false">Średnie dobowe: przed / 1 godzinę po posiłku</string>
+    <string name="lv_groups_meal_missing" formatted="false">Tylko zapisane węglowodany. Najbliższy odczyt CGM do 15 min; brak pomiaru: -.</string>
+    <string name="lv_groups_morning" formatted="false">Rano</string>
+    <string name="lv_groups_midday" formatted="false">Południe</string>
+    <string name="lv_groups_evening" formatted="false">Wieczór</string>
+    <string name="lv_groups_night" formatted="false">Noc</string>
+    <string name="lv_groups_app_version" formatted="false">Wersja aplikacji</string>
+    <string name="lv_groups_phone" formatted="false">Telefon</string>
+    <string name="lv_groups_data_sources" formatted="false">IDENTYFIKATORY SENSORÓW W WYBRANEJ HISTORII</string>
+    <string name="lv_match_days" formatted="false">Dni</string>
+    <string name="lv_match_generated" formatted="false">Wygenerowano</string>
+    <string name="lv_match_page" formatted="false">Strona</string>
+    <string name="lv_match_time_ranges" formatted="false">Czas w zakresach</string>
+    <string name="lv_match_metrics" formatted="false">Parametry oceny stężenia glukozy</string>
+    <string name="lv_match_gmi" formatted="false">Wskaźnik kontroli stężenia glukozy (GMI)</string>
+    <string name="lv_match_agp_explanation" formatted="false">Ambulatoryjny profil glikemii (AGP) podsumowuje stężenia glukozy z całego raportowanego okresu, prezentując medianę (50%) i pozostałe percentyle na wspólnej osi pojedynczej doby.</string>
+    <string name="lv_match_daily_explanation" formatted="false">Profil dobowy trwa od północy do północy. Data znajduje się w lewym górnym rogu.</string>
+    <string name="lv_match_carbs" formatted="false">Węglowodany</string>
+    <string name="lv_match_insulin" formatted="false">Insulina</string>
+    <string name="lv_match_recorded_average" formatted="false">Średnia dobowa z dni z zapisanymi wpisami.</string>
+    <string name="lv_match_comments" formatted="false">Komentarze</string>
+    <string name="lv_match_missing_insulin" formatted="false">Dni bez zapisanej insuliny:</string>
+    <string name="lv_match_missing_carbs" formatted="false">Dni bez zapisanych węglowodanów:</string>
+    <string name="lv_match_no_scan_log" formatted="false">Aplikacja nie zapisuje historii skanów i widoków.</string>
+    <string name="lv_match_settings" formatted="false">Ustawienia</string>
+    <string name="lv_match_clinical_thresholds" formatted="false">Próg bardzo niski / bardzo wysoki</string>
+    <string name="lv_match_method" formatted="false">Źródło: odczyty glukozy i wpisy dziennika aplikacji. Progi AGP 54/70/180/250 mg/dL; historia skanów niedostępna.</string>
+    <string name="lv_match_mean_duration" formatted="false">Średni czas trwania</string>
+    <string name="lv_match_scans_per_day" formatted="false">Średnia skanów/widoków na dobę</string>
+    <string name="lv_match_goal" formatted="false">Cel:</string>
+    <string name="lv_match_standard_targets" formatted="false">Standardowe cele T1/T2</string>
+
+    <!-- Labels scoped to the reference-shaped PDF layout. -->
+    <string name="lv_ref_dob">Data ur.:</string>
+    <string name="lv_ref_coverage">Czas aktywności czujnika</string>
+    <string name="lv_ref_standard">Cele dla cukrzycy typu 1 lub typu 2</string>
+    <string name="lv_ref_mean">Średnie stęż. glukozy</string>
+    <string name="lv_ref_variability">Zmienność stęż. glukozy</string>
+    <string name="lv_ref_cv">Zdefiniowane jako procentowy współczynnik zmienności (CV)</string>
+    <string name="lv_ref_range">Zakres docelowy</string>
+    <string name="lv_ref_range_short">Zakres</string>
+    <string name="lv_ref_agp">AGP to suma wartości stęż. glukozy w raportowanym okresie z medianą (50%) i innymi percentylami pokazanymi jakby wystąpiły jednego dnia.</string>
+    <string name="lv_ref_daily">Profil dzienny prezentuje okres od północy do północy z datą w górnym lewym rogu.</string>
+    <string name="lv_ref_median">Mediana</string>
+    <string name="lv_ref_percentiles_inner">Od 25. do 75. percentyla</string>
+    <string name="lv_ref_percentiles_outer">Percentyle od 5. do 95.</string>
+    <string name="lv_ref_high">Wysokie stężenie glukozy</string>
+    <string name="lv_ref_low">Niskie stężenie glukozy</string>
+    <string name="lv_ref_legend">Objaśnienia</string>
+    <string name="lv_ref_recorded_insulin">Zarejestrowana insulina</string>
+    <string name="lv_ref_daily_average">Codziennie Średnia</string>
+    <string name="lv_ref_glucose_short">Stęż. glukozy</string>
+    <string name="lv_ref_insights_profile">Tendencje stężeń glukozy</string>
+    <string name="lv_ref_night">Przez noc</string>
+    <string name="lv_ref_app">Aplikacja</string>
+    <string name="lv_ref_version">Pełna wersja oprogramowania</string>
+    <string name="lv_ref_os">Wersja systemu operacyjnego</string>
+    <string name="lv_ref_phone_model">Model smartfona</string>
+    <string name="lv_ref_dose_anchor_note">Strzykawka: pobliski fragment wykresu; u góry: brak pobliskich danych CGM.</string>
+</resources>
+

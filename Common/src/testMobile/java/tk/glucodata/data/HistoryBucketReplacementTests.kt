@@ -61,6 +61,70 @@ class HistoryBucketReplacementTests {
     }
 
     @Test
+    fun overlap_keepsCompleteReadingWhenNextBatchHasOnlyRawInSameMinute() {
+        val complete = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = null)
+        val rawOnly = complete.copy(timestamp = 60_050_000L, value = 0f, rawValue = 107f)
+        assertEquals(listOf(complete), HistoryBucketReplacement.retainBestReadings(
+            listOf(complete), listOf(rawOnly), 60_000L))
+    }
+
+    @Test
+    fun overlap_keepsNewerReadingWhenBothHaveSameQuality() {
+        val old = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = null)
+        val newer = old.copy(timestamp = 60_050_000L, value = 112f, rawValue = 107f)
+        assertEquals(listOf(newer), HistoryBucketReplacement.retainBestReadings(
+            listOf(old), listOf(newer), 60_000L))
+    }
+
+    @Test
+    fun overlap_updatesSameTimestampWithoutErasingAnAvailableLane() {
+        val old = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = 1f)
+        val incoming = old.copy(value = 112f, rawValue = 0f, rate = null)
+        assertEquals(listOf(old.copy(value = 112f)), HistoryBucketReplacement.retainBestReadings(
+            listOf(old), listOf(incoming), 60_000L))
+    }
+
+    @Test
+    fun overlap_doesNotCombineLanesFromDifferentTimestamps() {
+        val autoOnly = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 0f, rate = null)
+        val rawOnly = autoOnly.copy(timestamp = 60_050_000L, value = 0f, rawValue = 105f)
+        assertEquals(listOf(autoOnly), HistoryBucketReplacement.retainBestReadings(
+            listOf(autoOnly), listOf(rawOnly), 60_000L))
+    }
+
+    @Test
+    fun overlap_prefersCompleteIncomingOverExistingRawOnly() {
+        val rawOnly = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 0f, rawValue = 105f, rate = null)
+        val complete = rawOnly.copy(timestamp = 60_050_000L, value = 112f, rawValue = 107f)
+        assertEquals(listOf(complete), HistoryBucketReplacement.retainBestReadings(
+            listOf(rawOnly), listOf(complete), 60_000L))
+    }
+
+    @Test
+    fun singleLiveAutoOnlyWriteDoesNotEraseRecordedRawInTheSameMinute() {
+        val complete = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = null)
+        val incoming = complete.copy(timestamp = 60_050_000L, value = 112f, rawValue = 0f, rate = 0f)
+        assertEquals(listOf(complete), HistoryBucketReplacement.retainBestReadings(
+            listOf(complete), listOf(incoming), 60_000L))
+    }
+
+    @Test
+    fun singleLiveAutoUpdateAtTheSameTimePreservesRecordedRaw() {
+        val complete = HistoryReading(timestamp = 60_010_000L, sensorSerial = "sensor",
+            value = 110f, rawValue = 105f, rate = null)
+        val incoming = complete.copy(value = 112f, rawValue = 0f, rate = 0f)
+        assertEquals(listOf(complete.copy(value = 112f, rate = 0f)),
+            HistoryBucketReplacement.retainBestReadings(
+                listOf(complete), listOf(incoming), 60_000L))
+    }
+
+    @Test
     fun plan_returnsNullWhenNoValidTimestampsRemain() {
         val plan = HistoryBucketReplacement.plan(
             readings = listOf(

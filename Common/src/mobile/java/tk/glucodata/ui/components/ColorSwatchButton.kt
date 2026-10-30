@@ -1,5 +1,7 @@
 package tk.glucodata.ui.components
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.R
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -31,7 +33,7 @@ fun ColorSwatchButton(
         colors = IconButtonDefaults.filledTonalIconButtonColors(
             containerColor = containerColor
         ),
-        shapes = IconButtonDefaults.shapes()
+        shapes = appIconButtonShapes()
     ) {
         Surface(
             modifier = Modifier.size(22.dp),

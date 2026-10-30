@@ -2,9 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.AdaptiveTrailingRow
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -277,7 +278,7 @@ fun ApiSourceSettingsScreen(navController: NavController) {
                                     },
                                     trailingIcon = {
                                         IconButtonTooltip(if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                                            IconButton(onClick = { showSecret = !showSecret }, shapes = IconButtonDefaults.shapes()) {
+                                            IconButton(onClick = { showSecret = !showSecret }, shapes = appIconButtonShapes()) {
                                                 Icon(
                                                     if (showSecret) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                                     contentDescription = if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_widget_description">Widżet glukozy</string>
+    <string name="settings_category_appearance">Wygląd i wyświetlanie</string>
+    <string name="settings_category_appearance_description">Motyw, język, jednostki, pulpit, wykresy, widżety i nakładki</string>
+    <string name="settings_category_alarms">Alarmy i głos</string>
+    <string name="settings_category_alarms_description">Alarmy glukozy, połączenia i sensora, wyciszenie oraz odczytywanie głosowe</string>
+    <string name="settings_category_devices">Sensory i urządzenia</string>
+    <string name="settings_category_devices_description">Łączenie, przełączanie sensorów, glukometry, peny i zegarki</string>
+    <string name="settings_category_processing">Glukoza i obliczenia</string>
+    <string name="settings_category_processing_description">Kalibracja, wygładzanie, prognozy i zachowanie wyświetlonych wartości</string>
+    <string name="settings_category_journal">Dziennik</string>
+    <string name="settings_category_journal_description">Szybkie dodawanie, kalkulator dawki, produkty, insuliny i import wpisów</string>
+    <string name="settings_category_connections">Połączenia i udostępnianie</string>
+    <string name="settings_category_connections_description">Usługi internetowe, API, broadcasty, Mirror, Health Connect i serwer WWW</string>
+    <string name="settings_category_data">Dane i kopie zapasowe</string>
+    <string name="settings_category_data_description">Kopie automatyczne, eksport i import danych oraz ustawień</string>
+    <string name="settings_category_app">Aplikacja i diagnostyka</string>
+    <string name="settings_category_app_description">Gotowość CGM, uprawnienia, aktualizacje, logi i informacje o aplikacji</string>
+    <string name="settings_category_reset">Reset i usuwanie danych</string>
+    <string name="settings_search_label">Szukaj w ustawieniach</string>
+    <string name="settings_search_clear">Wyczyść wyszukiwanie</string>
+    <string name="settings_bars_stacked_summary">Belki jedna pod drugą</string>
+    <string name="settings_bars_side_summary">Belki obok siebie</string>
+    <string name="settings_reset_description">Usuwanie historii, danych aplikacji i reset fabryczny</string>
+    <string name="widget_classic">Klasyczny widżet glukozy</string>
+    <string name="widget_expressive">Ekspresyjny widżet glukozy</string>
+    <string name="widget_range">Widżet zakresu glikemii</string>
+    <string name="widget_clock_weather">Widżet glikemii z zegarem i pogodą</string>
+    <string name="widget_classic_description">Pokazuje aktualną glikemię i trend.</string>
+    <string name="widget_expressive_description">Ekspresyjny widżet glukozy z aktualną wartością i trendem.</string>
+    <string name="widget_range_description">Pokazuje glikemię, trend i zakres docelowy.</string>
+    <string name="widget_clock_weather_description">Pokazuje glikemię razem z zegarem i pogodą.</string>
+</resources>

@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.AdaptiveButtonRow
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.animation.AnimatedContent
@@ -272,7 +274,7 @@ fun StatsRangeSelectorControl(
             itemHeight = 40.dp,
             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
             selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -382,7 +384,7 @@ fun StatsDateRangeSheet(
                 itemHeight = 40.dp,
                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                 selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
@@ -406,7 +408,7 @@ fun StatsDateRangeSheet(
             ) {
                 OutlinedButton(
                     onClick = onDismiss,
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Text(text = stringResource(R.string.cancel))
@@ -418,7 +420,7 @@ fun StatsDateRangeSheet(
                         onApply(start, end)
                     },
                     enabled = startUtc != null,
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Text(text = stringResource(R.string.stats_apply_range))

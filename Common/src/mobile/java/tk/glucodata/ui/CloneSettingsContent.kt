@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -43,7 +45,7 @@ internal fun CloneSettingsContent(
                 title = stringResource(R.string.clone_sync_title),
                 onNavigateBack = onBack,
                 actions = {
-                    IconButton(onClick = onRefresh, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Default.Refresh, stringResource(R.string.mirror_reconnect_all)) }
+                    IconButton(onClick = onRefresh, shapes = appIconButtonShapes()) { Icon(Icons.Default.Refresh, stringResource(R.string.mirror_reconnect_all)) }
                 },
             )
         },

@@ -1158,7 +1158,10 @@ public class NotificationChartDrawer {
             GlucosePoint p,
             boolean isRawMode,
             String calibrationSensorId) {
-        Float sealed = tk.glucodata.chart.HistoryChartModelBuilder.INSTANCE.recordedMainValue(p);
+        Float sealed = !Float.isNaN(p.sealedDisplayValue) && p.sealedDisplayValue > 0.1f
+                && tk.glucodata.chart.HistoryChartModelBuilder.INSTANCE.recordAppliesToLane(
+                        p.sealedDisplayViewMode, isRawMode)
+                ? p.sealedDisplayValue : null;
         if (sealed != null) return sealed;
         float baseVal = isRawMode ? p.rawValue : p.value;
         if (baseVal <= 0f) return 0f;
@@ -1254,6 +1257,13 @@ public class NotificationChartDrawer {
 
     public static Bitmap drawArrow(Context context, float rate, boolean isMmol, int color, float arrowScale,
             boolean outline) {
+        boolean largeArrow = context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                .getBoolean("notification_large_trend_arrow", false);
+        return drawArrow(context, rate, isMmol, color, arrowScale, outline, largeArrow);
+    }
+
+    public static Bitmap drawArrow(Context context, float rate, boolean isMmol, int color, float arrowScale,
+            boolean outline, boolean largeArrow) {
         float density = context.getResources().getDisplayMetrics().density;
         // Arrow size: 20dp * scale (slightly smaller than 24dp for notifications)
         int size = (int) (20 * density * arrowScale);
@@ -1298,8 +1308,6 @@ public class NotificationChartDrawer {
         // center, so a shaft of up to ~95% of the box never clips at any
         // angle. Opt-in setting: the long-shaft variant matches what other
         // apps render for the same rate; the default keeps the compact glyph.
-        boolean largeArrow = context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
-                .getBoolean("notification_large_trend_arrow", false);
         float arrowLenFactor = largeArrow
                 ? (showDouble ? 0.62f : 0.82f)
                 : (showDouble ? 0.42f : 0.62f);
@@ -1840,10 +1848,29 @@ public class NotificationChartDrawer {
                 peerSeries, model, predictionBatch);
     }
 
+    /** Phone widget chart: compact trace sizing with readable time/value axes. */
+    public static Bitmap drawWidgetChart(Context context, List<GlucosePoint> data, int widthHint, int heightHint,
+            boolean isMmol, int viewMode, boolean showTargetRange, boolean hasCalibration,
+            String calibrationSensorId, long durationMs) {
+        return drawChartInternal(context, data, widthHint, heightHint, isMmol, viewMode, showTargetRange,
+                hasCalibration, true, calibrationSensorId, durationMs, false, null, null, null, true);
+    }
+
     private static Bitmap drawChartInternal(Context context, List<GlucosePoint> data, int widthHint, int heightHint,
             boolean isMmol, int viewMode, boolean showTargetRange, boolean hasCalibration, boolean compactMode,
             String calibrationSensorId, long durationMs, boolean showPredictionOverlay, List<PeerSeries> peerSeries,
             tk.glucodata.chart.HistoryChartModel model, NotificationPredictionBatch predictionBatch) {
+        // Every existing notification caller retains its original layout.
+        return drawChartInternal(context, data, widthHint, heightHint, isMmol, viewMode, showTargetRange,
+                hasCalibration, compactMode, calibrationSensorId, durationMs, showPredictionOverlay,
+                peerSeries, model, predictionBatch, false);
+    }
+
+    private static Bitmap drawChartInternal(Context context, List<GlucosePoint> data, int widthHint, int heightHint,
+            boolean isMmol, int viewMode, boolean showTargetRange, boolean hasCalibration, boolean compactMode,
+            String calibrationSensorId, long durationMs, boolean showPredictionOverlay, List<PeerSeries> peerSeries,
+            tk.glucodata.chart.HistoryChartModel model, NotificationPredictionBatch predictionBatch,
+            boolean widgetAxes) {
         // When a resolved model drives the primary line, the auto/raw lanes are
         // only ever the source lanes behind a calibration. Without one they
         // would be the main line, and the model already is.
@@ -2230,6 +2257,28 @@ public class NotificationChartDrawer {
             // ignore
         }
 
+        if (widgetAxes) {
+            // Axes live outside the trace area. Cap dense chart text at 1.3x,
+            // following the dashboard, while keeping its physical size legible.
+            float fontScale = Math.min(1.3f, dm.scaledDensity / dm.density);
+            textPaint.setTextSize(11f * dm.density * fontScale);
+            textPaint.setColor(isDark ? 0xFFE3E5EF : 0xFF1D1B20);
+            String unit = context.getString(isMmol ? R.string.mmolL : R.string.mgdL);
+            float labelWidth = textPaint.measureText(unit);
+            for (float value : new float[] {minY, maxY, targetLow, targetHigh}) {
+                labelWidth = Math.max(labelWidth, textPaint.measureText(widgetAxisValue(value, isMmol)));
+            }
+            Paint.FontMetrics fm = textPaint.getFontMetrics();
+            float fontHeight = fm.descent - fm.ascent;
+            chartLeft = Math.min(labelWidth + 8f * dm.density, width * 0.4f);
+            chartRight = width - 4f * dm.density;
+            chartTop = fontHeight / 2f + 3f * dm.density;
+            chartBottom = height - fontHeight - 8f * dm.density;
+            chartWidth = Math.max(1f, chartRight - chartLeft);
+            chartHeight = Math.max(1f, chartBottom - chartTop);
+            chartBottom = chartTop + chartHeight;
+        }
+
         Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         linePaint.setStyle(Paint.Style.STROKE);
         float strokeWidth = (compactMode ? 1.5f : 2.0f) * dm.density;
@@ -2257,7 +2306,7 @@ public class NotificationChartDrawer {
 
         // Check if collapsed (from Notify.java: passed 100 for collapsed, 180 for
         // expanded)
-        boolean isCollapsed = compactMode || (height < 150);
+        boolean isCollapsed = widgetAxes || compactMode || (height < 150);
 
         // Draw grid lines (3 horizontal)
         // yRange already calculated above
@@ -2373,6 +2422,12 @@ public class NotificationChartDrawer {
             }
 
             cal.add(Calendar.HOUR_OF_DAY, 1);
+        }
+
+        int widgetPlotSave = 0;
+        if (widgetAxes) {
+            widgetPlotSave = canvas.save();
+            canvas.clipRect(chartLeft, chartTop, chartRight, chartBottom);
         }
 
         if (ribbonEnabled) {
@@ -2724,6 +2779,89 @@ public class NotificationChartDrawer {
             }
         }
 
+        if (widgetAxes) {
+            canvas.restoreToCount(widgetPlotSave);
+            drawWidgetAxisLabels(canvas, textPaint, context, dm.density, width, height,
+                    chartLeft, chartRight, chartTop, chartBottom, startTime, chartEndTime,
+                    minY, maxY, targetLow, targetHigh, isMmol, showTargetRange);
+        }
         return bitmap;
+    }
+
+    private static String widgetAxisValue(float value, boolean isMmol) {
+        return String.format(java.util.Locale.getDefault(), isMmol ? "%.1f" : "%.0f", value);
+    }
+
+    private static void drawWidgetAxisLabels(Canvas canvas, Paint paint, Context context,
+            float density, int width, int height, float left, float right, float top, float bottom,
+            long startTime, long endTime, float minY, float maxY, float targetLow, float targetHigh,
+            boolean isMmol, boolean showTargetRange) {
+        Paint.FontMetrics fm = paint.getFontMetrics();
+        float textHeight = fm.descent - fm.ascent;
+        float separation = textHeight + 3f * density;
+        float lowCenter = top;
+        float highCenter = Math.max(top, bottom);
+        java.util.ArrayList<Float> occupied = new java.util.ArrayList<>();
+        java.util.ArrayList<String> drawnLabels = new java.util.ArrayList<>();
+        paint.setTextAlign(Paint.Align.RIGHT);
+        // Target values have priority over auxiliary axis values on short widgets.
+        float[] values = showTargetRange
+                ? new float[] {targetHigh, targetLow, maxY, minY, (minY + maxY) / 2f}
+                : new float[] {maxY, minY, (minY + maxY) / 2f};
+        for (float value : values) {
+            if (!Float.isFinite(value) || value < minY || value > maxY) continue;
+            String valueLabel = widgetAxisValue(value, isMmol);
+            if (drawnLabels.contains(valueLabel)) continue;
+            float desired = bottom - (value - minY) / (maxY - minY) * (bottom - top);
+            float best = Float.NaN;
+            float bestDistance = Float.POSITIVE_INFINITY;
+            java.util.ArrayList<Float> candidates = new java.util.ArrayList<>();
+            candidates.add(desired);
+            candidates.add(lowCenter);
+            candidates.add(highCenter);
+            for (float center : occupied) {
+                candidates.add(center - separation);
+                candidates.add(center + separation);
+            }
+            for (float candidate : candidates) {
+                if (candidate < lowCenter || candidate > highCenter) continue;
+                boolean clear = true;
+                for (float center : occupied) {
+                    if (Math.abs(center - candidate) < separation - 0.01f) { clear = false; break; }
+                }
+                float distance = Math.abs(candidate - desired);
+                if (clear && distance < bestDistance) { best = candidate; bestDistance = distance; }
+            }
+            if (!Float.isFinite(best)) continue;
+            occupied.add(best);
+            drawnLabels.add(valueLabel);
+            float baseline = best - (fm.ascent + fm.descent) / 2f;
+            canvas.drawText(valueLabel, left - 4f * density, baseline, paint);
+        }
+
+        float timeBaseline = height - 4f * density - fm.descent;
+        canvas.drawText(context.getString(isMmol ? R.string.mmolL : R.string.mgdL),
+                left - 4f * density, timeBaseline, paint);
+        java.text.DateFormat format = android.text.format.DateFormat.getTimeFormat(context);
+        String startLabel = format.format(new java.util.Date(startTime));
+        String endLabel = format.format(new java.util.Date(endTime));
+        float widest = Math.max(paint.measureText(startLabel), paint.measureText(endLabel));
+        // Account for the entire first/last label, so a middle label cannot
+        // consume the space required for the end time.
+        float labelCenterSpan = Math.max(0f, width - left - 4f * density - widest);
+        int intervals = Math.max(1, Math.min(4, (int) (labelCenterSpan / (widest + 12f * density))));
+        float previousRight = left;
+        paint.setTextAlign(Paint.Align.LEFT);
+        for (int i = 0; i <= intervals; i++) {
+            long time = startTime + (endTime - startTime) * i / intervals;
+            String label = format.format(new java.util.Date(time));
+            float labelWidth = paint.measureText(label);
+            float x = left + (right - left) * i / intervals;
+            float textLeft = Math.max(left + 2f * density,
+                    Math.min(x - labelWidth / 2f, width - 2f * density - labelWidth));
+            if (textLeft < previousRight + 2f * density) continue;
+            canvas.drawText(label, textLeft, timeBaseline, paint);
+            previousRight = textLeft + labelWidth + 6f * density;
+        }
     }
 }

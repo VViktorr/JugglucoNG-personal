@@ -137,7 +137,7 @@ object HistoryChartModelBuilder {
                 val differs = live != null && kotlin.math.abs(live - value) > PREVIEW_DIFFERENCE
                 if (differs) {
                     if (previewLast != Long.MIN_VALUE && point.timestamp - previewLast > gapThresholdMs) flushPreview()
-                    preview.add(ChartPointModel(point.timestamp, live!!))
+                    preview.add(ChartPointModel(point.timestamp, live))
                     previewLast = point.timestamp
                 } else if (preview.isNotEmpty()) {
                     flushPreview()
@@ -211,24 +211,14 @@ object HistoryChartModelBuilder {
     }
 
     /**
-     * A record is the main value the user was shown for a minute, whichever lane
-     * the main line was drawing then. It is applied to the main line in every
-     * lane — it is never consulted for a secondary lane, which draws the sensor's
-     * own values (see [segmentLane]). Switching between auto and raw therefore
-     * leaves a sealed minute where it was, and the lane now selected shows
-     * beside it as the calibration preview, exactly as a calibration change
-     * does.
-     *
-     * Gating the record by lane (2026-09-11, extended to every reader in #499)
-     * turned the main line into a patchwork: each minute took its record or a
-     * fresh derivation depending on which lane happened to be main when it was
-     * first shown, so a toggle re-derived every minute recorded in the other
-     * lane, the statistics followed, and a later calibration moved exactly
-     * those minutes and no others.
+     * A recorded display value belongs to the lane that was visible when it was
+     * sealed: Auto for modes 0/2, Raw for modes 1/3. Older records without lane
+     * metadata are retained for compatibility.
      */
-    fun recordedMainValue(point: GlucosePoint): Float? {
-        val sealed = point.sealedDisplayValue
-        return if (!sealed.isNaN() && sealed > 0.1f) sealed else null
+    fun recordAppliesToLane(sealedDisplayViewMode: Int, isRawMode: Boolean): Boolean {
+        if (sealedDisplayViewMode < 0) return true
+        val recordedIsRaw = sealedDisplayViewMode == 1 || sealedDisplayViewMode == 3
+        return recordedIsRaw == isRawMode
     }
 
     /** Below this the record and the live calibration are the same number, in any unit. */
@@ -264,5 +254,11 @@ object HistoryChartModelBuilder {
         isRawMode: Boolean,
         sensorId: String,
         calibration: Calibration,
-    ): Float? = recordedMainValue(point) ?: liveValue(point, isRawMode, sensorId, calibration)
+    ): Float? {
+        val sealed = point.sealedDisplayValue
+        if (!sealed.isNaN() && sealed > 0.1f &&
+            recordAppliesToLane(point.sealedDisplayViewMode, isRawMode)
+        ) return sealed
+        return liveValue(point, isRawMode, sensorId, calibration)
+    }
 }

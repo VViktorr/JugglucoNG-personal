@@ -23,6 +23,7 @@ package tk.glucodata;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -64,6 +65,182 @@ import static tk.glucodata.Natives.processTooth;
 
 public class Libre2GattCallback extends SuperGattCallback {
 	private int conphase = 0;
+    // LibreLink recovery policy, executed within main's serialized GATT lifecycle.
+    private static final long GATT_WATCHDOG_MS = 120_000L;
+    private static final long HARD_RECOVERY_DELAY_MS = 6_000L;
+    private boolean recoveryInProgress;
+    private long failedHandshakeSinceMs = -1L;
+    private long recoveryDueMs;
+    private PowerManager.WakeLock recoveryWakeLock;
+    private long diagAttempt;
+    private long diagConnectedAtMs = -1L, diagServicesAtMs = -1L, diagPassWriteAtMs = -1L, diagDescriptorAtMs = -1L;
+    private long diagNativeStreamGeneration = 1L;
+    private long diagLastPacketAtMs = -1L;
+    private long diagLastCloseAtMs = -1L;
+    private long diagConnectRequestAtMs = -1L;
+    private long diagConnectedSinceMs = -1L;
+
+    private final GattConnectDeadline<BluetoothGatt> streamDeadline = new GattConnectDeadline<>(
+            this, (task, delay) -> {
+                var future = Applic.scheduler.schedule(task, delay, TimeUnit.MILLISECONDS);
+                return () -> future.cancel(false);
+            }, this::streamExpired);
+    private final GattConnectDeadline<Object> recoveryDeadline = new GattConnectDeadline<>(
+            this, (task, delay) -> {
+                var future = Applic.scheduler.schedule(task, delay, TimeUnit.MILLISECONDS);
+                return () -> future.cancel(false);
+            }, ignored -> resumeRecovery());
+
+    private boolean canRecoverLocally() {
+        return !stop && dataptr != 0L && !CloneSensorRegistry.isCloneSensor(SerialNumber)
+                && !SensorOwnershipRuntime.blocksLocalConnection(SerialNumber);
+    }
+
+    private void libre2Diag(String stage, BluetoothGatt gatt, String extra) {
+        if (!doLog) return;
+        final long now = android.os.SystemClock.elapsedRealtime();
+        Log.i(LOG_ID, "LIBRE2_DIAG serial=" + SerialNumber + " attempt=" + diagAttempt
+                + " stage=" + stage + " gatt=" + (gatt == null ? "null" : Integer.toHexString(System.identityHashCode(gatt)))
+                + " dataptr=0x" + Long.toHexString(dataptr) + " nativeStreamGen=" + diagNativeStreamGeneration
+                + " sensorgen=" + sensorgen + " conphase=" + conphase + " connected=" + connected
+                + " pack1=" + pack1 + " pack2=" + pack2 + " paused=" + stop + " recovery=" + recoveryInProgress
+                + " connectedDurationMs=" + (diagConnectedSinceMs < 0L ? -1L : now - diagConnectedSinceMs)
+                + " lastPacketAgeMs=" + (diagLastPacketAtMs < 0L ? -1L : now - diagLastPacketAtMs)
+                + " lastCloseAgeMs=" + (diagLastCloseAtMs < 0L ? -1L : now - diagLastCloseAtMs)
+                + " fromConnectRequestMs=" + (diagConnectRequestAtMs < 0L ? -1L : now - diagConnectRequestAtMs)
+                + " adapterState=" + bluetoothAdapterState()
+                + " fromConnectMs=" + (diagConnectedAtMs < 0L ? -1L : now - diagConnectedAtMs)
+                + " fromServicesMs=" + (diagServicesAtMs < 0L ? -1L : now - diagServicesAtMs)
+                + " fromPassWriteMs=" + (diagPassWriteAtMs < 0L ? -1L : now - diagPassWriteAtMs)
+                + (extra == null ? "" : " " + extra));
+    }
+
+    @SuppressLint("MissingPermission")
+    private String bluetoothAdapterState() {
+        try {
+            final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            return adapter == null ? "UNAVAILABLE" : Integer.toString(adapter.getState());
+        } catch (SecurityException e) {
+            return "NO_PERMISSION";
+        }
+    }
+
+    private synchronized void watchStream(BluetoothGatt gatt) {
+        if (!isWearable && canRecoverLocally() && !recoveryInProgress && gatt == mBluetoothGatt)
+            streamDeadline.arm(gatt, GATT_WATCHDOG_MS);
+    }
+
+    private synchronized void streamExpired(BluetoothGatt gatt) {
+        if (gatt != mBluetoothGatt || !canRecoverLocally()) return;
+        hardRecoverGatt("120s without a complete sensor packet");
+    }
+
+    // Transport health is separate from algorithm acceptance and publication.
+    // RSSI, fragments and handshake callbacks never extend this deadline.
+    private void markPacketReceived() {
+        failedHandshakeSinceMs = -1L;
+        diagLastPacketAtMs = android.os.SystemClock.elapsedRealtime();
+        libre2Diag("complete-packet", mBluetoothGatt,
+                "descriptorAgoMs=" + (diagDescriptorAtMs < 0L ? -1L : android.os.SystemClock.elapsedRealtime() - diagDescriptorAtMs));
+        watchStream(mBluetoothGatt);
+    }
+
+    private boolean failedHandshakeNeedsRecovery(int status) {
+        if (isWearable || recoveryInProgress || (status != 8 && status != 19 && status != 147)) return false;
+        final long now = android.os.SystemClock.elapsedRealtime();
+        if (failedHandshakeSinceMs < 0L) failedHandshakeSinceMs = now;
+        return now - failedHandshakeSinceMs >= GATT_WATCHDOG_MS;
+    }
+
+    private synchronized void releaseRecoveryWakeLock() {
+        if (recoveryWakeLock != null) {
+            if (recoveryWakeLock.isHeld()) recoveryWakeLock.release();
+            recoveryWakeLock = null;
+        }
+    }
+
+    private synchronized void cancelRecovery(String reason) {
+        recoveryDeadline.cancel();
+        streamDeadline.cancel();
+        if (recoveryInProgress) libre2Diag("hard-recovery-cancelled", mBluetoothGatt, "reason=" + reason);
+        recoveryInProgress = false;
+        failedHandshakeSinceMs = -1L;
+        releaseRecoveryWakeLock();
+    }
+
+    private synchronized void hardRecoverGatt(String reason) {
+        if (isWearable || recoveryInProgress || !canRecoverLocally()) return;
+        recoveryInProgress = true;
+        failedHandshakeSinceMs = android.os.SystemClock.elapsedRealtime();
+        streamDeadline.cancel();
+        cancelDisconnectDeadline();
+        resetConnectionState();
+        justenablednotification = failedbefore = false;
+        libre2Diag("hard-recovery-begin", mBluetoothGatt, "reason=" + reason);
+        try {
+            // Hold CPU only for this bounded recovery window, including the fresh-connect delay.
+            // A ScheduledExecutor alone cannot wake a sleeping Android device.
+            recoveryWakeLock = ((PowerManager) app.getSystemService(POWER_SERVICE))
+                    .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Juggluco::libre2Recovery");
+            recoveryWakeLock.setReferenceCounted(false);
+            recoveryWakeLock.acquire(15_000L);
+            try { super.disconnect(); }
+            finally {
+                libre2Diag("hard-recovery-close", mBluetoothGatt, "reason=" + reason);
+                diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
+                closeGattTransport();
+            }
+            Natives.resetbluetooth(dataptr);
+            // Keep user pause untouched; all reconnect entry points see recoveryInProgress.
+            recoveryDueMs = android.os.SystemClock.elapsedRealtime() + HARD_RECOVERY_DELAY_MS;
+            recoveryDeadline.arm(new Object(), HARD_RECOVERY_DELAY_MS);
+            libre2Diag("hard-recovery-scheduled", null, "delayMs=" + HARD_RECOVERY_DELAY_MS + " dueElapsedMs=" + recoveryDueMs);
+        } catch (Throwable error) {
+            cancelRecovery("setup failed");
+            Log.stack(LOG_ID, SerialNumber + " hard recovery", error);
+        }
+    }
+
+    private synchronized void resumeRecovery() {
+        libre2Diag("hard-recovery-resume", mBluetoothGatt,
+                "schedulerLateMs=" + Math.max(0L, android.os.SystemClock.elapsedRealtime() - recoveryDueMs));
+        recoveryInProgress = false;
+        try {
+            if (!canRecoverLocally()) {
+                libre2Diag("hard-recovery-skipped", mBluetoothGatt, "reason=pause-removal-clone-or-ownership");
+                return;
+            }
+            final var sensorbluetooth = SensorBluetooth.blueone;
+            if (sensorbluetooth != null) sensorbluetooth.connectToActiveDevice(this, 200L);
+        } finally {
+            // Bound the lock even when Android never reports the connection result.
+            // Leave its 15s timeout active for the 200ms queued connect, then release on CONNECTED.
+            if (!canRecoverLocally() || SensorBluetooth.blueone == null) releaseRecoveryWakeLock();
+        }
+    }
+
+    synchronized void diagnoseReset(String stage, long previousDataptr) {
+        libre2Diag(stage, mBluetoothGatt, "oldDataptr=0x" + Long.toHexString(previousDataptr)
+                + " activeAddress=" + mActiveDeviceAddress);
+    }
+
+    synchronized void diagnoseResetContext(String stage, long previousDataptr, String extra) {
+        libre2Diag(stage, mBluetoothGatt, "oldDataptr=0x" + Long.toHexString(previousDataptr)
+                + " activeAddress=" + mActiveDeviceAddress
+                + (extra == null ? "" : " " + extra));
+    }
+
+    @Override
+    public synchronized long resetdataptr() {
+        cancelRecovery("native stream reload");
+        final long oldDataptr = dataptr;
+        final long newDataptr = super.resetdataptr();
+        ++diagNativeStreamGeneration;
+        libre2Diag("native-stream-reloaded", mBluetoothGatt,
+                "oldDataptr=0x" + Long.toHexString(oldDataptr) + " newDataptr=0x" + Long.toHexString(newDataptr));
+        return newDataptr;
+    }
+
 	private BluetoothGatt disconnectingGatt;
 	private long reconnectDelayMillis;
 	private final GattConnectDeadline<BluetoothGatt> disconnectDeadline = new GattConnectDeadline<>(
@@ -109,16 +286,20 @@ public class Libre2GattCallback extends SuperGattCallback {
 		cancelDisconnectDeadline();
 		resetConnectionState();
 		// Retire the reference before close(), so late callbacks cannot affect its replacement.
+        libre2Diag("gatt-close-before-retry", gatt, "reconnectDelayMs=" + delay);
+        diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
 		closeGattTransport();
 		connectDevice(delay);
 	}
 
 	private synchronized void requestDisconnect(BluetoothGatt gatt, long delayMillis) {
 		if (gatt == null || gatt != mBluetoothGatt) return;
+        streamDeadline.cancel();
 		// Retain the latest reconnect delay without restarting an in-progress disconnect.
 		reconnectDelayMillis = delayMillis;
 		if (disconnectingGatt == gatt) return;
 		disconnectingGatt = gatt;
+        libre2Diag("disconnect-request", gatt, "reconnectDelayMs=" + delayMillis);
 		endBLEHandler();
 		// Android can omit DISCONNECTED. Repeated recovery requests must not extend this wait.
 		disconnectDeadline.arm(gatt, 2_000L);
@@ -132,13 +313,18 @@ public class Libre2GattCallback extends SuperGattCallback {
 
 	@Override
 	public synchronized void disconnect() {
+        cancelRecovery("disconnect requested");
 		if (mBluetoothGatt == null) super.disconnect();
 		else requestDisconnect(mBluetoothGatt, 0L);
 	}
 
 	@Override
 	public synchronized boolean connectDevice(long delayMillis) {
-		if (stop || dataptr == 0L || CloneSensorRegistry.isCloneSensor(SerialNumber)
+		if (recoveryInProgress) {
+            libre2Diag("connect-suppressed", mBluetoothGatt, "reason=recovery-in-progress");
+            return true;
+        }
+        if (stop || dataptr == 0L || CloneSensorRegistry.isCloneSensor(SerialNumber)
 				|| SensorOwnershipRuntime.blocksLocalConnection(SerialNumber)) return false;
 		if (mBluetoothGatt != null) {
 			requestDisconnect(mBluetoothGatt, delayMillis);
@@ -146,12 +332,15 @@ public class Libre2GattCallback extends SuperGattCallback {
 		}
 		cancelDisconnectDeadline();
 		resetConnectionState();
+        diagConnectRequestAtMs = android.os.SystemClock.elapsedRealtime();
+        libre2Diag("connect-request", null, "delayMs=" + delayMillis);
 		return super.connectDevice(delayMillis);
 	}
 
 	@Override
 	public synchronized boolean reconnect(long now) {
-		final long old = now - showtime + 20;
+		if (recoveryInProgress || stop) return true;
+        final long old = now - showtime + 20;
 		if (charcha[1] < old && connectTime < now - 60_000L) {
 			noteLossOfSignal(now);
 			return connectDevice(0L);
@@ -162,6 +351,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 	@Override
 	public synchronized void setPause(boolean pause) {
 		if (pause) {
+            cancelRecovery("user pause");
 			cancelDisconnectDeadline();
 			endBLEHandler();
 		}
@@ -174,6 +364,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 	public Libre2GattCallback(String SerialNumber, long dataptr) {
 		super(SerialNumber,dataptr,Natives.getsensorgen(dataptr));
 		{if(doLog) {Log.d(LOG_ID, "Libre2GattCallback(..)");};};
+        libre2Diag("callback-created", null, "activeAddress=" + mActiveDeviceAddress);
 	}
 
 
@@ -224,6 +415,8 @@ static void showCharacter(String label, BluetoothGattCharacteristic characterist
 @Override // android.bluetooth.BluetoothGattCallback
 	public synchronized void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
+        diagDescriptorAtMs = android.os.SystemClock.elapsedRealtime();
+        libre2Diag("descriptor-write-callback", bluetoothGatt, "status=" + status);
 		super.onDescriptorWrite(bluetoothGatt, bluetoothGattDescriptor, status);
 		if(doLog)  {
 		   BluetoothGattCharacteristic characteristic = bluetoothGattDescriptor.getCharacteristic();
@@ -261,6 +454,13 @@ private boolean connected=false;
 			}
 			if (newState == BluetoothProfile.STATE_CONNECTED && status == GATT_SUCCESS) {
 				connected = true;
+                ++diagAttempt;
+                diagConnectedAtMs = android.os.SystemClock.elapsedRealtime();
+                diagConnectedSinceMs = diagConnectedAtMs;
+                diagServicesAtMs = diagPassWriteAtMs = diagDescriptorAtMs = -1L;
+                libre2Diag("connected", bluetoothGatt, "status=" + status);
+                releaseRecoveryWakeLock();
+                watchStream(bluetoothGatt);
 				constatchange[0] = tim;
 				setpriority(bluetoothGatt);
 				if (!bluetoothGatt.discoverServices()) {
@@ -272,6 +472,13 @@ private boolean connected=false;
 				setConStatus(status);
 				constatchange[1] = tim;
 				if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    streamDeadline.cancel();
+                    libre2Diag("disconnected", bluetoothGatt, "status=" + status + " newState=" + newState + " justenablednotification=" + justenablednotification + " failedbefore=" + failedbefore);
+                    diagConnectedSinceMs = -1L;
+                    if (failedHandshakeNeedsRecovery(status)) {
+                        hardRecoverGatt("repeated incomplete handshake status=" + status);
+                        return;
+                    }
 					// Keep the existing Libre 2 notification/authentication recovery policy.
 					if (status == 19 && justenablednotification) {
 						Natives.resetbluetooth(dataptr);
@@ -317,6 +524,7 @@ private boolean connected=false;
 
 					long tim = System.currentTimeMillis();
 					byte[] key = Natives.sensorUnlockKey(dataptr);
+                    libre2Diag("unlock-key", mBluetoothGatt, "keyPresent=" + (key != null) + " keyLen=" + (key == null ? 0 : key.length));
 					if (key != null) {
 						conphase = 5;
 						if(BLELogincharacteristic.setValue(key)) {
@@ -371,6 +579,8 @@ private boolean connected=false;
     @Override // android.bluetooth.BluetoothGattCallback
 	public synchronized void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
+        diagServicesAtMs = android.os.SystemClock.elapsedRealtime();
+        libre2Diag("services-discovered", bluetoothGatt, "status=" + status);
 		{if(doLog) {Log.i(LOG_ID, "BLE onServicesDiscovered invoked, status: " + status);};};
 //		readrssi=9999; mBluetoothGatt.readRemoteRssi();
 		if(status != GATT_SUCCESS||! m2831x()) {
@@ -399,6 +609,8 @@ private   boolean failedbefore=false;
 	@Override
 	public synchronized void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
+        diagPassWriteAtMs = android.os.SystemClock.elapsedRealtime();
+        libre2Diag("characteristic-write-callback", bluetoothGatt, "status=" + status);
 		{if(doLog) {Log.d(LOG_ID, bluetoothGatt.getDevice().getAddress() + " onCharacteristicWrite, status:" + status + " UUID:" + bluetoothGattCharacteristic.getUuid().toString());};};
 		if (sensorgen == 2)
 			return;
@@ -423,9 +635,11 @@ private   boolean failedbefore=false;
                             Log.e(LOG_ID,"descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)  failed");
                             }
                         success = bluetoothGatt.writeDescriptor(descriptor);
+                        libre2Diag("notification-enable-queued", bluetoothGatt, "writeQueued=" + success);
                         } 
             else success = false;
 			if (!success) {
+                libre2Diag("notification-enable-failed", bluetoothGatt, "writeQueued=false");
 				wrotepass[1] = tim;
 				handshake = "Enabling notification failed";
 				{if(doLog) {Log.i(LOG_ID, SerialNumber + " onCharacteristicWrite:  enabling notification failed");};};
@@ -488,6 +702,7 @@ private long datatime=0L;
 private	void oldonCharacteristicChanged(byte[] value) {
 		justenablednotification = false;
 		int length = value.length;
+        libre2Diag("stream-fragment", mBluetoothGatt, "len=" + length);
 		{if(doLog) {Log.d(LOG_ID, SerialNumber + " oldonCharacteristicChanged " + length);};};
 		switch (length) {
 			case 20: {
@@ -507,6 +722,7 @@ private	void oldonCharacteristicChanged(byte[] value) {
 			break;
 			case 8: {
 				if (pack1 && pack2) {
+                    markPacketReceived();
 					final var wakeLock=Natives.hasRootcheck()?getwakelock():null;
 					if(wakeLock!=null) {
 						wakeLock.setReferenceCounted(false);
@@ -534,6 +750,7 @@ private	void oldonCharacteristicChanged(byte[] value) {
 						final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
 						if(newpacket!=null) {
 							long res = processTooth(dataptr, newpacket);
+                            libre2Diag("parser-result", mBluetoothGatt, "result=" + res + " duplicate=" + (res == 1L));
 							if(res!=1L) {
 								handleGlucoseResult(res,timmsec);
 								}
@@ -852,6 +1069,7 @@ private void endBLEHandler() {
     }
 @Override
 	public synchronized void close() {
+       cancelRecovery("close");
 	   cancelDisconnectDeadline();
 	   endBLEHandler();
       final var gatt=mBluetoothGatt;
@@ -859,6 +1077,8 @@ private void endBLEHandler() {
          disablenotification(gatt,BLELogincharacteristic);
          disablenotification(gatt, CompositeRawDatacharacteristic) ;
          }
+        libre2Diag("gatt-close", gatt, "reason=close");
+        diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
 		super.close();
 		resetConnectionState();
 		}
@@ -873,10 +1093,54 @@ public synchronized void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int stat
 
 @Override
 public boolean matchDeviceName(String deviceName,String address) {
-	if(deviceName==null||!deviceName.startsWith("ABBOTT")) {
+	if(deviceName==null) {
+		if(doLog) {Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address + " name=null accepted=false reason=no-name");};
 		return false;
 		}
-	return SerialNumber.equals(deviceName.substring(6));
+	if(!deviceName.startsWith("ABBOTT")) {
+		if(doLog) {Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address + " name=" + deviceName + " accepted=false reason=name-prefix");};
+		return false;
+		}
+	final String advertisedSerial=deviceName.substring(6);
+	final boolean accepted=SerialNumber.equals(advertisedSerial);
+	if(doLog) {
+		Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+				+ " name=" + deviceName + " advertisedSerial=" + advertisedSerial
+				+ " accepted=" + accepted + " reason=" + (accepted?"name-match":"serial-mismatch"));
+		}
+	return accepted;
+	}
+
+@Override
+public boolean matchScanResult(android.bluetooth.le.ScanResult result) {
+	if(result==null) {
+		if(doLog) {Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " accepted=false reason=null-scan-result");};
+		return false;
+		}
+	final android.bluetooth.le.ScanRecord record=result.getScanRecord();
+	final BluetoothDevice device=result.getDevice();
+	final String address=device==null?null:device.getAddress();
+	final String name=record==null?null:record.getDeviceName();
+	boolean serviceFde3=false;
+	if(record!=null) {
+		final java.util.List<android.os.ParcelUuid> services=record.getServiceUuids();
+		if(services!=null) {
+			for(android.os.ParcelUuid service:services) {
+				if(service!=null && mADCCustomServiceUUID.equals(service.getUuid())) {
+					serviceFde3=true;
+					break;
+					}
+				}
+			}
+		}
+	if(doLog) {
+		Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+				+ " name=" + name + " serviceFDE3=" + serviceFde3
+				+ " accepted=false reason=metadata-only-upstream-name-match");
+		}
+	// Diagnostic only: keep upstream matching semantics. Libre 2 is still
+	// accepted by its remembered address or ABBOTT<serial> local name.
+	return false;
 	}
 @Override
 void free() {
