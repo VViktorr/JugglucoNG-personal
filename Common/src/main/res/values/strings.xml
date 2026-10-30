@@ -18,6 +18,8 @@
     <string name="loss_description">Juggluco has lost contact with sensor</string>
     <string name="numalarm_description">Reminder to dose, eat or exercise</string>
     <string name="notification_description">Notifies current glucose value</string>
+    <string name="notification_live_update_toggle">Android Live Update</string>
+    <string name="notification_metric_style_toggle">MetricStyle notification (Android 17+)</string>
     <string name="ongoing_description">Ongoing program</string>
     <string name="scan_permission">Permission</string>
     <string name="scanname">Scan</string>
