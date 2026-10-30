@@ -74,6 +74,11 @@ internal fun buildDisplayHistoryForPrediction(
         // in whichever lane it was recorded, as the main line does.
         val sealed = if (useCalibration) {
             point.sealedDisplayValue?.takeIf { it.isFinite() && it > 0.1f }
+                ?.takeIf {
+                    tk.glucodata.chart.HistoryChartModelBuilder.recordAppliesToLane(
+                        point.sealedDisplayViewMode, useRaw
+                    )
+                }
         } else {
             null
         }
