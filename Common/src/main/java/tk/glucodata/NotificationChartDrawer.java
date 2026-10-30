@@ -1158,7 +1158,10 @@ public class NotificationChartDrawer {
             GlucosePoint p,
             boolean isRawMode,
             String calibrationSensorId) {
-        Float sealed = tk.glucodata.chart.HistoryChartModelBuilder.INSTANCE.recordedMainValue(p);
+        Float sealed = !Float.isNaN(p.sealedDisplayValue) && p.sealedDisplayValue > 0.1f
+                && tk.glucodata.chart.HistoryChartModelBuilder.INSTANCE.recordAppliesToLane(
+                        p.sealedDisplayViewMode, isRawMode)
+                ? p.sealedDisplayValue : null;
         if (sealed != null) return sealed;
         float baseVal = isRawMode ? p.rawValue : p.value;
         if (baseVal <= 0f) return 0f;
@@ -2419,6 +2422,12 @@ public class NotificationChartDrawer {
             }
 
             cal.add(Calendar.HOUR_OF_DAY, 1);
+        }
+
+        int widgetPlotSave = 0;
+        if (widgetAxes) {
+            widgetPlotSave = canvas.save();
+            canvas.clipRect(chartLeft, chartTop, chartRight, chartBottom);
         }
 
         if (ribbonEnabled) {
