@@ -611,8 +611,7 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/calibrations") },
                     icon = Icons.Default.WaterDrop,
                     iconTint = everydayColor,
-                    position = CardPosition.SINGLE,
-                    onClick = { navController.navigate("settings/widgets") }
+                    position = CardPosition.SINGLE
                 )
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.journal_title),
@@ -725,7 +724,6 @@ fun ExpressiveSettingsScreen(
                 )
                 }
             }
-        }
 
         // === SHARING === apps on this phone first, then the network
         item(key = "sharing_label") { SectionLabel(stringResource(R.string.settings_section_sharing)) }
@@ -952,12 +950,10 @@ fun ExpressiveSettingsScreen(
                     onClick = { showSealGraceDialog = true },
                     icon = Icons.Default.Lock,
                     iconTint = advancedColor,
-                    position = CardPosition.SINGLE,
-                    onOpen = { navController.navigate("settings/app-updates") }
+                    position = CardPosition.SINGLE
                 )
                 }
             }
-        }
 
         // === DANGER ===
         item(key = "danger_label") { SectionLabel(stringResource(R.string.danger_zone), isError = true) }
@@ -1067,7 +1063,6 @@ fun ExpressiveSettingsScreen(
         }
             }
         }
-    }
 
     // Dialogs
     if (showSealGraceDialog) {
