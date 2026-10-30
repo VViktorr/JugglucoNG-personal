@@ -427,6 +427,8 @@
     <string name="chart_short_title">Wykres</string>
     <string name="target_range_title">Zakres docelowy</string>
     <string name="chart_limits_title">Zakres wykresu</string>
+    <string name="chart_scale_limits_title">Limity skali wykresu</string>
+    <string name="chart_scale_limits_description">Najniższa i najwyższa rysowana wartość, także przy automatycznej skali. Przesuwaj pionowo po wartościach z lewej strony, aby zmienić skalę.</string>
     <string name="dashboard_range_hours">%1$dH</string>
     <string name="dashboard_range_days">%1$dD</string>
     <string name="sensor_age_hours_compact">%1$dh</string>
