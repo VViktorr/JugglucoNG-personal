@@ -76,7 +76,7 @@ internal fun buildDisplayHistoryForPrediction(
             point.sealedDisplayValue?.takeIf { it.isFinite() && it > 0.1f }
                 ?.takeIf {
                     tk.glucodata.chart.HistoryChartModelBuilder.recordAppliesToLane(
-                        point.sealedDisplayViewMode, useRaw
+                        point.sealedDisplayViewMode ?: -1, useRaw
                     )
                 }
         } else {
