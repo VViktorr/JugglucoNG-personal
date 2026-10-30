@@ -15,13 +15,7 @@ Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap 
 >
 > JugglucoNG may contain bugs and may display incorrect, delayed, or missing data. Do not rely on it as the sole basis for treatment, insulin dosing, diagnosis, or other medical decisions. Always verify clinically significant readings using the manufacturer's official system or another appropriate method.
 
-## Download
 
-<!-- download-info:start -->
-[![Download JugglucoNG 1.2.5-Alpha for Android](docs/assets/download-android.svg?version=1.2.5-Alpha)][download-phone] [![Nightly builds](docs/assets/download-nightly.svg)](https://github.com/ctqvva/JugglucoNG/releases?q=nightly-&expanded=true)
-<!-- download-info:end -->
-
-<sub>Android 8.0 or newer · [Release notes][download-release] · [Wear OS][download-wear] · [Phone DUB][download-phone-dub] · [Wear OS DUB][download-wear-dub]</sub>
 
 <details>
 <summary>Installation and other versions</summary>
