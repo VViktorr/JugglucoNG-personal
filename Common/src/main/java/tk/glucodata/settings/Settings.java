@@ -1410,8 +1410,9 @@ private    void mksettings(MainActivity context) {
                 if (floating != null) floating.show(context,thelayout[0]); });
 
         View[] rowglu=new View[]{floatconfig,calibration,glucosenotify};
-        View[] notificationStyleRow = new View[]{liveUpdateToggle, metricStyleToggle};
-        views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,notificationStyleRow,new View[]{exchanges,numalarm,alarmbut},numdis, row9};
+        views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,
+                new View[]{liveUpdateToggle}, new View[]{metricStyleToggle},
+                new View[]{exchanges,numalarm,alarmbut},numdis, row9};
         }
 
     help.setFocusableInTouchMode(true);
