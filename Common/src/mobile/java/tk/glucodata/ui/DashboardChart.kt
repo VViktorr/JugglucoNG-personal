@@ -2953,14 +2953,6 @@ fun InteractiveGlucoseChart(
                                     formatDate.format(reusableDate)
                                 }
                                 axisLabel = dateLabel
-                                xTextPaint.typeface = graphFontBold
-                                val halfDateLabel = xTextPaint.measureText(dateLabel) / 2f
-                                if (x - halfDateLabel >= 0f && x + halfDateLabel <= width) {
-                                    drawContext.canvas.nativeCanvas.drawText(
-                                        dateLabel, x, contentHeight - labelsLiftPx - 25f, xTextPaint
-                                    )
-                                }
-                                xTextPaint.typeface = graphFont
                             } else {
                                 // Time Line
                                 drawLine(gridColor, Offset(x, 0f), Offset(x, chartHeight), 1f)
