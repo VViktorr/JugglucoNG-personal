@@ -34,7 +34,7 @@ internal object SealedGlucoseValue {
         point.sealedDisplayValue?.takeIf { it.isFinite() && it > 0.1f }
             ?.takeIf {
                 tk.glucodata.chart.HistoryChartModelBuilder.recordAppliesToLane(
-                    point.sealedDisplayViewMode, isRawMode
+                    point.sealedDisplayViewMode ?: -1, isRawMode
                 )
             }
             ?.let { return it }
