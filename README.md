@@ -85,10 +85,6 @@ The app is localized into 15 languages; new user-facing strings go into `Common/
 
 Build helpers live in [scripts/](scripts/README.md), developer tools in `tools/`, and documentation images in `docs/assets/`. Historical root files are preserved in [tools/archive/root-cleanup/](tools/archive/root-cleanup/README.md).
 
-## Version history
-
-This fork can differ from upstream JugglucoNG. Check this repository's commit history and any releases published here for changes specific to this version. For the upstream project's release notes, see the [JugglucoNG Releases page](https://github.com/ctqvva/JugglucoNG/releases).
-
 ## License and credits
 
 GPL-3.0 (see [LICENSE.txt](LICENSE.txt)). This repository is a derivative work based on [JugglucoNG](https://github.com/ctqvva/JugglucoNG), developed by ctqvva with contributions from the community. JugglucoNG itself originated as a fork of [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap Korthals Altes. The original projects, authors, and contributors retain their respective credits and copyrights.
