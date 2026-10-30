@@ -83,7 +83,7 @@ object CurrentDisplaySource {
 
     /** Whether [points] holds a reading no older than [maxAgeMs] at [nowMs]. */
     internal fun hasReadingWithin(points: List<GlucosePoint>, nowMs: Long, maxAgeMs: Long): Boolean =
-        points.any { nowMs - it.timestamp <= maxAgeMs }
+        points.any { (nowMs - it.timestamp) in 0L..maxAgeMs }
 
     /**
      * The current reading as measured. A fingerstick is paired with this, never with a smoothed
@@ -129,6 +129,13 @@ object CurrentDisplaySource {
         // a point only that longer window reaches must not become the current value; within
         // [historyWindowMs] the last reading is shown as before, whatever the smoothing.
         if (current == null && !hasReadingWithin(recentPoints, now, historyWindowMs)) return null
+        // History can outlive the live-reading timeout. Do not resurrect a stale chart point as
+        // the current value, and never accept timestamps from the future as fresh glucose.
+        val latestHistoryTime = recentPoints.lastOrNull()?.timestamp ?: 0L
+        if (current == null && (latestHistoryTime <= 0L ||
+                now - latestHistoryTime < 0L || now - latestHistoryTime > maxAgeMillis)) {
+            return null
+        }
         val viewMode = resolveSensorViewMode(resolvedSensorId)
         return resolveSnapshot(
             current = current,
@@ -141,7 +148,7 @@ object CurrentDisplaySource {
         )?.takeIf {
             // Smoothing/chunk collapsing can select an older history timestamp.
             // Validate the value actually displayed, not just the live input.
-            it.timeMillis > 0L && kotlin.math.abs(now - it.timeMillis) <= maxAgeMillis
+            it.timeMillis > 0L && now - it.timeMillis >= 0L && now - it.timeMillis <= maxAgeMillis
         }
     }
 
