@@ -1927,7 +1927,7 @@ fun DashboardScreen(
                             // behind the hero above and the readings below, and those cards
                             // have to land on top of it, not under it.
                             .zIndex(-1f)
-                            .padding(horizontal = animatedChartHorizontalPadding.coerceAtLeast(0.dp))
+                            .padding(horizontal = chartHorizontalPadding.coerceAtLeast(0.dp))
                     ) {
                         Box(
                             modifier = Modifier
