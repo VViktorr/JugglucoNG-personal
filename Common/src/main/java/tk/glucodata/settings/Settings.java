@@ -1377,13 +1377,6 @@ private    void mksettings(MainActivity context) {
 
       final android.content.SharedPreferences notificationPreferences = context.getSharedPreferences(
               "tk.glucodata_preferences", Context.MODE_PRIVATE);
-      CheckBox liveUpdateToggle = new CheckBox(context);
-      liveUpdateToggle.setText(R.string.notification_live_update_toggle);
-      liveUpdateToggle.setChecked(notificationPreferences.getBoolean( tk.glucodata.GlucoseLiveUpdate.PREFERENCE, false));
-      liveUpdateToggle.setVisibility(Build.VERSION.SDK_INT >= 36 ? VISIBLE : GONE);
-      liveUpdateToggle.setOnCheckedChangeListener((buttonView, isChecked) ->
-              notificationPreferences.edit().putBoolean(tk.glucodata.GlucoseLiveUpdate.PREFERENCE, isChecked).apply());
-
       CheckBox metricStyleToggle = new CheckBox(context);
       metricStyleToggle.setText(R.string.notification_metric_style_toggle);
       metricStyleToggle.setChecked(notificationPreferences.getBoolean(
@@ -1412,7 +1405,7 @@ private    void mksettings(MainActivity context) {
 
         View[] rowglu=new View[]{floatconfig,calibration,glucosenotify};
         views=new View[][]{row0, hasnfc?new View[]{nfcsound, globalscan,camera}:null,rowglu,
-                new View[]{liveUpdateToggle}, new View[]{metricStyleToggle},
+                new View[]{metricStyleToggle},
                 new View[]{exchanges,numalarm,alarmbut},numdis, row9};
         }
 
