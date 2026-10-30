@@ -4281,17 +4281,24 @@ public class Notify {
 
         // The system Live Update template cannot contain custom RemoteViews.
         // Return before chart/peer rendering, using the same resolved primary reading.
-        final boolean liveUpdateEnabled = Applic.app
-                .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+        final android.content.SharedPreferences notificationPreferences = Applic.app
+                .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
+        final boolean liveUpdateEnabled = notificationPreferences
                 .getBoolean(GlucoseLiveUpdate.PREFERENCE, false);
-        if (GlucoseLiveUpdatePolicy.canUse(liveUpdateEnabled, Build.VERSION.SDK_INT,
+        final boolean metricStyleEnabled = Build.VERSION.SDK_INT >= 37
+                && notificationPreferences.getBoolean(GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, false);
+        // MetricStyle is independent and can use a standard notification without requesting
+        // Live Update promotion when the Live Update switch is disabled.
+        if ((liveUpdateEnabled || metricStyleEnabled)
+                && GlucoseLiveUpdatePolicy.canUse(true, Build.VERSION.SDK_INT,
                 isWearable, customPhone, displayGlucoseValue,
                 fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L,
                 System.currentTimeMillis(), glucosetimeout)) {
-            final Notification live = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
-                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate);
-            if (live != null) {
-                return new GlucoseNotificationContent(live, fallbackDisplay);
+            final Notification styled = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
+                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate,
+                    liveUpdateEnabled, metricStyleEnabled);
+            if (styled != null) {
+                return new GlucoseNotificationContent(styled, fallbackDisplay);
             }
         }
 
