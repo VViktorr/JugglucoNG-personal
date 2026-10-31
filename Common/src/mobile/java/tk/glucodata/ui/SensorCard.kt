@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import android.text.format.DateUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1289,7 +1291,7 @@ fun SensorCard(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
-                        Slider(
+                        AppSlider(
                             value = sensitivityDraft,
                             onValueChange = {
                                 sensitivityDraft = (it * 100f).roundToInt() / 100f
