@@ -29,7 +29,7 @@ The custom work in this repository is focused mainly on the Libre 2 Bluetooth co
 
 These changes are intended to improve recovery from a connection that appears active but has stopped delivering complete glucose packets. They do not guarantee uninterrupted readings and have not been validated on every phone, Android version, or Libre 2 sensor. The regression test is a code-level simulation, not a substitute for testing with a physical sensor.
 
-The Libre 2 NFC reading and Abbott data-processing implementation remains based on the upstream code. The main Libre 2-specific work in this fork is around Bluetooth connection management, recovery, and diagnostics rather than a new sensor protocol implementation.
+The NFC sensor-reading and Abbott data-processing implementation remains based on the upstream code. This fork also keeps NFC trend backfill outside `polls.dat`, which remains the live BLE stream cursor, and exposes those samples through the history bridge. This prevents an NFC scan from advancing the BLE cursor and making later physical readings look like duplicates. The main Libre 2-specific work remains around Bluetooth connection management, recovery, history handling, and diagnostics rather than a new sensor protocol implementation.
 
 ## Sensor and data-source support
 
