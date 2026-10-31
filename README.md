@@ -4,6 +4,8 @@
 
 An experimental continuous glucose monitoring app for Android, based on [JugglucoNG](https://github.com/ctqvva/JugglucoNG).
 
+The initial version of this independent fork was based on **JugglucoNG 1.2.5**.
+
 **This repository is an independent personal fork of JugglucoNG.** It is not the official upstream project, and it is not an official release maintained or endorsed by the upstream maintainers. The upstream application is the foundation of this fork; most general app functionality, supported sensor integrations, and the user interface originate in JugglucoNG.
 
 The main purpose of this fork is to carry personal changes, with a particular focus on **FreeStyle Libre 2 Bluetooth connection reliability, recovery, and diagnostics**.
