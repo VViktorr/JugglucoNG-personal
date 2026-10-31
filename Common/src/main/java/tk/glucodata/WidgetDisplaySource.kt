@@ -52,9 +52,13 @@ object WidgetDisplaySource {
         val startTimeMs = (System.currentTimeMillis() - historyWindowMs).coerceAtLeast(0L)
         val isMmol = Applic.unit == 1
         val baseHistory = try {
-            // Keep the widget on the active sensor's display timeline. The native
-            // supplement below fills missing minutes without crossing handovers.
-            NotificationHistorySource.getDisplayHistory(
+            // On the phone, use the same merged multi-sensor timeline as the dashboard.
+            // Wear has no Room bridge and keeps the native per-sensor fallback.
+            HistoryRepositoryAccess.getMergedDisplayHistoryForWidget(
+                activeSensorSerial,
+                startTimeMs,
+                isMmol
+            ) ?: NotificationHistorySource.getDisplayHistory(
                 startTimeMs,
                 isMmol,
                 activeSensorSerial

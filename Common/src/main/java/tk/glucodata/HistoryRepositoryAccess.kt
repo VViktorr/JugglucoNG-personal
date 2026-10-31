@@ -167,4 +167,15 @@ object HistoryRepositoryAccess {
             .onFailure { Log.stack(TAG, "getHistoryForSensor failed", it) }
             .getOrNull()
     }
+
+    /** The phone widget should use the same merged multi-sensor timeline as the dashboard chart. */
+    @JvmStatic
+    fun getMergedDisplayHistoryForWidget(
+        preferredSerial: String?,
+        startTimeMs: Long,
+        isMmol: Boolean,
+    ): List<GlucosePoint>? =
+        runCatching { bridge?.getMergedDisplayHistoryForWidget(preferredSerial, startTimeMs, isMmol) }
+            .onFailure { Log.stack(TAG, "getMergedDisplayHistoryForWidget failed", it) }
+            .getOrNull()
 }

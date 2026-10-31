@@ -3,6 +3,8 @@ package tk.glucodata.data
 import tk.glucodata.GlucosePoint
 import tk.glucodata.HistoryRepositoryBridge
 import tk.glucodata.chart.MainSensorOwnership
+import tk.glucodata.ui.util.inDisplayUnit
+import tk.glucodata.ui.util.toSharedGlucosePoint
 
 /**
  * Phone implementation of [HistoryRepositoryBridge] (plan P1/Q1). Delegates to
@@ -89,4 +91,20 @@ object MobileHistoryRepositoryBridge : HistoryRepositoryBridge {
         startTimeMs: Long,
         isMmol: Boolean,
     ): List<GlucosePoint> = HistoryRepository.getHistoryForNotificationForSensor(sensorSerial, startTimeMs, isMmol)
+
+    override fun getMergedDisplayHistoryForWidget(
+        preferredSerial: String?,
+        startTimeMs: Long,
+        isMmol: Boolean,
+    ): List<GlucosePoint> = kotlinx.coroutines.runBlocking {
+        HistoryRepository()
+            .loadMergedWindow(
+                preferredSerial = preferredSerial,
+                startTime = startTimeMs,
+                endTime = System.currentTimeMillis(),
+                allowProvisional = false,
+            )
+            .inDisplayUnit(isMmol)
+            .map { it.toSharedGlucosePoint() }
+    }
 }

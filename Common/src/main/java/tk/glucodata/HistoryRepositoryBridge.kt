@@ -77,4 +77,11 @@ interface HistoryRepositoryBridge {
         startTimeMs: Long,
         isMmol: Boolean,
     ): List<GlucosePoint>?
+
+    /** Merged Room/display history used by phone home-screen widgets across sensor handovers. */
+    fun getMergedDisplayHistoryForWidget(
+        preferredSerial: String?,
+        startTimeMs: Long,
+        isMmol: Boolean,
+    ): List<GlucosePoint>?
 }
