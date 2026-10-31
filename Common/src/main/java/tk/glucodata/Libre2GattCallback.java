@@ -95,6 +95,12 @@ public class Libre2GattCallback extends SuperGattCallback {
         libre2Diag(stage, mBluetoothGatt, "oldDataptr=0x" + Long.toHexString(previousDataptr));
     }
 
+    synchronized void diagnoseResetContext(String stage, long previousDataptr, String extra) {
+        libre2Diag(stage, mBluetoothGatt, "oldDataptr=0x" + Long.toHexString(previousDataptr)
+                + " activeAddress=" + mActiveDeviceAddress
+                + (extra == null ? "" : " " + extra));
+    }
+
     @SuppressLint("MissingPermission")
     private String bluetoothAdapterState() {
         try {
