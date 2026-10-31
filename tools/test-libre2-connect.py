@@ -94,6 +94,7 @@ class SuperGattCallback {
         static void i(String a,String b){} static void d(String a,String b){} static void e(String a,String b){}
         static void stack(String a,String b,Throwable t){throw new AssertionError(b,t);}
     }
+    static class BluetoothAdapter { static BluetoothAdapter getDefaultAdapter(){return new BluetoothAdapter();} int getState(){return 12;} }
     static class BluetoothGatt {
         int closed, disconnected, discoveries, writes; boolean discoverySucceeds=true;
         void disconnect(){disconnected++;} void close(){closed++;}
@@ -173,6 +174,8 @@ class SuperGattCallback {
 java += field(base, 'private final GattConnectDeadline<BluetoothGatt> connectDeadline', '}, this::connectionAttemptExpired);')
 java += '\n' + base_methods + '\n}\nclass Libre2GattCallback extends SuperGattCallback {\n'
 java += field(libre, 'private final GattConnectDeadline<BluetoothGatt> disconnectDeadline', '}, this::retryAfterDisconnect);')
+java += libre[libre.index('    private long diagAttempt;'):libre.index('    private void libre2Diag(')]
+java += method(libre, 'private String bluetoothAdapterState()')
 java += libre[libre.index('    private static final long GATT_WATCHDOG_MS'):libre.index('    private boolean canRecoverLocally()')]
 java += r'''
     BluetoothGatt disconnectingGatt;
