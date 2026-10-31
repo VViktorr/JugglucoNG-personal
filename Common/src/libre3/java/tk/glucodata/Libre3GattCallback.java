@@ -248,7 +248,7 @@ private boolean connected=false;
 
         @Override // android.bluetooth.BluetoothGattCallback
         public synchronized void onReadRemoteRssi(BluetoothGatt bluetoothGatt, int rssi, int status) {
-        if (!acceptGattCallback(bluetoothGatt)) return;
+            if (!acceptGattCallback(bluetoothGatt)) return;
             if (status != GATT_SUCCESS) {
                 Log.e(LOG_ID, SerialNumber + ": "+ "Error reading RSSI, error " + status);
                 rssi = 999;
