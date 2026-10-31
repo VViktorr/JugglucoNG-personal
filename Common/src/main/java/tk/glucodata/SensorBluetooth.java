@@ -1864,11 +1864,18 @@ public class SensorBluetooth {
                     ;
                 }
                 ;
+                final long oldDataptr = cb.dataptr;
+                if (cb instanceof Libre2GattCallback)
+                    ((Libre2GattCallback) cb).diagnoseReset("nfc-reset-begin", oldDataptr);
                 cb.resetdataptr();
+                if (cb instanceof Libre2GattCallback)
+                    ((Libre2GattCallback) cb).diagnoseReset("nfc-reset-dataptr", oldDataptr);
                 cb.sensorstartmsec = Natives.getSensorStartmsec(cb.dataptr);
                 cb.setPause(false);
                 // NFC created a separate stream wrapper for the same native record.
                 Natives.freedataptr(streamptr);
+                if (cb instanceof Libre2GattCallback)
+                    ((Libre2GattCallback) cb).diagnoseReset("nfc-reset-connect", oldDataptr);
                 return checkandconnect(cb, 0);
             }
         }
@@ -1898,7 +1905,12 @@ public class SensorBluetooth {
                 }
                 ;
                 SuperGattCallback cb = gattcallbacks.get(i);
+                final long oldDataptr = cb.dataptr;
+                if (cb instanceof Libre2GattCallback)
+                    ((Libre2GattCallback) cb).diagnoseReset("manual-reset-begin", oldDataptr);
                 ptrptr[0] = cb.resetdataptr();
+                if (cb instanceof Libre2GattCallback)
+                    ((Libre2GattCallback) cb).diagnoseReset("manual-reset-connect", oldDataptr);
                 return checkandconnect(cb, 0);
             }
         }
