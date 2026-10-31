@@ -168,6 +168,7 @@ object HistoryRepositoryAccess {
             .getOrNull()
     }
 
+    /** The phone widget should use the same merged multi-sensor timeline as the dashboard chart. */
     @JvmStatic
     fun getMergedDisplayHistoryForWidget(
         preferredSerial: String?,
