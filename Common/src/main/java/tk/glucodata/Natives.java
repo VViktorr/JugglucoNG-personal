@@ -1225,6 +1225,8 @@ public class Natives {
         public static native int getLibreCountry();
 
         public static native void setLibreCountry(int val);
+        
+        public static native void resetLibre2ViewAuth();
 
         public static native void setinterval(int val);
 

@@ -904,6 +904,8 @@
     <string name="libreview_desc">Synchronizuj z Abbott LibreView</string>
     <string name="libreview_email">E-mail</string>
     <string name="libreview_get_account_id">Uzyskaj identyfikator konta</string>
+    <string name="libreview_reregister_libre2_device">Zarejestruj ponownie urządzenie Libre 2</string>
+    <string name="libreview_reregistering_libre2_device">Ponowna rejestracja urządzenia Libre 2…</string>
     <string name="libreview_is_viewed">Oznacz jako obejrzane</string>
     <string name="libreview_password">Hasło</string>
     <string name="libreview_resend">Wyślij ponownie dane</string>

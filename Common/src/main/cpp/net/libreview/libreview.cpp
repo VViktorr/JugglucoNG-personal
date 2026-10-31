@@ -1449,6 +1449,16 @@ void startlibrethread() {
     libre.detach();
   }
 }
+extern "C" JNIEXPORT void JNICALL fromjava(resetLibre2ViewAuth)(JNIEnv *env,
+                                                                 jclass cl) {
+  settings->data()->libreinit = false;
+  if (sensors) sensors->onallsensors([](SensorGlucoseData *sensor) {
+    if (sensor->isLibre2()) sensor->getinfo()->putsensor = false;
+  });
+  alwaysnewstatus = true;
+  startlibrethread();
+  librecondition.wakebackup(Backup::wakeall);
+}
 void endlibrethread() {
   if (libreviewrunning) {
     librecondition.wakebackup(Backup::wakeend);

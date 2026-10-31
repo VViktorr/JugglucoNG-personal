@@ -94,6 +94,23 @@ import static tk.glucodata.util.getlocale;
 
 public class Libreview  {
    private static final String LOG_ID="Libreview";
+   private static final String LIBRE2_FORCE_REGISTER_PREFS = "libreview_force_register";
+   private static final String LIBRE2_FORCE_REGISTER_KEY = "once";
+   private static boolean forceLibre2RegistrationRequested() {
+      return Applic.app != null && Applic.app.getSharedPreferences(LIBRE2_FORCE_REGISTER_PREFS, Context.MODE_PRIVATE)
+            .getBoolean(LIBRE2_FORCE_REGISTER_KEY, false);
+   }
+   private static void clearForcedLibre2Registration() {
+      if (Applic.app != null) Applic.app.getSharedPreferences(LIBRE2_FORCE_REGISTER_PREFS, Context.MODE_PRIVATE)
+            .edit().remove(LIBRE2_FORCE_REGISTER_KEY).apply();
+   }
+   public static void requestLibre2DeviceReregistration() {
+      if (Applic.app == null) return;
+      Applic.app.getSharedPreferences(LIBRE2_FORCE_REGISTER_PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(LIBRE2_FORCE_REGISTER_KEY, true).apply();
+      Natives.resetLibre2ViewAuth();
+   }
+
 private static String getputtext(String sensorid,String usertoken,String gateway) {
  return "{\"DomainData\":\"{\\\"activeSensor\\\":\\\""+sensorid+"\\\"}\",\"UserToken\":\""+usertoken +"\",\"Domain\":\"Libreview\",\"GatewayType\":\""+gateway+"\"}";
  }
@@ -236,7 +253,8 @@ static boolean postgetauth(boolean libre3) {
    var loc= Locale.getDefault();
    String language=loc.getLanguage()+'-'+loc.getCountry();
    String culture=language;
-   String setdevice="false";
+   final boolean forceLibre2Registration = !libre3 && forceLibre2RegistrationRequested();
+   String setdevice=forceLibre2Registration ? "true" : "false";
    while(true) {
       try {
       final String baseurl=getlibrebaseurl(libre3);
@@ -336,6 +354,7 @@ static boolean postgetauth(boolean libre3) {
          Natives.setlibreUserToken(libre3,usertoken);
          String accountid=result.getString("AccountId");
          setlibreAccountID(accountid);
+         if (forceLibre2Registration) clearForcedLibre2Registration();
          librestatus="Received AccountID";
          if(libre3) {//TODO enkel als send to libreview aanstaat?
             String DateOfBirth=result.getString("DateOfBirth");

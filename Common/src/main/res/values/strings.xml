@@ -673,6 +673,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="libreview_resend">Resend data</string>
     <string name="libreview_account_id">Account ID</string>
     <string name="libreview_get_account_id">Get account ID</string>
+    <string name="libreview_reregister_libre2_device">Re-register Libre 2 device</string>
+    <string name="libreview_reregistering_libre2_device">Re-registering Libre 2 device…</string>
     <string name="libreview_status">Status</string>
     <string name="libreview_russia">Russia region</string>
     
