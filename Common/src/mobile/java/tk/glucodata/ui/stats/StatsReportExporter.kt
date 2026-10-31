@@ -34,6 +34,7 @@ object StatsReportExporter {
         val prefValue: String,
         @StringRes val labelResId: Int
     ) {
+        LIBREVIEW_STYLE("libreview_style", R.string.report_style_libreviev),
         CURRENT("current", R.string.report_style_current),
         LIBREVIEW_STYLE("libreview_style", R.string.report_style_libreviev),
         MINIMAL_SWISS("minimal_swiss", R.string.report_style_minimal_swiss),
@@ -93,6 +94,12 @@ object StatsReportExporter {
     fun swatch(style: PdfVisualStyle): PdfStyleSwatch =
         resolveVisualTheme(style).let { PdfStyleSwatch(it.paper, it.text, it.primary, it.secondary) }
 
+        PdfVisualStyle.LIBREVIEW_STYLE -> resolveVisualTheme(PdfVisualStyle.MINIMAL_SWISS).copy(
+            paper = android.graphics.Color.WHITE,
+            primary = android.graphics.Color.rgb(0, 103, 166),
+            secondary = android.graphics.Color.BLACK,
+            showSideStripe = false
+        )
     private fun resolveVisualTheme(style: PdfVisualStyle): PdfVisualTheme = when (style) {
         PdfVisualStyle.LIBREVIEW_STYLE -> resolveVisualTheme(PdfVisualStyle.MINIMAL_SWISS).copy(
             paper = android.graphics.Color.WHITE,
