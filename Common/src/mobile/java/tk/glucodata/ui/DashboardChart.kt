@@ -2921,7 +2921,8 @@ fun InteractiveGlucoseChart(
                 // Intervals: 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 24h
                 // Pick interval keeping labels ~120px apart
                 val pxPerMs = width / animDur
-                val minMs = (120f / pxPerMs).toLong()
+                val timeLabelSpacing = maxOf(64.dp.toPx(), xTextPaint.measureText("23:59") + 24.dp.toPx())
+                val minMs = (timeLabelSpacing / pxPerMs).toLong()
                 val gridInterval = gridIntervals.firstOrNull { it >= minMs } ?: gridIntervals.last()
 
                 // Align t to timezone day boundary
