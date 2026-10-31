@@ -2040,7 +2040,13 @@ uint32_t getlastpolltime() const {
       int count = pollcount() - 1;
       int previd = polls[count].id;
       if (previd >= id) {
-        LOGGER("GLU: duplicate id: previd=%d id=%d\n", previd, id);
+            const uint32_t prevt=polls[count].t;
+            LOGGER(
+                "GLU_CURSOR duplicate incoming{id=%d time=%lu glu=%d} "
+                "previous{pos=%d id=%d time=%u} pollcount=%u "
+                "pollinterval=%.3f\n",
+                id, static_cast<unsigned long>(tim), glu, count, previd, prevt,
+                getinfo()->pollcount, getinfo()->pollinterval);
         return false;
       }
       uint32_t prevt = polls[count].t;

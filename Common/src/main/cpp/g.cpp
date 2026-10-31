@@ -2160,36 +2160,72 @@ static void appendPollHistory(const SensorGlucoseData *hist, jlong starttime,
   }
 }
 
+static bool plausibleNfcTrendRaw(uint16_t raw) {
+  // Same plausibility window used by Glucose::valid()/the old saveScanTrend().
+  return raw > 380 && raw < 5020;
+}
+
 static void appendScanHistory(const SensorGlucoseData *hist, jlong starttime,
                               HistorySamples &samples) {
   const auto scans = hist->getScandata();
   const bool libreLanes = hasLibreHistoryLane(hist);
-  for (const auto &item : scans) {
-    if (!item.valid() || item.t <= starttime)
+  const bool includeNfcTrend = hist->isLibre2();
+  constexpr int nfcTrendCount = 16;
+
+  for (size_t scanIndex = 0; scanIndex < scans.size(); ++scanIndex) {
+    const auto &item = scans[scanIndex];
+    if (!item.valid())
       continue;
 
-    const double cali = calibrateNow(hist, item);
-    const jlong valAuto = !isnan(cali) ? (jlong)(cali * 10) : (jlong)item.g * 10;
+    if (item.t > starttime) {
+      const double cali = calibrateNow(hist, item);
+      const jlong valAuto = !isnan(cali) ? (jlong)(cali * 10) : (jlong)item.g * 10;
 
-    // Scans have no dedicated raw lane like rawpolls.dat. Assignment is
-    // intentional: a scan is a newer source than the periodic history point.
-    // Libre 1/2: Room keeps one row per clock minute, so a history value
-    // appendStoredHistory left in the scan's minute rides on the scan row,
-    // or Room would keep one of the two and lose the other lane.
-    jlong valRaw = 0;
-    if (libreLanes) {
-      const jlong minuteStart = (jlong)(item.t / 60) * 60;
-      for (auto it = samples.lower_bound(minuteStart);
-           it != samples.end() && it->first < minuteStart + 60;) {
-        if (it->second.second > 0) {
-          valRaw = it->second.second;
-          it = samples.erase(it);
-        } else {
-          ++it;
+      // Preserve a raw value already paired with this scan's minute.
+      jlong valRaw = 0;
+      if (libreLanes) {
+        const jlong minuteStart = (jlong)(item.t / 60) * 60;
+        for (auto it = samples.lower_bound(minuteStart);
+             it != samples.end() && it->first < minuteStart + 60;) {
+          if (it->second.second > 0) {
+            valRaw = it->second.second;
+            it = samples.erase(it);
+          } else {
+            ++it;
+          }
         }
       }
+      samples[item.t] = {valAuto, valRaw};
     }
-    samples[item.t] = {valAuto, valRaw};
+
+    if (!includeNfcTrend)
+      continue;
+
+    /*
+     * Libre 2 NFC stores the preceding 16 one-minute raw samples in trends.dat.
+     * Export the first 15 directly to Room history instead of appending them to
+     * polls.dat. polls.dat is the live BLE stream cursor; scan-ahead ids there
+     * can make subsequent physical readings look like duplicates.
+     */
+    const auto &trendValues = hist->gettrendsbuf(static_cast<int>(scanIndex));
+    for (int i = 0; i < nfcTrendCount - 1; ++i) {
+      const uint16_t raw = trendValues[i];
+      if (!plausibleNfcTrendRaw(raw))
+        continue;
+
+      const int minutesBack = nfcTrendCount - 1 - i;
+      const uint32_t secondsBack = static_cast<uint32_t>(minutesBack * 60);
+      if (item.t <= secondsBack)
+        continue;
+
+      const jlong trendTime = static_cast<jlong>(item.t - secondsBack);
+      if (trendTime <= starttime)
+        continue;
+
+      // trends.dat and HistorySamples both use mg/dL x 10. BLE polls are
+      // appended afterwards and therefore retain priority on timestamp clashes.
+      samples[trendTime].second = static_cast<jlong>(raw);
+    }
   }
 }
 
