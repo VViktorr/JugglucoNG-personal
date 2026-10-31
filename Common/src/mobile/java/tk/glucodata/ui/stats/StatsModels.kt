@@ -419,5 +419,7 @@ data class StatsUiState(
     val hasSensor: Boolean = true,
     val summary: StatsSummary = StatsSummary(),
     val temperaturePoints: List<TemperaturePoint> = emptyList(),
-    val readings: List<GlucosePoint> = emptyList()
+    val readings: List<GlucosePoint> = emptyList(),
+    val reportCalendarReadings: List<GlucosePoint> = emptyList(),
+    val reportPersonalTargets: StatsTargets? = null
 )
