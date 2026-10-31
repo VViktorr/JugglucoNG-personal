@@ -61,6 +61,8 @@
  <string name="addconnectionbutton">Dodaj połączenie</string>
  <string name="offtouch">Wył. dotyk</string>
  <string name="glucosestatusbar">Wartość glikemii w pasku stanu</string>
+ <string name="notification_metric_style_toggle">Powiadomienie MetricStyle (Android 17+)</string>
+ <string name="notification_metric_style_glucose">Glukoza</string>
  <string name="lowglucosealarm">Alarm dla hipoglikemii</string>
  <string name="numlabel">&quot;Etykieta: &quot;</string>
  <string name="roundto">Zaokrąglaj do: &quot;</string>

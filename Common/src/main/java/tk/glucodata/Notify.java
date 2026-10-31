@@ -4551,7 +4551,24 @@ public class Notify {
 
         GluNotBuilder.setVisibility(VISIBILITY_PUBLIC);
 
-        if (customPhone) {
+        final long metricNow = System.currentTimeMillis();
+        final long metricReadingTime = fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L;
+        final boolean metricStyleRequested = customPhone && Build.VERSION.SDK_INT >= 37
+                && prefs.getBoolean(GlucoseMetricStyle.PREFERENCE, false)
+                && Float.isFinite(displayGlucoseValue) && displayGlucoseValue > 0f
+                && metricReadingTime > 0L && metricReadingTime <= metricNow
+                && glucosetimeout > 0L && metricNow - metricReadingTime <= glucosetimeout;
+        final boolean metricStyleApplied = metricStyleRequested
+                && GlucoseMetricStyle.apply(GluNotBuilder, app, displayGlucoseValue, isMmol);
+
+        if (metricStyleApplied) {
+            final CharSequence fallbackMetricText = valueText != null && valueText.length() > 0
+                    ? valueText.toString() + " " + app.getString(isMmol ? R.string.mmolL : R.string.mgdL)
+                    : message;
+            GluNotBuilder.setContentTitle(standardTitle != null
+                    ? standardTitle : app.getString(R.string.notification_metric_style_glucose));
+            GluNotBuilder.setContentText(standardText != null ? standardText : fallbackMetricText);
+        } else if (customPhone) {
             CustomGlucoseNotification.apply(GluNotBuilder, standardTitle, standardText,
                     remoteViews, remoteViewsExpanded);
         } else {
@@ -4594,7 +4611,7 @@ public class Notify {
         if (customPhone) {
             try {
                 final NotificationFingerprint content = new NotificationFingerprint()
-                        .add(type).add(once).add(standardTitle).add(standardText)
+                        .add(type).add(once).add(metricStyleApplied).add(standardTitle).add(standardText)
                         .add(valueText).add(primaryDisplayColor).add(secondaryDisplayColor)
                         .add(tertiaryDisplayColor).add(rate).add(arrowColor).add(isMmol)
                         .add(newStatusText).add(shadeNight).add(displayGlucoseValue)

@@ -61,6 +61,8 @@
  <string name="addconnectionbutton">Add Connection</string>
  <string name="offtouch">Off Touch</string>
  <string name="glucosestatusbar">Glucose notification</string>
+ <string name="notification_metric_style_toggle">MetricStyle notification (Android 17+)</string>
+ <string name="notification_metric_style_glucose">Glucose</string>
  <string name="lowglucosealarm">Low glucose alarm</string>
  <string name="numlabel">"Label: "</string>
  <string name="roundto">"Round to: "</string>
