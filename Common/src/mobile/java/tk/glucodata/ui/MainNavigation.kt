@@ -316,6 +316,11 @@ private fun JournalRoute(
 ) {
     val glucoseHistory by dashboardViewModel.glucoseHistory.collectAsStateWithLifecycle()
     val timelineExtents by dashboardViewModel.timelineExtents.collectAsStateWithLifecycle()
+    // Refresh Health Connect activities whenever the journal route is entered.
+    // The import is asynchronous and deduplicates records by their Health Connect ID.
+    LaunchedEffect(dashboardViewModel) {
+        tk.glucodata.HealthConnectAccess.get()?.importActivity()
+    }
     // The ledger's readings come from bounded reads around the entries, not from
     // the loaded list; nothing else needs them, so they start with this screen.
     // Refresh Health Connect activities whenever the journal route is entered.
@@ -1042,6 +1047,7 @@ private fun NavGraphBuilder.appDestinations(
     composable("settings/turnserver") { tk.glucodata.ui.TurnServerSettingsScreen(navController) }
     composable("settings/debug") { DebugSettingsScreen(navController) }
     composable("settings/cgm-readiness") { CgmReadinessScreen(navController) }
+    composable("settings/widgets") { tk.glucodata.widgets.WidgetSettingsScreen(navController) }
     composable("settings/app-updates") { AppUpdatesScreen(navController) }
     composable("settings/alerts") { tk.glucodata.ui.alerts.AlertSettingsScreen(navController) }
     composable("settings/alerts/talker") { tk.glucodata.ui.alerts.TalkerSettingsScreen(navController) }
