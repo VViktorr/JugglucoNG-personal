@@ -87,6 +87,7 @@ class SuperGattCallback {
     static class SensorOwnershipRuntime { static boolean blocked; static boolean blocksLocalConnection(String s){return blocked;} }
     static class WearSensorClaim { static int releases; static void onLocalGattDisconnected(String s){releases++;} }
     static class Natives { static int resets; static void resetbluetooth(long ptr){resets++;} }
+    static final Applic app=Applic.app;
     static final String POWER_SERVICE="power";
     static class PowerManager {
         static final int PARTIAL_WAKE_LOCK=1;
