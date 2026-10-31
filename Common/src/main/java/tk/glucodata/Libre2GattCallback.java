@@ -537,6 +537,9 @@ private	void oldonCharacteristicChanged(byte[] value) {
 							if(res!=1L) {
 								handleGlucoseResult(res,timmsec);
 								}
+							else if(doLog) {
+								Log.i(LOG_ID, SerialNumber + " duplicate glucose frame; parser state advanced");
+								}
 							}
 						datatime=timmsec;
 						}
