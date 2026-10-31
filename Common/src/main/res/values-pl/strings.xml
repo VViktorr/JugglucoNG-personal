@@ -3200,4 +3200,10 @@
 <string name="widget_sensor_finished">Sensor zakończony</string>
 <string name="widget_graph_hours">Zakres wykresu</string>
 <string name="widget_text_size_value">Bazowy rozmiar tekstu: %1$d%%</string>
+<string name="dashboard_bars_stacked_desc">Czujnik u góry, glukoza poniżej.</string>
+<string name="dashboard_bars_ratio_title">Dostosuj proporcje belek</string>
+<string name="dashboard_bars_ratio_desc">Ustaw szerokość belki glukozy, gdy belki są obok siebie.</string>
+<string name="dashboard_bars_ratio_value">Glukoza %1$d%% · Czujnik %2$d%%</string>
+<string name="dashboard_bars_stacked_title">Belki czujnika i glukozy jedna pod drugą</string>
+<string name="dashboard_bars_section">Belki na stronie głównej</string>
 </resources>

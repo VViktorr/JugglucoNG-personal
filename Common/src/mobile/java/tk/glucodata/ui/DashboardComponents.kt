@@ -235,6 +235,9 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    sensorEndTimeMs: Long = 0L,
+    stackBars: Boolean = false,
+    glucoseWidthPercent: Int = 70,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -1068,36 +1071,43 @@ fun DashboardCombinedHeader(
                              }
                          }
                      }
+                    if (sensorEndTimeMs > 0L) {
+                        val expiryText = remember(sensorEndTimeMs) {
+                            java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(sensorEndTimeMs))
+                        }
+                        Text(
+                            text = expiryText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = sensorContentColor.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
     }
 
-    if (isLandscape) {
+    if (stackBars) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            heroCard(Modifier.fillMaxWidth())
             sensorCard(Modifier.fillMaxWidth())
+            heroCard(Modifier.fillMaxWidth())
         }
     } else {
+        val glucoseWeight = glucoseWidthPercent.coerceIn(40, 70) / 100f
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            heroCard(
-                Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight()
-            )
-            sensorCard(
-                Modifier
-                    .weight(0.3f)
-                    .fillMaxHeight()
-            )
+            heroCard(Modifier.weight(glucoseWeight).fillMaxHeight())
+            sensorCard(Modifier.weight(1f - glucoseWeight).fillMaxHeight())
         }
     }
 }
