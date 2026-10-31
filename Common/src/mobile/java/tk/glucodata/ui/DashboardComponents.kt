@@ -944,15 +944,6 @@ fun DashboardCombinedHeader(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
-                    // Quiet window: visible while it runs, so nobody forgets it.
-                    if (quietWindowUntilMs > 0L) {
-                        QuietWindowHeaderChip(
-                            untilMs = quietWindowUntilMs,
-                            onClick = onQuietWindowClick,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-
                     // 0. Signal quality (start) and how old the newest reading is (end).
                     // The noise indicator shows as before; only the reading-age
                     // counter is opt-in via Display → Dashboard readouts (off by
@@ -1112,6 +1103,13 @@ fun DashboardCombinedHeader(
             heroCard(Modifier.weight(glucoseWeight).fillMaxHeight())
             sensorCard(Modifier.weight(1f - glucoseWeight).fillMaxHeight())
         }
+    }
+    if (quietWindowUntilMs > 0L) {
+        QuietWindowHeaderChip(
+            untilMs = quietWindowUntilMs,
+            onClick = onQuietWindowClick,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
