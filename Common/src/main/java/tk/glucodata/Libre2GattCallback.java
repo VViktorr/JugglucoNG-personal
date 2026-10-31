@@ -1085,10 +1085,22 @@ public synchronized void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int stat
 
 @Override
 public boolean matchDeviceName(String deviceName,String address) {
-	if(deviceName==null||!deviceName.startsWith("ABBOTT")) {
+	if(deviceName==null) {
+		if(doLog) Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+                + " name=null accepted=false reason=no-name");
 		return false;
 		}
-	return SerialNumber.equals(deviceName.substring(6));
+	if(!deviceName.startsWith("ABBOTT")) {
+		if(doLog) Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+                + " name=" + deviceName + " accepted=false reason=name-prefix");
+		return false;
+		}
+	final String advertisedSerial=deviceName.substring(6);
+	final boolean accepted=SerialNumber.equals(advertisedSerial);
+	if(doLog) Log.i(LOG_ID, "LIBRE2_SCAN serial=" + SerialNumber + " address=" + address
+            + " name=" + deviceName + " advertisedSerial=" + advertisedSerial
+            + " accepted=" + accepted + " reason=" + (accepted ? "name-match" : "serial-mismatch"));
+	return accepted;
 	}
 @Override
 void free() {
