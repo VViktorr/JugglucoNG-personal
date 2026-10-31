@@ -544,8 +544,7 @@ private void onCharacteristicChanged33(BluetoothGatt gatt, BluetoothGattCharacte
          dodisconnect(mBluetoothGatt);
          disconnected(1042);
             }
-       if(wakelock!=null)
-        } finally {
+       } finally {
            Applic.releasewakelock(wakelock);
        }
     {if(doLog) {Log.i(LOG_ID, SerialNumber + ": "+"onCharacteristicChanged end");};};
