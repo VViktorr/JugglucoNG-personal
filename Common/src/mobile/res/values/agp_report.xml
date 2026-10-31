@@ -18,19 +18,19 @@
     <string name="lv_report_high" formatted="false">High</string>
     <string name="lv_report_low" formatted="false">Low</string>
     <string name="lv_report_very_low" formatted="false">Very low</string>
-    <string name="lv_report_profile" formatted="false">AMBULATORY GLUCOSE PROFILE (AGP)</string>
+    <string name="lv_report_profile" formatted="false">Ambulatory glucose profile (AGP)</string>
     <string name="lv_report_percentiles" formatted="false">Median (50%), 25-75% and 5-95% percentiles; 15-minute clock bins.</string>
-    <string name="lv_report_daily_profiles" formatted="false">DAILY GLUCOSE PROFILES</string>
+    <string name="lv_report_daily_profiles" formatted="false">Daily glucose profiles</string>
     <string name="lv_report_last_14" formatted="false">Up to 14 final calendar days of the selected period.</string>
     <string name="lv_report_footer" formatted="false">JugglucoNG | Report generated from recorded glucose and journal data.</string>
     <string name="lv_report_method" formatted="false">Range percentages: share of readings. Daily times: 24-hour equivalents. Gaps remain unfilled.</string>
-    <string name="lv_report_glucose" formatted="false">GLUCOSE</string>
+    <string name="lv_report_glucose" formatted="false">Glucose</string>
     <string name="lv_report_above" formatted="false">Above target</string>
     <string name="lv_report_below" formatted="false">Below target</string>
-    <string name="lv_report_low_events" formatted="false">LOW GLUCOSE EVENTS</string>
+    <string name="lv_report_low_events" formatted="false">Low glucose events</string>
     <string name="lv_report_event_count" formatted="false">Number of events</string>
     <string name="lv_report_median_duration" formatted="false">Median event duration</string>
-    <string name="lv_report_sensor_use" formatted="false">SENSOR USE</string>
+    <string name="lv_report_sensor_use" formatted="false">Sensor use</string>
     <string name="lv_report_days_with_data" formatted="false">Days with data</string>
     <string name="lv_report_journal" formatted="false">RECORDED CARBOHYDRATES AND INSULIN</string>
     <string name="lv_report_carbs" formatted="false">Recorded carbohydrates (g/day)</string>
@@ -40,4 +40,85 @@
     <string name="lv_report_journal_note_2" formatted="false">Daily amounts are totals divided by the selected period, not a treatment recommendation.</string>
     <string name="lv_report_two_hour" formatted="false">MEAN GLUCOSE IN TWO-HOUR BLOCKS</string>
     <string name="lv_report_recorded_trends" formatted="false">RECORDED DAILY AMOUNTS IN TWO-HOUR BLOCKS</string>
+    <string name="lv_group_insights" formatted="false">Glucose pattern insights</string>
+    <string name="lv_group_weekly" formatted="false">Weekly summary</string>
+    <string name="lv_group_monthly" formatted="false">Monthly summary</string>
+    <string name="lv_group_daily_log" formatted="false">Daily log</string>
+    <string name="lv_group_meals" formatted="false">Mealtime glucose patterns</string>
+    <string name="lv_group_device" formatted="false">Detailed device information</string>
+    <string name="lv_groups_title" formatted="false">PDF report groups</string>
+    <string name="lv_groups_all" formatted="false">Select all</string>
+    <string name="lv_groups_clear" formatted="false">Clear selection</string>
+    <string name="lv_groups_choose" formatted="false">Choose at least one report group.</string>
+    <string name="lv_groups_pdf_only" formatted="false">PDF: calendar days and standard AGP bands (54/70/180/250 mg/dL). App targets remain unchanged.</string>
+    <string name="lv_groups_day_parts" formatted="false">GLUCOSE BY TIME OF DAY</string>
+    <string name="lv_groups_observations" formatted="false">OBSERVATIONS</string>
+    <string name="lv_groups_no_observations" formatted="false">No additional observations for this period.</string>
+    <string name="lv_groups_mean_short" formatted="false">Mean</string>
+    <string name="lv_groups_lows_short" formatted="false">Lows</string>
+    <string name="lv_groups_markers" formatted="false">Markers at chart top: purple = recorded insulin; amber = recorded carbohydrates.</string>
+    <string name="lv_groups_hourly_totals" formatted="false">Hourly columns: maximum, minimum, recorded insulin and carbohydrate totals. Missing data: -.</string>
+    <string name="lv_groups_max" formatted="false">Max.</string>
+    <string name="lv_groups_min" formatted="false">Min.</string>
+    <string name="lv_groups_meal_method" formatted="false">Mean glucose before a recorded meal and at +1, +2 and +3 hours.</string>
+    <string name="lv_groups_meal_table" formatted="false">Daily means: before / +1 hour after the meal</string>
+    <string name="lv_groups_meal_missing" formatted="false">Recorded carbohydrate entries only. Nearest CGM within 15 min; missing measurements: -.</string>
+    <string name="lv_groups_morning" formatted="false">Morning</string>
+    <string name="lv_groups_midday" formatted="false">Midday</string>
+    <string name="lv_groups_evening" formatted="false">Evening</string>
+    <string name="lv_groups_night" formatted="false">Night</string>
+    <string name="lv_groups_app_version" formatted="false">Application version</string>
+    <string name="lv_groups_phone" formatted="false">Phone</string>
+    <string name="lv_groups_data_sources" formatted="false">SENSOR IDENTIFIERS IN THE SELECTED HISTORY</string>
+    <string name="lv_match_days" formatted="false">Days</string>
+    <string name="lv_match_generated" formatted="false">Generated</string>
+    <string name="lv_match_page" formatted="false">Page</string>
+    <string name="lv_match_time_ranges" formatted="false">Time in ranges</string>
+    <string name="lv_match_metrics" formatted="false">Glucose assessment metrics</string>
+    <string name="lv_match_gmi" formatted="false">Glucose management indicator (GMI)</string>
+    <string name="lv_match_agp_explanation" formatted="false">AGP summarizes glucose throughout the reporting period, displaying the median (50%) and other percentiles on a shared single-day time axis.</string>
+    <string name="lv_match_daily_explanation" formatted="false">Each daily profile runs from midnight to midnight, with the date in the top-left corner.</string>
+    <string name="lv_match_carbs" formatted="false">Carbohydrates</string>
+    <string name="lv_match_insulin" formatted="false">Insulin</string>
+    <string name="lv_match_recorded_average" formatted="false">Daily mean on days with recorded entries.</string>
+    <string name="lv_match_comments" formatted="false">Comments</string>
+    <string name="lv_match_missing_insulin" formatted="false">Days without recorded insulin:</string>
+    <string name="lv_match_missing_carbs" formatted="false">Days without recorded carbohydrates:</string>
+    <string name="lv_match_no_scan_log" formatted="false">Scan/view history is not recorded by this app.</string>
+    <string name="lv_match_settings" formatted="false">Settings</string>
+    <string name="lv_match_clinical_thresholds" formatted="false">Very low / very high thresholds</string>
+    <string name="lv_match_method" formatted="false">Source: app glucose readings and journal entries. AGP bands 54/70/180/250 mg/dL; scan history unavailable.</string>
+    <string name="lv_match_mean_duration" formatted="false">Mean event duration</string>
+    <string name="lv_match_scans_per_day" formatted="false">Mean scans/views per day</string>
+    <string name="lv_match_goal" formatted="false">Goal:</string>
+    <string name="lv_match_standard_targets" formatted="false">Standard targets for T1/T2</string>
+
+    <!-- Labels scoped to the reference-shaped PDF layout. -->
+    <string name="lv_ref_dob">Date of birth:</string>
+    <string name="lv_ref_coverage">Sensor active time</string>
+    <string name="lv_ref_standard">Goals for type 1 or type 2 diabetes</string>
+    <string name="lv_ref_mean">Average glucose</string>
+    <string name="lv_ref_variability">Glucose variability</string>
+    <string name="lv_ref_cv">Defined as percent coefficient of variation (CV)</string>
+    <string name="lv_ref_range">Target range</string>
+    <string name="lv_ref_range_short">Range</string>
+    <string name="lv_ref_agp">AGP summarizes glucose values from the reporting period, with the median (50%) and other percentiles shown as if they occurred in a single day.</string>
+    <string name="lv_ref_daily">The daily profile shows midnight to midnight, with the date in the upper left corner.</string>
+    <string name="lv_ref_median">Median</string>
+    <string name="lv_ref_percentiles_inner">25th to 75th percentile</string>
+    <string name="lv_ref_percentiles_outer">5th to 95th percentile</string>
+    <string name="lv_ref_high">High glucose</string>
+    <string name="lv_ref_low">Low glucose</string>
+    <string name="lv_ref_legend">Legend</string>
+    <string name="lv_ref_recorded_insulin">Recorded insulin</string>
+    <string name="lv_ref_daily_average">Daily average</string>
+    <string name="lv_ref_glucose_short">Glucose</string>
+    <string name="lv_ref_insights_profile">Glucose trends</string>
+    <string name="lv_ref_night">Overnight</string>
+    <string name="lv_ref_app">Application</string>
+    <string name="lv_ref_version">Full software version</string>
+    <string name="lv_ref_os">Operating system version</string>
+    <string name="lv_ref_phone_model">Smartphone model</string>
+    <string name="lv_ref_dose_anchor_note">Syringe: nearby glucose trace; at the top: no nearby CGM data.</string>
 </resources>
+

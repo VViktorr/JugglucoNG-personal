@@ -237,6 +237,14 @@ fun StatsScreen(
     }
     var pendingReportStylePref by rememberSaveable { mutableStateOf(reportStylePref) }
     val selectedReportStyle = StatsReportExporter.PdfVisualStyle.fromPref(reportStylePref)
+    var reportGroupKeys by rememberSaveable {
+        mutableStateOf(LibreViewReportGroup.fromKeys(
+            reportPrefs.getStringSet("stats_report_libreview_groups", null)
+        ).joinToString(",") { it.key })
+    }
+    var pendingReportGroupKeys by rememberSaveable { mutableStateOf(reportGroupKeys) }
+    val reportGroups = LibreViewReportGroup.fromKeys(reportGroupKeys.split(","))
+    val hasPdfGroups = selectedReportStyle != StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE || reportGroups.isNotEmpty()
     val view = LocalView.current
     LaunchedEffect(context) { StatsLayoutStore.ensureLoaded(context) }
     val layout by StatsLayoutStore.state.collectAsStateWithLifecycle()
@@ -282,6 +290,7 @@ fun StatsScreen(
             .putString("stats_report_patient_dob", patientDobInput.trim())
             .putString("stats_report_patient_clinician", patientClinicianInput.trim())
             .putString(PrefKeyReportPdfStyle, reportStylePref)
+            .putStringSet("stats_report_libreview_groups", reportGroups.map { it.key }.toSet())
             .apply()
     }
 
@@ -289,15 +298,26 @@ fun StatsScreen(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
+        // Freeze every option before the history read suspends or another sheet is opened.
+        val requestedDays = pendingReportDays
+        val requestedPatient = pendingPatientInfo
+        val requestedStyle = StatsReportExporter.PdfVisualStyle.fromPref(pendingReportStylePref)
+        val requestedGroups = LibreViewReportGroup.fromKeys(pendingReportGroupKeys.split(","))
         coroutineScope.launch {
-            val reportState = viewModel.buildReportUiState(pendingReportDays)
+            val clinicalReport = requestedStyle == StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE
+            val reportState = viewModel.buildReportUiState(
+                requestedDays,
+                clinicalReport = clinicalReport,
+                includeCalendarContext = clinicalReport && LibreViewReportGroup.MONTHLY_SUMMARY in requestedGroups
+            )
             val result = StatsReportExporter.exportComprehensivePdf(
                 context = context,
                 uri = uri,
                 uiState = reportState,
-                reportDays = pendingReportDays,
-                patientInfo = pendingPatientInfo,
-                reportStyle = StatsReportExporter.PdfVisualStyle.fromPref(pendingReportStylePref)
+                reportDays = requestedDays,
+                patientInfo = requestedPatient,
+                reportStyle = requestedStyle,
+                reportGroups = requestedGroups
             )
             result.onSuccess {
                 exportedReportUri = uri
@@ -484,6 +504,7 @@ fun StatsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -542,6 +563,12 @@ fun StatsScreen(
                         onStyleSelected = { style -> reportStylePref = style.prefValue },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    if (selectedReportStyle == StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE) {
+                        ReportGroupPicker(selected = reportGroups, onChange = { groups ->
+                            reportGroupKeys = groups.joinToString(",") { it.key }
+                            reportPrefs.edit().putStringSet("stats_report_libreview_groups", groups.map { it.key }.toSet()).apply()
+                        })
+                    }
                     androidx.compose.material3.FilledTonalButton(
                         onClick = { showPatientInfo = !showPatientInfo },
                         modifier = Modifier.fillMaxWidth(),
@@ -602,14 +629,16 @@ fun StatsScreen(
                             val reportDays = parsedReportDays ?: return@FilledTonalButton
                             pendingReportDays = reportDays
                             pendingPatientInfo = buildPatientInfo()
+                            if (!hasPdfGroups) return@FilledTonalButton
                             pendingReportStylePref = reportStylePref
+                            pendingReportGroupKeys = reportGroupKeys
                             persistReportPrefs()
                             showShareSheet = false
                             val reportDate = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
                             pdfLauncher.launch("cgm_report_$reportDate.pdf")
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = parsedReportDays != null,
+                        enabled = parsedReportDays != null && hasPdfGroups,
                         shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
