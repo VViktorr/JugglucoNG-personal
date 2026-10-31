@@ -3369,4 +3369,6 @@
 <string name="delete_confirm">Usuń</string>
 <string name="alert_profile_label">Profil alarmu</string>
 <string name="alert_delivery_method_label">Sposób powiadamiania</string>
+ <string name="notification_metric_style_glucose">Glukoza</string>
+    <string name="report_style_libreviev">Raport kliniczny LibreView</string>
 </resources>

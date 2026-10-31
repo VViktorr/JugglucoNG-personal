@@ -3499,4 +3499,6 @@ Pressing OK will generate a connection on this phone and display a QR code that 
 <string name="widget_text_size_value">Base text size: %1$d%%</string>
 <string name="alert_profile_label">Alarm profile</string>
 <string name="alert_delivery_method_label">Notification method</string>
+ <string name="notification_metric_style_glucose">Glucose</string>
+    <string name="report_style_libreviev">LibreView clinical report</string>
 </resources>
