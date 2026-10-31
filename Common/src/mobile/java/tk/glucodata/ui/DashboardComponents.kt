@@ -114,6 +114,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.lerp
+import kotlin.math.cos
+import kotlin.math.sin
 import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.Applic
@@ -166,15 +168,40 @@ private fun glucoseHeroTone(
     GlucoseHeroTone(tint = Color(tone.tintArgb), blendFraction = tone.blendFraction)
 }
 
-private fun trendRightCornerRadius(velocity: Float, top: Boolean): Dp {
-    val directionalVelocity = if (top) -velocity else velocity
-    val strength = if (directionalVelocity.isFinite()) {
-        (directionalVelocity / 3.6f).coerceIn(0f, 1f)
-    } else {
-        0f
+private data class TrendCornerWeights(
+    val topStart: Float,
+    val topEnd: Float,
+    val bottomEnd: Float,
+    val bottomStart: Float
+)
+
+private fun trendCornerWeightsFromVelocity(velocity: Float): TrendCornerWeights {
+    val angleDeg = (-velocity * 25f).coerceIn(-90f, 90f)
+    val angleRad = Math.toRadians(angleDeg.toDouble())
+    val dirX = cos(angleRad).toFloat()
+    val dirY = sin(angleRad).toFloat()
+
+    fun cornerRoundWeight(cornerX: Float, cornerY: Float): Float {
+        val dot = ((dirX * cornerX + dirY * cornerY) * 0.70710677f).coerceIn(-1f, 1f)
+        return if (dot >= 0f) {
+            // Toward direction: sharper as dot increases.
+            lerpFloat(0.88f, 0.08f, dot)
+        } else {
+            // Opposite side: extra rounded.
+            lerpFloat(0.88f, 1f, -dot)
+        }
     }
-    return lerp(16.dp, 40.dp, strength)
+
+    return TrendCornerWeights(
+        topStart = cornerRoundWeight(-1f, -1f),
+        topEnd = cornerRoundWeight(1f, -1f),
+        bottomEnd = cornerRoundWeight(1f, 1f),
+        bottomStart = cornerRoundWeight(-1f, 1f)
+    )
 }
+
+private fun directionalRadius(weight: Float, min: Dp, max: Dp): Dp = lerp(min, max, weight.coerceIn(0f, 1f))
+
 
 private const val CalibrationDeleteSwipeThresholdFraction = 0.4f
 
@@ -289,31 +316,53 @@ fun DashboardCombinedHeader(
     }
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val isLandscape = adaptiveMetrics.isLandscape
+    val cornerWeights = remember(trendResult.velocity) { trendCornerWeightsFromVelocity(trendResult.velocity) }
     val cornerAnimSpec = spring<Dp>(
         dampingRatio = Spring.DampingRatioLowBouncy,
         stiffness = Spring.StiffnessLow
     )
 
-    val heroTopStart = 16.dp
-    val heroTopEndAnimated by animateDpAsState(
-        targetValue = trendRightCornerRadius(trendResult.velocity, top = true),
+    val heroTopStart by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.topStart, 22.dp, 52.dp),
+        animationSpec = cornerAnimSpec,
+        label = "HeroTopStartRadius"
+    )
+    val heroTopEnd by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.topEnd, 8.dp, 24.dp),
         animationSpec = cornerAnimSpec,
         label = "HeroTopEndRadius"
     )
-    val heroBottomEndAnimated by animateDpAsState(
-        targetValue = trendRightCornerRadius(trendResult.velocity, top = false),
+    val heroBottomEnd by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.bottomEnd, 8.dp, 24.dp),
         animationSpec = cornerAnimSpec,
         label = "HeroBottomEndRadius"
     )
-    // Keep spring overshoot inside the bounds of the 80dp card.
-    val heroTopEnd = heroTopEndAnimated.coerceIn(16.dp, 40.dp)
-    val heroBottomEnd = heroBottomEndAnimated.coerceIn(16.dp, 40.dp)
-    val heroBottomStart = 16.dp
+    val heroBottomStart by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.bottomStart, 22.dp, 46.dp),
+        animationSpec = cornerAnimSpec,
+        label = "HeroBottomStartRadius"
+    )
 
-    val sensorTopStart = 16.dp
-    val sensorTopEnd = 16.dp
-    val sensorBottomEnd = 16.dp
-    val sensorBottomStart = 16.dp
+    val sensorTopStart by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.topStart, 8.dp, 24.dp),
+        animationSpec = cornerAnimSpec,
+        label = "SensorTopStartRadius"
+    )
+    val sensorTopEnd by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.topEnd, 20.dp, 46.dp),
+        animationSpec = cornerAnimSpec,
+        label = "SensorTopEndRadius"
+    )
+    val sensorBottomEnd by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.bottomEnd, 22.dp, 52.dp),
+        animationSpec = cornerAnimSpec,
+        label = "SensorBottomEndRadius"
+    )
+    val sensorBottomStart by animateDpAsState(
+        targetValue = directionalRadius(cornerWeights.bottomStart, 8.dp, 24.dp),
+        animationSpec = cornerAnimSpec,
+        label = "SensorBottomStartRadius"
+    )
 
     // 1. Resolve Values using shared logic (with calibration if active)
     val refreshRevision by UiRefreshBus.revision.collectAsStateWithLifecycle(initialValue = 0L)
