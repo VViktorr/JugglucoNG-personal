@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.components.AdaptiveTrailingRow
 import tk.glucodata.ui.components.AppSlider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle

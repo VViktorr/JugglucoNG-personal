@@ -2,6 +2,8 @@ package tk.glucodata.ui
 
 import tk.glucodata.ui.components.AppSlider
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.util.appFilterChipColors
 import tk.glucodata.ui.util.appFilterChipShapes

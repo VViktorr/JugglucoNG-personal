@@ -656,6 +656,14 @@ fun ExpressiveSettingsScreen(
                     position = CardPosition.TOP,
                     onClick = { navController.navigate("settings/display-colors") }
                 )
+                SettingsItem(
+                    title = stringResource(R.string.widget_settings_title),
+                    subtitle = stringResource(R.string.widget_settings_subtitle),
+                    icon = Icons.Default.Layers,
+                    iconTint = displayColor,
+                    position = CardPosition.MIDDLE,
+                    onClick = { navController.navigate("settings/widgets") }
+                )
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.graph_smoothing_title),
                     subtitle = graphSmoothingLabel,
@@ -1439,7 +1447,7 @@ private fun SealGraceDialog(currentHours: Int, onSave: (Int) -> Unit, onDismiss:
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Slider(
+                    AppSlider(
                         value = index,
                         onValueChange = { index = it },
                         valueRange = 0f..choices.lastIndex.toFloat(),
