@@ -1070,10 +1070,6 @@ class DashboardViewModel(
                     ?: lifecycleOfficialEndMs.takeIf { it > 0L }
                     ?: lifecycleExpectedEndMs.takeIf { it > 0L }
                     ?: 0L
-                _sensorEndTimeMs.value = calendarEndMs
-                    ?: managedSnapshot?.officialEndMs?.takeIf { it > 0L }
-                    ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L }
-                    ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1093,6 +1089,10 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
+                _sensorEndTimeMs.value = calendarEndMs
+                    ?: managedSnapshot?.officialEndMs?.takeIf { it > 0L }
+                    ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L }
+                    ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
