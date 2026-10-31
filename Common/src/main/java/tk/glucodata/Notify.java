@@ -1663,6 +1663,7 @@ public class Notify {
                 freshnessDeadlineService = null;
                 scheduleVisualNotificationRefresh();
             }
+            GlucoseUpdateBroadcaster.send(Applic.app);
         }
     };
 
@@ -4981,6 +4982,7 @@ public class Notify {
      */
     void oldnotification(long time) {
         placelargenotification(R.drawable.novalue, staleReadingStatus(time), GLUCOSENOTIFICATION, true);
+        GlucoseUpdateBroadcaster.send(Applic.app);
     }
 
     /** "No new value since 14:32": what the lock-screen overlay and widgets show in
