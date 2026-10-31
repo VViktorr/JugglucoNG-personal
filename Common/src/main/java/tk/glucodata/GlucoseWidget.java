@@ -37,6 +37,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.RemoteViews;
+import org.json.JSONObject;
 
 public class GlucoseWidget extends AppWidgetProvider {
     private static final String ACTION_GLUCOSE_UPDATE = "tk.glucodata.action.GLUCOSE_UPDATE";
@@ -45,27 +46,46 @@ public class GlucoseWidget extends AppWidgetProvider {
     private static long lastUpdateElapsedRealtime = 0L;
     static RemoteGlucose remote = null;
     static int width=0;
+    static int height=50;
 
-private static void setWidth(int widthdip) {
-    synchronized (widgetLock) {
-        var density = GlucoseCurve.getDensity();
-        if (density <= 0.0f) {
-            density = 1.0f;
-        }
-        var widthpx = widthdip * density;
-//      var fontsize=widthpx*0.22f;
-        var fontsize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
-        remote = new RemoteGlucose(fontsize, widthpx, Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
-        width = widthdip;
-    }
-}
+ private static void setSize(int widthdip, int heightdip) {
+     synchronized (widgetLock) {
+         widthdip = Math.max(1, widthdip);
+         heightdip = Math.max(1, heightdip);
+         var density = GlucoseCurve.getDensity();
+         if (density <= 0.0f) density = 1.0f;
+         final float widthpx = widthdip * density;
+         final float heightpx = heightdip * density;
+         // Size the text against both axes so a short resized widget does not
+         // clip a font that was chosen from width alone.
+         final float widthDrivenSize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
+         final float heightDrivenSize = heightpx * 0.72f;
+         float textScale = 1.0f;
+         try {
+             var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
+             var raw = prefs.getString("BASIC", null);
+             if (raw != null) {
+                 textScale = Math.max(0.70f, Math.min(1.40f,
+                         new JSONObject(raw).optInt("textScale", 100) / 100.0f));
+             } else {
+                 textScale = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                         .getFloat("notification_font_size", 1.0f);
+             }
+         } catch (Throwable ignored) { }
+         final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize) * textScale);
+         remote = new RemoteGlucose(fontsize, widthpx, Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
+         width = widthdip;
+         height = heightdip;
+     }
+ }
 @Override
 public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle widgetInfo) {
    var widthdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-   {if(doLog) {Log.i(LOG_ID,"onAppWidgetOptionsChanged widthdip="+widthdip);};};
+   var heightdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+   {if(doLog) {Log.i(LOG_ID,"onAppWidgetOptionsChanged widthdip="+widthdip+" heightdip="+heightdip);};};
    used=true;
-   if(widthdip!=0&&widthdip!=width) {
-       setWidth(widthdip);
+   if(widthdip>0 && heightdip>0 && (widthdip!=width || heightdip!=height)) {
+       setSize(widthdip, heightdip);
        updateAppWidget(context, appWidgetManager, appWidgetId);
        }
    } 
@@ -107,19 +127,15 @@ static private void updateAppWidget(Context context, AppWidgetManager appWidgetM
         {if(doLog) {Log.d(LOG_ID, key + " = " + widgetInfo.get(key));};};
         }
    var widthdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-   if(widthdip==0) {
-      if(remote==null)
-         widthdip=200;
-      else
-         widthdip=width;
-      } if(widthdip!=width) {
-      setWidth(widthdip);
-      }
+   var heightdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+   if(widthdip<=0) widthdip=remote==null?200:width;
+   if(heightdip<=0) heightdip=remote==null?50:height;
+   if(widthdip!=width || heightdip!=height) setSize(widthdip,heightdip);
    RemoteViews  views;
    int id= R.id.arrowandvalue;
    synchronized (widgetLock) {
       if (remote == null) {
-         setWidth(widthdip == 0 ? 200 : widthdip);
+         setSize(widthdip == 0 ? 200 : widthdip, heightdip == 0 ? 50 : heightdip);
       }
 	      final var current = WidgetDisplaySource.resolveWidgetSnapshot(glucosetimeout);
       if (current != null) {
