@@ -43,7 +43,6 @@ import tk.glucodata.R
 import tk.glucodata.SensorBluetooth
 import tk.glucodata.SuperGattCallback
 import tk.glucodata.UiRefreshBus
-import java.util.Locale
 
 class AODOverlayService : AccessibilityService(), SensorEventListener {
     companion object {
@@ -521,14 +520,12 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
             chartPoints = ArrayList()
         }
 
-        // ViewMode & Status
+        // ViewMode
         var viewMode = 0
-        var statusText = ""
 
         if (activeSensorSerial != null && SensorBluetooth.blueone != null) {
             for (cb in SensorBluetooth.mygatts()) {
                 if (cb.SerialNumber != null && cb.SerialNumber == activeSensorSerial) {
-                    statusText = cb.constatstatusstr
                     viewMode = tk.glucodata.CurrentDisplaySource.resolveViewModeForSensor(activeSensorSerial)
                     break
                 }
@@ -537,10 +534,10 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
 
         val prefs = getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
         val showSecondary = prefs.getBoolean("aod_show_secondary", false)
-        // Current Value
+        // The AOD number must come from the current-reading source, never from
+        // the tail of chart history. History remains available to draw the chart.
         var glvalue = 0f
         var valStr = "---"
-        var time = 0L
 
         val resolvedDisplay = tk.glucodata.CurrentDisplaySource.resolveCurrent(
             maxAgeMillis = tk.glucodata.Notify.glucosetimeout,
@@ -552,36 +549,38 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         }
         val overlayChartPoints = DisplayTrendSource.augmentHistory(chartPoints, resolvedDisplay, activeSensorSerial, startT)
         currentChartAnchorFraction = estimateChartAnchorFraction(overlayChartPoints, startT, endT)
+        val staleReadingMillis = if (resolvedDisplay == null && overlayChartPoints.isNotEmpty()) {
+            overlayChartPoints.maxOf { it.timestamp }
+        } else 0L
         val hasCalibration = tk.glucodata.NightscoutCalibration.hasCalibrationForViewMode(activeSensorSerial, viewMode)
-        // Same freshness rule as the dashboard hero and the ongoing notification: past
-        // glucosetimeout the number and arrow give way to "No new value since …", while
-        // the chart keeps the history.
         val dataState = tk.glucodata.DisplayDataState.resolve(
             sensorPresent = !activeSensorSerial.isNullOrBlank(),
             currentTimestampMillis = resolvedDisplay?.timeMillis ?: 0L,
-            latestHistoryTimestampMillis = overlayChartPoints.lastOrNull()?.timestamp ?: 0L
+            latestHistoryTimestampMillis = 0L
         )
         if (dataState.isFresh) {
             tk.glucodata.GlucoseUpdateBroadcaster.armFreshnessDeadline(dataState.latestTimestampMillis)
         }
-        val staleStatus = if (dataState.isStale) {
-            Notify.staleReadingStatus(dataState.latestTimestampMillis)
+        val staleStatus = if (resolvedDisplay == null) {
+            if (staleReadingMillis > 0L) {
+                Notify.staleReadingStatus(staleReadingMillis)
+            } else {
+                getString(R.string.novalue)
+            }
         } else {
             null
         }
 
-        if (dataState.isFresh && resolvedDisplay != null) {
-            time = resolvedDisplay.timeMillis
+        if (resolvedDisplay != null) {
             glvalue = resolvedDisplay.primaryValue
             valStr = if (showSecondary) resolvedDisplay.fullFormatted else resolvedDisplay.primaryStr
-        } else if (dataState.isFresh && overlayChartPoints.isNotEmpty()) {
-            val p = overlayChartPoints[overlayChartPoints.size - 1]
-            glvalue = p.value
-            valStr = if (isMmol) String.format(Locale.getDefault(), "%.1f", glvalue)
-            else String.format(Locale.getDefault(), "%.0f", glvalue)
         }
 
-        val displayRate = DisplayTrendSource.resolveArrowRate(overlayChartPoints, resolvedDisplay, viewMode, isMmol)
+        val displayRate = if (resolvedDisplay != null) {
+            DisplayTrendSource.resolveArrowRate(overlayChartPoints, resolvedDisplay, viewMode, isMmol)
+        } else {
+            Float.NaN
+        }
 
         val glucoseColor = NotificationChartDrawer.getGlucoseColor(this, glvalue, isMmol)
         val peerCurrents = NotificationMultiSensorSource.peerCurrents(
@@ -623,7 +622,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
             textScale,
             fontWeight,
             useSystemFont,
-            if (inlineMultiArrows && dataState.isFresh) displayRate else Float.NaN,
+            if (inlineMultiArrows && resolvedDisplay != null) displayRate else Float.NaN,
             isMmol,
             1.0f
         )
@@ -633,7 +632,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
 
         // Pass combined scale to arrow
         val arrowImg = view.findViewById<ImageView>(R.id.notification_arrow)
-        if (showArrow && !inlineMultiArrows && dataState.isFresh) {
+        if (showArrow && !inlineMultiArrows && resolvedDisplay != null) {
             val arrowBitmap = NotificationChartDrawer.drawArrow(
                 this,
                 displayRate,
@@ -703,7 +702,6 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
                 statusView.visibility = View.VISIBLE
             } else {
                 statusView.visibility = View.GONE
-                statusView.text = statusText
             }
         }
         applyBurnInProtection()
