@@ -897,7 +897,8 @@ bool sendlibreviewdata(const int newcurrent, const uint32_t nu) {
   const int uitlen = uitptr - uitbuf - 1;
   //    write(STDOUT_FILENO,uitbuf,uitlen);
   LOGGER("uitlen=%d\n", uitlen);
-  logwriter(uitbuf, uitlen);
+  LOGGER("LibreView payload bytes=%d UOM=%.*s country=%d body=****\n",
+         uitlen, (int)settings->getunitlabel().size(), settings->getunitlabel().data(), country);
   if (!currentToSend && scansiter == 0 && !histtotal && !bytesnumbers && !journalbytes) {
     LOGAR("Nothing to write to libreview");
     return true;
