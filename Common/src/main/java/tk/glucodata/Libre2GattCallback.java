@@ -23,6 +23,7 @@ package tk.glucodata;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -68,6 +69,10 @@ public class Libre2GattCallback extends SuperGattCallback {
     private long diagConnectedAtMs = -1L, diagServicesAtMs = -1L;
     private long diagPassWriteAtMs = -1L, diagDescriptorAtMs = -1L;
     private long diagNativeStreamGeneration = 1L;
+    private long diagLastPacketAtMs = -1L;
+    private long diagLastCloseAtMs = -1L;
+    private long diagConnectRequestAtMs = -1L;
+    private long diagConnectedSinceMs = -1L;
     private void libre2Diag(String stage, BluetoothGatt gatt, String extra) {
         if (!doLog) return;
         final long now = android.os.SystemClock.elapsedRealtime();
@@ -76,6 +81,11 @@ public class Libre2GattCallback extends SuperGattCallback {
                 + " dataptr=0x" + Long.toHexString(dataptr) + " nativeStreamGen=" + diagNativeStreamGeneration
                 + " sensorgen=" + sensorgen + " conphase=" + conphase + " connected=" + connected
                 + " pack1=" + pack1 + " pack2=" + pack2 + " paused=" + stop + " recovery=" + recoveryInProgress
+                + " connectedDurationMs=" + (diagConnectedSinceMs < 0L ? -1L : now - diagConnectedSinceMs)
+                + " lastPacketAgeMs=" + (diagLastPacketAtMs < 0L ? -1L : now - diagLastPacketAtMs)
+                + " lastCloseAgeMs=" + (diagLastCloseAtMs < 0L ? -1L : now - diagLastCloseAtMs)
+                + " fromConnectRequestMs=" + (diagConnectRequestAtMs < 0L ? -1L : now - diagConnectRequestAtMs)
+                + " adapterState=" + bluetoothAdapterState()
                 + " fromConnectMs=" + (diagConnectedAtMs < 0L ? -1L : now - diagConnectedAtMs)
                 + " fromServicesMs=" + (diagServicesAtMs < 0L ? -1L : now - diagServicesAtMs)
                 + " fromPassWriteMs=" + (diagPassWriteAtMs < 0L ? -1L : now - diagPassWriteAtMs)
@@ -83,6 +93,16 @@ public class Libre2GattCallback extends SuperGattCallback {
     }
     synchronized void diagnoseReset(String stage, long previousDataptr) {
         libre2Diag(stage, mBluetoothGatt, "oldDataptr=0x" + Long.toHexString(previousDataptr));
+    }
+
+    @SuppressLint("MissingPermission")
+    private String bluetoothAdapterState() {
+        try {
+            final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            return adapter == null ? "UNAVAILABLE" : Integer.toString(adapter.getState());
+        } catch (SecurityException e) {
+            return "NO_PERMISSION";
+        }
     }
     // Phone-only watchdog: recover if a connected Libre 2 stops delivering complete frames.
     private static final long GATT_WATCHDOG_MS = 120_000L;
@@ -122,6 +142,7 @@ public class Libre2GattCallback extends SuperGattCallback {
     // callbacks must not hide a stream that has stopped delivering glucose packets.
     private void markPacketReceived() {
         failedHandshakeSinceMs = -1L;
+        diagLastPacketAtMs = android.os.SystemClock.elapsedRealtime();
         libre2Diag("complete-packet", mBluetoothGatt,
                 "descriptorAgoMs=" + (diagDescriptorAtMs < 0L ? -1L : android.os.SystemClock.elapsedRealtime() - diagDescriptorAtMs));
         watchStream(mBluetoothGatt);
@@ -163,7 +184,11 @@ public class Libre2GattCallback extends SuperGattCallback {
             recoveryWakeLock.setReferenceCounted(false);
             recoveryWakeLock.acquire(15_000L);
             try { super.disconnect(); }
-            finally { closeGattTransport(); }
+            finally {
+                libre2Diag("hard-recovery-close", mBluetoothGatt, "reason=" + reason);
+                diagLastCloseAtMs = android.os.SystemClock.elapsedRealtime();
+                closeGattTransport();
+            }
             Natives.resetbluetooth(dataptr);
             recoveryDueMs = android.os.SystemClock.elapsedRealtime() + HARD_RECOVERY_DELAY_MS;
             recoveryDeadline.arm(new Object(), HARD_RECOVERY_DELAY_MS);
@@ -402,6 +427,7 @@ private boolean connected=false;
 				connected = true;
                 ++diagAttempt;
                 diagConnectedAtMs = android.os.SystemClock.elapsedRealtime();
+                diagConnectedSinceMs = diagConnectedAtMs;
                 diagServicesAtMs = diagPassWriteAtMs = diagDescriptorAtMs = -1L;
                 libre2Diag("connected", bluetoothGatt, "status=" + status);
                 releaseRecoveryWakeLock();
@@ -418,7 +444,8 @@ private boolean connected=false;
 				constatchange[1] = tim;
 				if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     streamDeadline.cancel();
-                    libre2Diag("disconnected", bluetoothGatt, "status=" + status + " justenablednotification=" + justenablednotification + " failedbefore=" + failedbefore);
+                    libre2Diag("disconnected", bluetoothGatt, "status=" + status + " newState=" + newState + " justenablednotification=" + justenablednotification + " failedbefore=" + failedbefore);
+                    diagConnectedSinceMs = -1L;
                     if (failedHandshakeNeedsRecovery(status)) {
                         hardRecoverGatt("repeated incomplete handshake status=" + status);
                         return;
