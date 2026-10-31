@@ -1266,6 +1266,7 @@ fun InteractiveGlucoseChart(
     // Label Cache to avoid SimpleDateFormat overhead during scroll
     // Maps Timestamp -> Formatted String
     val labelCache = remember { mutableMapOf<Long, String>() }
+    val axisLabelBounds = remember { android.graphics.Rect() }
 
     // --- VIEWPORT STATE ---
     val now = System.currentTimeMillis()
@@ -2885,15 +2886,13 @@ fun InteractiveGlucoseChart(
                 }
 
                 // --- 1. DRAW Y-AXIS GRID ---
-                val yStep = if (cYRange < 25) 2f else 50f
+                val yStep = chartYAxisStep(cYRange, chartHeight, labelHeight, 40.dp.toPx(), isMmol)
                 val yTicks = chartYAxisTicks(cYMin, cYMax, yStep)
-                var yVal = (kotlin.math.ceil(cYMin / yStep) * yStep).toInt() // integer steps
+                val firstYValue = kotlin.math.ceil(cYMin / yStep) * yStep
                 if (drawBackdrop && cYRange >= 0.001f) {
                     val stepPx = yStep * chartHeight / cYRange
-                    // Unclamped on purpose: valToY pins far values, and these are all far.
-                    val anchorY = chartHeight - ((yVal - cYMin) / cYRange) * chartHeight
-                    // A grid denser than this is a scale being dragged, not one to extend.
-                    // The loops end on comparisons, which a NaN would never satisfy.
+                    // Unclamped anchor keeps the continuation grid aligned with the visible plot.
+                    val anchorY = chartHeight - ((firstYValue - cYMin) / cYRange) * chartHeight
                     if (stepPx >= 8f * density && anchorY.isFinite() && backdropBottom.isFinite()) {
                         var step = kotlin.math.ceil((backdropTop - anchorY) / stepPx)
                         while (true) {
@@ -2911,13 +2910,35 @@ fun InteractiveGlucoseChart(
                         }
                     }
                 }
-                
-                while (yVal < cYMax) {
-                    val y = valToY(yVal.toFloat())
+
+                yTicks.forEach { tick ->
+                    val y = valToY(tick)
                     if (y in 0f..chartHeight) {
                         drawLine(gridColor, Offset(0f, y), Offset(width, y), 0.7.dp.toPx())
+                        val labelText = if (isMmol) {
+                            tk.glucodata.ui.util.GlucoseFormatter.format(tick, true)
+                        } else tick.roundToInt().toString()
+                        axisTextPaint.color = axisTextColorArgb
+                        axisTextPaint.getTextBounds(labelText, 0, labelText.length, axisLabelBounds)
+                        val labelClearance = axisLabelBounds.height() + labelGap
+                        if (indicatorLabelYs.any { abs(it - y) < labelClearance }) return@forEach
+                        val centeredY = y + axisLabelBounds.height() / 2f
+                        val labelPadding = 16f * density
+                        val textWidth = axisTextPaint.measureText(labelText)
+                        val backgroundPadH = 8f * density
+                        val backgroundPadV = 3f * density
+                        drawRoundRect(
+                            color = axisLabelBackgroundColor,
+                            topLeft = Offset(labelPadding - backgroundPadH,
+                                centeredY - axisLabelBounds.height() - backgroundPadV),
+                            size = androidx.compose.ui.geometry.Size(
+                                textWidth + backgroundPadH * 2f,
+                                axisLabelBounds.height().toFloat() + backgroundPadV * 2f
+                            ),
+                            cornerRadius = CornerRadius(8f * density, 8f * density)
+                        )
+                        drawContext.canvas.nativeCanvas.drawText(labelText, labelPadding, centeredY, axisTextPaint)
                     }
-                    yVal += yStep.toInt().coerceAtLeast(1)
                 }
 
                 xTextPaint.typeface = graphFont
