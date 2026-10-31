@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.AppSlider
+import tk.glucodata.ui.components.AppRangeSlider
+
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator

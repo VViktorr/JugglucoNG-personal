@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import android.text.format.DateUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle

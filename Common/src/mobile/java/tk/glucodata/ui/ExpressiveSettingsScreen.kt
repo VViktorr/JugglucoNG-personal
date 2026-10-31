@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri

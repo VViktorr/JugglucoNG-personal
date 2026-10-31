@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.AppSlider
+
 import androidx.compose.material3.TimePickerDefaults
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.SelectableDropdownMenuItem
