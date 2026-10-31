@@ -174,7 +174,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             } else {
                 val widthPx = ((size.width.value - 24f).coerceAtLeast(96f) * density).roundToInt()
                 val heightPx = ((size.height.value - ChartReservedHeightDp).coerceAtLeast(60f) * density).roundToInt()
-                NotificationChartDrawer.drawChart(
+                NotificationChartDrawer.drawWidgetChart(
                     context,
                     history,
                     widthPx,
@@ -183,7 +183,6 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                     viewMode,
                     true,
                     hasCalibration,
-                    true,
                     activeSensorSerial,
                     WidgetDisplaySource.CHART_WINDOW_MS
                 )
