@@ -903,7 +903,7 @@ fun DashboardCombinedHeader(
             ) {
                 val showRemainingHours = sensorHoursRemaining in 0L..24L
                 val lifecycleText = if (showRemainingHours) "$sensorHoursRemaining" + "h" else daysRemaining
-                val lifecycleStyle = MaterialTheme.typography.labelLarge
+                val lifecycleStyle = if (stackBars) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge
                 val lifecycleTextMeasurer = rememberTextMeasurer()
                 val lifecycleTextWidthPx = remember(lifecycleText, lifecycleStyle) {
                     lifecycleTextMeasurer.measure(
@@ -921,25 +921,26 @@ fun DashboardCombinedHeader(
                 // whole screen, not the real space inside this card.
                 val showLifecycleCalendar = sensorContentWidthPx == 0 ||
                     lifecycleTextWidthPx + lifecycleCalendarChromePx <= sensorContentWidthPx
-                // Dynamic Fill Layer
+                // At activation the entire bar matches the glucose card. As the sensor
+                // ages, neutral grey advances from the right edge toward the left.
                 if (sensorProgress > 0f) {
-                    val fillColor = when {
-                        sensorProgress > 0.95f -> MaterialTheme.colorScheme.error
-                        sensorProgress > 0.80f -> MaterialTheme.colorScheme.tertiary
-                        else -> StatusPalette.sensorLifeFill
-                    }
                     Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(sensorProgress)
-                            .background(fillColor.copy(alpha = 0.25f)) // Slightly increased opacity for visibility
-                    )
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(sensorProgress.coerceIn(0f, 1f))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                    }
                 }
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 12.dp), // Matched Vertical Padding (12dp)
+                        .padding(horizontal = if (stackBars) 12.dp else 16.dp, vertical = if (stackBars) 4.dp else 12.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -962,9 +963,11 @@ fun DashboardCombinedHeader(
                             noiseLevel = trendResult.noiseLevel,
                             readingMillis = if (showReadingAge) primaryReadingMillis else null,
                             contentColor = sensorContentColor,
+                            readingAgeStyle = if (stackBars) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+                            readingAgeIconSize = if (stackBars) 16.dp else 14.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = if (stackBars || sensorEndTimeMs > 0L) 2.dp else 4.dp)
                         )
                     }
                     
@@ -976,12 +979,12 @@ fun DashboardCombinedHeader(
                                     transport = cloneTransport,
                                     showLabel = true,
                                     tint = sensorContentColor.copy(alpha = 0.7f),
-                                    textStyle = MaterialTheme.typography.labelMedium,
+                                    textStyle = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                                 )
                             } else {
                                 Text(
                                     text = sensorDisplayName,
-                                    style = MaterialTheme.typography.labelMedium, // M3 Standard
+                                    style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium, // M3 Standard
                                     color = sensorContentColor.copy(alpha = 0.7f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -1078,7 +1081,7 @@ fun DashboardCombinedHeader(
                         }
                         Text(
                             text = expiryText,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
                             color = sensorContentColor.copy(alpha = 0.85f),
                             maxLines = 1,
                             softWrap = false,
@@ -2206,7 +2209,9 @@ private fun SignalQualityAndReadingAgeRow(
     noiseLevel: Float,
     readingMillis: Long?,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readingAgeStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.labelMedium,
+    readingAgeIconSize: androidx.compose.ui.unit.Dp = 14.dp
 ) {
     val density = LocalDensity.current
     val gapPx = with(density) { SIGNAL_AGE_GAP.roundToPx() }
@@ -2253,6 +2258,8 @@ private fun SignalQualityAndReadingAgeRow(
                     readingMillis = readingMillis,
                     iconTint = contentColor.copy(alpha = 0.55f),
                     textColor = contentColor.copy(alpha = 0.75f),
+                    textStyle = readingAgeStyle,
+                    iconSize = readingAgeIconSize,
                     modifier = Modifier.layoutId(SIGNAL_AGE_COUNTER_ID)
                 )
             }
