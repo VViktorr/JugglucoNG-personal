@@ -173,7 +173,7 @@ class SuperGattCallback {
 '''
 java += field(base, 'private final GattConnectDeadline<BluetoothGatt> connectDeadline', '}, this::connectionAttemptExpired);')
 java += '\n' + base_methods + '\n}\nclass Libre2GattCallback extends SuperGattCallback {\n'
-java += libre[libre.index('    // Phone-only watchdog'):libre.index('\tprivate BluetoothGatt disconnectingGatt')]
+java += libre[libre.index('    // Phone-only watchdog'):libre.index('    private boolean canRecoverLocally()')]
 java += field(libre, 'private final GattConnectDeadline<BluetoothGatt> disconnectDeadline', '}, this::retryAfterDisconnect);')
 java += r'''
     BluetoothGatt disconnectingGatt;
