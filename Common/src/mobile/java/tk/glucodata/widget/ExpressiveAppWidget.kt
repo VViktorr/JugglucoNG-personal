@@ -2,13 +2,14 @@ package tk.glucodata.widget
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -17,6 +18,7 @@ import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
@@ -26,254 +28,163 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
-import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
-import androidx.glance.layout.padding
-import androidx.glance.text.FontFamily
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
-import tk.glucodata.CurrentDisplaySource
-import tk.glucodata.DisplayDataState
-import tk.glucodata.GlucosePoint
 import tk.glucodata.GlucoseUpdateBroadcaster
 import tk.glucodata.MainActivity
 import tk.glucodata.NotificationChartDrawer
-import tk.glucodata.Notify
-import tk.glucodata.R
-import tk.glucodata.WidgetDisplaySource
-import tk.glucodata.ui.util.GlucoseFormatter
+import tk.glucodata.widgets.ClockWeatherWidgetViews
+import tk.glucodata.widgets.WidgetBackground
+import tk.glucodata.widgets.WidgetConfig
+import tk.glucodata.widgets.WidgetConfigStore
+import tk.glucodata.widgets.WidgetDataSource
+import tk.glucodata.widgets.WidgetSettingsKind
+import tk.glucodata.widgets.WidgetSnapshot
+import tk.glucodata.widgets.WidgetWeather
+import tk.glucodata.widgets.WidgetWeatherSource
 
 class ExpressiveAppWidget : GlanceAppWidget() {
     private companion object {
-        val HeaderHeight = 78.dp
-        val CardGap = 10.dp
-        val DividerHeight = 3.dp
-        val DividerInset = 26.dp
-        const val ChartReservedHeightDp = 122f
+        private val weatherRefreshPending = AtomicBoolean(false)
+        private val weatherScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val initialRevision = WidgetConfigStore.revision.value
         val initialTick = GlucoseUpdateBroadcaster.tick.value
-        val initialState = withContext(Dispatchers.IO) { loadWidgetState() }
-
+        val initialState = withContext(Dispatchers.IO) { loadWidgetState(context) }
         provideContent {
             GlanceTheme {
                 val tick by GlucoseUpdateBroadcaster.tick.collectAsState()
-                val state by produceState(initialValue = initialState, key1 = tick) {
-                    if (tick != initialTick) {
-                        value = withContext(Dispatchers.IO) { loadWidgetState() }
+                val revision by WidgetConfigStore.revision.collectAsState()
+                val state by produceState(initialValue = initialState, key1 = tick, key2 = revision) {
+                    if (tick != initialTick || revision != initialRevision) {
+                        value = withContext(Dispatchers.IO) { loadWidgetState(context) }
                     }
                 }
-                WidgetContent(
-                    currentDisplay = state.currentDisplay,
-                    history = state.history,
-                    dataState = state.dataState,
-                    activeSensorSerial = state.activeSensorSerial,
-                    viewMode = state.viewMode,
-                    hasCalibration = state.hasCalibration
-                )
+                WidgetContent(state)
             }
         }
     }
 
     private data class WidgetState(
-        val currentDisplay: CurrentDisplaySource.Snapshot?,
-        val history: List<GlucosePoint>,
-        val dataState: DisplayDataState.Status,
-        val activeSensorSerial: String?,
-        val viewMode: Int,
-        val hasCalibration: Boolean
+        val config: WidgetConfig,
+        val snapshot: WidgetSnapshot,
+        val weather: WidgetWeather?
     )
 
-    private fun loadWidgetState(): WidgetState {
-        val currentDisplay = WidgetDisplaySource.resolveWidgetSnapshot()
-        val chartHistory = WidgetDisplaySource.resolveChartHistory(currentDisplay, WidgetDisplaySource.CHART_WINDOW_MS)
-        val activeSensorSerial = currentDisplay?.sensorId ?: WidgetDisplaySource.resolveActiveSensorSerial()
-        val resolvedDisplay = WidgetDisplaySource.resolveDisplaySnapshot(currentDisplay, chartHistory, activeSensorSerial)
-        val viewMode = resolvedDisplay?.viewMode ?: WidgetDisplaySource.resolveViewMode(activeSensorSerial)
-        val dataState = WidgetDisplaySource.resolveDataState(resolvedDisplay, chartHistory, activeSensorSerial)
-        val hasCalibration = WidgetDisplaySource.hasCalibration(activeSensorSerial, viewMode)
-        if (dataState.isFresh) {
-            GlucoseUpdateBroadcaster.armFreshnessDeadline(dataState.latestTimestampMillis)
+    private fun loadWidgetState(context: Context): WidgetState {
+        val config = WidgetConfigStore.load(context, WidgetSettingsKind.CHART)
+        // Same reading freshness, delta, units and status as ClockWeatherWidget.
+        // Keep the chart's own history window and saved appearance.
+        val snapshot = WidgetDataSource.load(context, config.graphHours * 3_600_000L)
+        val app = context.applicationContext
+        val weather = if (config.showWeather) WidgetWeatherSource.cached(app) else null
+        if (config.showWeather && WidgetWeatherSource.needsRefresh(app) &&
+            weatherRefreshPending.compareAndSet(false, true)) {
+            weatherScope.launch {
+                try {
+                    val previous = WidgetWeatherSource.cached(app)?.observedAt ?: 0L
+                    val refreshed = WidgetWeatherSource.load(app)
+                    if (refreshed != null && refreshed.observedAt > previous) {
+                        ExpressiveWidgetReceiver.updateAll(app)
+                    }
+                } catch (t: Throwable) {
+                    tk.glucodata.Log.stack("ExpressiveWidget", "weather refresh", t)
+                } finally {
+                    weatherRefreshPending.set(false)
+                }
+            }
         }
-        return WidgetState(
-            // Same rule as the dashboard hero: a reading past glucosetimeout is not
-            // shown as current, whether it came from the live source or from history.
-            currentDisplay = resolvedDisplay?.takeIf { dataState.isFresh },
-            history = chartHistory,
-            dataState = dataState,
-            activeSensorSerial = activeSensorSerial,
-            viewMode = viewMode,
-            hasCalibration = hasCalibration
-        )
+        return WidgetState(config, snapshot, weather)
     }
 
     @Composable
-    private fun WidgetContent(
-        currentDisplay: CurrentDisplaySource.Snapshot?,
-        history: List<GlucosePoint>,
-        dataState: DisplayDataState.Status,
-        activeSensorSerial: String?,
-        viewMode: Int,
-        hasCalibration: Boolean
-    ) {
+    private fun WidgetContent(state: WidgetState) {
         val context = LocalContext.current
         val size = LocalSize.current
-        val prefs = remember(context) {
-            context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
-        }
-
-        val isMmol = GlucoseFormatter.isMmolApp()
-        val fontSize = prefs.getFloat("notification_font_size", 1.0f)
-        val fontWeight = prefs.getInt("notification_font_weight", 400)
-        val useSystemFont = prefs.getInt("notification_font_family", 0) == 1
-        val showArrow = prefs.getBoolean("notification_show_arrow", true)
-        val arrowScale = prefs.getFloat("notification_arrow_size", 1.0f)
-
-        val displayValue = currentDisplay?.primaryValue ?: 0f
-        val glucoseColor = remember(displayValue, isMmol) {
-            NotificationChartDrawer.getGlucoseColor(context, displayValue, isMmol)
-        }
-        val valueText = currentDisplay?.fullFormatted
-        val rate = currentDisplay?.rate ?: Float.NaN
-
-        val valueBitmap = remember(valueText, glucoseColor, fontSize, fontWeight, useSystemFont) {
-            valueText?.let {
-                NotificationChartDrawer.drawGlucoseText(
-                    context,
-                    it,
-                    glucoseColor,
-                    fontSize,
-                    fontWeight,
-                    useSystemFont
-                )
-            }
-        }
-
-        val arrowBitmap = remember(rate, showArrow, arrowScale, glucoseColor, isMmol) {
-            if (showArrow && rate.isFinite()) {
-                NotificationChartDrawer.drawArrow(context, rate, isMmol, glucoseColor, arrowScale)
-            } else {
-                null
-            }
-        }
-
-        val showChart = history.size >= 2 && size.height >= 144.dp
+        val config = state.config
+        val snapshot = state.snapshot
         val density = context.resources.displayMetrics.density
-        val chartBitmap = remember(history, showChart, size, isMmol, viewMode, hasCalibration, activeSensorSerial) {
-            if (!showChart) {
-                null
-            } else {
-                val widthPx = ((size.width.value - 24f).coerceAtLeast(96f) * density).roundToInt()
-                val heightPx = ((size.height.value - ChartReservedHeightDp).coerceAtLeast(60f) * density).roundToInt()
-                NotificationChartDrawer.drawWidgetChart(
-                    context,
-                    history,
-                    widthPx,
-                    heightPx,
-                    isMmol,
-                    viewMode,
-                    true,
-                    hasCalibration,
-                    activeSensorSerial,
-                    WidgetDisplaySource.CHART_WINDOW_MS
-                )
-            }
+        val fontScale = context.resources.displayMetrics.scaledDensity / density
+        val headerHeightDp = ChartWidgetSizing.headerHeightDp(
+            size.height.value, config, fontScale
+        )
+        val chartHeightDp = ChartWidgetSizing.chartHeightDp(size.height.value, headerHeightDp)
+        val showChart = snapshot.history.size >= 2 && chartHeightDp >= 60f
+        val headerViews = remember(snapshot, state.weather, config, size.width, headerHeightDp) {
+            ClockWeatherWidgetViews.create(
+                context, config, snapshot, size.width.value, headerHeightDp, density,
+                state.weather, includeBackground = false,
+                valueText = snapshot.current?.fullFormatted ?: snapshot.valueText,
+                reserveTrendArrowSpace = true
+            )
+        }
+        val chartBitmap = remember(
+            snapshot, showChart, size.width, chartHeightDp, config.graphHours, config.showTargetBand
+        ) {
+            if (!showChart) null else NotificationChartDrawer.drawWidgetChart(
+                context,
+                snapshot.history,
+                (size.width.value.coerceAtLeast(1f) * density).roundToInt().coerceAtLeast(1),
+                (chartHeightDp * density).roundToInt().coerceAtLeast(1),
+                snapshot.isMmol,
+                snapshot.viewMode,
+                config.showTargetBand,
+                snapshot.hasCalibration,
+                snapshot.sensorSerial,
+                config.graphHours * 3_600_000L
+            )
         }
 
-        val fallbackText = remember(dataState) {
-            when {
-                dataState.isStale -> Notify.staleReadingStatus(dataState.latestTimestampMillis)
-                dataState.isAwaitingData || !dataState.sensorPresent -> context.getString(R.string.novalue)
-                else -> context.getString(R.string.novalue)
-            }
+        val darkSurface = (context.resources.configuration.uiMode and 0x30) == 0x20
+        val bgRgb = when (config.background) {
+            WidgetBackground.TRANSPARENT -> null
+            WidgetBackground.SURFACE ->
+                if (darkSurface) 0xFF1C1B1F.toInt() else 0xFFF7F2FA.toInt()
+            WidgetBackground.RANGE -> NotificationChartDrawer.getGlucoseColor(
+                context, snapshot.current?.primaryValue ?: 0f, snapshot.isMmol
+            )
         }
+        val backgroundModifier = if (bgRgb == null || config.opacity == 0) GlanceModifier
+        else GlanceModifier.background(ComposeColor(Color.argb(
+            (config.opacity * 255f / 100f).roundToInt().coerceIn(0, 255),
+            Color.red(bgRgb), Color.green(bgRgb), Color.blue(bgRgb)
+        )))
 
         Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(GlanceTheme.colors.widgetBackground)
-                .padding(6.dp)
+            modifier = GlanceModifier.fillMaxSize()
+                .then(backgroundModifier)
+                .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp)
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxWidth()
-                    .height(HeaderHeight)
-                    .background(GlanceTheme.colors.surface)
-                    .cornerRadius(24.dp)
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (valueBitmap != null) {
-                    Row(
-                        modifier = GlanceModifier.fillMaxSize(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Image(
-                            provider = ImageProvider(valueBitmap),
-                            contentDescription = "Glucose"
-                        )
-
-                        Spacer(GlanceModifier.defaultWeight())
-
-                        if (arrowBitmap != null) {
-                            Image(
-                                provider = ImageProvider(arrowBitmap),
-                                contentDescription = "Trend"
-                            )
-                        }
-                    }
-                } else {
-                    Text(
-                        text = fallbackText,
-                        style = TextStyle(
-                            color = GlanceTheme.colors.onSurfaceVariant,
-                            fontSize = 15.sp,
-                            fontFamily = FontFamily("sans-serif")
-                        ),
-                        maxLines = 2
-                    )
-                }
-            }
-
+            // Native TextClock keeps ticking without a sensor update or running activity.
+            AndroidRemoteViews(
+                remoteViews = headerViews,
+                modifier = GlanceModifier.fillMaxWidth().height(headerHeightDp.dp)
+            )
             if (chartBitmap != null) {
-                Spacer(GlanceModifier.height(8.dp))
-
-//                Box(
-//                    modifier = GlanceModifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = DividerInset)
-//                        .height(DividerHeight)
-//                        .background(GlanceTheme.colors.onSurfaceVariant)
-//                        .cornerRadius(99.dp)
-//                ) {}
-//
-//                Spacer(GlanceModifier.height(CardGap))
-
+                Spacer(GlanceModifier.height(ChartWidgetSizing.GAP_DP.dp))
                 Box(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .defaultWeight()
-                        .padding(top = 8.dp)
-                        .background(GlanceTheme.colors.surface)
-                        .cornerRadius(24.dp)
-                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    modifier = GlanceModifier.fillMaxWidth().defaultWeight()
+                        .cornerRadius(config.cornerRadiusDp.coerceIn(0, 24).dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         provider = ImageProvider(chartBitmap),
-                        contentDescription = "Chart",
+                        contentDescription = context.getString(tk.glucodata.R.string.notification_chart_accessibility),
                         modifier = GlanceModifier.fillMaxSize(),
                         contentScale = androidx.glance.layout.ContentScale.FillBounds
                     )
