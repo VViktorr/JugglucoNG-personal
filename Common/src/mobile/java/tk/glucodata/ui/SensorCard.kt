@@ -1289,7 +1289,7 @@ fun SensorCard(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
-                        Slider(
+                        AppSlider(
                             value = sensitivityDraft,
                             onValueChange = {
                                 sensitivityDraft = (it * 100f).roundToInt() / 100f

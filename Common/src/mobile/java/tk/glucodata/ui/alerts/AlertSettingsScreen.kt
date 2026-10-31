@@ -1503,7 +1503,7 @@ private fun ThresholdSlider(
             )
         }
         
-        Slider(
+        AppSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1572,7 +1572,7 @@ internal fun DurationSlider(
             )
         }
         
-        Slider(
+        AppSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1908,7 +1908,7 @@ private fun TimeRangeSlider(
         mutableStateOf(startHour.toFloat()..endHour.toFloat())
     }
 
-    RangeSlider(
+    AppRangeSlider(
         value = sliderValues,
         onValueChange = { range ->
             sliderValues = range

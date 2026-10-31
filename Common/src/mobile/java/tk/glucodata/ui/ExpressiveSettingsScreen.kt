@@ -1126,7 +1126,7 @@ internal fun PredictiveSimulationParameterRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Slider(
+        AppSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,
@@ -1184,7 +1184,7 @@ private fun SealGraceDialog(currentHours: Int, onSave: (Int) -> Unit, onDismiss:
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Slider(
+                    AppSlider(
                         value = index,
                         onValueChange = { index = it },
                         valueRange = 0f..choices.lastIndex.toFloat(),

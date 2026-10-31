@@ -514,7 +514,7 @@ fun AlarmItem(
             AnimatedVisibility(visible = enabled) {
                 Column {
                     Spacer(Modifier.height(16.dp))
-                    Slider(
+                    AppSlider(
                         value = sliderValue,
                         onValueChange = { sliderValue = it },
                         onValueChangeFinished = { onValueChange(sliderValue) },
@@ -594,7 +594,7 @@ fun SettingsSlider(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(title, style = MaterialTheme.typography.titleMedium)
-        Slider(
+        AppSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = range,

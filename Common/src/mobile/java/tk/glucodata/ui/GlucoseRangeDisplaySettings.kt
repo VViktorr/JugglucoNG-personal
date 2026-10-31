@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import tk.glucodata.ui.components.AdaptiveTrailingRow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
@@ -27,7 +29,6 @@ import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -341,7 +342,7 @@ private fun GlucoseRangeSliderRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Slider(
+            AppSlider(
                 value = value,
                 onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,
