@@ -184,7 +184,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 ) {
                     Image(
                         provider = ImageProvider(chartBitmap),
-                        contentDescription = context.getString(tk.glucodata.R.string.notification_chart_accessibility),
+                        contentDescription = context.getString(tk.glucodata.R.string.notification_chart_title),
                         modifier = GlanceModifier.fillMaxSize(),
                         contentScale = androidx.glance.layout.ContentScale.FillBounds
                     )
