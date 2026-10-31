@@ -4284,17 +4284,21 @@ public class Notify {
         final android.content.SharedPreferences notificationPreferences = Applic.app
                 .getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
         final boolean metricStyleEnabled = Build.VERSION.SDK_INT >= 37
-                && notificationPreferences.getBoolean(GlucoseLiveUpdate.METRIC_STYLE_PREFERENCE, false);
-        // MetricStyle runs on its own; do not promote this notification as a Live Update.
+                && notificationPreferences.getBoolean(GlucoseMetricStyle.PREFERENCE, false);
+        // Apply only MetricStyle. Do not request promoted Live Update behavior.
         if (metricStyleEnabled
                 && GlucoseLiveUpdatePolicy.canUse(true, Build.VERSION.SDK_INT,
                 isWearable, customPhone, displayGlucoseValue,
                 fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L,
                 System.currentTimeMillis(), glucosetimeout)) {
-            final Notification styled = GlucoseLiveUpdate.tryBuild(Applic.app, mkbuilder(type),
-                    displayGlucoseValue, isMmol, fallbackDisplay.getTimeMillis(), rate,
-                    false, metricStyleEnabled);
-            if (styled != null) {
+            final Notification.Builder metricBuilder = mkbuilder(type);
+            if (GlucoseMetricStyle.apply(metricBuilder, Applic.app, displayGlucoseValue, isMmol)) {
+                final CharSequence fallbackMetricText = valueText != null && valueText.length() > 0
+                        ? valueText.toString() + " " + Applic.app.getString(isMmol ? R.string.mmolL : R.string.mgdL)
+                        : message;
+                metricBuilder.setContentTitle(Applic.app.getString(R.string.notification_metric_style_glucose));
+                metricBuilder.setContentText(fallbackMetricText);
+                final Notification styled = metricBuilder.build();
                 final long metricFingerprint = new NotificationFingerprint()
                         .add(type).add("metric-style").add(displayGlucoseValue)
                         .add(isMmol).add(rate)
