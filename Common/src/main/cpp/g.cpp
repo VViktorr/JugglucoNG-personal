@@ -2369,7 +2369,10 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
   data_t::deleteex(bluedata);
   //    delete newstate;
   if (algres == ALGDUP_VALUE) {
-    delete newstate;
+    // The frame is valid and advanced the Abbott stream parser even though
+    // its glucose value is already present (for example after WearSync handover).
+    // Keep parser state so the next physical frame can advance normally.
+    sdata->setstate(newstate);
     return 1LL;
   }
   if (algres) {
