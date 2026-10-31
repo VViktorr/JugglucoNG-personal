@@ -34,6 +34,7 @@ object StatsReportExporter {
         val prefValue: String,
         @StringRes val labelResId: Int
     ) {
+        LIBREVIEW_STYLE("libreview_style", R.string.report_style_libreviev),
         CURRENT("current", R.string.report_style_current),
         MINIMAL_SWISS("minimal_swiss", R.string.report_style_minimal_swiss),
         MEDICAL_JOURNAL("medical_journal", R.string.report_style_medical_journal),
@@ -92,6 +93,12 @@ object StatsReportExporter {
     fun swatch(style: PdfVisualStyle): PdfStyleSwatch =
         resolveVisualTheme(style).let { PdfStyleSwatch(it.paper, it.text, it.primary, it.secondary) }
 
+        PdfVisualStyle.LIBREVIEW_STYLE -> resolveVisualTheme(PdfVisualStyle.MINIMAL_SWISS).copy(
+            paper = android.graphics.Color.WHITE,
+            primary = android.graphics.Color.rgb(0, 103, 166),
+            secondary = android.graphics.Color.BLACK,
+            showSideStripe = false
+        )
     private fun resolveVisualTheme(style: PdfVisualStyle): PdfVisualTheme = when (style) {
         PdfVisualStyle.CURRENT -> PdfVisualTheme(
             paper = android.graphics.Color.rgb(245, 248, 253),
@@ -317,6 +324,11 @@ object StatsReportExporter {
         patientInfo: PatientInfo? = null,
         reportStyle: PdfVisualStyle = PdfVisualStyle.CURRENT
     ): Result<Unit> = withContext(Dispatchers.IO) {
+        if (reportStyle == PdfVisualStyle.LIBREVIEW_STYLE) {
+            return@withContext runCatching {
+                LibreViewStyleReport.write(context, uri, uiState, reportDays, patientInfo)
+            }.onFailure { Log.e(TAG, "Libreviev style export failed", it) }
+        }
         runCatching {
             val reportWindowDays = reportDays.coerceAtLeast(1)
             val pageWidth = 1240

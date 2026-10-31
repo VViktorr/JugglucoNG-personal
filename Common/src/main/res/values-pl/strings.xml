@@ -1274,6 +1274,7 @@
     <string name="export_readable_report">Eksportuj czytelny raport</string>
     <string name="report_style_title">Styl wizualny raportu</string>
     <string name="report_style_current">Bieżący</string>
+    <string name="report_style_libreviev">Raport kliniczny LibreView</string>    <string name="report_style_current">Bieżący</string>
     <string name="report_style_minimal_swiss">Minimalny szwajcarski</string>
     <string name="report_style_medical_journal">Czasopismo medyczne</string>
     <string name="report_style_dark_ink">Premium ciemny tusz</string>
