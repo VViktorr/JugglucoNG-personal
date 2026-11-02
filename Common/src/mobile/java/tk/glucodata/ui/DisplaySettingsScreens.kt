@@ -594,9 +594,17 @@ fun FloatingGlucoseSettingsScreen(
             )
             if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
                 OutlinedButton(onClick = {
-                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_PROMOTED_NOTIFICATIONS)
+                    val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
                         .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                    runCatching { context.startActivity(intent) }
+                    runCatching { context.startActivity(intent) }.onFailure {
+                        // Some OEMs omit the promotion page; app notification settings remain available.
+                        runCatching {
+                            context.startActivity(
+                                Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            )
+                        }
+                    }
                 }) { Text(stringResource(R.string.system_glucose_notification_permission)) }
             }
         }
