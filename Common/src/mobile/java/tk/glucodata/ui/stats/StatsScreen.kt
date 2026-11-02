@@ -2,9 +2,11 @@
 
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.ClipData
 import android.content.Context
@@ -237,6 +239,14 @@ fun StatsScreen(
     }
     var pendingReportStylePref by rememberSaveable { mutableStateOf(reportStylePref) }
     val selectedReportStyle = StatsReportExporter.PdfVisualStyle.fromPref(reportStylePref)
+    var reportGroupKeys by rememberSaveable {
+        mutableStateOf(LibreViewReportGroup.fromKeys(
+            reportPrefs.getStringSet("stats_report_libreview_groups", null)
+        ).joinToString(",") { it.key })
+    }
+    var pendingReportGroupKeys by rememberSaveable { mutableStateOf(reportGroupKeys) }
+    val reportGroups = LibreViewReportGroup.fromKeys(reportGroupKeys.split(","))
+    val hasPdfGroups = selectedReportStyle != StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE || reportGroups.isNotEmpty()
     val view = LocalView.current
     LaunchedEffect(context) { StatsLayoutStore.ensureLoaded(context) }
     val layout by StatsLayoutStore.state.collectAsStateWithLifecycle()
@@ -282,6 +292,7 @@ fun StatsScreen(
             .putString("stats_report_patient_dob", patientDobInput.trim())
             .putString("stats_report_patient_clinician", patientClinicianInput.trim())
             .putString(PrefKeyReportPdfStyle, reportStylePref)
+            .putStringSet("stats_report_libreview_groups", reportGroups.map { it.key }.toSet())
             .apply()
     }
 
@@ -289,15 +300,26 @@ fun StatsScreen(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
+        // Freeze every option before the history read suspends or another sheet is opened.
+        val requestedDays = pendingReportDays
+        val requestedPatient = pendingPatientInfo
+        val requestedStyle = StatsReportExporter.PdfVisualStyle.fromPref(pendingReportStylePref)
+        val requestedGroups = LibreViewReportGroup.fromKeys(pendingReportGroupKeys.split(","))
         coroutineScope.launch {
-            val reportState = viewModel.buildReportUiState(pendingReportDays)
+            val clinicalReport = requestedStyle == StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE
+            val reportState = viewModel.buildReportUiState(
+                requestedDays,
+                clinicalReport = clinicalReport,
+                includeCalendarContext = clinicalReport && LibreViewReportGroup.MONTHLY_SUMMARY in requestedGroups
+            )
             val result = StatsReportExporter.exportComprehensivePdf(
                 context = context,
                 uri = uri,
                 uiState = reportState,
-                reportDays = pendingReportDays,
-                patientInfo = pendingPatientInfo,
-                reportStyle = StatsReportExporter.PdfVisualStyle.fromPref(pendingReportStylePref)
+                reportDays = requestedDays,
+                patientInfo = requestedPatient,
+                reportStyle = requestedStyle,
+                reportGroups = requestedGroups
             )
             result.onSuccess {
                 exportedReportUri = uri
@@ -484,6 +506,7 @@ fun StatsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -519,7 +542,7 @@ fun StatsScreen(
                         itemHeight = 36.dp,
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
@@ -542,10 +565,16 @@ fun StatsScreen(
                         onStyleSelected = { style -> reportStylePref = style.prefValue },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    if (selectedReportStyle == StatsReportExporter.PdfVisualStyle.LIBREVIEW_STYLE) {
+                        ReportGroupPicker(selected = reportGroups, onChange = { groups ->
+                            reportGroupKeys = groups.joinToString(",") { it.key }
+                            reportPrefs.edit().putStringSet("stats_report_libreview_groups", groups.map { it.key }.toSet()).apply()
+                        })
+                    }
                     androidx.compose.material3.FilledTonalButton(
                         onClick = { showPatientInfo = !showPatientInfo },
                         modifier = Modifier.fillMaxWidth(),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(
@@ -602,15 +631,17 @@ fun StatsScreen(
                             val reportDays = parsedReportDays ?: return@FilledTonalButton
                             pendingReportDays = reportDays
                             pendingPatientInfo = buildPatientInfo()
+                            if (!hasPdfGroups) return@FilledTonalButton
                             pendingReportStylePref = reportStylePref
+                            pendingReportGroupKeys = reportGroupKeys
                             persistReportPrefs()
                             showShareSheet = false
                             val reportDate = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
                             pdfLauncher.launch("cgm_report_$reportDate.pdf")
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = parsedReportDays != null,
-                        shapes = ButtonDefaults.shapes(),
+                        enabled = parsedReportDays != null && hasPdfGroups,
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = stringResource(R.string.export_readable_report))
@@ -664,7 +695,7 @@ fun StatsScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isPublishing && workerUrl.isNotBlank() && parsedReportDays != null,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(text = if (isPublishing) stringResource(R.string.loading_data) else stringResource(R.string.export))
@@ -839,7 +870,7 @@ private fun ArrangeSheet(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Button(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                Button(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
@@ -1195,7 +1226,7 @@ private fun HeaderBlock(
 ) {
     TabScreenHeader(title = stringResource(R.string.statistics_title)) {
         IconButtonTooltip(stringResource(R.string.export)) {
-            IconButton(onClick = onShareClick, shapes = IconButtonDefaults.shapes()) {
+            IconButton(onClick = onShareClick, shapes = appIconButtonShapes()) {
                 Icon(
                     imageVector = Icons.Filled.Share,
                     contentDescription = stringResource(R.string.export),
@@ -1942,7 +1973,7 @@ private fun PatternsCard(
                     itemHeight = 38.dp,
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)

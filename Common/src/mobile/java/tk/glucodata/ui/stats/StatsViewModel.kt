@@ -360,41 +360,42 @@ class StatsViewModel : ViewModel() {
         }
     }
 
-    suspend fun buildReportUiState(reportDays: Int): StatsUiState = withContext(Dispatchers.Default) {
+    suspend fun buildReportUiState(
+        reportDays: Int,
+        clinicalReport: Boolean = false,
+        includeCalendarContext: Boolean = false
+    ): StatsUiState = withContext(Dispatchers.Default) {
         val clampedDays = reportDays.coerceIn(1, MAX_REPORT_DAYS)
-        val cutoff = System.currentTimeMillis() - (clampedDays.toLong() * DAY_MS)
-        val reportHistory = resolveHistoryForStartTime(cutoff)
-        val filteredHistory = resolveStatsDisplayHistory(
-            history = reportHistory,
-            viewMode = _viewMode.value,
-            unit = _unit.value
-        ).filter {
-            it.timestamp >= cutoff && isStatsValueValid(it.value)
-        }
-        val filteredTemperature = _temperaturePoints.value.filter { it.timestamp >= cutoff }
+        val now = System.currentTimeMillis()
+        val zone = ZoneId.systemDefault()
+        val range = if (clinicalReport) ClinicalReportPolicy.range(clampedDays, now, zone)
+            else StatsDateRange(now - clampedDays.toLong() * DAY_MS, now)
+        val cutoff = range.startMillis
+        val historyStart = if (clinicalReport && includeCalendarContext) {
+            Instant.ofEpochMilli(cutoff).atZone(zone).toLocalDate().withDayOfMonth(1)
+                .atStartOfDay(zone).toInstant().toEpochMilli()
+        } else cutoff
+        val reportUnit = _unit.value
+        val reportTargets = if (clinicalReport) StatsTargets() else _targets.value
+        val reportHistory = resolveHistoryForStartTime(historyStart)
+        val displayHistory = resolveStatsDisplayHistory(
+            history = reportHistory, viewMode = _viewMode.value, unit = reportUnit
+        ).filter { it.timestamp in historyStart..now && isStatsValueValid(it.value) }
+        val filteredHistory = displayHistory.filter { it.timestamp >= cutoff }
 
         StatsUiState(
             selectedRange = _selectedRange.value,
-            activeRange = StatsDateRange(
-                startMillis = cutoff,
-                endMillis = System.currentTimeMillis()
-            ),
+            activeRange = range,
             availableRange = _availableRange.value,
-            unit = _unit.value,
-            targets = _targets.value,
+            unit = reportUnit,
+            targets = reportTargets,
             isLoading = _isLoading.value,
             hasSensor = _hasSensor.value,
-            summary = calculateSummary(
-                history = filteredHistory,
-                targets = _targets.value,
-                unit = _unit.value,
-                activeRange = StatsDateRange(
-                    startMillis = cutoff,
-                    endMillis = System.currentTimeMillis()
-                )
-            ),
-            temperaturePoints = filteredTemperature,
-            readings = filteredHistory
+            summary = calculateSummary(filteredHistory, reportTargets, reportUnit, range),
+            temperaturePoints = _temperaturePoints.value.filter { it.timestamp in cutoff..now },
+            readings = filteredHistory,
+            reportCalendarReadings = if (clinicalReport && includeCalendarContext) displayHistory else emptyList(),
+            reportPersonalTargets = if (clinicalReport) _targets.value else null
         )
     }
 

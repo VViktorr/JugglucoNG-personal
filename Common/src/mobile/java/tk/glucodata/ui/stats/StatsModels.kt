@@ -419,5 +419,9 @@ data class StatsUiState(
     val hasSensor: Boolean = true,
     val summary: StatsSummary = StatsSummary(),
     val temperaturePoints: List<TemperaturePoint> = emptyList(),
-    val readings: List<GlucosePoint> = emptyList()
+    val readings: List<GlucosePoint> = emptyList(),
+    /** Optional full-month context for the PDF calendar, excluded from period summaries. */
+    val reportCalendarReadings: List<GlucosePoint> = emptyList(),
+    /** Original app settings, for the device page; clinical report bands are separate. */
+    val reportPersonalTargets: StatsTargets? = null
 )
