@@ -15,6 +15,8 @@ class FloatingSettingsRepository(context: Context) {
     
     // Keys
     companion object {
+        private val resetRequests = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
         const val KEY_ENABLED = "floating_glucose_enabled"
         const val KEY_TRANSPARENT = "floating_transparent" // true = transparent, false = filled
         const val KEY_SHOW_SECONDARY = "floating_show_secondary"
@@ -87,7 +89,12 @@ class FloatingSettingsRepository(context: Context) {
             .apply()
     }
 
-    fun resetPosition() = savePosition(OverlayPosition.CENTRE)
+    val positionResetRequests: Flow<Unit> = resetRequests
+
+    fun resetPosition() {
+        savePosition(OverlayPosition.CENTRE)
+        resetRequests.tryEmit(Unit)
+    }
 
     /** Null until a position has been saved in the screen-relative form. */
     fun getPosition(): OverlayPosition? {

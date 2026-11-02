@@ -7,6 +7,13 @@ import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.IBinder
+import android.view.MotionEvent
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Color
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import android.view.Gravity
 import android.view.Surface
 import android.view.View
@@ -150,6 +157,131 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
     private var legacyPixelPosition: Pair<Int, Int>? = null
     private var screenArea: OverlayScreenArea? = null
     private var dragging = false
+    private var positionHandle: View? = null
+    private var positionHandleParams: WindowManager.LayoutParams? = null
+    private var handleTimeout: Job? = null
+
+    private fun hidePositionHandle() {
+        handleTimeout?.cancel()
+        handleTimeout = null
+        positionHandle?.let { handle ->
+            runCatching { windowManager?.removeView(handle) }
+        }
+        positionHandle = null
+        positionHandleParams = null
+    }
+
+    private fun expirePositionHandle(delayMillis: Long) {
+        handleTimeout?.cancel()
+        handleTimeout = serviceScope.launch {
+            delay(delayMillis)
+            hidePositionHandle()
+        }
+    }
+
+    private fun updatePositionHandle() {
+        val handle = positionHandle ?: return
+        val params = positionHandleParams ?: return
+        val root = overlayRoot ?: return
+        val area = currentScreenArea() ?: return
+        val density = resources.displayMetrics.density
+        val gap = (126f * density).roundToInt() // About 2 cm in density-independent units.
+        params.x = (layoutParams.x + (root.width - params.width) / 2)
+            .coerceIn(area.left, maxOf(area.left, area.right - params.width))
+        val below = layoutParams.y + root.height + gap - params.height / 2
+        val above = layoutParams.y - gap - params.height / 2
+        params.y = (if (below + params.height <= area.bottom) below else above)
+            .coerceIn(area.top, maxOf(area.top, area.bottom - params.height))
+        runCatching { windowManager?.updateViewLayout(handle, params) }
+    }
+
+    private fun showPositionHandle() {
+        hidePositionHandle()
+        if (dynamicIslandEnabled || overlayRoot?.isAttachedToWindow != true) return
+        val density = resources.displayMetrics.density
+        val label = getString(tk.glucodata.R.string.floating_drag_handle)
+        val handle = object : View(this) {
+            private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+            override fun onDraw(canvas: Canvas) {
+                super.onDraw(canvas)
+                val cy = height / 2f
+                paint.color = Color.argb(220, 32, 32, 32)
+                canvas.drawRoundRect(2f * density, 2f * density,
+                    width - 2f * density, height - 2f * density, 14f * density, 14f * density, paint)
+                paint.color = Color.WHITE
+                canvas.drawRoundRect(width / 2f - 18f * density, 9f * density,
+                    width / 2f + 18f * density, 13f * density, 2f * density, 2f * density, paint)
+                paint.textAlign = Paint.Align.CENTER
+                paint.textSize = 13f * resources.displayMetrics.scaledDensity
+                canvas.drawText(label, width / 2f, cy + 12f * density, paint)
+            }
+        }
+        handle.contentDescription = label
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 13f * resources.displayMetrics.scaledDensity
+        }
+        val params = WindowManager.LayoutParams(
+            maxOf((180f * density).roundToInt(), (labelPaint.measureText(label) + 32f * density).roundToInt()), (48f * density).roundToInt(),
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            if (android.os.Build.VERSION.SDK_INT >= 28) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
+        var lastX = 0f
+        var lastY = 0f
+        var remainderX = 0f
+        var remainderY = 0f
+        handle.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    handleTimeout?.cancel()
+                    lastX = event.rawX
+                    lastY = event.rawY
+                    remainderX = 0f
+                    remainderY = 0f
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    remainderX += event.rawX - lastX
+                    remainderY += event.rawY - lastY
+                    lastX = event.rawX
+                    lastY = event.rawY
+                    val dx = remainderX.toInt()
+                    val dy = remainderY.toInt()
+                    remainderX -= dx
+                    remainderY -= dy
+                    if (dx != 0 || dy != 0) updateViewPosition(dx, dy)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    persistViewPosition()
+                    expirePositionHandle(1500L)
+                    true
+                }
+                else -> true
+            }
+        }
+        positionHandle = handle
+        positionHandleParams = params
+        // Place before attaching to avoid flashing the handle in the top-left corner.
+        val root = overlayRoot!!
+        params.x = layoutParams.x + (root.width - params.width) / 2
+        params.y = layoutParams.y + root.height + (102f * density).roundToInt()
+        try {
+            windowManager?.addView(handle, params)
+            updatePositionHandle()
+            expirePositionHandle(30_000L)
+        } catch (error: Exception) {
+            hidePositionHandle()
+            tk.glucodata.Log.stack("FloatingGlucoseService", "position handle", error)
+        }
+    }
 
     private fun setupOverlay() {
         if (composeView != null) return
@@ -262,6 +394,7 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
 
         try {
             windowManager?.updateViewLayout(overlayRoot, layoutParams)
+            updatePositionHandle()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -278,6 +411,18 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
 
 
     private fun observeSettings() {
+        serviceScope.launch {
+            settingsRepository.positionResetRequests.collectLatest {
+                if (!dynamicIslandEnabled) {
+                    dragging = false
+                    freeformPosition = OverlayPosition.CENTRE
+                    legacyPixelPosition = null
+                    applyOverlayPlacement()
+                    overlayRoot?.post { showPositionHandle() }
+                }
+            }
+        }
+
         serviceScope.launch {
             UiRefreshBus.events.collectLatest {
                 glucoseRepository.refreshSensorSerial()
@@ -306,6 +451,7 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
         serviceScope.launch {
             settingsRepository.isDynamicIslandEnabled.collectLatest { isIsland ->
                 dynamicIslandEnabled = isIsland
+                if (isIsland) hidePositionHandle()
                 applyOverlayPlacement()
             }
         }
@@ -384,6 +530,7 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
 
         try {
             windowManager?.updateViewLayout(overlayRoot, layoutParams)
+            updatePositionHandle()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -470,6 +617,7 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
     }
 
     override fun onDestroy() {
+        hidePositionHandle()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         store.clear()
         serviceScope.cancel()
