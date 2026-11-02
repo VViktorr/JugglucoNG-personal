@@ -336,6 +336,9 @@ fun DisplayAndColorSettingsScreen(
     navController: NavController,
     viewModel: DashboardViewModel
 ) {
+    val barsStacked by viewModel.dashboardBarsStacked.collectAsStateWithLifecycle()
+    val barsCustomRatio by viewModel.dashboardBarsCustomRatio.collectAsStateWithLifecycle()
+    val glucoseWidthPercent by viewModel.dashboardGlucoseWidthPercent.collectAsStateWithLifecycle()
     val rangeColorsEnabled by viewModel.glucoseValueRangeColorsEnabled.collectAsStateWithLifecycle()
     val arrowForecastEnabled by viewModel.glucoseArrowForecastColorsEnabled.collectAsStateWithLifecycle()
     val chartRangeColorsEnabled by viewModel.glucoseChartRangeColorsEnabled.collectAsStateWithLifecycle()
@@ -356,6 +359,45 @@ fun DisplayAndColorSettingsScreen(
         title = stringResource(R.string.settings_dashboard_charts_title)
     ) {
         GlucoseRangeDisplaySettings(viewModel)
+
+        SectionLabel(
+            stringResource(R.string.dashboard_bars_section),
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        ) {
+            SettingsSwitchItem(
+                title = stringResource(R.string.dashboard_bars_stacked_title),
+                subtitle = stringResource(R.string.dashboard_bars_stacked_desc),
+                checked = barsStacked,
+                onCheckedChange = viewModel::setDashboardBarsStacked,
+                position = if (barsStacked) CardPosition.SINGLE else CardPosition.TOP
+            )
+            if (!barsStacked) {
+                SettingsSwitchItem(
+                    title = stringResource(R.string.dashboard_bars_ratio_title),
+                    subtitle = stringResource(R.string.dashboard_bars_ratio_desc),
+                    checked = barsCustomRatio,
+                    onCheckedChange = viewModel::setDashboardBarsCustomRatio,
+                    position = CardPosition.BOTTOM
+                )
+            }
+        }
+        if (!barsStacked && barsCustomRatio) {
+            Text(
+                stringResource(R.string.dashboard_bars_ratio_value, glucoseWidthPercent, 100 - glucoseWidthPercent),
+                modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+            )
+            tk.glucodata.ui.components.AppSlider(
+                value = glucoseWidthPercent.toFloat(),
+                onValueChange = { viewModel.setDashboardGlucoseWidthPercent(it.toInt()) },
+                valueRange = 40f..70f,
+                modifier = Modifier.padding(horizontal = screenHorizontalPadding),
+                steps = 29
+            )
+        }
 
         SectionLabel(
             stringResource(R.string.glucose_palette_edit_title),

@@ -492,6 +492,13 @@ class DashboardViewModel(
     private val _glucoseAppChartRangeColorsEnabled = MutableStateFlow(false)
     val glucoseAppChartRangeColorsEnabled = _glucoseAppChartRangeColorsEnabled.asStateFlow()
 
+    private val _dashboardBarsStacked = MutableStateFlow(false)
+    val dashboardBarsStacked = _dashboardBarsStacked.asStateFlow()
+    private val _dashboardBarsCustomRatio = MutableStateFlow(false)
+    val dashboardBarsCustomRatio = _dashboardBarsCustomRatio.asStateFlow()
+    private val _dashboardGlucoseWidthPercent = MutableStateFlow(70)
+    val dashboardGlucoseWidthPercent = _dashboardGlucoseWidthPercent.asStateFlow()
+
     private val _dashboardShowDelta = MutableStateFlow(false)
     val dashboardShowDelta = _dashboardShowDelta.asStateFlow()
 
@@ -885,6 +892,9 @@ class DashboardViewModel(
         _glucoseArrowForecastColorsEnabled.value = prefs.getBoolean(ARROW_FORECAST_COLORS_KEY, false)
         _glucoseChartRangeColorsEnabled.value = prefs.getBoolean(CHART_RANGE_COLORS_KEY, false)
         _glucoseAppChartRangeColorsEnabled.value = prefs.getBoolean(APP_CHART_RANGE_COLORS_KEY, false)
+        _dashboardBarsStacked.value = prefs.getBoolean("dashboard_bars_stacked", false)
+        _dashboardBarsCustomRatio.value = prefs.getBoolean("dashboard_bars_custom_ratio", false)
+        _dashboardGlucoseWidthPercent.value = prefs.getInt("dashboard_glucose_width_percent", 70).coerceIn(40, 70)
         _dashboardShowDelta.value = prefs.getBoolean(DASHBOARD_SHOW_DELTA_KEY, false)
         _dashboardRowsShowDelta.value = prefs.getBoolean(DASHBOARD_ROWS_SHOW_DELTA_KEY, false)
         _dashboardShowReadingAge.value = prefs.getBoolean(DASHBOARD_SHOW_READING_AGE_KEY, false)
@@ -1896,6 +1906,25 @@ class DashboardViewModel(
         refreshNotificationPredictionSurfaces(context)
         // Travels with the palette: the watch colours its readings by the same rule.
         tk.glucodata.GlucoseColorSync.push()
+    }
+
+    fun setDashboardBarsStacked(enabled: Boolean) {
+        tk.glucodata.Applic.app.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("dashboard_bars_stacked", enabled).apply()
+        _dashboardBarsStacked.value = enabled
+    }
+
+    fun setDashboardBarsCustomRatio(enabled: Boolean) {
+        tk.glucodata.Applic.app.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("dashboard_bars_custom_ratio", enabled).apply()
+        _dashboardBarsCustomRatio.value = enabled
+    }
+
+    fun setDashboardGlucoseWidthPercent(percent: Int) {
+        val bounded = percent.coerceIn(40, 70)
+        tk.glucodata.Applic.app.getSharedPreferences("tk.glucodata_preferences", android.content.Context.MODE_PRIVATE)
+            .edit().putInt("dashboard_glucose_width_percent", bounded).apply()
+        _dashboardGlucoseWidthPercent.value = bounded
     }
 
     fun setDashboardShowDelta(enabled: Boolean) {

@@ -240,6 +240,8 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    stackBars: Boolean = false,
+    glucoseWidthPercent: Int = 70,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -1144,7 +1146,15 @@ fun DashboardCombinedHeader(
         }
     }
 
-    if (isLandscape) {
+    if (stackBars) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            sensorCard(Modifier.fillMaxWidth())
+            heroCard(Modifier.fillMaxWidth())
+        }
+    } else if (isLandscape) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1161,12 +1171,12 @@ fun DashboardCombinedHeader(
         ) {
             heroCard(
                 Modifier
-                    .weight(0.7f)
+                    .weight(glucoseWidthPercent.coerceIn(40, 70) / 100f)
                     .fillMaxHeight()
             )
             sensorCard(
                 Modifier
-                    .weight(0.3f)
+                    .weight(1f - glucoseWidthPercent.coerceIn(40, 70) / 100f)
                     .fillMaxHeight()
             )
         }
