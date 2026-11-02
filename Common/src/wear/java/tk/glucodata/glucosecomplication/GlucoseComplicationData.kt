@@ -68,25 +68,37 @@ internal object GlucoseComplicationData {
         runCatching { tk.glucodata.ui.WearSensorSelection.resolve() }.getOrNull()
 
     fun currentReading(sensor: String? = displaySensor()): Reading? {
-        val snapshot = runCatching {
-            CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout, sensor)
-        }.getOrNull() ?: return syncedReading(sensor)
         val now = System.currentTimeMillis()
-        if (snapshot.timeMillis <= 0L || now - snapshot.timeMillis >= Notify.glucosetimeout) {
-            return syncedReading(sensor)
+        val live = runCatching {
+            CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout, sensor)
+        }.getOrNull()?.takeIf { snapshot ->
+            snapshot.timeMillis > 0L &&
+                now - snapshot.timeMillis < Notify.glucosetimeout &&
+                snapshot.primaryValue.isFinite() && snapshot.primaryValue > 0f &&
+                snapshot.primaryStr.isNotBlank()
+        }?.let { snapshot ->
+            Reading(
+                value = snapshot.primaryValue,
+                text = snapshot.primaryStr,
+                isMmol = snapshot.isMmol,
+                timeMillis = snapshot.timeMillis,
+                rate = snapshot.rate,
+                index = snapshot.index,
+                sensorId = snapshot.sensorId,
+            )
         }
-        if (!snapshot.primaryValue.isFinite() || snapshot.primaryValue <= 0.0f || snapshot.primaryStr.isBlank()) {
-            return syncedReading(sensor)
+        // Data Layer history can advance while the live cache remains within its
+        // 330-second freshness limit. A fallback only after expiry hides newer
+        // synced minutes even when the system requests another complication.
+        // Compare resolved display times: both candidates retain the configured
+        // calibration, lane, smoothing and completed-interval policy.
+        val synced = syncedReading(sensor)
+        return when {
+            live == null -> synced
+            synced == null -> live
+            synced.timeMillis > live.timeMillis -> synced
+            else -> live
         }
-        return Reading(
-            value = snapshot.primaryValue,
-            text = snapshot.primaryStr,
-            isMmol = snapshot.isMmol,
-            timeMillis = snapshot.timeMillis,
-            rate = snapshot.rate,
-            index = snapshot.index,
-            sensorId = snapshot.sensorId,
-        )
     }
 
     /**

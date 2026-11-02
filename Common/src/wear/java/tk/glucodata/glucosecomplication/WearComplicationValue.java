@@ -327,6 +327,7 @@ static public void updateall() {
     IconValueDataSourceService.Companion.update();
     IconArrowDataSourceService.Companion.update();
     ShortArrowValueDataSourceService.Companion.update();
+    ArrowAboveValueDataSourceService.Companion.update();
     ChartDataSourceService.update();
     MultiSensorDataSourceService.update();
     tk.glucodata.tile.GlucoseTileService.Companion.update();
