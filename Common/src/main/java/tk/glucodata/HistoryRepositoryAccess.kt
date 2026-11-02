@@ -167,4 +167,14 @@ object HistoryRepositoryAccess {
             .onFailure { Log.stack(TAG, "getHistoryForSensor failed", it) }
             .getOrNull()
     }
+
+    @JvmStatic
+    fun getMergedDisplayHistoryForWidget(
+        preferredSerial: String?,
+        startTimeMs: Long,
+        isMmol: Boolean,
+    ): List<GlucosePoint>? =
+        runCatching { bridge?.getMergedDisplayHistoryForWidget(preferredSerial, startTimeMs, isMmol) }
+            .onFailure { Log.stack(TAG, "getMergedDisplayHistoryForWidget failed", it) }
+            .getOrNull()
 }

@@ -77,4 +77,14 @@ interface HistoryRepositoryBridge {
         startTimeMs: Long,
         isMmol: Boolean,
     ): List<GlucosePoint>?
+
+    /**
+     * The same merged multi-sensor display timeline used by the phone chart.
+     * Null means this bridge cannot provide it (for example on Wear).
+     */
+    fun getMergedDisplayHistoryForWidget(
+        preferredSerial: String?,
+        startTimeMs: Long,
+        isMmol: Boolean,
+    ): List<GlucosePoint>? = null
 }

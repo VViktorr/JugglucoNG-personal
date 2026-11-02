@@ -362,6 +362,21 @@ class HistoryRepository internal constructor(private val database: HistoryDataba
             }
         }
         
+        /** Merged dashboard history for home widgets, including sensor handovers. */
+        @JvmStatic
+        fun getMergedDisplayHistoryForWidget(
+            preferredSerial: String?,
+            startTime: Long,
+            isMmol: Boolean
+        ): List<tk.glucodata.GlucosePoint> = kotlinx.coroutines.runBlocking {
+            HistoryRepository().loadMergedWindow(
+                preferredSerial = preferredSerial,
+                startTime = startTime,
+                endTime = System.currentTimeMillis(),
+                allowProvisional = false
+            ).inDisplayUnit(isMmol).map { it.toSharedGlucosePoint() }
+        }
+
         /**
          * Blocking ownership for shared/main renderers, so the notification
          * resolves who is main at each minute from the same record the

@@ -481,6 +481,14 @@ fun ExpressiveSettingsScreen(
                     position = CardPosition.MIDDLE
                 )
                 SettingsItem(
+                    title = stringResource(R.string.widget_settings_title),
+                    subtitle = stringResource(R.string.widget_settings_subtitle),
+                    icon = Icons.Default.ClearAll,
+                    iconTint = displayColor,
+                    position = CardPosition.MIDDLE,
+                    onClick = { navController.navigate("settings/widgets") }
+                )
+                SettingsItem(
                     title = stringResource(R.string.notification_settings_title),
                     subtitle = stringResource(R.string.notification_settings_subtitle),
                     icon = Icons.Default.ClearAll,
