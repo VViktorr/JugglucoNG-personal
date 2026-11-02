@@ -20,16 +20,16 @@ Source `main`: `ba606f408428d2885421887c83c8531a3cd50b54`. The review covers all
 ## Explicit exclusions and holds
 
 1. **Libre2 callback hold lifted by the user for the hybrid implementation.** The personal 120-second stream watchdog is not copied; upstream 150-second soft recovery precedes one bounded hard escalation. See `libre2-hybrid-main5.md` for exact timing, privacy changes and validation.
-2. **NFC stays at 1.2.8.** `AlgNfcV`, `ScanNfcV`, native `libre2.cpp`, `SensorGlucoseData.hpp`, `share/savehistory.cpp` and `g.cpp` are unchanged. `NfcRawHistory.hpp` is not added. NFC/raw-only history import/export, its storage/overlap changes, NFC-as-current notification selection and related native widget supplement remain deferred together.
+2. **Authorized NFC isolation for Libre 2.** The minute NFC trend now uses the personal `NfcRawHistory` sidecar instead of advancing the BLE poll cursor. Only storage and dispatch were integrated; `AlgNfcV`, `ScanNfcV`, native `libre2.cpp` and `g.cpp` retain 1.2.8. Fifteen-minute gap filling and Path + Raw are unchanged. Personal NFC-as-current selection and older Raw/export semantics remain excluded. See `nfc-ble-isolation-main5.md`.
 3. **Other sensors stay at 1.2.8.** The complete driver tree, Libre3 source tree and sensor setup screens are preserved. Common `SuperGattCallback` remains original. In the shared `Libreview.java`, Libre3 calls explicitly delegate to preserved 1.2.8 method bodies, and its original config fetch is retained. The new Libre2 cloud behavior does not replace those methods.
 4. **Personal MetricStyle and glucose Live Update are excluded**, including classes, legacy/Compose toggles, resources, receiver, permission and tests. Features already in 1.2.8 are retained.
 5. Older AiDex/iCan/Ottai implementation and model-state changes do not replace newer 1.2.8 logic. In particular the newer AiDex state format, source ownership checks, transactional display-lock invalidation, calibration handling and sensor removal/setup paths remain original.
 
-The source differences listed below have no unreviewed entries. Deferred NFC and Libre2 callback work is intentionally outside the completed eligible scope, not implicitly approved.
+The source differences listed below have no unreviewed entries. The later user approvals cover the Libre2 hybrid callback and NFC/BLE storage isolation. Older NFC Raw/export and notification selection remain outside that approved scope.
 
 ## Validation
 
-- `python tools/check-main5-preserved.py`: confirms **223 protected files** against recorded upstream SHA-256 values, and verifies original Libre3 cloud method bodies after internal renaming.
+- `python tools/check-main5-preserved.py`: confirms **221 protected files** (the current manifest additionally pins the three authorized NFC isolation files; this follow-up was reviewed without running the checker) against recorded upstream SHA-256 values, and verifies original Libre3 cloud method bodies after internal renaming.
 - Production Libre2 LibreView replay: unit/region selection, forced registration, finite auth/device retries, HTTP/JSON rate limits, timeouts and connection cleanup pass.
 - Widget production-dispatch replay: both home and Glance renderers deliver an update racing with completion.
 - Wear production-ingestion replay: all **16 scenarios** pass, including malformed frames, out-of-order timestamps, ownership/disabled gates and phone Libre2 handling. Native/Room/platform APIs use test doubles; no sensor is contacted.
@@ -53,17 +53,17 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 | `Common/build.gradle` | Preserved original 1.2.8 version, SDK and dependency versions; personal 2.0.0 version bump is not a feature port |
 | `Common/proguard-rules.my` | Integrated personal regression/tooling/support file |
 | `Common/src/libre3/java/tk/glucodata/Libre3GattCallback.java` | Preserved original 1.2.8 per user: other sensor implementations and common BLE callback lifecycle are not replaced |
-| `Common/src/main/cpp/NfcRawHistory.hpp` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
-| `Common/src/main/cpp/SensorGlucoseData.hpp` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
+| `Common/src/main/cpp/NfcRawHistory.hpp` | Integrated separate NFC minute-trend storage only; not exported into the upstream Raw lane |
+| `Common/src/main/cpp/SensorGlucoseData.hpp` | Minimal sidecar writer added; all newer upstream sensor metadata/storage logic retained |
 | `Common/src/main/cpp/datbackup.cpp` | Integrated personal delta over 1.2.8 |
-| `Common/src/main/cpp/g.cpp` | Original native storage and NFC/history exporters preserved; raw-only storage changes deferred with NFC |
+| `Common/src/main/cpp/g.cpp` | Original native storage and NFC/history exporters preserved; original Path/Raw export unchanged after NFC sidecar isolation |
 | `Common/src/main/cpp/libre2.cpp` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
 | `Common/src/main/cpp/logjava.cpp` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/cpp/net/libreview/libreview.cpp` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/cpp/net/libreview/newlibre3.cpp` | Preserved original 1.2.8 per user: other sensor implementations and common BLE callback lifecycle are not replaced |
 | `Common/src/main/cpp/net/libreview/putsensor.cpp` | Only Libre2 registration diagnostics masked; Libre3 registration unchanged |
 | `Common/src/main/cpp/settings/javasettings.cpp` | Integrated personal delta over 1.2.8 |
-| `Common/src/main/cpp/share/savehistory.cpp` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
+| `Common/src/main/cpp/share/savehistory.cpp` | Libre2 trend isolated from savepoll; other sensor dispatch and 15-minute history stay upstream |
 | `Common/src/main/cpp/watch/netinfo.cpp` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/cpp/watch/watchvalue.cpp` | Use immutable sensor roster snapshot and current epoch time |
 | `Common/src/main/java/tk/glucodata/AlgNfcV.java` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
@@ -84,7 +84,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 | `Common/src/main/java/tk/glucodata/HistoryRepositoryAccess.kt` | Already identical to main |
 | `Common/src/main/java/tk/glucodata/HistoryRepositoryBridge.kt` | Already identical to main |
 | `Common/src/main/java/tk/glucodata/LeadingTrailingRefresh.kt` | Integrated personal delta over 1.2.8 |
-| `Common/src/main/java/tk/glucodata/Libre2GattCallback.java` | Authorized hybrid: upstream 150-second soft recovery, one additional hard recovery after 150 further seconds, private detailed diagnostics; NFC still deferred |
+| `Common/src/main/java/tk/glucodata/Libre2GattCallback.java` | Authorized hybrid: upstream 150-second soft recovery, one additional hard recovery after 150 further seconds, private detailed diagnostics; NFC sidecar isolation integrated separately |
 | `Common/src/main/java/tk/glucodata/MessageReceiver.kt` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/java/tk/glucodata/MessageSender.kt` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/java/tk/glucodata/Natives.java` | Merged country/auth/alert bridge |
@@ -412,7 +412,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 | `tools/notification-native-view-probe/evidence/status-font-ibm-compact.png` | Already identical to main |
 | `tools/notification-native-view-probe/src/tk/glucodata/ProductionPreview.java` | Already identical to main |
 | `tools/test-air-driver.py` | Integrated personal support/tooling delta |
-| `tools/test-libre2-connect.py` | Authorized hybrid: upstream 150-second soft recovery, one additional hard recovery after 150 further seconds, private detailed diagnostics; NFC still deferred |
+| `tools/test-libre2-connect.py` | Authorized hybrid: upstream 150-second soft recovery, one additional hard recovery after 150 further seconds, private detailed diagnostics; NFC sidecar isolation integrated separately |
 | `tools/test-libre3-connect.py` | Preserved original 1.2.8 per user: other sensor implementations and common BLE callback lifecycle are not replaced |
 | `tools/test-libreview-config.py` | Integrated personal regression/tooling/support file |
 | `tools/test-sensor-lifecycle.py` | Not imported: coupled to out-of-scope callback lifetime changes for other sensors |
@@ -425,3 +425,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 ## Authorized Libre 2 follow-up
 
 See [Libre 2 hybrid design and validation](libre2-hybrid-main5.md). Only the callback was removed from the original-file freeze manifest; the remaining 223 protected sensor/NFC/native files retain their original hashes. Shared Java/C++ log sinks now redact identities, credentials, byte dumps and pointer values before writes. This changes diagnostic text for all callers, not other sensor algorithms. No full APK build was requested.
+
+## Authorized NFC/BLE storage isolation
+
+See [NFC isolation and unchanged Path/Raw behavior](nfc-ble-isolation-main5.md). This follow-up modifies only the authorized storage files and updates their manifest entries. Compilation and tests were not run, as instructed.

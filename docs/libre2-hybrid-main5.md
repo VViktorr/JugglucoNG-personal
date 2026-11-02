@@ -2,7 +2,8 @@
 
 Zmiana dotyczy Libre 2 na `main5`. Bazą jest callback z oryginalnego
 1.2.8-Alpha (`a4fbdcce5c7312ca05fe0ef74a52848df0965ae8`).
-Nie przeniesiono całego starszego callbacku. NFC i algorytmy pozostałych sensorów
+Nie przeniesiono całego starszego callbacku. Późniejszą izolację zapisu NFC
+opisuje `nfc-ble-isolation-main5.md`. Algorytmy pozostałych sensorów
 pozostają z 1.2.8; wspólny `SuperGattCallback` też jest niezmieniony.
 
 ## Działanie trzech wariantów

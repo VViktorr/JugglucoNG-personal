@@ -115,22 +115,12 @@ return true;
 }
 
 extern int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) ;
-/* Besides the 32 fifteen-minute history records, the patch carries trend[16]: the raw
-   sensor value for each of the 16 minutes before the scan. Juggluco kept those only in
-   trends.dat for the legacy trend thumbnail, so scanning during a BLE outage recovered
-   nothing at one-minute resolution even though the tag was holding it. Append the minutes
-   we do not have yet.
-
-   These are uncompensated sensor values in the same unit as the history raw lane
-   (mg/dL x 10), not algorithm output, so they go into the raw lane with no auto value.
-   Only the Abbott library can turn a raw sample into a glucose reading, and it exposes
-   that for the current minute alone — deriving the other fifteen would be inventing
-   readings, which this app does not do.
-
-   The newest entry is left out on purpose: the scan itself already records that minute
-   with a real algorithm value, and a raw-only poll at the same second would displace it
-   in getGlucoseHistory(). */
-int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) {
+/* The upstream trend writer is retained for sensor families outside this Libre 2 fix.
+   For Libre 2, raw NFC trend minutes go into a separate file: never call savepoll()
+   for them, because its id guard is also the live BLE duplicate cursor.
+   The sensor's regular 15-minute history still uses saveSputnik_PG2 above, and
+   g.cpp keeps the upstream Path/Raw lanes and gap-filling behavior unchanged. */
+static int saveScanTrendLegacy128(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) {
 	if(!nfcptr)
 		return 0;
 	int added=0,skipped=0;
@@ -166,6 +156,52 @@ int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseDat
 	LOGGER("saveScanTrend added=%d already known=%d\n",added,skipped);
 	return added;
 	}
+
+int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlucoseData &save) {
+    if(!nfcptr) return 0;
+    // Security generations 1/2 identify Libre 2 variants. Other sensors keep 1.2.8.
+    const int generation = save.getsensorgen();
+    if (!save.isLibre2() || save.isAiDex() || !save.hasLibrePatchInfo() ||
+        generation < 1 || generation > 2)
+        return saveScanTrendLegacy128(nfcptr, nutime, nuid, save);
+    std::vector<NfcRawSample> rows;
+    rows.reserve(trend::num-1);
+    int invalid=0;
+    const auto polls=save.getPolldata();
+    for(int i=0;i<trend::num-1;i++) {
+        const uint16_t raw=nfcptr->gettrendglucose(i);
+        if(!raw) continue;
+        const int minutesback=trend::num-1-i;
+        const int64_t wideId=static_cast<int64_t>(nuid)-minutesback;
+        if(wideId<0||wideId>=maxminutes) { ++invalid; continue; }
+        const int id=static_cast<int>(wideId);
+        int64_t timestamp=static_cast<int64_t>(nutime)-minutesback*60;
+        // NFC scans and BLE receipt times can differ by most of a minute. A nearby
+        // measured BLE sample anchors this sensor-life minute without moving its cursor.
+        int closest=31;
+        for(const auto &poll:polls) {
+            if(!poll.valid(0)) continue;
+            const int64_t distance=std::abs(static_cast<int64_t>(id)-poll.id);
+            if(distance<closest) {
+                closest=static_cast<int>(distance);
+                timestamp=static_cast<int64_t>(poll.t)+(static_cast<int64_t>(id)-poll.id)*60;
+            }
+        }
+        if(id<0||id>=maxminutes||timestamp<=1598911200LL||timestamp>=2145909600LL) {
+            ++invalid;
+            continue;
+        }
+        const NfcRawSample row{static_cast<uint32_t>(timestamp),id,raw};
+        if(!NfcRawHistory::valid(row)) { ++invalid; continue; }
+        rows.push_back(row);
+    }
+    // Do not use savepoll(): its duplicate guard protects the live BLE/parser cursor.
+    // This separate file is keyed by sensor-life minute, not by the last BLE id.
+    const auto result=save.saveNfcRawHistory(rows);
+    LOGGER("NFC_DIAG trend-history added=%zu known=%zu invalid=%d persisted=%d\n",
+           result.added,result.known,invalid,result.persisted?1:0);
+    return static_cast<int>(result.added);
+}
 
 extern std::vector<int> usedsensors;
 extern void setusedsensors();

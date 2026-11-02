@@ -21,6 +21,7 @@
 // #ifndef GLUCOSEHISTORY_H
 // #define GLUCOSEHISTORY_H
 #pragma once
+#include "NfcRawHistory.hpp"
 // #include <filesystem>
 
 #include <errno.h>
@@ -234,6 +235,11 @@ class SensorGlucoseData {
   string sensordir;
   // inline static  const string basedir{FILEDIR};
 public:
+  // NFC trend is independent of polls/rawpolls and cannot advance the live BLE cursor.
+  NfcRawHistory::Result saveNfcRawHistory(const std::vector<NfcRawSample> &rows) const {
+    return NfcRawHistory(sensordir + "/nfc-raw-history.dat").append(rows);
+  }
+
   struct updatestate {
     uint32_t scanstart;
     uint32_t histstart;

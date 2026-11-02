@@ -33,5 +33,7 @@ for name, digest in manifest['libreview3_methods'].items():
         body = body.replace(identifier, identifier.removesuffix('Upstream128'))
     normalized = re.sub(r'\s+', ' ', body).strip()
     assert hashlib.sha256(normalized.encode()).hexdigest() == digest, name
-assert not (root / 'Common/src/main/cpp/NfcRawHistory.hpp').exists()
+# Explicitly authorized Libre 2 NFC isolation: separately pinned, not claimed as upstream.
+for name, digest in manifest.get('nfc_isolation_files', {}).items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
 print(f'PASS: {len(expected)} preserved sensor/NFC/native files match upstream 1.2.8')

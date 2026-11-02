@@ -4,8 +4,6 @@
     "Common/src/main/java/tk/glucodata/SuperGattCallback.java": "850ef129dcf6720f5efc3436b40a7df8d90cedd4c3eee6b0a189ff2f26c45459",
     "Common/src/main/java/tk/glucodata/AlgNfcV.java": "160845112da44cff9dc1f899b1f0cd23bf46513413091a7f4a19f2a00d2e8e98",
     "Common/src/main/java/tk/glucodata/ScanNfcV.java": "fca0d46863ea10ab7321f38ea4d9143b6899390284a437d480c9fe150ca2c62a",
-    "Common/src/main/cpp/SensorGlucoseData.hpp": "30d134657c07086c4ae9c0bc3e92342f1c4b429b0e2656761ea2de5a7283c01e",
-    "Common/src/main/cpp/share/savehistory.cpp": "a3a39b6a005093ed4a661b0f3af29251a839e2a7001bee49df25fbf4932d5184",
     "Common/src/main/cpp/libre2.cpp": "68df87a3c8575e7648fc98cfb78ad209d0e2e6b4925c8785a219d38b6c0cb8b0",
     "Common/src/main/cpp/g.cpp": "798d8cbf9b2f574c42a1c8a7aed6c0090a0b6b848ebb5b5ec4ba854008e0d569",
     "Common/src/main/cpp/net/libreview/newlibre3.cpp": "9041cb89aa60db3ad8fd7eac51d5d2d4175f3a4ec2fc3b9f05c400d8376a4993"
@@ -240,5 +238,10 @@
     "postmeasurementsUpstream128": "a284563f936099c72dcfc3791f659c2c5017a0fefb19b4375e5de125eb3d4031",
     "libreconfigUpstream128": "4e10aca6a4ceffc026e55f97dda4f51a1ee50e775714c2d255644f9fd4d5909a",
     "libre3getconfigURL": "b6e1c75ce9b3608c11d029b54dadbfdaa9f0722dd654337a7bbe3daac5dc16b6"
+  },
+  "nfc_isolation_files": {
+    "Common/src/main/cpp/NfcRawHistory.hpp": "8ecdd994119c0f2eb4c654c35a77551ff74a404d84ae9d507e094f1487d26133",
+    "Common/src/main/cpp/share/savehistory.cpp": "dfa7d6ab17d5262999fed39f89f688975a619cacb042f4f6fd5698ad9bb7909a",
+    "Common/src/main/cpp/SensorGlucoseData.hpp": "bc3b15318070f868c2e37beb5ce1e490648312c102e4ef9fd63fd94c63a7f253"
   }
 }
