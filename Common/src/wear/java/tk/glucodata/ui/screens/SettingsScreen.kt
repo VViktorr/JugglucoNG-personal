@@ -4,6 +4,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.wear.compose.material3.RadioButton
+import tk.glucodata.WearOngoingActivity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -23,6 +30,8 @@ fun SettingsScreen(
     onOpenSensor: () -> Unit,
     onOpenExchange: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+    var ongoingIconMode by remember { mutableIntStateOf(WearOngoingActivity.iconMode(context)) }
     ScreenScaffold(timeText = { TimeText() }) {
         ScalingLazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -36,6 +45,23 @@ fun SettingsScreen(
             }
             item {
                 WearNavigationRow(stringResource(R.string.sensor), onClick = onOpenSensor)
+            }
+            item { WearSectionTitle(stringResource(R.string.wear_ongoing_icon_title)) }
+            val iconOptions = listOf(
+                R.string.wear_ongoing_icon_normal,
+                R.string.wear_ongoing_icon_value,
+                R.string.wear_ongoing_icon_trend,
+            )
+            items(iconOptions.size) { mode ->
+                RadioButton(
+                    selected = ongoingIconMode == mode,
+                    onSelect = {
+                        ongoingIconMode = mode
+                        WearOngoingActivity.setIconMode(context, mode)
+                    },
+                    label = { Text(stringResource(iconOptions[mode])) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             // Reading colours are no longer a watch-local choice: the palette,
             // the band overrides and the "colour values by range" switch all

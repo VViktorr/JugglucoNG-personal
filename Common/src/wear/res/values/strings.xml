@@ -56,4 +56,9 @@
 
     <string name="wear_arrow_above_value_label">Arrow above value (text)</string>
     <string name="wear_arrow_above_value_description">Trend arrow in the title, glucose in the main text. The watch face must display titles; their position depends on the face.</string>
+
+    <string name="wear_ongoing_icon_title">Activity icon on watch face</string>
+    <string name="wear_ongoing_icon_normal">Standard icon</string>
+    <string name="wear_ongoing_icon_value">Glucose value</string>
+    <string name="wear_ongoing_icon_trend">Trend arrow</string>
 </resources>

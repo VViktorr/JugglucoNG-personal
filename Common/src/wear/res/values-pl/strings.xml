@@ -39,4 +39,9 @@
     <string name="wear_multi_sensor_arrow_complication">Wartości wielu czujników + trendy (tekstowa / obrazkowa)</string>
     <string name="wear_arrow_above_value_label">Strzałka nad wartością (tekstowa)</string>
     <string name="wear_arrow_above_value_description">Strzałka trendu w tytule, glukoza w głównym tekście. Tarcza zegarka musi wyświetlać tytuł; jego położenie zależy od tarczy.</string>
+
+    <string name="wear_ongoing_icon_title">Ikona aktywności na tarczy</string>
+    <string name="wear_ongoing_icon_normal">Standardowa ikona</string>
+    <string name="wear_ongoing_icon_value">Wartość glukozy</string>
+    <string name="wear_ongoing_icon_trend">Strzałka trendu</string>
 </resources>
