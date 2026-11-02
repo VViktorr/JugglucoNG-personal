@@ -158,17 +158,19 @@ internal object SettingsSearchIndex {
     private fun route(route: String) = SettingsSearchTarget.Route(route)
     private fun action(action: SettingsSearchAction) = SettingsSearchTarget.Action(action)
 
-    // Paths, by group. The first two groups have no label on screen, so their rows say "Settings".
-    private val TOP = listOf(R.string.settings)
-    private val ALERTS = TOP + R.string.glucose_alerts_title
-    private val JOURNAL = TOP + R.string.journal_title
-    private val DISPLAY = listOf(R.string.settings_section_display)
-    private val SHARING = listOf(R.string.settings_section_sharing)
+    // Paths match the unique category used by the Settings tab.
+    private val TOP = listOf(R.string.settings_category_appearance)
+    private val PROCESSING = listOf(R.string.settings_category_processing)
+    private val APP = listOf(R.string.settings_category_app)
+    private val ALERTS = listOf(R.string.settings_category_alarms, R.string.glucose_alerts_title)
+    private val JOURNAL = listOf(R.string.settings_category_journal, R.string.journal_title)
+    private val DISPLAY = listOf(R.string.settings_category_appearance)
+    private val SHARING = listOf(R.string.settings_category_connections)
     private val PHONE_APPS = SHARING + R.string.settings_phone_apps_title
-    private val DEVICES = listOf(R.string.settings_section_devices)
-    private val BACKUP = listOf(R.string.settings_section_backup)
-    private val ADVANCED = listOf(R.string.advanced_title)
-    private val CONNECTION = ADVANCED + R.string.settings_sensor_connection_title
+    private val DEVICES = listOf(R.string.settings_category_devices)
+    private val BACKUP = listOf(R.string.settings_category_data)
+    private val ADVANCED = APP
+    private val CONNECTION = DEVICES + R.string.settings_sensor_connection_title
     private val DANGER = listOf(R.string.danger_zone)
 
     private val P = SettingsSearchTone.PRIMARY
@@ -189,10 +191,10 @@ internal object SettingsSearchIndex {
         SettingsSearchEntry(R.string.languagename, TOP, Icons.Default.Language, P, action(SettingsSearchAction.LANGUAGE)),
         SettingsSearchEntry(R.string.settings_unit_title, TOP, Icons.Default.Straighten, P, action(SettingsSearchAction.UNIT),
             terms = listOf("mg/dL", "mmol/L")),
-        SettingsSearchEntry(R.string.app_updates_title, TOP, Icons.Default.SystemUpdate, P, route("settings/app-updates")),
+        SettingsSearchEntry(R.string.app_updates_title, APP, Icons.Default.SystemUpdate, P, route("settings/app-updates")),
 
         // Everyday (second group, no label)
-        SettingsSearchEntry(R.string.glucose_alerts_title, TOP, Icons.Default.AddAlert, E, route("settings/alerts"),
+        SettingsSearchEntry(R.string.glucose_alerts_title, listOf(R.string.settings_category_alarms), Icons.Default.AddAlert, E, route("settings/alerts"),
             keywords = listOf(R.string.settings_alerts_desc)),
         SettingsSearchEntry(R.string.low_alerts_title, ALERTS, Icons.AutoMirrored.Filled.TrendingDown, E, route("settings/alerts"),
             keywords = listOf(R.string.alert_very_low, R.string.alert_forecast_low),
@@ -212,10 +214,10 @@ internal object SettingsSearchIndex {
             keywords = listOf(R.string.speakglucose, R.string.voice_schedule_title, R.string.voice_chime_title,
                 R.string.override_silent_mode),
             terms = listOf("TTS")),
-        SettingsSearchEntry(R.string.settings_calibration_title, TOP, Icons.Default.WaterDrop, P, route("settings/calibrations"),
+        SettingsSearchEntry(R.string.settings_calibration_title, PROCESSING, Icons.Default.WaterDrop, P, route("settings/calibrations"),
             keywords = listOf(R.string.calibration_from_journal_title),
             terms = listOf("fingerstick")),
-        SettingsSearchEntry(R.string.journal_title, TOP, Icons.Default.EditNote, P, route("settings/journal"),
+        SettingsSearchEntry(R.string.journal_title, listOf(R.string.settings_category_journal), Icons.Default.EditNote, P, route("settings/journal"),
             keywords = listOf(R.string.settings_journal_desc, R.string.journal_show_tab_title,
                 R.string.journal_dashboard_quickadd_title, R.string.journal_aaps_import_title,
                 R.string.journal_import_health_activity, R.string.journal_section_import)),
@@ -247,20 +249,20 @@ internal object SettingsSearchIndex {
             Icons.Default.Palette, S, route("settings/display-colors"), anchor = SettingsSearchAnchors.READING_AGE),
         SettingsSearchEntry(R.string.preview_window_title, DISPLAY + R.string.settings_dashboard_charts_title,
             Icons.Default.CropSquare, S, route("settings/display-colors"), anchor = SettingsSearchAnchors.PREVIEW_WINDOW),
-        SettingsSearchEntry(R.string.graph_smoothing_title, DISPLAY, Icons.AutoMirrored.Filled.TrendingUp, S, route("settings/data-smoothing"),
+        SettingsSearchEntry(R.string.graph_smoothing_title, PROCESSING, Icons.AutoMirrored.Filled.TrendingUp, S, route("settings/data-smoothing"),
             keywords = listOf(R.string.data_smoothing_window_title, R.string.data_smoothing_collapse_title,
                 R.string.data_smoothing_scope_title, R.string.data_smoothing_target_sent_title,
                 R.string.data_smoothing_causal_title)),
-        SettingsSearchEntry(R.string.predictive_simulation_title, DISPLAY, Icons.AutoMirrored.Filled.ShowChart, S,
+        SettingsSearchEntry(R.string.predictive_simulation_title, PROCESSING, Icons.AutoMirrored.Filled.ShowChart, S,
             route("settings/predictive-simulation"),
             keywords = listOf(R.string.settings_prediction_desc, R.string.predictive_trend_momentum,
                 R.string.predictive_forecast_horizon, R.string.predictive_notification_chart,
                 R.string.predictive_model_tuning)),
-        SettingsSearchEntry(R.string.prediction_analysis_accuracy, DISPLAY + R.string.predictive_simulation_title,
+        SettingsSearchEntry(R.string.prediction_analysis_accuracy, PROCESSING + R.string.predictive_simulation_title,
             Icons.Default.Insights, S, route("settings/predictive-simulation/analysis"),
             keywords = listOf(R.string.prediction_analysis_section, R.string.prediction_analysis_record,
                 R.string.prediction_analysis_past_title)),
-        SettingsSearchEntry(R.string.prediction_adaptive_title, DISPLAY + R.string.predictive_simulation_title,
+        SettingsSearchEntry(R.string.prediction_adaptive_title, PROCESSING + R.string.predictive_simulation_title,
             Icons.Default.AutoAwesome, S, route("settings/predictive-simulation")),
         SettingsSearchEntry(R.string.notification_settings_title, DISPLAY, Icons.Default.ClearAll, S, route("settings/notification-display"),
             keywords = listOf(R.string.notification_settings_subtitle, R.string.typography)),
@@ -354,7 +356,7 @@ internal object SettingsSearchIndex {
             keywords = listOf(R.string.debug_logs_desc), terms = listOf("logcat", "trace")),
         SettingsSearchEntry(R.string.cgm_readiness_title, ADVANCED, Icons.Default.Security, N, route("settings/cgm-readiness"),
             keywords = listOf(R.string.cgm_readiness_settings_desc), terms = listOf("CGM readiness")),
-        SettingsSearchEntry(R.string.settings_sensor_connection_title, ADVANCED, Icons.Default.Bluetooth, N,
+        SettingsSearchEntry(R.string.settings_sensor_connection_title, DEVICES, Icons.Default.Bluetooth, N,
             route("settings/sensor-connection"), keywords = listOf(R.string.settings_sensor_connection_desc)),
         SettingsSearchEntry(R.string.sensor_handover_title, CONNECTION, Icons.Default.SwapHoriz, N,
             route("settings/sensor-connection"), anchor = SettingsSearchAnchors.HANDOVER),
@@ -362,11 +364,11 @@ internal object SettingsSearchIndex {
             route("settings/sensor-connection"), terms = listOf("Turbo"), anchor = SettingsSearchAnchors.TURBO),
         SettingsSearchEntry(R.string.settings_autoconnect_title, CONNECTION, Icons.Default.Autorenew, N,
             route("settings/sensor-connection"), terms = listOf("AutoConnect"), anchor = SettingsSearchAnchors.AUTOCONNECT),
-        SettingsSearchEntry(R.string.freeze_displayed_values, ADVANCED, Icons.Default.Lock, N,
+        SettingsSearchEntry(R.string.freeze_displayed_values, PROCESSING, Icons.Default.Lock, N,
             action(SettingsSearchAction.KEEP_DISPLAYED_VALUES)),
 
         // Danger zone: restart acts at once, as its row does; the rest ask for confirmation.
-        SettingsSearchEntry(R.string.restart_app, DANGER, Icons.Default.Refresh, E, action(SettingsSearchAction.RESTART),
+        SettingsSearchEntry(R.string.restart_app, APP, Icons.Default.Refresh, E, action(SettingsSearchAction.RESTART),
             keywords = listOf(R.string.restart_app_desc)),
         SettingsSearchEntry(R.string.clear_history, DANGER, Icons.Default.History, E, action(SettingsSearchAction.CLEAR_HISTORY)),
         SettingsSearchEntry(R.string.clear_app_data, DANGER, Icons.Default.Delete, E, action(SettingsSearchAction.CLEAR_APP_DATA)),

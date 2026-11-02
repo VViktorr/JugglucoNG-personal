@@ -112,9 +112,8 @@ import kotlin.math.roundToInt
 import java.util.Locale
 
 /**
- * The Settings tab. Rows in one group are joined into a single card stack
- * ([CardPosition] TOP / MIDDLE / BOTTOM, 2dp apart); groups are separated by a
- * [SectionLabel].
+ * The Settings tab. Each row belongs to one category and uses its own card,
+ * matching the category layout from main. Search opens the existing detail screens.
  *
  * Each row answers its own question in its subtitle: the current value where there is
  * one, otherwise what the screen behind it holds. Rows with a switch don't repeat
@@ -387,11 +386,20 @@ fun ExpressiveSettingsScreen(
         "reset" to Icons.Default.Warning,
     )
 
+    val generalColor = MaterialTheme.colorScheme.primary
+    val displayColor = MaterialTheme.colorScheme.secondary
+    val devicesColor = MaterialTheme.colorScheme.primary
+    val advancedColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val everydayColor = MaterialTheme.colorScheme.primary
+    val sharingColor = MaterialTheme.colorScheme.tertiary
+    val backupColor = MaterialTheme.colorScheme.secondary
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(), // Add status bar padding
-        contentPadding = TabScreenDefaults.contentPadding()
+        contentPadding = TabScreenDefaults.contentPadding(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item(key = "title") {
             if (category == null) {
@@ -443,146 +451,70 @@ fun ExpressiveSettingsScreen(
             return@LazyColumn
         }
 
-        if (category == "appearance" || category == "app") {
-        // === GENERAL === (no label)
-        item(key = "general_group") {
-            val generalColor = MaterialTheme.colorScheme.primary
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // Each setting belongs to one category, matching main. Keep the newer
+        // screen routes and search/reveal behavior from 1.2.8.
+        if (category == "appearance") {
+            item(key = "theme_title") {
                 SettingsItem(
                     title = stringResource(R.string.theme_title),
                     subtitle = themeLabel,
                     icon = if(themeMode == ThemeMode.LIGHT) Icons.Default.LightMode else Icons.Default.DarkMode,
                     iconTint = generalColor,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                     onClick = { showThemeDialog = true }
                 )
+            }
+            item(key = "languagename") {
                 SettingsItem(
                     title = stringResource(R.string.languagename),
                     subtitle = currentLangName,
                     icon = Icons.Default.Language,
                     iconTint = generalColor,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     onClick = { showLanguageDialog = true }
                 )
+            }
+            item(key = "settings_unit_title") {
                 SettingsItem(
                     title = stringResource(R.string.settings_unit_title),
                     subtitle = unit,
                     icon = Icons.Default.Straighten,
                     iconTint = generalColor,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     onClick = { showUnitDialog = true }
                 )
-                AppUpdatesSettingsItem(
-                    iconTint = generalColor,
-                    position = CardPosition.BOTTOM,
-                    onOpen = { navController.navigate("settings/app-updates") }
-                )
             }
-        }
-
-        }
-
-        if (category == "alarms" || category == "processing" || category == "journal") {
-        // === EVERYDAY === (no label)
-        item(key = "everyday_group") {
-            val everydayColor = MaterialTheme.colorScheme.primary
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                SettingsNavSwitchItem(
-                    title = stringResource(R.string.glucose_alerts_title),
-                    subtitle = stringResource(
-                        if (alertsMasterEnabled) R.string.settings_alerts_desc else R.string.settings_alerts_off_desc
-                    ),
-                    checked = alertsMasterEnabled,
-                    onCheckedChange = { viewModel.setAlertsMasterEnabled(it) },
-                    onClick = { navController.navigate("settings/alerts") },
-                    icon = Icons.Default.AddAlert,
-                    iconTint = MaterialTheme.colorScheme.error,
-                    position = CardPosition.TOP,
-                )
-                SettingsNavSwitchItem(
-                    title = stringResource(R.string.settings_calibration_title),
-                    subtitle = stringResource(
-                        R.string.settings_calibration_desc,
-                        stringResource(if (isRawCalibrationMode) R.string.raw else R.string.auto)
-                    ),
-                    checked = calibrationEnabled,
-                    onCheckedChange = {
-                        CalibrationManager.setEnabledForMode(isRawCalibrationMode, it, sensorName)
-                    },
-                    onClick = { navController.navigate("settings/calibrations") },
-                    icon = Icons.Default.WaterDrop,
-                    iconTint = everydayColor,
-                    position = CardPosition.MIDDLE
-                )
-                SettingsNavSwitchItem(
-                    title = stringResource(R.string.journal_title),
-                    subtitle = stringResource(R.string.settings_journal_desc),
-                    checked = journalEnabled,
-                    onCheckedChange = { viewModel.setJournalEnabled(it) },
-                    onClick = { navController.navigate("settings/journal") },
-                    icon = Icons.Default.EditNote,
-                    iconTint = everydayColor,
-                    position = CardPosition.BOTTOM
-                )
-            }
-        }
-
-        }
-
-        if (category == "appearance" || category == "processing") {
-        // === DISPLAY ===
-        item(key = "display_label") { SectionLabel(stringResource(R.string.settings_section_display)) }
-
-        item(key = "display_group") {
-            val displayColor = MaterialTheme.colorScheme.secondary
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            item(key = "settings_dashboard_charts_title") {
                 SettingsItem(
                     title = stringResource(R.string.settings_dashboard_charts_title),
                     subtitle = stringResource(R.string.settings_dashboard_charts_desc),
                     icon = Icons.Default.Palette,
                     iconTint = displayColor,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/display-colors") }
                 )
-                SettingsNavSwitchItem(
-                    title = stringResource(R.string.graph_smoothing_title),
-                    subtitle = graphSmoothingLabel,
-                    checked = chartSmoothingMinutes > 0,
-                    onCheckedChange = { viewModel.setDataSmoothingEnabled(it) },
-                    onClick = { navController.navigate("settings/data-smoothing") },
-                    icon = Icons.AutoMirrored.Filled.TrendingUp,
-                    iconTint = displayColor,
-                    position = CardPosition.MIDDLE
-                )
-                SettingsNavSwitchItem(
-                    title = stringResource(R.string.predictive_simulation_title),
-                    subtitle = stringResource(R.string.settings_prediction_desc),
-                    checked = predictiveSimulationEnabled,
-                    onCheckedChange = { viewModel.setPredictiveSimulationEnabled(it) },
-                    onClick = { navController.navigate("settings/predictive-simulation") },
-                    icon = Icons.AutoMirrored.Filled.ShowChart,
-                    iconTint = displayColor,
-                    position = CardPosition.MIDDLE
-                )
+            }
+            item(key = "widget_settings_title") {
                 SettingsItem(
                     title = stringResource(R.string.widget_settings_title),
                     subtitle = stringResource(R.string.widget_settings_subtitle),
                     icon = Icons.Default.ClearAll,
                     iconTint = displayColor,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/widgets") }
                 )
+            }
+            item(key = "notification_settings_title") {
                 SettingsItem(
                     title = stringResource(R.string.notification_settings_title),
                     subtitle = stringResource(R.string.notification_settings_subtitle),
                     icon = Icons.Default.ClearAll,
                     iconTint = displayColor,
-                    position = CardPosition.MIDDLE,
+                    position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/notification-display") }
                 )
+            }
+            item(key = "floatglucose") {
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.floatglucose),
                     subtitle = stringResource(
@@ -607,8 +539,10 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/floating-display") },
                     icon = Icons.Default.PictureInPicture,
                     iconTint = displayColor,
-                    position = CardPosition.MIDDLE
+                    position = CardPosition.SINGLE
                 )
+            }
+            item(key = "settings_lock_screen_title") {
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.settings_lock_screen_title),
                     subtitle = stringResource(
@@ -627,130 +561,50 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/aod-display") },
                     icon = Icons.Default.ScreenLockPortrait,
                     iconTint = displayColor,
-                    position = CardPosition.BOTTOM
+                    position = CardPosition.SINGLE
                 )
             }
         }
 
-        }
-
-        if (category == "connections") {
-        // === SHARING === apps on this phone first, then the network
-        item(key = "sharing_label") { SectionLabel(stringResource(R.string.settings_section_sharing)) }
-
-        item(key = "sharing_group") {
-            val sharingColor = MaterialTheme.colorScheme.tertiary
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SettingsItem(
-                    title = stringResource(R.string.settings_phone_apps_title),
-                    subtitle = phoneAppsLabel,
-                    icon = Icons.Default.PhoneAndroid,
-                    iconTint = sharingColor,
-                    position = CardPosition.TOP,
-                    onClick = { navController.navigate("settings/phone-apps") }
-                )
+        if (category == "alarms") {
+            item(key = "glucose_alerts_title") {
                 SettingsNavSwitchItem(
-                    title = stringResource(R.string.nightscout_settings_title),
-                    subtitle = stringResource(R.string.nightscout_desc),
-                    checked = nightscoutActive,
-                    onCheckedChange = {
-                        setNightscoutActive(context, it)
-                        nightscoutActive = it
-                    },
-                    onClick = { navController.navigate("settings/nightscout") },
-                    icon = Icons.Default.CloudUpload,
-                    iconTint = sharingColor,
-                    position = CardPosition.MIDDLE
-                )
-                if (showLibreView) {
-                    SettingsItem(
-                        title = stringResource(R.string.libreview_config),
-                        subtitle = stringResource(R.string.libreview_desc),
-                        icon = Icons.Default.Cloud,
-                        iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
-                        onClick = { navController.navigate("settings/libreview") }
-                    )
-                }
-                if (showDexcomShare) {
-                    SettingsItem(
-                        title = stringResource(R.string.dexcom_share_title),
-                        subtitle = stringResource(R.string.dexcom_share_desc),
-                        icon = Icons.Default.CloudUpload,
-                        iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
-                        onClick = { navController.navigate("settings/dexcom-share") }
-                    )
-                }
-                if (showMqAccount) {
-                    SettingsItem(
-                        title = stringResource(R.string.mq_account_title),
-                        subtitle = stringResource(R.string.settings_mq_account_desc),
-                        icon = Icons.Default.AccountCircle,
-                        iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
-                        onClick = { navController.navigate("settings/mq-account") }
-                    )
-                }
-                if (showOttaiSettings) {
-                    SettingsItem(
-                        title = stringResource(R.string.ottai_setup_title),
-                        subtitle = stringResource(R.string.settings_ottai_desc),
-                        icon = Icons.Default.Sensors,
-                        iconTint = sharingColor,
-                        position = CardPosition.MIDDLE,
-                        onClick = { navController.navigate("settings/ottai") }
-                    )
-                }
-                SettingsItem(
-                    title = stringResource(R.string.mirror),
-                    subtitle = stringResource(R.string.settings_mirror_desc),
-                    icon = Icons.Default.Devices,
-                    iconTint = sharingColor,
-                    position = CardPosition.MIDDLE,
-                    onClick = { navController.navigate("settings/mirror") }
-                )
-                SettingsNavSwitchItem(
-                    title = stringResource(R.string.webserver),
-                    subtitle = stringResource(R.string.settings_webserver_desc),
-                    checked = webServerActive,
-                    onCheckedChange = {
-                        Natives.setusexdripwebserver(it)
-                        webServerActive = it
-                    },
-                    onClick = { navController.navigate("settings/webserver") },
-                    icon = Icons.Default.Dns,
-                    iconTint = sharingColor,
-                    position = CardPosition.MIDDLE
-                )
-                SettingsItem(
-                    title = stringResource(R.string.outbound_api_title),
-                    subtitle = stringResource(R.string.outbound_api_desc),
-                    icon = Icons.Default.Webhook,
-                    iconTint = sharingColor,
-                    position = CardPosition.BOTTOM,
-                    onClick = { navController.navigate("settings/outbound-api") }
+                    title = stringResource(R.string.glucose_alerts_title),
+                    subtitle = stringResource(
+                        if (alertsMasterEnabled) R.string.settings_alerts_desc else R.string.settings_alerts_off_desc
+                    ),
+                    checked = alertsMasterEnabled,
+                    onCheckedChange = { viewModel.setAlertsMasterEnabled(it) },
+                    onClick = { navController.navigate("settings/alerts") },
+                    icon = Icons.Default.AddAlert,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    position = CardPosition.SINGLE,
                 )
             }
-        }
-
         }
 
         if (category == "devices") {
-        // === DEVICES ===
-        item(key = "devices_label") { SectionLabel(stringResource(R.string.settings_section_devices)) }
-
-        item(key = "devices_group") {
-            val devicesColor = MaterialTheme.colorScheme.primary
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            item(key = "settings_sensor_connection_title") {
                 SettingsItem(
-                    title = stringResource(R.string.watches),
-                    subtitle = stringResource(R.string.settings_watch_desc),
-                    icon = Icons.Default.Watch,
-                    iconTint = devicesColor,
-                    position = CardPosition.TOP,
-                    onClick = { navController.navigate("settings/watch") }
+                    title = stringResource(R.string.settings_sensor_connection_title),
+                    subtitle = stringResource(R.string.settings_sensor_connection_desc),
+                    icon = Icons.Default.Bluetooth,
+                    iconTint = advancedColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/sensor-connection") }
                 )
+            }
+            item(key = "meterlist") {
+                SettingsItem(
+                    title = stringResource(R.string.meterlist),
+                    subtitle = stringResource(R.string.glucose_meters_desc),
+                    icon = Icons.Default.Bloodtype,
+                    iconTint = devicesColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/glucose-meters") }
+                )
+            }
+            item(key = "insulin_pens_title") {
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.insulin_pens_title),
                     subtitle = stringResource(R.string.insulin_pens_desc),
@@ -759,93 +613,64 @@ fun ExpressiveSettingsScreen(
                     onClick = { navController.navigate("settings/insulin-pens") },
                     icon = Icons.Default.Vaccines,
                     iconTint = devicesColor,
-                    position = CardPosition.MIDDLE
+                    position = CardPosition.SINGLE
                 )
+            }
+            item(key = "watches") {
                 SettingsItem(
-                    title = stringResource(R.string.meterlist),
-                    subtitle = stringResource(R.string.glucose_meters_desc),
-                    icon = Icons.Default.Bloodtype,
+                    title = stringResource(R.string.watches),
+                    subtitle = stringResource(R.string.settings_watch_desc),
+                    icon = Icons.Default.Watch,
                     iconTint = devicesColor,
-                    position = CardPosition.BOTTOM,
-                    onClick = { navController.navigate("settings/glucose-meters") }
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/watch") }
                 )
             }
         }
 
-        }
-
-        if (category == "data") {
-        // === BACKUP AND RESTORE ===
-        item(key = "backup_label") { SectionLabel(stringResource(R.string.settings_section_backup)) }
-
-        item(key = "backup_group") {
-            val backupColor = MaterialTheme.colorScheme.secondary
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SettingsItem(
-                    title = stringResource(R.string.scheduled_backup_title),
-                    subtitle = scheduledBackupSummary(scheduledBackupConfig),
-                    icon = Icons.Default.Backup,
-                    iconTint = backupColor,
-                    position = CardPosition.TOP,
-                    onClick = { showScheduledBackupDialog = true }
-                )
-                SettingsItem(
-                    title = stringResource(R.string.settings_export_title),
-                    subtitle = stringResource(R.string.export_data_settings_desc),
-                    icon = Icons.Default.Upload,
-                    iconTint = backupColor,
-                    position = CardPosition.MIDDLE,
-                    onClick = { showExportDialog = true }
-                )
-                SettingsItem(
-                    title = stringResource(R.string.settings_import_title),
-                    subtitle = stringResource(R.string.import_data_settings_desc),
-                    icon = Icons.Default.FolderOpen,
-                    iconTint = backupColor,
-                    position = CardPosition.BOTTOM,
-                    onClick = { importLauncher.launch(importMimeTypes) }
+        if (category == "processing") {
+            item(key = "settings_calibration_title") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.settings_calibration_title),
+                    subtitle = stringResource(
+                        R.string.settings_calibration_desc,
+                        stringResource(if (isRawCalibrationMode) R.string.raw else R.string.auto)
+                    ),
+                    checked = calibrationEnabled,
+                    onCheckedChange = {
+                        CalibrationManager.setEnabledForMode(isRawCalibrationMode, it, sensorName)
+                    },
+                    onClick = { navController.navigate("settings/calibrations") },
+                    icon = Icons.Default.WaterDrop,
+                    iconTint = everydayColor,
+                    position = CardPosition.SINGLE
                 )
             }
-        }
-
-        }
-
-        if (category == "processing" || category == "app") {
-        // === ADVANCED ===
-        item(key = "advanced_label") { SectionLabel(stringResource(R.string.advanced_title)) }
-
-        item(key = "advanced_group") {
-            val advancedColor = MaterialTheme.colorScheme.onSurfaceVariant
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SettingsItem(
-                    title = stringResource(R.string.debug_logs),
-                    subtitle = stringResource(R.string.debug_logs_desc),
-                    icon = Icons.Default.BugReport,
-                    iconTint = advancedColor,
-                    position = CardPosition.TOP,
-                    onClick = { navController.navigate("settings/debug") }
+            item(key = "graph_smoothing_title") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.graph_smoothing_title),
+                    subtitle = graphSmoothingLabel,
+                    checked = chartSmoothingMinutes > 0,
+                    onCheckedChange = { viewModel.setDataSmoothingEnabled(it) },
+                    onClick = { navController.navigate("settings/data-smoothing") },
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    iconTint = displayColor,
+                    position = CardPosition.SINGLE
                 )
-                SettingsItem(
-                    title = stringResource(R.string.cgm_readiness_title),
-                    subtitle = stringResource(R.string.cgm_readiness_settings_desc),
-                    icon = Icons.Default.Security,
-                    iconTint = advancedColor,
-                    position = CardPosition.MIDDLE,
-                    onClick = { navController.navigate("settings/cgm-readiness") }
+            }
+            item(key = "predictive_simulation_title") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.predictive_simulation_title),
+                    subtitle = stringResource(R.string.settings_prediction_desc),
+                    checked = predictiveSimulationEnabled,
+                    onCheckedChange = { viewModel.setPredictiveSimulationEnabled(it) },
+                    onClick = { navController.navigate("settings/predictive-simulation") },
+                    icon = Icons.AutoMirrored.Filled.ShowChart,
+                    iconTint = displayColor,
+                    position = CardPosition.SINGLE
                 )
-                SettingsItem(
-                    title = stringResource(R.string.settings_sensor_connection_title),
-                    subtitle = stringResource(R.string.settings_sensor_connection_desc),
-                    icon = Icons.Default.Bluetooth,
-                    iconTint = advancedColor,
-                    position = CardPosition.MIDDLE,
-                    onClick = { navController.navigate("settings/sensor-connection") }
-                )
-                // A reading's displayed value is a record, not a derivation —
-                // see tk.glucodata.data.ReadingDisplay. Its subtitle carries the
-                // current behaviour so the common question is answered in place;
-                // the body picks how long a value stays revisable, the switch
-                // turns keeping off.
+            }
+            item(key = "freeze_displayed_values") {
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.freeze_displayed_values),
                     subtitle = if (freezeDisplayedValues) {
@@ -861,54 +686,241 @@ fun ExpressiveSettingsScreen(
                     onClick = { showSealGraceDialog = true },
                     icon = Icons.Default.Lock,
                     iconTint = advancedColor,
-                    position = CardPosition.BOTTOM
+                    position = CardPosition.SINGLE
                 )
             }
         }
 
+        if (category == "journal") {
+            item(key = "journal_title") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.journal_title),
+                    subtitle = stringResource(R.string.settings_journal_desc),
+                    checked = journalEnabled,
+                    onCheckedChange = { viewModel.setJournalEnabled(it) },
+                    onClick = { navController.navigate("settings/journal") },
+                    icon = Icons.Default.EditNote,
+                    iconTint = everydayColor,
+                    position = CardPosition.SINGLE
+                )
+            }
         }
 
-        if (category == "reset") {
-        // === DANGER ===
-        item(key = "danger_label") { SectionLabel(stringResource(R.string.danger_zone), isError = true) }
+        if (category == "connections") {
+            item(key = "settings_phone_apps_title") {
+                SettingsItem(
+                    title = stringResource(R.string.settings_phone_apps_title),
+                    subtitle = phoneAppsLabel,
+                    icon = Icons.Default.PhoneAndroid,
+                    iconTint = sharingColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/phone-apps") }
+                )
+            }
+            item(key = "nightscout_settings_title") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.nightscout_settings_title),
+                    subtitle = stringResource(R.string.nightscout_desc),
+                    checked = nightscoutActive,
+                    onCheckedChange = {
+                        setNightscoutActive(context, it)
+                        nightscoutActive = it
+                    },
+                    onClick = { navController.navigate("settings/nightscout") },
+                    icon = Icons.Default.CloudUpload,
+                    iconTint = sharingColor,
+                    position = CardPosition.SINGLE
+                )
+            }
+            if (showLibreView) {
+                item(key = "libreview_config") {
+                    SettingsItem(
+                        title = stringResource(R.string.libreview_config),
+                        subtitle = stringResource(R.string.libreview_desc),
+                        icon = Icons.Default.Cloud,
+                        iconTint = sharingColor,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/libreview") }
+                    )
+                }
+            }
+            if (showDexcomShare) {
+                item(key = "dexcom_share_title") {
+                    SettingsItem(
+                        title = stringResource(R.string.dexcom_share_title),
+                        subtitle = stringResource(R.string.dexcom_share_desc),
+                        icon = Icons.Default.CloudUpload,
+                        iconTint = sharingColor,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/dexcom-share") }
+                    )
+                }
+            }
+            if (showMqAccount) {
+                item(key = "mq_account_title") {
+                    SettingsItem(
+                        title = stringResource(R.string.mq_account_title),
+                        subtitle = stringResource(R.string.settings_mq_account_desc),
+                        icon = Icons.Default.AccountCircle,
+                        iconTint = sharingColor,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/mq-account") }
+                    )
+                }
+            }
+            if (showOttaiSettings) {
+                item(key = "ottai_setup_title") {
+                    SettingsItem(
+                        title = stringResource(R.string.ottai_setup_title),
+                        subtitle = stringResource(R.string.settings_ottai_desc),
+                        icon = Icons.Default.Sensors,
+                        iconTint = sharingColor,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/ottai") }
+                    )
+                }
+            }
+            item(key = "mirror") {
+                SettingsItem(
+                    title = stringResource(R.string.mirror),
+                    subtitle = stringResource(R.string.settings_mirror_desc),
+                    icon = Icons.Default.Devices,
+                    iconTint = sharingColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/mirror") }
+                )
+            }
+            item(key = "webserver") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.webserver),
+                    subtitle = stringResource(R.string.settings_webserver_desc),
+                    checked = webServerActive,
+                    onCheckedChange = {
+                        Natives.setusexdripwebserver(it)
+                        webServerActive = it
+                    },
+                    onClick = { navController.navigate("settings/webserver") },
+                    icon = Icons.Default.Dns,
+                    iconTint = sharingColor,
+                    position = CardPosition.SINGLE
+                )
+            }
+            item(key = "outbound_api_title") {
+                SettingsItem(
+                    title = stringResource(R.string.outbound_api_title),
+                    subtitle = stringResource(R.string.outbound_api_desc),
+                    icon = Icons.Default.Webhook,
+                    iconTint = sharingColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/outbound-api") }
+                )
+            }
+        }
 
-        item(key = "danger_group") {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (category == "data") {
+            item(key = "scheduled_backup_title") {
+                SettingsItem(
+                    title = stringResource(R.string.scheduled_backup_title),
+                    subtitle = scheduledBackupSummary(scheduledBackupConfig),
+                    icon = Icons.Default.Backup,
+                    iconTint = backupColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { showScheduledBackupDialog = true }
+                )
+            }
+            item(key = "settings_export_title") {
+                SettingsItem(
+                    title = stringResource(R.string.settings_export_title),
+                    subtitle = stringResource(R.string.export_data_settings_desc),
+                    icon = Icons.Default.Upload,
+                    iconTint = backupColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { showExportDialog = true }
+                )
+            }
+            item(key = "settings_import_title") {
+                SettingsItem(
+                    title = stringResource(R.string.settings_import_title),
+                    subtitle = stringResource(R.string.import_data_settings_desc),
+                    icon = Icons.Default.FolderOpen,
+                    iconTint = backupColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { importLauncher.launch(importMimeTypes) }
+                )
+            }
+        }
+
+        if (category == "app") {
+            item(key = "cgm_readiness_title") {
+                SettingsItem(
+                    title = stringResource(R.string.cgm_readiness_title),
+                    subtitle = stringResource(R.string.cgm_readiness_settings_desc),
+                    icon = Icons.Default.Security,
+                    iconTint = advancedColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/cgm-readiness") }
+                )
+            }
+            item(key = "debug_logs") {
+                SettingsItem(
+                    title = stringResource(R.string.debug_logs),
+                    subtitle = stringResource(R.string.debug_logs_desc),
+                    icon = Icons.Default.BugReport,
+                    iconTint = advancedColor,
+                    position = CardPosition.SINGLE,
+                    onClick = { navController.navigate("settings/debug") }
+                )
+            }
+            item(key = "app_updates_title") {
+                AppUpdatesSettingsItem(
+                    iconTint = generalColor,
+                    position = CardPosition.SINGLE,
+                    onOpen = { navController.navigate("settings/app-updates") }
+                )
+            }
+            item(key = "restart_app") {
                 DangerItem(
                     title = stringResource(R.string.restart_app),
                     subtitle = stringResource(R.string.restart_app_desc),
                     icon = Icons.Filled.Refresh,
-                    position = CardPosition.TOP,
+                    position = CardPosition.SINGLE,
                     severity = DangerSeverity.LOW,
                     onClick = { context.findActivity()?.fullRestart() }
-                )
-                DangerItem(
-                    title = stringResource(R.string.clear_history),
-                    subtitle = stringResource(R.string.clear_history_desc_short),
-                    icon = Icons.Filled.History,
-                    position = CardPosition.MIDDLE,
-                    severity = DangerSeverity.LOW,
-                    onClick = { showClearHistoryDialog = true }
-                )
-                DangerItem(
-                    title = stringResource(R.string.clear_app_data),
-                    subtitle = stringResource(R.string.clear_app_data_desc),
-                    icon = Icons.Filled.Delete,
-                    position = CardPosition.MIDDLE,
-                    severity = DangerSeverity.MEDIUM,
-                    onClick = { showClearDataDialog = true }
-                )
-                DangerItem(
-                    title = stringResource(R.string.factory_reset),
-                    subtitle = stringResource(R.string.factory_reset_desc),
-                    icon = Icons.Filled.Warning,
-                    position = CardPosition.BOTTOM,
-                    severity = DangerSeverity.HIGH,
-                    onClick = { showFactoryResetDialog = true }
                 )
             }
         }
 
+        if (category == "reset") {
+            item(key = "clear_history") {
+                DangerItem(
+                    title = stringResource(R.string.clear_history),
+                    subtitle = stringResource(R.string.clear_history_desc_short),
+                    icon = Icons.Filled.History,
+                    position = CardPosition.SINGLE,
+                    severity = DangerSeverity.LOW,
+                    onClick = { showClearHistoryDialog = true }
+                )
+            }
+            item(key = "clear_app_data") {
+                DangerItem(
+                    title = stringResource(R.string.clear_app_data),
+                    subtitle = stringResource(R.string.clear_app_data_desc),
+                    icon = Icons.Filled.Delete,
+                    position = CardPosition.SINGLE,
+                    severity = DangerSeverity.MEDIUM,
+                    onClick = { showClearDataDialog = true }
+                )
+            }
+            item(key = "factory_reset") {
+                DangerItem(
+                    title = stringResource(R.string.factory_reset),
+                    subtitle = stringResource(R.string.factory_reset_desc),
+                    icon = Icons.Filled.Warning,
+                    position = CardPosition.SINGLE,
+                    severity = DangerSeverity.HIGH,
+                    onClick = { showFactoryResetDialog = true }
+                )
+            }
         }
 
         if (category == "app") {
