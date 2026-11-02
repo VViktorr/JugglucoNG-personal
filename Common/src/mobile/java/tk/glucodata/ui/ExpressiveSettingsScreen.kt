@@ -179,6 +179,7 @@ fun ExpressiveSettingsScreen(
     // Rows that carry a master switch read the same state their own screen reads. The
     // system-granted ones can change while this screen is in the background, so they are
     // re-read on resume rather than only at first composition.
+    val systemLiveEnabled by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
     val floatingOverlayEnabled by viewModel.floatingRepository.isEnabled.collectAsStateWithLifecycle(initialValue = false)
     var floatingOverlayAllowed by remember {
         mutableStateOf(android.provider.Settings.canDrawOverlays(context))
@@ -512,6 +513,23 @@ fun ExpressiveSettingsScreen(
                     iconTint = displayColor,
                     position = CardPosition.SINGLE,
                     onClick = { navController.navigate("settings/notification-display") }
+                )
+            }
+            item(key = "system_glucose_live_title") {
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.system_glucose_live_title),
+                    subtitle = stringResource(R.string.system_glucose_live_summary),
+                    checked = systemLiveEnabled,
+                    switchEnabled = Build.VERSION.SDK_INT >= 36,
+                    onCheckedChange = {
+                        tk.glucodata.SystemGlucoseNotification.setEnabled(
+                            context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it
+                        )
+                    },
+                    onClick = { navController.navigate("settings/live-update") },
+                    icon = Icons.Default.NotificationsActive,
+                    iconTint = displayColor,
+                    position = CardPosition.SINGLE
                 )
             }
             item(key = "floatglucose") {

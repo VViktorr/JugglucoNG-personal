@@ -496,6 +496,83 @@ fun DisplayAndColorSettingsScreen(
     }
 }
 
+
+/** Shared preference state keeps the category switch and detail screen in sync. */
+@Composable
+internal fun rememberSystemGlucoseEnabled(key: String): androidx.compose.runtime.State<Boolean> {
+    val context = LocalContext.current
+    val prefs = remember(context) { tk.glucodata.SystemGlucoseNotification.preferences(context) }
+    val state = remember(prefs, key) { mutableStateOf(prefs.getBoolean(key, false)) }
+    androidx.compose.runtime.DisposableEffect(prefs, key) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == key || changed == null) state.value = prefs.getBoolean(key, false)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        state.value = prefs.getBoolean(key, false)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    return state
+}
+
+@Composable
+fun LiveUpdateSettingsScreen(navController: NavController) {
+    val context = LocalContext.current
+    val systemLive by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
+    val systemMetric by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_STYLE)
+
+    SettingsScreenScaffold(navController = navController, title = stringResource(R.string.system_glucose_live_title)) {
+            MasterSwitchCard(
+                title = stringResource(R.string.system_glucose_live_title),
+                subtitle = stringResource(R.string.system_glucose_live_summary),
+                checked = systemLive,
+                enabled = android.os.Build.VERSION.SDK_INT >= 36,
+                onCheckedChange = {
+                    tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it)
+                },
+                icon = Icons.Default.Layers,
+                modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+            )
+
+        SectionLabel(
+            stringResource(R.string.system_glucose_notification_section),
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        )
+        Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+            SettingsSwitchItem(
+                title = stringResource(R.string.system_glucose_metric_title),
+                subtitle = stringResource(R.string.system_glucose_metric_summary),
+                checked = systemMetric,
+                enabled = android.os.Build.VERSION.SDK_INT >= 37,
+                onCheckedChange = {
+                    tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, it)
+                },
+                position = CardPosition.SINGLE
+            )
+            Text(
+                stringResource(R.string.system_glucose_notification_note),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
+                OutlinedButton(onClick = {
+                    val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
+                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    runCatching { context.startActivity(intent) }.onFailure {
+                        // Some OEMs omit the promotion page; app notification settings remain available.
+                        runCatching {
+                            context.startActivity(
+                                Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            )
+                        }
+                    }
+                }) { Text(stringResource(R.string.system_glucose_notification_permission)) }
+            }
+        }
+
+    }
+}
+
 @Composable
 fun FloatingGlucoseSettingsScreen(
     navController: NavController,
@@ -503,10 +580,6 @@ fun FloatingGlucoseSettingsScreen(
 ) {
     val context = LocalContext.current
     val repository = remember { viewModel.floatingRepository }
-    val systemPrefs = remember(context) { tk.glucodata.SystemGlucoseNotification.preferences(context) }
-    var systemLive by remember { mutableStateOf(systemPrefs.getBoolean(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, false)) }
-    var systemMetric by remember { mutableStateOf(systemPrefs.getBoolean(tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, false)) }
-
 
     val isEnabled by repository.isEnabled.collectAsStateWithLifecycle(initialValue = false)
     val isTransparent by repository.isTransparent.collectAsStateWithLifecycle(initialValue = false)
@@ -558,55 +631,6 @@ fun FloatingGlucoseSettingsScreen(
                 text = stringResource(R.string.floating_permission_required),
                 modifier = Modifier.padding(horizontal = screenHorizontalPadding)
             )
-        }
-
-        SectionLabel(
-            stringResource(R.string.system_glucose_notification_section),
-            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
-        )
-        Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_live_title),
-                subtitle = stringResource(R.string.system_glucose_live_summary),
-                checked = systemLive,
-                enabled = android.os.Build.VERSION.SDK_INT >= 36,
-                onCheckedChange = {
-                    systemLive = it
-                    tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it)
-                },
-                position = CardPosition.TOP
-            )
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_metric_title),
-                subtitle = stringResource(R.string.system_glucose_metric_summary),
-                checked = systemMetric,
-                enabled = android.os.Build.VERSION.SDK_INT >= 37,
-                onCheckedChange = {
-                    systemMetric = it
-                    tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, it)
-                },
-                position = CardPosition.BOTTOM
-            )
-            Text(
-                stringResource(R.string.system_glucose_notification_note),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
-                OutlinedButton(onClick = {
-                    val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
-                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                    runCatching { context.startActivity(intent) }.onFailure {
-                        // Some OEMs omit the promotion page; app notification settings remain available.
-                        runCatching {
-                            context.startActivity(
-                                Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                            )
-                        }
-                    }
-                }) { Text(stringResource(R.string.system_glucose_notification_permission)) }
-            }
         }
 
         SectionLabel(

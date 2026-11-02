@@ -1034,6 +1034,7 @@ private fun NavGraphBuilder.appDestinations(
     composable("settings/predictive-simulation/analysis/forecasts") {
         PredictionInspectorScreen(navController, dashboardViewModel)
     }
+    composable("settings/live-update") { LiveUpdateSettingsScreen(navController) }
     composable("settings/floating-display") {
         FloatingGlucoseSettingsScreen(navController, dashboardViewModel)
     }

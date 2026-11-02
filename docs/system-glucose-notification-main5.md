@@ -1,8 +1,10 @@
 # New system glucose presentation (phone)
 
 This is a new implementation on main5, not a port of GlucoseLiveUpdate or its
-old receiver/policy/preferences. Both new settings default off and are on the
-Floating glucose screen, independent of enabling the overlay or its permission.
+old receiver/policy/preferences. Both settings default off. Live Update has its own switch/navigation row in
+Appearance and display, immediately above Floating glucose. Its detail screen
+contains the Live Update master switch, the independent MetricStyle switch and
+the system settings link. These options are independent of the overlay and its permission.
 
 | Live Update | MetricStyle | Presentation with a fresh reading |
 | --- | --- | --- |
@@ -57,3 +59,15 @@ References:
 - https://developer.android.com/develop/ui/views/notifications/live-update
 - https://developer.android.com/develop/ui/views/notifications/metric-style
 - https://developer.android.com/reference/android/app/Notification.MetricStyle
+
+## Settings relocation (2026-11-02)
+
+Moved both controls out of Floating glucose into settings/live-update.
+The category row uses SettingsNavSwitchItem like Floating glucose and lock screen
+AOD; the detail screen uses the shared scaffold and master switch card.
+The existing preference keys, API 36/37 gates and independent switch behaviour
+are retained. Preference listeners keep category/detail values synchronised.
+Settings search now finds Live Update and MetricStyle at the new route.
+
+Statically reviewed the route, row order, preference references and removal of
+the old controls. No compilation or tests were run, per user instruction.
