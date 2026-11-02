@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lock_screen_aod">Lock screen (AOD)</string>
+    <string name="aod_settings_title">AOD settings</string>
+</resources>
