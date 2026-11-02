@@ -25,13 +25,24 @@
 #include <map>
 
 namespace {
-std::mutex privacyMutex;
-std::map<std::string, std::string> privacyIdentities;
+struct PrivacyState {
+    std::mutex mutex;
+    std::map<std::string, std::string> identities;
+};
+
+PrivacyState &privacyState() {
+    // Other translation units log from global constructors (e.g. persimages).
+    // Construct the map before first use, not in this translation unit's init order.
+    // Keep it alive for process lifetime: global destructors also write logs.
+    static PrivacyState *const state = new PrivacyState;
+    return *state;
+}
 }
 extern "C" void privacy_log_identity(const char *identity, const char *alias) {
     if (!identity || !*identity || !alias) return;
-    std::lock_guard<std::mutex> lock(privacyMutex);
-    privacyIdentities[identity] = alias;
+    auto &state = privacyState();
+    std::lock_guard<std::mutex> lock(state.mutex);
+    state.identities[identity] = alias;
 }
 extern "C" const char *privacy_log_message(const char *message, size_t length) {
     static thread_local std::string safe;
@@ -42,8 +53,9 @@ extern "C" const char *privacy_log_message(const char *message, size_t length) {
         return safe.c_str();
     }
     {
-        std::lock_guard<std::mutex> lock(privacyMutex);
-        for (const auto &entry : privacyIdentities) {
+        auto &state = privacyState();
+        std::lock_guard<std::mutex> lock(state.mutex);
+        for (const auto &entry : state.identities) {
             size_t at = 0;
             while ((at = safe.find(entry.first, at)) != std::string::npos) {
                 safe.replace(at, entry.first.size(), entry.second);

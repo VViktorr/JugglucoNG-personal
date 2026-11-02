@@ -72,6 +72,18 @@ with tempfile.TemporaryDirectory(prefix='log-privacy-') as folder:
 #include <cstring>
 #include <string>
 #include <iostream>
+// This TU is linked before logs.cpp below, matching persimages' early constructor.
+// The old translation-unit global identity map was unconstructed at this point.
+struct BeforeMain {
+    BeforeMain() {
+        const char *line = "CircularArray()";
+        assert(std::strcmp(privacy_log_message(line, std::strlen(line)), line) == 0);
+        privacy_log_identity("0M000DV8V60", "sensor-1");
+        const char *identity = "0M000DV8V60";
+        assert(std::strcmp(privacy_log_message(identity, std::strlen(identity)), "sensor-1") == 0);
+    }
+};
+BeforeMain beforeMain;
 int main(){
     privacy_log_identity("0M000DV8V60","sensor-1");
     privacy_log_identity("AA:BB:CC:DD:EE:FF","sensor-1");
@@ -90,10 +102,10 @@ int main(){
 }
 ''')
     subprocess.run(['g++','-std=c++17','-DNOLOG','-DNOTAPP','-I'+str(cpp),'-I'+str(cpp/'share'),
-                    str(cpp/'share/logs.cpp'),str(harness),'-o',str(tmp/'privacy')],check=True)
+                    str(harness),str(cpp/'share/logs.cpp'),'-o',str(tmp/'privacy')],check=True)
     subprocess.run([str(tmp/'privacy')],check=True)
     subprocess.run(['g++','-std=c++20','-DNOTAPP','-I'+str(cpp),'-I'+str(cpp/'share'),
-                    str(cpp/'share/logs.cpp'),str(harness),'-o',str(tmp/'privacy-writer')],check=True)
+                    str(harness),str(cpp/'share/logs.cpp'),'-o',str(tmp/'privacy-writer')],check=True)
     result=subprocess.run([str(tmp/'privacy-writer')],check=True,capture_output=True,text=True)
     assert 'sensor-1' in result.stderr and 'glucose=123' in result.stderr
     for secret in ['0M000DV8V60','AA:BB:CC:DD:EE:FF','0x7abcde1234','deadbeefcafebabe0011223344556677','do-not-write-this']:
@@ -111,7 +123,7 @@ static inline int __android_log_print(int level,const char *tag,const char *fmt,
 static inline int __android_log_write(int level,const char *tag,const char *msg) {return fputs(msg,stderr);}
 """)
     subprocess.run(['g++','-std=c++20','-DLOGCAT','-D__ANDROID__','-DNOTAPP','-I'+str(tmp),
-                    '-I'+str(cpp),'-I'+str(cpp/'share'),str(cpp/'share/logs.cpp'),str(harness),
+                    '-I'+str(cpp),'-I'+str(cpp/'share'),str(harness),str(cpp/'share/logs.cpp'),
                     '-o',str(tmp/'privacy-logcat')],check=True)
     result=subprocess.run([str(tmp/'privacy-logcat')],check=True,capture_output=True,text=True)
     for secret in ['0M000DV8V60','AA:BB:CC:DD:EE:FF','0x7abcde1234','deadbeefcafebabe0011223344556677','do-not-write-this']:
