@@ -34,16 +34,33 @@ object WearOngoingActivity : OngoingNotification {
     fun setIconMode(context: Context, mode: Int) {
         require(mode in MODE_NORMAL..MODE_TREND)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt("mode", mode).apply()
-        currentNotificationId?.let { updateStatus(context.applicationContext, it) }
+        // The foreground notification may outlive this object after process recreation.
+        val notificationId = currentNotificationId ?: runCatching {
+            OngoingActivity.recoverOngoingActivity(context)?.notificationId
+        }.getOrNull()
+        Log.i(LOG_ID, "icon selection mode=$mode active=${notificationId != null}")
+        notificationId?.let { updateStatus(context.applicationContext, it) }
     }
 
     override fun attach(context: Context, notification: Notification, notificationId: Int): Notification {
         return try {
             currentNotificationId = notificationId
             val reading = CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout)
-            val builder = NotificationCompat.Builder(context, notification).setOnlyAlertOnce(true)
+            val mode = iconMode(context)
+            val displayIcon = icon(context, reading, mode)
+            // Keep the active, ambient and notification-fallback icon paths consistent.
+            // recoverBuilder preserves the channel, foreground metadata, views and actions.
+            // It requires API 24; the Wear variant's minimum is API 26.
+            val baseNotification = Notification.Builder.recoverBuilder(context, notification)
+                .apply {
+                    if (mode == MODE_NORMAL) setSmallIcon(R.drawable.novalue)
+                    else setSmallIcon(displayIcon)
+                }
+                .build()
+            val builder = NotificationCompat.Builder(context, baseNotification).setOnlyAlertOnce(true)
             OngoingActivity.Builder(context, notificationId, builder)
-                .setStaticIcon(icon(context, reading))
+                .setAnimatedIcon(displayIcon)
+                .setStaticIcon(displayIcon)
                 .setStatus(status(context, reading))
                 .setTouchIntent(mainPendingIntent(context))
                 .setOngoingActivityId(notificationId)
@@ -81,11 +98,11 @@ object WearOngoingActivity : OngoingNotification {
         return Status.forPart(Status.TextPart(value))
     }
 
-    private fun icon(context: Context, reading: CurrentDisplaySource.Snapshot?): Icon {
-        if (iconMode(context) == MODE_NORMAL) return Icon.createWithResource(context, R.drawable.novalue)
+    private fun icon(context: Context, reading: CurrentDisplaySource.Snapshot?, mode: Int): Icon {
+        if (mode == MODE_NORMAL) return Icon.createWithResource(context, R.drawable.novalue)
         val bitmap = when {
             reading == null -> ComplicationRenderer.valueBitmap(ICON_SIZE, "—", 0f, false, Color.WHITE)
-            iconMode(context) == MODE_VALUE -> ComplicationRenderer.valueBitmap(
+            mode == MODE_VALUE -> ComplicationRenderer.valueBitmap(
                 ICON_SIZE, reading.primaryStr, reading.primaryValue, reading.isMmol, Color.WHITE,
             )
             reading.rate.isFinite() -> ComplicationRenderer.arrowBitmap(ICON_SIZE, reading.rate, Color.WHITE)
