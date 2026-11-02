@@ -40,6 +40,24 @@ object WearOngoingActivity : OngoingNotification {
         }.getOrNull()
         Log.i(LOG_ID, "icon selection mode=$mode active=${notificationId != null}")
         notificationId?.let { updateStatus(context.applicationContext, it) }
+        // Reading notifications use a different ID from the foreground service.
+        Notify.refreshWearNotificationIcon()
+    }
+
+    override fun applySmallIcon(context: Context, notification: Notification): Notification {
+        return try {
+            val mode = iconMode(context)
+            val reading = CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout)
+            Notification.Builder.recoverBuilder(context, notification)
+                .apply {
+                    if (mode == MODE_NORMAL) setSmallIcon(R.drawable.novalue)
+                    else setSmallIcon(icon(context, reading, mode))
+                }
+                .build()
+        } catch (th: Throwable) {
+            Log.stack(LOG_ID, "applySmallIcon", th)
+            notification
+        }
     }
 
     override fun attach(context: Context, notification: Notification, notificationId: Int): Notification {
@@ -118,7 +136,10 @@ object WearOngoingActivity : OngoingNotification {
             if (reading == null) return
             val delay = (reading.timeMillis + Notify.glucosetimeout - System.currentTimeMillis() + 1L)
                 .coerceAtLeast(1L)
-            val task = Runnable { updateStatus(context, notificationId) }
+            val task = Runnable {
+                updateStatus(context, notificationId)
+                Notify.refreshWearNotificationIcon()
+            }
             expiryTask = task
             expiryHandler.postDelayed(task, delay)
         }

@@ -42,3 +42,23 @@ Log wyboru zawiera tryb i informację, czy znaleziono aktywność, bez danych se
 Bez kompilacji i testów. Na zegarku należy sprawdzić oba tryby, powrót do standardowej
 ikony, nowy odczyt, wygaśnięcie oraz tryb aktywny i ambient. Poprawka zgodności
 nie jest potwierdzeniem obsługi bitmap przez każdą tarczę/OEM.
+
+## Mała ikona powiadomienia z odczytem (2026-11-02)
+
+Po doprecyzowaniu zgłoszenia sprawdzono oddzielne ID powiadomień: usługa
+foreground/OngoingActivity używa 81431, a odczyty i alarmy 81432.
+Dotychczasowy wybór ikony obejmował tylko 81431. Dodano applySmallIcon
+do mostu Wear oraz obu ścieżek publikujących powiadomienie glukozy 81432:
+fornotify i bezpośredniej publikacji bogatego alarmu.
+
+Zmiana wyboru odświeża także istniejące 81432 z onlyAlertOnce, bez tworzenia
+nowego powiadomienia i bez ponownego wywoływania logiki alarmów.
+Termin wygaśnięcia odczytu odświeża obie ikony. Powrót do trybu standardowego
+przywraca ikonę novalue. Kanały, treść, akcje i ID pozostają zachowane przez
+Notification.Builder.recoverBuilder. Telefon jest wyłączony z tej ścieżki
+warunkiem isWearable. Nie dodano drugiej OngoingActivity.
+
+Przejrzano wywołania i zachowanie dla zmiany trybu, braku odczytu oraz
+nieobecnego powiadomienia. Bez kompilacji i testów zgodnie z poleceniem
+użytkownika. Pominięcie ID 81432 jest potwierdzone w kodzie; nie potwierdza
+jeszcze obsługi dynamicznej bitmapy przez System UI konkretnego zegarka.

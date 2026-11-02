@@ -3957,6 +3957,10 @@ public class Notify {
 
                 Notification notif = GluNotBuilder.build();
                 notif.when = glucose.time;
+                if (isWearable) {
+                    var ongoing = OngoingNotificationAccess.get();
+                    if (ongoing != null) notif = ongoing.applySmallIcon(Applic.app, notif);
+                }
                 notificationManager.notify(glucosealarmid, notif);
                 // Lets a periodic update due for the same reading stand down; the alarm
                 // itself is already out.
@@ -4934,6 +4938,25 @@ public class Notify {
 
     // static final private boolean alertseperate=true;
 
+    /** Refresh only an already posted Wear reading icon; never recreate a dismissed alert. */
+    public static void refreshWearNotificationIcon() {
+        if (!isWearable || onenot == null) return;
+        var ongoing = OngoingNotificationAccess.get();
+        if (ongoing == null) return;
+        try {
+            for (var active : onenot.notificationManager.getActiveNotifications()) {
+                if (active.getId() != glucosealarmid || active.getTag() != null) continue;
+                Notification refreshed = ongoing.applySmallIcon(Applic.app, active.getNotification());
+                refreshed = Notification.Builder.recoverBuilder(Applic.app, refreshed)
+                        .setOnlyAlertOnce(true).build();
+                onenot.notificationManager.notify(glucosealarmid, refreshed);
+                break;
+            }
+        } catch (Throwable th) {
+            Log.stack(LOG_ID, "refreshWearNotificationIcon", th);
+        }
+    }
+
     void fornotify(Notification notif) {
         {
             if (doLog) {
@@ -4948,7 +4971,10 @@ public class Notify {
         ;
         if (isWearable) {
             var ongoing = OngoingNotificationAccess.get();
-            if (ongoing != null) ongoing.updateStatus(Applic.app, glucosenotificationid);
+            if (ongoing != null) {
+                ongoing.updateStatus(Applic.app, glucosenotificationid);
+                notif = ongoing.applySmallIcon(Applic.app, notif);
+            }
             notificationManager.notify(glucosealarmid, notif);
         } else {
             synchronized (foregroundPublicationLock) {
