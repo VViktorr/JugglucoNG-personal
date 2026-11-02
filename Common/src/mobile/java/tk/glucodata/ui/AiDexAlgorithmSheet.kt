@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -104,7 +106,7 @@ internal fun AiDexAlgorithmSheet(serial: String, selection: Int, onSelect: (Int)
                 }
             }
             Spacer(Modifier.height(16.dp))
-            Button(onClick = onDismiss, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.close)) }
+            Button(onClick = onDismiss, shapes = appButtonShapes(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.close)) }
         }
     }
 }

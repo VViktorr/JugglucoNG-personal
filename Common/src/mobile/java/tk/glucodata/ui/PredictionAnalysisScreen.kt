@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.text.format.Formatter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -135,14 +137,14 @@ fun PredictionAnalysisScreen(navController: NavController, dashboardViewModel: D
                 TextButton(
                     onClick = { confirmClear = false; viewModel.clearRecorded() },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
                 TextButton(
                     onClick = { confirmClear = false },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) { Text(stringResource(R.string.cancel)) }
             },
@@ -270,7 +272,7 @@ private fun EmptyAnalysisCard(recording: Boolean, onTurnOn: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = onTurnOn,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp),
             ) { Text(stringResource(R.string.prediction_analysis_turn_on)) }
         }

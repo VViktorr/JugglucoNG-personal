@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.foundation.layout.Arrangement
@@ -88,7 +90,7 @@ fun MQAccountFields(
             },
             trailingIcon = {
                 IconButtonTooltip(if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                    IconButton(onClick = { showPassword = !showPassword }, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
                         Icon(
                             imageVector = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                             contentDescription = if (showPassword) {

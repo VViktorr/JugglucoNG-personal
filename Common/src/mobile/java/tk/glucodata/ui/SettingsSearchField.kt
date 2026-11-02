@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,7 +58,7 @@ internal fun SettingsSearchField(
             trailingIcon = if (query.isNotEmpty()) {
                 {
                     IconButtonTooltip(clearLabel) {
-                        IconButton(onClick = { onQueryChange("") }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { onQueryChange("") }, shapes = appIconButtonShapes()) {
                             Icon(Icons.Default.Close, contentDescription = clearLabel)
                         }
                     }

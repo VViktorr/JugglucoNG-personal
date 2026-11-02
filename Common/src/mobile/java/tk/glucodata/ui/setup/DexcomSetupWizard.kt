@@ -1,5 +1,7 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -105,7 +107,7 @@ fun DexcomSetupWizard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.enter_code_manually))
@@ -184,14 +186,14 @@ private fun DexcomManualPairingDialog(
             Button(
                 onClick = { onConfirm(pairingCode, wearDays) },
                 enabled = isValid,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

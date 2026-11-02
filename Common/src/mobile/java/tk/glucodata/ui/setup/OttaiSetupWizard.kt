@@ -9,6 +9,8 @@
 
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
@@ -949,7 +951,7 @@ fun OttaiSetupWizard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                     ),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.ottai_cloud_unbind_confirm))
@@ -959,7 +961,7 @@ fun OttaiSetupWizard(
                 OutlinedButton(
                     onClick = { pendingCloudUnbind = null },
                     enabled = !busy,
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.cancel))
@@ -1001,7 +1003,7 @@ fun OttaiSetupWizard(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                     ),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.delete))
@@ -1010,7 +1012,7 @@ fun OttaiSetupWizard(
             dismissButton = {
                 OutlinedButton(
                     onClick = { pendingDelete = null },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.cancel))
@@ -1816,7 +1818,7 @@ private fun OttaiSearchStep(
                 TextButton(
                     onClick = onScanQr,
                     enabled = enabled,
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) {
                     Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -1869,7 +1871,7 @@ private fun OttaiSearchStep(
                             }
                         },
                         modifier = Modifier.heightIn(min = ui.buttonHeight),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Text(stringResource(buttonRes))

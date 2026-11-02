@@ -1,5 +1,9 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.IconButtonDefaults
@@ -233,7 +237,7 @@ fun LibreSetupWizard(
                         TextButton(
                             onClick = ::leaveLibreViewStep,
                             enabled = !isSendingNow && !isFetchingAccountId && !isResendingData,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.TextButtonContentPadding
                         ) {
                             Text(stringResource(R.string.libre_setup_done))
@@ -320,7 +324,7 @@ fun LibreSetupWizard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = ui.buttonHeight),
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Icon(Icons.Default.Nfc, contentDescription = null)
@@ -465,7 +469,7 @@ fun LibreSetupWizard(
                                         onClick = { saveManualAccountId() },
                                         modifier = Modifier.fillMaxWidth(),
                                         enabled = !isBusy,
-                                        shapes = ButtonDefaults.shapes(),
+                                        shapes = appButtonShapes(),
                                         contentPadding = ButtonDefaults.ContentPadding
                                     ) {
                                         Text(saveText)
@@ -497,7 +501,7 @@ fun LibreSetupWizard(
                                 trailingIcon = {
                                     val image = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff
                                     IconButtonTooltip(if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                                        IconButton(onClick = { showPassword = !showPassword }, shapes = IconButtonDefaults.shapes()) {
+                                        IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
                                             Icon(
                                                 imageVector = image,
                                                 contentDescription = if (showPassword) {
@@ -541,7 +545,7 @@ fun LibreSetupWizard(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = canSendData,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             if (isSendingNow) {
@@ -584,7 +588,7 @@ fun LibreSetupWizard(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = canSendData,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             if (isResendingData) {
@@ -631,7 +635,7 @@ fun LibreSetupWizard(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = hasCredentials && !isBusy,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             if (isFetchingAccountId) {

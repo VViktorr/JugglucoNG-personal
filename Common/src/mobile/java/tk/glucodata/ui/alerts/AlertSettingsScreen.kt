@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.AppSlider
 import tk.glucodata.ui.components.AppRangeSlider
 
@@ -933,7 +935,7 @@ private fun GroupFootnote(
         }
         TextButton(
             onClick = onClick,
-            shapes = ButtonDefaults.shapes(),
+            shapes = appButtonShapes(),
             contentPadding = ButtonDefaults.TextButtonContentPadding
         ) {
             Text(value)
@@ -1618,14 +1620,14 @@ private fun SameDirectionSuppressionDialog(
         confirmButton = {
             FilledTonalButton(
                 onClick = { onSave(minutes) },
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

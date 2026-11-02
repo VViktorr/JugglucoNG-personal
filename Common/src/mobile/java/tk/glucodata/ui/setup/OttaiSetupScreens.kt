@@ -8,6 +8,10 @@
 
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.provider.Settings
@@ -316,7 +320,7 @@ internal fun OttaiNfcHintRow(state: OttaiNfcWakeState, modifier: Modifier = Modi
                         context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
                     }
                 },
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding,
             ) { Text(stringResource(R.string.ottai_nfc_open_settings)) }
         }
@@ -421,7 +425,7 @@ internal fun OttaiSensorCard(
                     onClick = onSignIn,
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) { Text(stringResource(R.string.ottai_login_button)) }
             } else if (!loading && canConnect) {
@@ -429,7 +433,7 @@ internal fun OttaiSensorCard(
                     onClick = onConnect,
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     if (busy) {
@@ -444,7 +448,7 @@ internal fun OttaiSensorCard(
                     Button(
                         onClick = onExport,
                         enabled = !busy,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileUpload, contentDescription = null)
@@ -454,7 +458,7 @@ internal fun OttaiSensorCard(
                     OutlinedButton(
                         onClick = onImport,
                         enabled = !busy,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         Icon(Icons.Default.FileDownload, contentDescription = null)
@@ -508,7 +512,7 @@ private fun OttaiUnbindButton(enabled: Boolean, onClick: () -> Unit) {
         onClick = onClick,
         enabled = enabled,
         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-        shapes = ButtonDefaults.shapes(),
+        shapes = appButtonShapes(),
         contentPadding = ButtonDefaults.ContentPadding,
     ) {
         Icon(Icons.Default.LinkOff, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -575,7 +579,7 @@ internal fun OttaiAccountCard(
                 trailingContent = {
                     OutlinedButton(
                         onClick = onSignOut,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(stringResource(R.string.ottai_sign_out)) }
                 },
@@ -781,7 +785,7 @@ internal fun OttaiAccountCard(
                         },
                         enabled = !busy && smsPhone != null,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(stringResource(R.string.ottai_send_code)) }
                     OutlinedTextField(
@@ -816,7 +820,7 @@ internal fun OttaiAccountCard(
                     form.phone.isNotBlank() && form.password.isNotBlank()
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 if (busy) {
@@ -830,7 +834,7 @@ internal fun OttaiAccountCard(
                     onClick = onRegister,
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) { Text(stringResource(R.string.ottai_register_cta)) }
             }
@@ -881,7 +885,7 @@ private fun OttaiSmsCountryDialog(
                 ) {
                     TextButton(
                         onClick = onDismiss,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.TextButtonContentPadding,
                     ) { Text(stringResource(R.string.cancel)) }
                 }
@@ -963,7 +967,7 @@ internal fun OttaiRegisterStep(
             },
             enabled = !busy && email.contains('@'),
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            shapes = ButtonDefaults.shapes(),
+            shapes = appButtonShapes(),
             contentPadding = ButtonDefaults.ContentPadding,
         ) { Text(stringResource(R.string.ottai_send_code)) }
         OutlinedTextField(
@@ -1023,7 +1027,7 @@ internal fun OttaiRegisterStep(
                 enabled = !busy && regRequestId.isNotBlank() && regCode.isNotBlank() &&
                     regPassword.isNotBlank() && profileName.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 if (busy) {
@@ -1127,7 +1131,7 @@ internal fun OttaiImportButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
-        shapes = ButtonDefaults.shapes(),
+        shapes = appButtonShapes(),
         contentPadding = ButtonDefaults.ContentPadding,
     ) {
         Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -1373,13 +1377,13 @@ internal fun OttaiSavedSensorsStep(
                         FilledTonalButton(
                             onClick = { onSelectSaved(sensor) },
                             enabled = enabled,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(stringResource(R.string.ottai_select)) }
                         OutlinedButton(
                             onClick = { onExport(sensor) },
                             enabled = enabled,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -1397,7 +1401,7 @@ internal fun OttaiSavedSensorsStep(
                                 IconButton(
                                     onClick = { onDelete(sensor) },
                                     enabled = enabled,
-                                    shapes = IconButtonDefaults.shapes(),
+                                    shapes = appIconButtonShapes(),
                                 ) {
                                     Icon(
                                         Icons.Default.Delete,
@@ -1479,7 +1483,7 @@ internal fun OttaiSavedSensorsStep(
                         FilledTonalButton(
                             onClick = { onSelectAccountDevice(device) },
                             enabled = enabled,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(stringResource(R.string.ottai_select)) }
                         if (unbind != null) {
@@ -1493,7 +1497,7 @@ internal fun OttaiSavedSensorsStep(
             TextButton(
                 onClick = onRefreshAccount,
                 enabled = enabled && !accountLoading,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding,
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))

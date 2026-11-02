@@ -1999,7 +1999,7 @@ fun SensorCard(
                                         }
                                     },
                                     modifier = Modifier.size(48.dp),
-                                    shapes = IconButtonDefaults.shapes(),
+                                    shapes = appIconButtonShapes(),
                                     colors = IconButtonDefaults.filledIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -2947,7 +2947,7 @@ fun SensorCard(
                         disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                         disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     ),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
@@ -3292,7 +3292,7 @@ fun SensorCard(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(

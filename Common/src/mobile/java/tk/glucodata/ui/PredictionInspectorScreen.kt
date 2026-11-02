@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -146,7 +148,7 @@ internal fun PredictionInspectorContent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             val previous = stringResource(R.string.prediction_inspector_previous)
             IconButtonTooltip(previous) {
-                IconButton(onClick = { onSelect(selected - 1) }, enabled = selected > 0, shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = { onSelect(selected - 1) }, enabled = selected > 0, shapes = appIconButtonShapes()) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = previous)
                 }
             }
@@ -164,7 +166,7 @@ internal fun PredictionInspectorContent(
             }
             val next = stringResource(R.string.prediction_inspector_next)
             IconButtonTooltip(next) {
-                IconButton(onClick = { onSelect(selected + 1) }, enabled = selected < list.lastIndex, shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = { onSelect(selected + 1) }, enabled = selected < list.lastIndex, shapes = appIconButtonShapes()) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = next)
                 }
             }

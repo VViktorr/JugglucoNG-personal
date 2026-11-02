@@ -4,6 +4,8 @@
 
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -246,7 +248,7 @@ fun MedtrumSetupWizard(
                     OutlinedButton(
                         onClick = { serialNumber?.let { requestPermissionsAndAttach(it) } },
                         enabled = isValid,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = ui.buttonHeight),
@@ -286,7 +288,7 @@ fun MedtrumSetupWizard(
                     }
                     OutlinedButton(
                         onClick = onComplete,
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = ui.buttonHeight),

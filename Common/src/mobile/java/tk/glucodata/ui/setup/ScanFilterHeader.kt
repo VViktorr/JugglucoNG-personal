@@ -1,5 +1,7 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +29,7 @@ internal fun ScanFilterHeader(
         trailingContent = {
             TextButton(
                 onClick = onToggleFilter,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding,
             ) {
                 Text(

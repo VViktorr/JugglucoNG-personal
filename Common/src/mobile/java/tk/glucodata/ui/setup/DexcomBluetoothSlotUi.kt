@@ -1,5 +1,7 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -153,7 +155,7 @@ internal fun DexcomBluetoothSlotDialog(
             Button(
                 onClick = { onConfirm(selected) },
                 enabled = selected != currentSlot,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(stringResource(R.string.dexcom_slot_change_action))
@@ -162,7 +164,7 @@ internal fun DexcomBluetoothSlotDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding,
             ) {
                 Text(stringResource(R.string.cancel))

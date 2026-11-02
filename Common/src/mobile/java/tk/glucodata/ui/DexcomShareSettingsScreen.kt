@@ -1,5 +1,9 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -195,7 +199,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                     IconButtonTooltip(
                         if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
                     ) {
-                        IconButton(onClick = { showPassword = !showPassword }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
                             Icon(
                                 imageVector = image,
                                 contentDescription = if (showPassword) {
@@ -261,7 +265,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
                 enabled = hasCredentials && !testing,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 if (testing) {
@@ -296,7 +300,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(stringResource(R.string.save))

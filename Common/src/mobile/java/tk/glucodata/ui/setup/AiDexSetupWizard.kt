@@ -1,5 +1,7 @@
 package tk.glucodata.ui.setup
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
@@ -352,7 +354,7 @@ fun AiDexScanStep(
                                     }
                                 },
                                 modifier = Modifier.heightIn(min = ui.buttonHeight),
-                                shapes = ButtonDefaults.shapes(),
+                                shapes = appButtonShapes(),
                                 contentPadding = ButtonDefaults.ContentPadding
                             ) {
                                 Text(stringResource(buttonRes))
