@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="system_glucose_notification_section">System glucose notification</string>
+    <string name="system_glucose_live_title">Live Update</string>
+    <string name="system_glucose_live_summary">Android 16+. Request a glucose value in the system status chip.</string>
+    <string name="system_glucose_metric_title">MetricStyle</string>
+    <string name="system_glucose_metric_summary">Android 17+. Display glucose using the system metric template.</string>
+    <string name="system_glucose_notification_note">Independent of the floating overlay. These modes replace the notification chart with a system template. Enable both for MetricStyle with Live Update. The system controls promotion; without fresh data the normal notification returns.</string>
+    <string name="system_glucose_notification_permission">Live Update system settings</string>
+</resources>

@@ -22,7 +22,7 @@ Source `main`: `ba606f408428d2885421887c83c8531a3cd50b54`. The review covers all
 1. **Libre2 callback hold lifted by the user for the hybrid implementation.** The personal 120-second stream watchdog is not copied; upstream 150-second soft recovery precedes one bounded hard escalation. See `libre2-hybrid-main5.md` for exact timing, privacy changes and validation.
 2. **Authorized NFC isolation for Libre 2.** The minute NFC trend now uses the personal `NfcRawHistory` sidecar instead of advancing the BLE poll cursor. Only storage and dispatch were integrated; `AlgNfcV`, `ScanNfcV`, native `libre2.cpp` and `g.cpp` retain 1.2.8. Fifteen-minute gap filling and Path + Raw are unchanged. Personal NFC-as-current selection and older Raw/export semantics remain excluded. See `nfc-ble-isolation-main5.md`.
 3. **Other sensors stay at 1.2.8.** The complete driver tree, Libre3 source tree and sensor setup screens are preserved. Common `SuperGattCallback` remains original. In the shared `Libreview.java`, Libre3 calls explicitly delegate to preserved 1.2.8 method bodies, and its original config fetch is retained. The new Libre2 cloud behavior does not replace those methods.
-4. **Personal MetricStyle and glucose Live Update are excluded**, including classes, legacy/Compose toggles, resources, receiver, permission and tests. Features already in 1.2.8 are retained.
+4. **The old personal MetricStyle/Live Update implementation remains excluded.** The user subsequently authorized rebuilding both features from scratch. New phone-only presentation and new disabled-by-default switches are documented in `system-glucose-notification-main5.md`; no old helper, receiver or preference keys were copied.
 5. Older AiDex/iCan/Ottai implementation and model-state changes do not replace newer 1.2.8 logic. In particular the newer AiDex state format, source ownership checks, transactional display-lock invalidation, calibration handling and sensor removal/setup paths remain original.
 
 The source differences listed below have no unreviewed entries. The later user approvals cover the Libre2 hybrid callback and NFC/BLE storage isolation. Older NFC Raw/export and notification selection remain outside that approved scope.
@@ -94,7 +94,7 @@ The source differences listed below have no unreviewed entries. The later user a
 | `Common/src/main/java/tk/glucodata/NotificationHistorySource.kt` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
 | `Common/src/main/java/tk/glucodata/NotificationPredictionSeries.java` | Already identical to main |
 | `Common/src/main/java/tk/glucodata/NotificationValueBitmap.java` | Status typography and bitmap bounds |
-| `Common/src/main/java/tk/glucodata/Notify.java` | Status presentation/diagnostics merged; NFC history selection deferred, MetricStyle excluded |
+| `Common/src/main/java/tk/glucodata/Notify.java` | Status presentation/diagnostics merged; NFC history selection deferred; new system presentation added separately after user authorization |
 | `Common/src/main/java/tk/glucodata/RemoteGlucose.java` | Already identical to main |
 | `Common/src/main/java/tk/glucodata/ScanNfcV.java` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
 | `Common/src/main/java/tk/glucodata/SensorBluetooth.java` | Only instanceof Libre2GattCallback scan diagnostics; all 1.2.8 roster, pause and reconnect mechanisms unchanged |
@@ -429,3 +429,7 @@ See [Libre 2 hybrid design and validation](libre2-hybrid-main5.md). Only the cal
 ## Authorized NFC/BLE storage isolation
 
 See [NFC isolation and unchanged Path/Raw behavior](nfc-ble-isolation-main5.md). This follow-up modifies only the authorized storage files and updates their manifest entries. Compilation and tests were not run, as instructed.
+
+## Newly authorized system notification modes
+
+Live Update and MetricStyle have been implemented anew rather than ported from the personal branch. See [system presentation design](system-glucose-notification-main5.md). The phone Floating glucose screen hosts two independent controls; the overlay itself is unchanged. No compilation or tests were run for this follow-up.

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="system_glucose_notification_section">Systemowe powiadomienie glukozy</string>
+    <string name="system_glucose_live_title">Live Update</string>
+    <string name="system_glucose_live_summary">Android 16+. Poproś o wartość glukozy w wyróżnionej ikonie na pasku stanu.</string>
+    <string name="system_glucose_metric_title">MetricStyle</string>
+    <string name="system_glucose_metric_summary">Android 17+. Pokaż glukozę w systemowym szablonie pomiarów.</string>
+    <string name="system_glucose_notification_note">Niezależne od pływającej nakładki. Te tryby zastępują wykres powiadomienia szablonem systemowym. Włącz oba, aby połączyć MetricStyle z Live Update. O wyróżnieniu decyduje system; bez świeżych danych wraca zwykłe powiadomienie.</string>
+    <string name="system_glucose_notification_permission">Ustawienia systemowe Live Update</string>
+</resources>
