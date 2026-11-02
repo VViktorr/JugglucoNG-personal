@@ -90,3 +90,19 @@ value and MetricStyle retains critical metric 0. System/OEM controls final layou
 Statically reviewed fresh/stale handling, API gates, resource availability in
 shared source sets, standard/metric content and fallback. No compilation or tests
 were run, per user instruction; visual behaviour needs verification on device.
+
+## Status chip duplicate value (2026-11-02)
+
+The original notification's small icon paints the glucose number. Recovering it
+for Live Update while also supplying short critical text caused a bitmap number
+beside a second number in the system font (matching the user's screenshots).
+When Live Update is selected, explicitly replace the inherited small icon with
+a white trend arrow on a transparent background using the shared renderer.
+A nonfinite trend uses the app's standard icon instead of an invented direction.
+The existing hide-status-icon preference still selects a transparent icon.
+MetricStyle-only and ordinary chart notifications keep their prior icon policy.
+
+No new notification ID, preference or transport changes. Static review covered
+both Live Update styles, unknown trend, the existing hide preference and API
+gates. No compilation or tests were run, per user instruction. Final System UI
+appearance still requires confirmation on device.

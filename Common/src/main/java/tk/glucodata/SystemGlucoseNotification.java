@@ -63,7 +63,20 @@ public final class SystemGlucoseNotification {
                     .setWhen(reading.getTimeMillis()).setShowWhen(true);
             applyStandardContent(builder, label, text);
             builder.getExtras().putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, live);
-            if (live) builder.setShortCriticalText(value);
+            if (live) {
+                builder.setShortCriticalText(value);
+                // The original small icon contains a painted glucose number.
+                // A promoted chip would show it alongside the same number as system text.
+                if (preferences(context).getBoolean("notification_hide_status_icon", false)) {
+                    builder.setSmallIcon(R.drawable.transparent_icon);
+                } else if (Float.isFinite(rate)) {
+                    builder.setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(
+                            NotificationChartDrawer.drawArrow(context, rate, reading.isMmol(),
+                                    android.graphics.Color.WHITE, 1.0f, false, false)));
+                } else {
+                    builder.setSmallIcon(R.drawable.novalue);
+                }
+            }
             if (metric) {
                 try {
                     // MetricStyle supplies the number and unit itself; don't repeat them in the title.
