@@ -1610,17 +1610,6 @@ fun InteractiveGlucoseChart(
     fun predictionBand(series: GlucosePredictionSeries): tk.glucodata.chart.PredictionBand {
         val first = series.points.first()
         val isRawLane = series.kind == GlucosePredictionSeriesKind.RAW ||
-            (series.kind == GlucosePredictionSeriesKind.CALIBRATED && (viewMode == 1 || viewMode == 3))
-        val sourceLane = series.kind == GlucosePredictionSeriesKind.AUTO &&
-            (hasCalibration || viewMode == 3)
-        val interval = if (uncertaintyRibbonEnabled) chartModel.primary
-            ?.uncertaintyAt(first.timestamp, isRawLane, sourceLane) else null
-        return tk.glucodata.chart.PredictionBand(first.value, first.confidence, interval, first.timestamp)
-    }
-
-    fun predictionBand(series: GlucosePredictionSeries): tk.glucodata.chart.PredictionBand {
-        val first = series.points.first()
-        val isRawLane = series.kind == GlucosePredictionSeriesKind.RAW ||
             (series.kind == GlucosePredictionSeriesKind.CALIBRATED && (renderViewMode == 1 || renderViewMode == 3))
         val sourceLane = series.kind == GlucosePredictionSeriesKind.AUTO &&
             (hasCalibration || renderViewMode == 3)

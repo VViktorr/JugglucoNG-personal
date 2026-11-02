@@ -1,5 +1,7 @@
 package tk.glucodata.accessibility
 
+import java.util.Locale
+
 import android.accessibilityservice.AccessibilityService
 import android.app.WallpaperManager
 import android.app.WallpaperColors
@@ -578,7 +580,6 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         }
 
         if (dataState.isFresh && resolvedDisplay != null) {
-            time = resolvedDisplay.timeMillis
             glvalue = resolvedDisplay.primaryValue
             valStr = if (showSecondary) resolvedDisplay.fullFormatted else resolvedDisplay.primaryStr
         } else if (dataState.isFresh && overlayChartPoints.isNotEmpty()) {
@@ -713,7 +714,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
                 statusView.visibility = View.VISIBLE
             } else {
                 statusView.visibility = View.GONE
-                statusView.text = statusText
+                statusView.text = ""
             }
         }
         applyBurnInProtection()
