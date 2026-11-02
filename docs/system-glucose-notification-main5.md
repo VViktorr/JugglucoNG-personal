@@ -71,3 +71,22 @@ Settings search now finds Live Update and MetricStyle at the new route.
 
 Statically reviewed the route, row order, preference references and removal of
 the old controls. No compilation or tests were run, per user instruction.
+
+## Readable notification content (2026-11-02)
+
+Use dedicated default and Polish reading labels rather than the shared glucose
+axis label. Standard Live Update shows the value, trend and unit once in the
+title (e.g. 194 ↓ mg/dL), with Glucose/Glukoza as its body.
+MetricStyle uses Glucose/Glukoza plus trend as the title and Current reading /
+Bieżący odczyt as the metric label. Its native metric supplies the value and unit,
+so those are no longer repeated in the title or body. Inherited subtext and
+content-info are cleared. If MetricStyle is unavailable with Live Update enabled,
+the clean standard presentation is restored.
+
+The same notification ID and publication lifecycle remain in use. No extra
+notification or chart was added. The status chip still receives the glucose
+value and MetricStyle retains critical metric 0. System/OEM controls final layout.
+
+Statically reviewed fresh/stale handling, API gates, resource availability in
+shared source sets, standard/metric content and fallback. No compilation or tests
+were run, per user instruction; visual behaviour needs verification on device.

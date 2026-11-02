@@ -50,6 +50,7 @@ public final class SystemGlucoseNotification {
                 CurrentDisplaySource.Snapshot reading, float rate, boolean live, boolean metric) {
             final String value = reading.getPrimaryStr();
             final String unit = context.getString(reading.isMmol() ? R.string.mmolL : R.string.mgdL);
+            final String label = context.getString(R.string.system_glucose_reading_label);
             final String text = GlucoseNotificationText.title(value,
                     java.util.Collections.emptyList(), rate) + " " + unit;
             // Recovering preserves the foreground ID's channel, actions and announcement policy.
@@ -58,22 +59,32 @@ public final class SystemGlucoseNotification {
                     .setCustomContentView(null).setCustomBigContentView(null).setCustomHeadsUpContentView(null)
                     .setGroup(null).setGroupSummary(false).setColorized(false)
                     .setOngoing(true).setAutoCancel(false).setCategory(Notification.CATEGORY_STATUS)
-                    .setContentTitle(context.getString(R.string.glucose) + ": " + text)
-                    .setContentText(text).setWhen(reading.getTimeMillis()).setShowWhen(true)
-                    .setStyle(new Notification.BigTextStyle().bigText(text));
+                    .setSubText(null).setContentInfo(null)
+                    .setWhen(reading.getTimeMillis()).setShowWhen(true);
+            applyStandardContent(builder, label, text);
             builder.getExtras().putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, live);
             if (live) builder.setShortCriticalText(value);
             if (metric) {
                 try {
-                    Api37.apply(builder, reading, unit, context.getString(R.string.glucose));
+                    // MetricStyle supplies the number and unit itself; don't repeat them in the title.
+                    builder.setContentTitle(GlucoseNotificationText.title(label,
+                            java.util.Collections.emptyList(), rate)).setContentText(null);
+                    Api37.apply(builder, reading, unit,
+                            context.getString(R.string.system_glucose_current_reading));
                     return builder.build();
                 } catch (RuntimeException | LinkageError unavailable) {
                     // A device missing MetricStyle can still show the independently requested Live Update.
                     if (!live) return original;
-                    builder.setStyle(new Notification.BigTextStyle().bigText(text));
+                    applyStandardContent(builder, label, text);
                 }
             }
             return builder.build();
+        }
+
+        private static void applyStandardContent(Notification.Builder builder, String label, String text) {
+            // Show the reading once, with a short, correctly translated description below it.
+            builder.setContentTitle(text).setContentText(label)
+                    .setStyle(new Notification.BigTextStyle().bigText(label));
         }
     }
 
