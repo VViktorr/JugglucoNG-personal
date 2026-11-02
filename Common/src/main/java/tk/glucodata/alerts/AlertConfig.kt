@@ -25,13 +25,14 @@ enum class AlertType(val id: Int, val nameResId: Int) {
         fun fromId(id: Int): AlertType? = entries.find { it.id == id }
 
         fun isLegacyOnlyId(id: Int): Boolean {
-            return id == AVAILABLE.id || id == AMOUNT.id
+            return id == AMOUNT.id
         }
 
-        // Compose alert settings intentionally hide old legacy-only alert types.
+        // AVAILABLE is a user-facing legacy alert again; AMOUNT stays legacy-only.
         val settingsEntries = listOf(
             LOW,
             HIGH,
+            AVAILABLE,
             VERY_LOW,
             VERY_HIGH,
             PRE_LOW,

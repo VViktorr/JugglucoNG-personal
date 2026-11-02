@@ -47,10 +47,13 @@
     <!-- Not yet confirmed by the phone: saved on the watch only (#502). -->
     <string name="wear_journal_pending">Waiting for the phone</string>
     <string name="wear_sensor_forget">Forget sensor</string>
-    <string name="wear_multi_sensor_complication">Multi-sensor values</string>
-    <string name="wear_multi_sensor_arrow_complication">Multi-sensor values + arrows</string>
+    <string name="wear_multi_sensor_complication">Multi-sensor values (text / image)</string>
+    <string name="wear_multi_sensor_arrow_complication">Multi-sensor values + arrows (text / image)</string>
     <!-- Journal-derived, not the phone's device-status snapshot (#500). -->
     <string name="wear_journal_derived_title">Journal IOB / COB</string>
     <string name="wear_journal_iob">IOB %1$s</string>
     <string name="wear_journal_cob">COB %1$s</string>
+
+    <string name="wear_arrow_above_value_label">Arrow above value (text)</string>
+    <string name="wear_arrow_above_value_description">Trend arrow in the title, glucose in the main text. The watch face must display titles; their position depends on the face.</string>
 </resources>

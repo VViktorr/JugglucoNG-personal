@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -217,7 +219,7 @@ internal fun DataSmoothingSettingsContent(
                             }
                         }
 
-                        Slider(
+                        AppSlider(
                             value = sliderIndex,
                             onValueChange = { sliderIndex = it },
                             onValueChangeFinished = {

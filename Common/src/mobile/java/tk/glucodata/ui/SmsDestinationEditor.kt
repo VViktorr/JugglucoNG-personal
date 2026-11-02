@@ -2,9 +2,12 @@
 
 package tk.glucodata.ui
 
-import androidx.compose.material3.FilterChipDefaults
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -168,7 +171,7 @@ private fun SmsNoticeCard(text: String, action: String?, onAction: () -> Unit) {
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             if (action != null) {
-                TextButton(onClick = onAction, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(action) }
+                TextButton(onClick = onAction, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(action) }
             }
         }
     }
@@ -228,7 +231,7 @@ private fun SmsContactsSection(policy: SmsPolicy, onChange: (SmsPolicy) -> Unit)
                     expandedId = added.id
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Icon(Icons.Filled.PersonAdd, contentDescription = null)
@@ -302,7 +305,7 @@ private fun SmsContactCard(
                     )
                 }
                 IconButtonTooltip(stringResource(R.string.sms_remove_contact)) {
-                    IconButton(onClick = onDelete, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onDelete, shapes = appIconButtonShapes()) {
                         Icon(
                             Icons.Filled.Delete,
                             contentDescription = stringResource(R.string.sms_remove_contact)
@@ -310,7 +313,7 @@ private fun SmsContactCard(
                     }
                 }
                 IconButtonTooltip(if (expanded) stringResource(R.string.show_less) else stringResource(R.string.show_more)) {
-                    IconButton(onClick = onToggleExpanded, shapes = IconButtonDefaults.shapes()) {
+                    IconButton(onClick = onToggleExpanded, shapes = appIconButtonShapes()) {
                         Icon(
                             if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                             contentDescription = if (expanded) stringResource(R.string.show_less) else stringResource(R.string.show_more)
@@ -505,8 +508,8 @@ private fun SmsAlertTypePicker(policy: SmsPolicy, onChange: (SmsPolicy) -> Unit)
                         onChange(policy.copy(alarmAlertIds = next))
                     },
                     label = { Text(stringResource(type.nameResId)) },
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
             }
         }

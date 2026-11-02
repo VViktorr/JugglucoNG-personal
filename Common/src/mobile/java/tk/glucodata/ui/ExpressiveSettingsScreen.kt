@@ -2,6 +2,25 @@
 
 package tk.glucodata.ui
 
+import androidx.compose.material.icons.filled.Palette
+
+import androidx.compose.material.icons.filled.Devices
+
+import androidx.compose.material.icons.filled.Vaccines
+
+import androidx.compose.material.icons.filled.Backup
+
+import androidx.compose.material.icons.filled.Warning
+
+import androidx.compose.material.icons.filled.WaterDrop
+
+import androidx.compose.material.icons.filled.AddAlert
+
+import androidx.compose.material.icons.filled.Share
+
+import tk.glucodata.ui.components.AppSlider
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -106,7 +125,8 @@ fun ExpressiveSettingsScreen(
     navController: NavController,
     themeMode: ThemeMode,
     onThemeChanged: (ThemeMode) -> Unit,
-    viewModel: DashboardViewModel = viewModel()
+    viewModel: DashboardViewModel = viewModel(),
+    category: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -333,6 +353,40 @@ fun ExpressiveSettingsScreen(
         }
     }
 
+    val categoryTitles = linkedMapOf(
+        "appearance" to R.string.settings_category_appearance,
+        "alarms" to R.string.settings_category_alarms,
+        "devices" to R.string.settings_category_devices,
+        "processing" to R.string.settings_category_processing,
+        "journal" to R.string.settings_category_journal,
+        "connections" to R.string.settings_category_connections,
+        "data" to R.string.settings_category_data,
+        "app" to R.string.settings_category_app,
+        "reset" to R.string.settings_category_reset,
+    )
+    val categoryDescriptions = mapOf(
+        "appearance" to R.string.settings_category_appearance_description,
+        "alarms" to R.string.settings_category_alarms_description,
+        "devices" to R.string.settings_category_devices_description,
+        "processing" to R.string.settings_category_processing_description,
+        "journal" to R.string.settings_category_journal_description,
+        "connections" to R.string.settings_category_connections_description,
+        "data" to R.string.settings_category_data_description,
+        "app" to R.string.settings_category_app_description,
+        "reset" to R.string.danger_zone,
+    )
+    val categoryIcons = mapOf(
+        "appearance" to Icons.Default.Palette,
+        "alarms" to Icons.Default.AddAlert,
+        "devices" to Icons.Default.Devices,
+        "processing" to Icons.Default.WaterDrop,
+        "journal" to Icons.Default.Vaccines,
+        "connections" to Icons.Default.Share,
+        "data" to Icons.Default.Backup,
+        "app" to Icons.Default.Info,
+        "reset" to Icons.Default.Warning,
+    )
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -340,7 +394,14 @@ fun ExpressiveSettingsScreen(
         contentPadding = TabScreenDefaults.contentPadding()
     ) {
         item(key = "title") {
-            TabScreenHeader(title = stringResource(R.string.settings))
+            if (category == null) {
+                TabScreenHeader(title = stringResource(R.string.settings))
+            } else {
+                tk.glucodata.ui.components.AppTopBar(
+                    title = stringResource(categoryTitles[category] ?: R.string.settings),
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
 
         item(key = "search") {
@@ -363,6 +424,26 @@ fun ExpressiveSettingsScreen(
             return@LazyColumn
         }
 
+        if (category == null) {
+            item(key = "readiness") {
+                DashboardCgmReadinessBanner(onOpenReadiness = { navController.navigate("settings/cgm-readiness") })
+            }
+            categoryTitles.forEach { (key, title) ->
+                item(key = "category_$key") {
+                    SettingsItem(
+                        title = stringResource(title),
+                        subtitle = stringResource(categoryDescriptions.getValue(key)),
+                        icon = categoryIcons.getValue(key),
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/category/$key") }
+                    )
+                }
+            }
+            return@LazyColumn
+        }
+
+        if (category == "appearance" || category == "app") {
         // === GENERAL === (no label)
         item(key = "general_group") {
             val generalColor = MaterialTheme.colorScheme.primary
@@ -399,6 +480,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "alarms" || category == "processing" || category == "journal") {
         // === EVERYDAY === (no label)
         item(key = "everyday_group") {
             val everydayColor = MaterialTheme.colorScheme.primary
@@ -446,6 +530,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "appearance" || category == "processing") {
         // === DISPLAY ===
         item(key = "display_label") { SectionLabel(stringResource(R.string.settings_section_display)) }
 
@@ -545,6 +632,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "connections") {
         // === SHARING === apps on this phone first, then the network
         item(key = "sharing_label") { SectionLabel(stringResource(R.string.settings_section_sharing)) }
 
@@ -644,6 +734,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "devices") {
         // === DEVICES ===
         item(key = "devices_label") { SectionLabel(stringResource(R.string.settings_section_devices)) }
 
@@ -679,6 +772,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "data") {
         // === BACKUP AND RESTORE ===
         item(key = "backup_label") { SectionLabel(stringResource(R.string.settings_section_backup)) }
 
@@ -712,6 +808,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "processing" || category == "app") {
         // === ADVANCED ===
         item(key = "advanced_label") { SectionLabel(stringResource(R.string.advanced_title)) }
 
@@ -767,6 +866,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "reset") {
         // === DANGER ===
         item(key = "danger_label") { SectionLabel(stringResource(R.string.danger_zone), isError = true) }
 
@@ -807,6 +909,9 @@ fun ExpressiveSettingsScreen(
             }
         }
 
+        }
+
+        if (category == "app") {
         // === ABOUT ===
         item(key = "about") {
             Column(
@@ -825,7 +930,9 @@ fun ExpressiveSettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
+        }        }
+
+
     }
 
     // Dialogs
@@ -1235,7 +1342,7 @@ internal fun PredictiveSimulationParameterRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Slider(
+        AppSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,
@@ -1293,7 +1400,7 @@ private fun SealGraceDialog(currentHours: Int, onSave: (Int) -> Unit, onDismiss:
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Slider(
+                    AppSlider(
                         value = index,
                         onValueChange = { index = it },
                         valueRange = 0f..choices.lastIndex.toFloat(),
@@ -1321,10 +1428,10 @@ private fun SealGraceDialog(currentHours: Int, onSave: (Int) -> Unit, onDismiss:
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(stringResource(R.string.cancel))
                     }
-                    TextButton(onClick = { onSave(selectedHours) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = { onSave(selectedHours) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(stringResource(R.string.save))
                     }
                 }
@@ -1365,7 +1472,7 @@ private fun UnitPickerDialog(isMmol: Boolean, onSelect: (Int) -> Unit, onDismiss
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1405,7 +1512,7 @@ private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1460,7 +1567,7 @@ internal fun SensorHandoverActionPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1516,7 +1623,7 @@ internal fun PreviewWindowPickerDialog(
                         .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1586,7 +1693,7 @@ private fun LanguagePickerDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                 }
             }
         }
@@ -1611,11 +1718,11 @@ private fun ConfirmActionDialog(
             TextButton(
                 onClick = onConfirm,
                 colors = if (isDestructive) ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.textButtonColors(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) { Text(if (isDestructive) stringResource(R.string.delete) else stringResource(R.string.ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
+        dismissButton = { TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) } }
     )
 }
 

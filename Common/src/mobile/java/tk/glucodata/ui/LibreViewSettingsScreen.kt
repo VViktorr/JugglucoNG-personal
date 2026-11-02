@@ -1,7 +1,9 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -71,7 +73,11 @@ fun LibreViewSettingsScreen(navController: NavController) {
     var email by remember { mutableStateOf(Natives.getlibreemail() ?: "") }
     var password by remember { mutableStateOf(Natives.getlibrepass() ?: "") }
     var isActive by remember { mutableStateOf(Natives.getuselibreview()) }
-    var isRussia by remember { mutableStateOf(Natives.getLibreCountry() == 4) }
+    var isRussia by remember {
+        Natives.initLibreCountryFromLocale()
+        mutableStateOf(Natives.getLibreCountry() == 4)
+    }
+    var regionEdited by remember { mutableStateOf(false) }
     var libreCurrent by remember { mutableStateOf(Natives.getLibreCurrent()) }
     var libreIsViewed by remember { mutableStateOf(Natives.getLibreIsViewed()) }
     var sendNumbers by remember { mutableStateOf(Natives.getSendNumbers()) }
@@ -93,10 +99,12 @@ fun LibreViewSettingsScreen(navController: NavController) {
     var isSendingNow by remember { mutableStateOf(false) }
     var isResendingData by remember { mutableStateOf(false) }
     var isFetchingAccountId by remember { mutableStateOf(false) }
+    var isReregisteringLibre2 by remember { mutableStateOf(false) }
     val hasCredentials = email.isNotBlank() && password.isNotBlank()
     val sendingNowText = stringResource(R.string.sending_now)
     val requestingAccountIdText = stringResource(R.string.requesting_account_id)
     val resendTriggeredText = stringResource(R.string.resend_triggered)
+    val reregisteringLibre2Text = stringResource(R.string.libreview_reregistering_libre2_device)
     val accountIdTimeoutText = stringResource(R.string.libre_setup_account_id_timeout)
     val accountIdObtainedText = stringResource(R.string.libre_setup_account_id_obtained)
     val manualText = stringResource(R.string.manual)
@@ -110,12 +118,15 @@ fun LibreViewSettingsScreen(navController: NavController) {
         if (includeUploadPreference) {
             Natives.setuselibreview(isActive)
         }
-        val currentCountry = Natives.getLibreCountry()
-        Natives.setLibreCountry(
-            if (isRussia) 4
-            else if (currentCountry == 4) 0
-            else currentCountry
-        )
+        if (regionEdited) {
+            val currentCountry = Natives.getLibreCountry()
+            Natives.setLibreCountry(
+                if (isRussia) 4
+                else if (currentCountry == 4) 0
+                else currentCountry
+            )
+            regionEdited = false
+        }
         Natives.setLibreCurrent(libreCurrent)
         Natives.setLibreIsViewed(libreIsViewed)
         Natives.setSendNumbers(sendNumbers)
@@ -125,6 +136,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
     fun refreshAccountIdState() {
         val resolvedAccountId = Natives.getlibreAccountIDnumber()
         accountId = resolvedAccountId
+        if (!regionEdited) isRussia = Natives.getLibreCountry() == 4
         if (!isManualAccountId) {
             manualAccountIdInput = if (resolvedAccountId > 0L) resolvedAccountId.toString() else ""
         }
@@ -180,7 +192,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        val isBusy = isSendingNow || isResendingData || isFetchingAccountId
+        val isBusy = isSendingNow || isResendingData || isFetchingAccountId || isReregisteringLibre2
         val canSendData = isActive && !isBusy
         Column(
             modifier = Modifier
@@ -261,7 +273,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                             onClick = { saveManualAccountId() },
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !isBusy,
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Text(saveText)
@@ -295,7 +307,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 trailingIcon = {
                     val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButtonTooltip(if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                        IconButton(onClick = { showPassword = !showPassword }, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
                             Icon(
                                 imageVector = image,
                                 contentDescription = if (showPassword) {
@@ -338,7 +350,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canSendData,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isSendingNow) {
@@ -378,7 +390,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canSendData,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isResendingData) {
@@ -424,7 +436,7 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasCredentials && !isBusy,
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isFetchingAccountId) {
@@ -437,11 +449,55 @@ fun LibreViewSettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.libreview_get_account_id))
             }
 
+            OutlinedButton(
+                onClick = {
+                    saveLibreViewSettings()
+                    tk.glucodata.Libreview.clearStatus()
+                    statusText = reregisteringLibre2Text
+                    isReregisteringLibre2 = true
+                    tk.glucodata.Libreview.requestLibre2DeviceReregistration()
+                    coroutineScope.launch {
+                        var elapsed = 0
+                        var latestStatus = ""
+                        while (elapsed < 30_000) {
+                            delay(500)
+                            elapsed += 500
+                            latestStatus = tk.glucodata.Libreview.getStatus()
+                            refreshAccountIdState()
+                            if (latestStatus.isNotEmpty()) {
+                                statusText = latestStatus
+                                if (latestStatus.contains("AccountID", ignoreCase = true) ||
+                                    isTerminalStatus(latestStatus)) {
+                                    break
+                                }
+                            }
+                        }
+                        if (latestStatus.isEmpty() && statusText == reregisteringLibre2Text) {
+                            statusText = accountIdTimeoutText
+                        }
+                        isReregisteringLibre2 = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isActive && hasCredentials && !isBusy,
+                shapes = appButtonShapes(),
+                contentPadding = ButtonDefaults.ContentPadding
+            ) {
+                if (isReregisteringLibre2) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.size(8.dp))
+                } else {
+                    Icon(Icons.Default.Cloud, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.size(8.dp))
+                }
+                Text(stringResource(R.string.libreview_reregister_libre2_device))
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingsSwitchItem(
                     title = stringResource(R.string.libreview_russia),
                     checked = isRussia,
-                    onCheckedChange = { isRussia = it },
+                    onCheckedChange = { isRussia = it; regionEdited = true },
                     icon = Icons.Default.Public,
                     iconTint = MaterialTheme.colorScheme.secondary,
                     position = CardPosition.TOP
@@ -505,6 +561,31 @@ private fun LibreViewStatusCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            Text(
+                text = stringResource(
+                    R.string.libreview_region_value,
+                    tk.glucodata.Libreview.getConfiguredCountryCode()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.libreview_uom_value,
+                    tk.glucodata.Libreview.getConfiguredUom()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.libreview_model_value,
+                    tk.glucodata.Libreview.getConfiguredModelName()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             if (statusText.isNotEmpty()) {
                 Text(

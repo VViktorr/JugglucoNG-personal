@@ -2,8 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -643,7 +645,7 @@ fun HistoryBrowseScreen(
                                                 ?.takeIf { !quickAddAlwaysNow }
                                         )
                                     },
-                                    shapes = IconButtonDefaults.shapes()
+                                    shapes = appIconButtonShapes()
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Add,
@@ -653,7 +655,7 @@ fun HistoryBrowseScreen(
                             }
                         }
                         IconButtonTooltip(stringResource(R.string.export_data)) {
-                            IconButton(onClick = { showExportSheet = true }, shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = { showExportSheet = true }, shapes = appIconButtonShapes()) {
                                 Icon(
                                     imageVector = Icons.Filled.CloudUpload,
                                     contentDescription = stringResource(R.string.export_data)
@@ -661,7 +663,7 @@ fun HistoryBrowseScreen(
                             }
                         }
                         IconButtonTooltip(stringResource(R.string.import_data)) {
-                            IconButton(onClick = { importLauncher.launch(arrayOf("text/csv", "text/tab-separated-values", "text/plain", "*/*")) }, shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = { importLauncher.launch(arrayOf("text/csv", "text/tab-separated-values", "text/plain", "*/*")) }, shapes = appIconButtonShapes()) {
                                 Icon(
                                     imageVector = Icons.Filled.FolderOpen,
                                     contentDescription = stringResource(R.string.import_data)
@@ -829,8 +831,8 @@ fun HistoryBrowseScreen(
                             .fillMaxWidth(),
                         itemHeight = 44.dp,
                         spacing = 3.dp,
-                        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.78f),
-                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        unselectedContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -979,14 +981,14 @@ fun HistoryBrowseScreen(
                         showDateRangePicker = false
                     },
                     enabled = canSaveRange,
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding
                 ) {
                     Text(text = stringResource(R.string.save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDateRangePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { showDateRangePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(text = stringResource(R.string.cancel))
                 }
             }

@@ -2,9 +2,11 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.LinearWavyProgressIndicator
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.Manifest
 import android.annotation.SuppressLint
@@ -206,14 +208,14 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                         meters = GlucoseMeterManager.configuredMeters()
                         pendingForget = null
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) {
                     Text(stringResource(R.string.glucose_meter_forget))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingForget = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { pendingForget = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -252,14 +254,14 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                         pendingSatellite = null
                     },
                     enabled = GlucoseMeterManager.isSatelliteCodeValid(satelliteCode),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding,
                 ) {
                     Text(stringResource(R.string.pair))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingSatellite = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { pendingSatellite = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -359,7 +361,7 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                             modifier = Modifier.weight(1f),
                         )
                         IconButtonTooltip(stringResource(R.string.glucose_meter_forget)) {
-                            IconButton(onClick = { pendingForget = meter }, shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = { pendingForget = meter }, shapes = appIconButtonShapes()) {
                                 Icon(
                                     Icons.Filled.Delete,
                                     contentDescription = stringResource(R.string.glucose_meter_forget),
@@ -414,7 +416,7 @@ fun GlucoseMeterSettingsScreen(navController: NavController) {
                     },
                     enabled = !scanning,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Icon(Icons.AutoMirrored.Filled.BluetoothSearching, contentDescription = null)

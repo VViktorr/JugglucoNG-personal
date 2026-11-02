@@ -1,5 +1,7 @@
 package tk.glucodata.ui.journal
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import tk.glucodata.ui.FontScaleCap
@@ -438,7 +440,7 @@ private fun ChartMenuItem(
         onClick = onClick,
         modifier = modifier.heightIn(min = FabMenuItemHeight),
         interactionSource = interactionSource,
-        shapes = ButtonDefaults.shapes(shape = shape),
+        shapes = appButtonShapes(),
         colors = ButtonDefaults.buttonColors(
             containerColor = journalTypeSelectedContainerColor(actionType),
             contentColor = MaterialTheme.colorScheme.onSurface

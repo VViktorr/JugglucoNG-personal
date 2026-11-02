@@ -316,6 +316,9 @@ private fun JournalRoute(
     val timelineExtents by dashboardViewModel.timelineExtents.collectAsStateWithLifecycle()
     // The ledger's readings come from bounded reads around the entries, not from
     // the loaded list; nothing else needs them, so they start with this screen.
+    LaunchedEffect(dashboardViewModel) {
+        tk.glucodata.HealthConnectAccess.get()?.importActivity()
+    }
     LaunchedEffect(dashboardViewModel) { dashboardViewModel.ensureJournalGlucoseAnchorsObserved() }
     val journalGlucoseAnchors by dashboardViewModel.journalGlucoseAnchors.collectAsStateWithLifecycle()
     val unit by dashboardViewModel.unit.collectAsStateWithLifecycle()
@@ -1039,6 +1042,12 @@ private fun NavGraphBuilder.appDestinations(
     composable("settings/turnserver") { tk.glucodata.ui.TurnServerSettingsScreen(navController) }
     composable("settings/debug") { DebugSettingsScreen(navController) }
     composable("settings/cgm-readiness") { CgmReadinessScreen(navController) }
+    composable("settings/category/{category}") { entry ->
+        ExpressiveSettingsScreen(
+            navController, themeMode, onThemeChanged, dashboardViewModel,
+            category = entry.arguments?.getString("category")
+        )
+    }
     composable("settings/widgets") { tk.glucodata.widgets.WidgetSettingsScreen(navController) }
     composable("settings/app-updates") { AppUpdatesScreen(navController) }
     composable("settings/alerts") { tk.glucodata.ui.alerts.AlertSettingsScreen(navController) }

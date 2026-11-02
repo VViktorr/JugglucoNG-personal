@@ -1,6 +1,11 @@
 package tk.glucodata.ui
 
-import androidx.compose.material3.FilterChipDefaults
+import tk.glucodata.ui.components.AppSlider
+
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+
 import androidx.compose.material3.ButtonDefaults
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +20,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -90,8 +94,8 @@ fun GlucosePalettePresetSelector(modifier: Modifier = Modifier) {
                 },
                 label = { Text(stringResource(presetLabelRes(preset))) },
                 modifier = Modifier.weight(1f),
-                shapes = FilterChipDefaults.shapes(),
-                colors = FilterChipDefaults.filterChipColors()
+                shapes = appFilterChipShapes(),
+                colors = appFilterChipColors()
             )
         }
     }
@@ -111,7 +115,7 @@ fun GlucosePaletteResetAllButton(modifier: Modifier = Modifier) {
             TextButton(
                 onClick = { GlucosePaletteState.clearOverrides(context) },
                 modifier = Modifier.align(Alignment.End),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.glucose_palette_reset_all))
@@ -303,7 +307,7 @@ fun ExpressiveColorPickerDialog(
         confirmButton = {
             TextButton(
                 onClick = { onConfirm(composedColor) },
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.save))
@@ -312,11 +316,11 @@ fun ExpressiveColorPickerDialog(
         dismissButton = {
             Row {
                 if (onReset != null) {
-                    TextButton(onClick = onReset, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    TextButton(onClick = onReset, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                         Text(stringResource(R.string.glucose_palette_reset))
                     }
                 }
-                TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -346,7 +350,7 @@ private fun LabeledColorSlider(
                 )
             }
         }
-        Slider(
+        AppSlider(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth()

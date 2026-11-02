@@ -5,6 +5,11 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.Context
@@ -181,7 +186,7 @@ fun InsulinPenSettingsScreen(navController: NavController) {
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                             }
-                            Slider(
+                            AppSlider(
                                 value = notificationDurationIndex,
                                 onValueChange = { value ->
                                     notificationDurationIndex = value.roundToInt().toFloat()
@@ -284,11 +289,11 @@ fun InsulinPenSettingsScreen(navController: NavController) {
                     InsulinPenManager.forget(pen.serial)
                     forgetTarget = null
                 },
-                                shapes = ButtonDefaults.shapes(),
+                                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.remove)) }
             },
             dismissButton = {
-                TextButton(onClick = { forgetTarget = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = { forgetTarget = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -332,10 +337,10 @@ private fun DuplicateCleanupDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onConfirm, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.remove)) }
+            TextButton(onClick = onConfirm, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.remove)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
         },
     )
 }
@@ -446,8 +451,8 @@ private fun PenDetailSheet(
                         selected = preset.id == pen.insulinPresetId,
                         onClick = { onSelected(preset) },
                         label = { Text(preset.displayName) },
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors(),
+                        shapes = appFilterChipShapes(),
+                        colors = appFilterChipColors(),
                     )
                 }
             }
@@ -460,7 +465,7 @@ private fun PenDetailSheet(
                 onClick = onArmFullRead,
                 enabled = readingEnabled && !fullReadArmed,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(
@@ -487,7 +492,7 @@ private fun PenDetailSheet(
                 onClick = { onCleanup(found) },
                 enabled = found.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(
@@ -511,7 +516,7 @@ private fun PenDetailSheet(
             )
 
             Spacer(Modifier.size(8.dp))
-            TextButton(onClick = onForget, modifier = Modifier.fillMaxWidth(), shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onForget, modifier = Modifier.fillMaxWidth(), shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(
                     stringResource(R.string.insulin_pen_forget),
                     color = MaterialTheme.colorScheme.error,

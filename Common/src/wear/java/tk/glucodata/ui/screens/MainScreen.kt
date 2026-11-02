@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -133,15 +136,20 @@ fun MainScreen(
     var chartRangeIndex by remember { mutableIntStateOf(0) }
     var chartOwnsDrag by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
         WearGlucoseStore.start()
-        launch { UiRefreshBus.revision.collect { snapshot = currentSnapshot(); now = System.currentTimeMillis() } }
-        while (true) { delay(TICK_MS); snapshot = currentSnapshot(); now = System.currentTimeMillis() }
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            snapshot = currentSnapshot()
+            now = System.currentTimeMillis()
+            launch { UiRefreshBus.revision.collect { snapshot = currentSnapshot(); now = System.currentTimeMillis() } }
+            while (true) { delay(TICK_MS); snapshot = currentSnapshot(); now = System.currentTimeMillis() }
+        }
     }
 
     // Readings come from the shared snapshot: the home list used to run its own
     // main-thread history read on every refresh, on top of the chart's.
-    val storeSnapshot by WearGlucoseStore.snapshot.collectAsState()
+    val storeSnapshot by WearGlucoseStore.snapshot.collectAsStateWithLifecycle(minActiveState = Lifecycle.State.RESUMED)
     val isMmol = snapshot?.isMmol ?: storeSnapshot.isMmol
     val viewMode = storeSnapshot.viewMode
     val recent = remember(storeSnapshot) { WearGlucoseStore.recent(count = 6) }

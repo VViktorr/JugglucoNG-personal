@@ -83,7 +83,7 @@ def inputs_check():
     for source in ['main', 'mobile', 'wear', 'wearSi']:
         for abi in abis():
             for p in (ROOT / f'Common/src/{source}/jniLibs/{abi}').glob('*.so'):
-                if str(p.relative_to(ROOT)) not in expected:
+                if p.relative_to(ROOT).as_posix() not in expected:
                     raise ValueError(f'Uninventoried distribution input: {p.relative_to(ROOT)}')
     print(f'Verified {len(expected)} private JNI inputs', file=sys.stderr)
 

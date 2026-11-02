@@ -77,7 +77,7 @@ fun CustomAlertDialog(
                 ) {
                     OutlinedButton(
                         onClick = { showTimePicker(startTimeMinutes) { startTimeMinutes = it } },
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = alertButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(stringResource(R.string.start_time_with_value, formatTime(startTimeMinutes)))
@@ -85,7 +85,7 @@ fun CustomAlertDialog(
                     Text(stringResource(R.string.dash))
                     OutlinedButton(
                         onClick = { showTimePicker(endTimeMinutes) { endTimeMinutes = it } },
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = alertButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding
                     ) {
                         Text(stringResource(R.string.end_time_with_value, formatTime(endTimeMinutes)))
@@ -117,14 +117,14 @@ fun CustomAlertDialog(
                     }
                 },
                 enabled = name.isNotBlank() && thresholdStr.toFloatOrNull() != null,
-                shapes = ButtonDefaults.shapes(),
+                shapes = alertButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = alertButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

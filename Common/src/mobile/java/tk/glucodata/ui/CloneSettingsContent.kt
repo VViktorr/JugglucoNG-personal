@@ -2,6 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -69,7 +73,7 @@ internal fun CloneSettingsContent(
                 onNavigateBack = onBack,
                 actions = {
                     IconButtonTooltip(stringResource(R.string.mirror_reconnect_all)) {
-                        IconButton(onClick = onRefresh, shapes = IconButtonDefaults.shapes()) {
+                        IconButton(onClick = onRefresh, shapes = appIconButtonShapes()) {
                             Icon(Icons.Default.Refresh, stringResource(R.string.mirror_reconnect_all))
                         }
                     }
@@ -266,7 +270,7 @@ private fun CloneGetPanel(
     Button(
         onClick = onScan,
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        shapes = ButtonDefaults.shapes(),
+        shapes = appButtonShapes(),
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {
         Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -303,7 +307,7 @@ private fun CloneGetPanel(
                 Spacer(Modifier.width(12.dp))
                 FilledTonalButton(
                     onClick = { onConnectNearby(device) },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
                     Text(stringResource(R.string.mirror_connect_action))

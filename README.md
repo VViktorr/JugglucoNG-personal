@@ -1,8 +1,12 @@
 ![Logo-icon](Common/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp)
 
-# JugglucoNG
+# JugglucoNG — personal fork
 
-JugglucoNG is an experimental continuous glucose monitoring app for Android.
+This is an independent personal fork of [JugglucoNG](https://github.com/ctqvva/JugglucoNG), an experimental continuous glucose monitoring app for Android.
+
+The `main5` branch integrates personal UI, widgets, clinical PDF reports, diagnostics and LibreView changes over upstream **1.2.8-Alpha** (`a4fbdcce5c7312ca05fe0ef74a52848df0965ae8`). The focus of this fork is Libre 2. Other sensor drivers remain from 1.2.8. Libre 2 NFC integration and `Libre2GattCallback.java` are intentionally unchanged until a separate decision; the 120-second recovery from `main` is not enabled here.
+
+See the [integration audit](docs/integration-main5.md) for the scope, preserved upstream solutions and deferred changes.
 
 Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap Korthals Altes, it continues to evolve with a modern Compose UI using Material 3, a sensor-independent data layer, support for multiple CGM systems, a treatment journal with IOB/eIOB/COB tracking, predictive simulation, a redesigned alarm engine, and bidirectional Nightscout integration.
 
@@ -15,44 +19,9 @@ Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap 
 >
 > JugglucoNG may contain bugs and may display incorrect, delayed, or missing data. Do not rely on it as the sole basis for treatment, insulin dosing, diagnosis, or other medical decisions. Always verify clinically significant readings using the manufacturer's official system or another appropriate method.
 
-## Download
+## Builds
 
-<!-- download-info:start -->
-[![Download JugglucoNG 1.2.7-Alpha for Android](docs/assets/download-android.svg?version=1.2.7-Alpha)][download-phone] [![Nightly builds](docs/assets/download-nightly.svg)](https://github.com/ctqvva/JugglucoNG/releases?q=nightly-&expanded=true)
-<!-- download-info:end -->
-
-<sub>Android 8.0 or newer · [Release notes][download-release] · [Wear OS][download-wear] · [Phone DUB][download-phone-dub] · [Wear OS DUB][download-wear-dub]</sub>
-
-<details>
-<summary>Installation and other versions</summary>
-
-Open the downloaded APK on your phone. If Android asks, allow installation from
-the browser or file manager you used. Back up settings and data before updating;
-the matching APK updates your existing installation.
-
-| Download | Use it for |
-| --- | --- |
-| **[Android phone][download-phone]** | The standard phone app; the right choice for most people |
-| [Wear OS][download-wear] | A Wear OS watch |
-| [Phone DUB][download-phone-dub] | A second, separate phone app with its own data |
-| [Wear OS DUB][download-wear-dub] | The matching separate app on a Wear OS watch |
-
-Standard and DUB installations update with their matching APK. Watch APKs are
-installed on the watch. [Nightlies](https://github.com/ctqvva/JugglucoNG/releases?q=nightly-&expanded=true)
-are test builds from recent main changes; choose the file ending in `-phone.apk`
-for a standard phone.
-
-Browse [all releases](https://github.com/ctqvva/JugglucoNG/releases) for older versions.
-
-</details>
-
-<!-- download-links:start -->
-[download-phone]: https://github.com/ctqvva/JugglucoNG/releases/download/1.2.7-Alpha/JugglucoNG-1.2.7-Alpha.apk
-[download-wear]: https://github.com/ctqvva/JugglucoNG/releases/download/1.2.7-Alpha/JugglucoNG-1.2.7-Alpha-wear.apk
-[download-phone-dub]: https://github.com/ctqvva/JugglucoNG/releases/download/1.2.7-Alpha/JugglucoNG-1.2.7-Alpha-dub.apk
-[download-wear-dub]: https://github.com/ctqvva/JugglucoNG/releases/download/1.2.7-Alpha/JugglucoNG-1.2.7-Alpha-wear-dub.apk
-[download-release]: https://github.com/ctqvva/JugglucoNG/releases/tag/1.2.7-Alpha
-<!-- download-links:end -->
+Personal phone and Wear APK builders are available as manually started workflows in this repository's [Actions](https://github.com/VViktorr/JugglucoNG-personal/actions). Select `main5` when running them. This fork does not claim upstream release artifacts as its own.
 
 ## Sensor and data-source support
 
@@ -105,10 +74,6 @@ git submodule update --init
 The app is localized into 15 languages; new user-facing strings go into `Common/src/main/res/values/strings.xml` and every `values-*` locale.
 
 Build helpers live in [scripts/](scripts/README.md), developer tools in `tools/`, and documentation images in `docs/assets/`. Historical root files are preserved in [tools/archive/root-cleanup/](tools/archive/root-cleanup/README.md).
-
-## Version history
-
-See the [Releases page](https://github.com/ctqvva/JugglucoNG/releases) for the changelog of each Alpha build.
 
 ## License and credits
 

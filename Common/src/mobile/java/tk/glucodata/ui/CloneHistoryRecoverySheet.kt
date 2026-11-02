@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
+
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -191,7 +193,7 @@ internal fun CloneHistoryRecoverySheet(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError,
                     ),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Text(stringResource(
@@ -201,7 +203,7 @@ internal fun CloneHistoryRecoverySheet(
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showFullHistoryConfirmation = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                OutlinedButton(onClick = { showFullHistoryConfirmation = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },
@@ -270,7 +272,7 @@ internal fun CloneHistoryRecoverySheet(
                         },
                         enabled = !actionRunning,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                        shapes = ButtonDefaults.shapes(),
+                        shapes = appButtonShapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
                         if (actionRunning) {
@@ -530,13 +532,13 @@ private fun CloneHistoryRecoveryProgress(
                 onClick = onStartAnother,
                 enabled = !actionRunning,
                 modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) { Text(stringResource(R.string.clone_history_start_another)) }
             Button(
                 onClick = onDone,
                 modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) { Text(stringResource(R.string.clone_history_done)) }
         }
@@ -545,7 +547,7 @@ private fun CloneHistoryRecoveryProgress(
             onClick = onStartAnother,
             enabled = !actionRunning,
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            shapes = ButtonDefaults.shapes(),
+            shapes = appButtonShapes(),
             contentPadding = ButtonDefaults.ContentPadding,
         ) { Text(stringResource(R.string.clone_history_try_again)) }
         else -> {
@@ -563,7 +565,7 @@ private fun CloneHistoryRecoveryProgress(
                     onClick = onCancel,
                     enabled = !actionRunning,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) { Text(stringResource(R.string.clone_history_cancel_transfer)) }
             }

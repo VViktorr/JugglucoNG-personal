@@ -1,5 +1,9 @@
 package tk.glucodata.ui.components
 
+import tk.glucodata.ui.components.AppSlider
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
@@ -514,7 +518,7 @@ fun AlarmItem(
             AnimatedVisibility(visible = enabled) {
                 Column {
                     Spacer(Modifier.height(16.dp))
-                    Slider(
+                    AppSlider(
                         value = sliderValue,
                         onValueChange = { sliderValue = it },
                         onValueChangeFinished = { onValueChange(sliderValue) },
@@ -532,16 +536,16 @@ fun AlarmItem(
                             onClick = { onSoundChange(0) },
                             label = { Text(stringResource(R.string.vibrate_only)) },
                             leadingIcon = { if(soundMode == 0) Icon(Icons.Filled.Check, null) },
-                            shapes = FilterChipDefaults.shapes(),
-                            colors = FilterChipDefaults.filterChipColors()
+                            shapes = appFilterChipShapes(),
+                            colors = appFilterChipColors()
                         )
                         FilterChip(
                             selected = soundMode == 1,
                             onClick = { onSoundChange(1) },
                             label = { Text(stringResource(R.string.sound_vibrate)) },
                             leadingIcon = { if(soundMode == 1) Icon(Icons.Filled.Check, null) },
-                            shapes = FilterChipDefaults.shapes(),
-                            colors = FilterChipDefaults.filterChipColors()
+                            shapes = appFilterChipShapes(),
+                            colors = appFilterChipColors()
                         )
                     }
                 }

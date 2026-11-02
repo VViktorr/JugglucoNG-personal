@@ -17,6 +17,10 @@ object MobileHealthConnect : HealthConnect {
     override fun writeAll(sensorPtr: Long, sensorName: String) {
         HealthConnection.writeAll(sensorPtr, sensorName)
     }
+
+    override fun importActivity(daysBack: Int) {
+        HealthConnection.importActivity(daysBack)
+    }
 }
 
 object MobileHealthPermissions : HealthPermissionsAccess.Factory {

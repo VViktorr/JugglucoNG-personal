@@ -1,6 +1,7 @@
 package tk.glucodata.ui.components
 
-import androidx.compose.material3.IconButtonDefaults
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
@@ -54,7 +55,7 @@ fun AppTopBar(
     val navigationIcon: @Composable () -> Unit = {
         if (onNavigateBack != null) {
             IconButtonTooltip(navigationContentDescription) {
-                IconButton(onClick = onNavigateBack, shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = onNavigateBack, shapes = appIconButtonShapes()) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = navigationContentDescription,

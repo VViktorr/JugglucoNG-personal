@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
@@ -25,18 +26,26 @@ fun StyledSwitch(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null
 ) {
+    // The thumb uses onPrimary, so pair its checkmark with primary. A container
+    // foreground can have the same tone as the thumb in dynamic monochrome themes.
+    val colors = SwitchDefaults.colors(
+        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+        checkedIconColor = MaterialTheme.colorScheme.primary
+    )
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
         enabled = enabled,
         interactionSource = interactionSource,
+        colors = colors,
         thumbContent = if (checked) {
             {
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                    tint = if (enabled) colors.checkedIconColor else colors.disabledCheckedIconColor
                 )
             }
         } else null

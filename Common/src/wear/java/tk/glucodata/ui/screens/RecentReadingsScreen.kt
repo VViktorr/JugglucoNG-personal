@@ -12,7 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -40,7 +41,7 @@ internal fun rangeColor(value: Float, isMmol: Boolean, neutral: Color): Color =
 
 @Composable
 fun RecentReadingsScreen(onCalibrateReading: ((GlucosePoint) -> Unit)? = null) {
-    val storeSnapshot by tk.glucodata.ui.WearGlucoseStore.snapshot.collectAsState()
+    val storeSnapshot by tk.glucodata.ui.WearGlucoseStore.snapshot.collectAsStateWithLifecycle(minActiveState = Lifecycle.State.RESUMED)
     val isMmol = storeSnapshot.isMmol
     val readings = remember(storeSnapshot) { tk.glucodata.ui.WearGlucoseStore.recent(48, 24 * 3_600_000L) }
     val viewMode = storeSnapshot.viewMode

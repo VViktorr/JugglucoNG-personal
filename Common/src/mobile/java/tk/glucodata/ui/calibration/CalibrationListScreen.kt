@@ -1,5 +1,10 @@
 package tk.glucodata.ui.calibration
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.activity.compose.BackHandler
@@ -70,7 +75,6 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import tk.glucodata.ui.components.ConnectedButtonShapes
 import tk.glucodata.ui.components.IconTile
 import tk.glucodata.ui.components.IconTileDefaults
 import tk.glucodata.ui.components.AppTopBar
@@ -284,7 +288,7 @@ fun CalibrationListScreen(
                     onNavigateBack = { navController.navigateUp() },
                     actions = {
                         IconButtonTooltip(stringResource(R.string.calibration_model_table_action)) {
-                            IconButton(onClick = onOpenModelTable, shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = onOpenModelTable, shapes = appIconButtonShapes()) {
                                 Icon(
                                     imageVector = Icons.Default.Analytics,
                                     contentDescription = stringResource(R.string.calibration_model_table_action)
@@ -292,7 +296,7 @@ fun CalibrationListScreen(
                             }
                         }
                         IconButtonTooltip(stringResource(R.string.calibration_import_export_action)) {
-                            IconButton(onClick = { showImportExportSheet = true }, shapes = IconButtonDefaults.shapes()) {
+                            IconButton(onClick = { showImportExportSheet = true }, shapes = appIconButtonShapes()) {
                                 Icon(
                                     imageVector = Icons.Default.ImportExport,
                                     contentDescription = stringResource(R.string.calibration_import_export_action)
@@ -551,12 +555,12 @@ fun CalibrationListScreen(
                                     selectedIds = emptySet()
                                 }
                             },
-                            shapes = ButtonDefaults.shapes(),
+                            shapes = appButtonShapes(),
                             contentPadding = ButtonDefaults.TextButtonContentPadding
                         ) { Text(stringResource(R.string.delete)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showBulkDeleteConfirmation = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
+                        TextButton(onClick = { showBulkDeleteConfirmation = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
                     }
                 )
             }
@@ -1027,8 +1031,8 @@ private fun CalibrationWeightControl(
                         )
                     },
                     modifier = Modifier.weight(1f),
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
+                    shapes = appFilterChipShapes(),
+                    colors = appFilterChipColors()
                 )
             }
         }
@@ -1451,7 +1455,7 @@ private fun FloatingActionToolbar(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp),
-                shapes = ButtonDefaults.shapes(shape = ConnectedButtonShapes.Leading, pressedShape = ConnectedButtonShapes.LeadingPressed),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -1472,7 +1476,7 @@ private fun FloatingActionToolbar(
             modifier = Modifier
                 .weight(1f)
                 .heightIn(min = 48.dp),
-            shapes = ButtonDefaults.shapes(shape = ConnectedButtonShapes.Trailing, pressedShape = ConnectedButtonShapes.TrailingPressed),
+            shapes = appButtonShapes(),
             contentPadding = ButtonDefaults.ContentPadding,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -1505,7 +1509,7 @@ private fun SelectionModeToolbar(
         expanded = true,
         leadingContent = {
             IconButtonTooltip(stringResource(R.string.cancel)) {
-                IconButton(onClick = onCancel, shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = onCancel, shapes = appIconButtonShapes()) {
                     Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
                 }
             }
@@ -1520,7 +1524,7 @@ private fun SelectionModeToolbar(
     ) {
         val selectAllLabel = stringResource(if (allSelected) R.string.deselect_all else R.string.select_all)
         IconButtonTooltip(selectAllLabel) {
-            IconButton(onClick = onToggleSelectAll, shapes = IconButtonDefaults.shapes()) {
+            IconButton(onClick = onToggleSelectAll, shapes = appIconButtonShapes()) {
                 Icon(
                     imageVector = if (allSelected) Icons.Default.Deselect else Icons.Default.SelectAll,
                     contentDescription = selectAllLabel
@@ -1528,19 +1532,19 @@ private fun SelectionModeToolbar(
             }
         }
         IconButtonTooltip(stringResource(R.string.disable)) {
-            IconButton(onClick = onDisable, shapes = IconButtonDefaults.shapes()) {
+            IconButton(onClick = onDisable, shapes = appIconButtonShapes()) {
                 Icon(Icons.Default.Block, contentDescription = stringResource(R.string.disable))
             }
         }
         IconButtonTooltip(stringResource(R.string.enable)) {
-            IconButton(onClick = onEnable, shapes = IconButtonDefaults.shapes()) {
+            IconButton(onClick = onEnable, shapes = appIconButtonShapes()) {
                 Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.enable))
             }
         }
         IconButtonTooltip(stringResource(R.string.delete)) {
             FilledTonalIconButton(
                 onClick = onDelete,
-                shapes = IconButtonDefaults.shapes(),
+                shapes = appIconButtonShapes(),
                 colors = IconButtonDefaults.filledTonalIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -1620,7 +1624,7 @@ private fun CalibrationImportExportBottomSheet(
             TextButton(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.cancel))
@@ -1665,7 +1669,7 @@ private fun CalibrationTransferAction(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     color = if (isDestructive) contentColor else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -1739,7 +1743,7 @@ private fun ClearOptionsBottomSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.clear_disabled_only),
-                                style = MaterialTheme.typography.titleMedium)
+                                style = MaterialTheme.typography.titleMediumEmphasized,)
                             Text(
                                 stringResource(R.string.disabled_calibrations_count, disabledCount),
                                 style = MaterialTheme.typography.bodySmall,
@@ -1772,7 +1776,7 @@ private fun ClearOptionsBottomSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             stringResource(R.string.clear),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMediumEmphasized,
                             color = MaterialTheme.colorScheme.error
                         )
                         Text(
@@ -1790,7 +1794,7 @@ private fun ClearOptionsBottomSheet(
             TextButton(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.cancel))

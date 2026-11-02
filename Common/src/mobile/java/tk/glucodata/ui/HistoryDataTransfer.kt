@@ -1,5 +1,9 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.AppSlider
+
+import tk.glucodata.ui.util.appButtonShapes
+
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.Intent
@@ -43,7 +47,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
@@ -216,7 +219,7 @@ fun HistoryExportSheet(
                         csvLauncher.launch(fileName)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     androidx.compose.material3.Icon(
@@ -233,7 +236,7 @@ fun HistoryExportSheet(
                         textLauncher.launch(fileName)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     androidx.compose.material3.Icon(
@@ -606,7 +609,7 @@ fun ExportDataSettingsSheet(
                     onClick = ::exportCsv,
                     enabled = !isExporting,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
@@ -622,7 +625,7 @@ fun ExportDataSettingsSheet(
                     onClick = ::exportReadableReport,
                     enabled = !isExporting,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
@@ -663,7 +666,7 @@ fun ExportDataSettingsSheet(
                     onClick = ::saveToFilePicker,
                     enabled = !isExporting,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
@@ -678,7 +681,7 @@ fun ExportDataSettingsSheet(
                     onClick = ::shareExport,
                     enabled = !isExporting,
                     modifier = Modifier.fillMaxWidth(),
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     Icon(
@@ -869,7 +872,7 @@ fun ScheduledBackupSettingsSheet(
                                 modifier = Modifier
                                     .align(Alignment.End)
                                     .padding(top = 8.dp),
-                                shapes = ButtonDefaults.shapes(),
+                                shapes = appButtonShapes(),
                                 contentPadding = ButtonDefaults.ContentPadding
                             ) {
                                 Text(stringResource(R.string.scheduled_backup_acknowledge))
@@ -984,7 +987,7 @@ fun ScheduledBackupSettingsSheet(
                 onClick = ::runNow,
                 enabled = config.destination != null && !isRunningNow && !isTestingBackup,
                 modifier = Modifier.fillMaxWidth(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isRunningNow) {
@@ -1007,7 +1010,7 @@ fun ScheduledBackupSettingsSheet(
                 },
                 enabled = !isRunningNow && !isTestingBackup,
                 modifier = Modifier.fillMaxWidth(),
-                shapes = ButtonDefaults.shapes(),
+                shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isTestingBackup) {
@@ -1037,12 +1040,12 @@ fun ScheduledBackupSettingsSheet(
                         persist(config.copy(hour = pickerState.hour, minute = pickerState.minute))
                         showTimePicker = false
                     },
-                    shapes = ButtonDefaults.shapes(),
+                    shapes = appButtonShapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) { Text(stringResource(android.R.string.ok)) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showTimePicker = false }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                OutlinedButton(onClick = { showTimePicker = false }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(android.R.string.cancel))
                 }
             },
@@ -1054,7 +1057,7 @@ fun ScheduledBackupSettingsSheet(
         AlertDialog(
             onDismissRequest = { backupTestMessage = null },
             confirmButton = {
-                Button(onClick = { backupTestMessage = null }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                Button(onClick = { backupTestMessage = null }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
                     Text(stringResource(android.R.string.ok))
                 }
             },
@@ -1093,7 +1096,7 @@ private fun BackupRetentionRow(
                 style = MaterialTheme.typography.titleLargeEmphasized.copy(fontFeatureSettings = "tnum")
             )
         }
-        Slider(
+        AppSlider(
             value = index,
             onValueChange = { index = it },
             onValueChangeFinished = { onSelected(options[index.toInt().coerceIn(options.indices)]) },

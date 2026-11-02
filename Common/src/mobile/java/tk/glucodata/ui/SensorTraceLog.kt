@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -416,7 +418,7 @@ private fun TraceLogAction(icon: ImageVector, label: Int, onClick: () -> Unit) {
             colors = IconButtonDefaults.iconButtonColors(
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
-            shapes = IconButtonDefaults.shapes(),
+            shapes = appIconButtonShapes(),
         ) {
             Icon(icon, contentDescription = text)
         }

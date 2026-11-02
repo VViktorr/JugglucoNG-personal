@@ -2,6 +2,10 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
+import tk.glucodata.ui.util.appButtonShapes
+
 import tk.glucodata.ui.components.AdaptiveTrailingRow
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.IconButtonDefaults
@@ -277,7 +281,7 @@ fun ApiSourceSettingsScreen(navController: NavController) {
                                     },
                                     trailingIcon = {
                                         IconButtonTooltip(if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                                            IconButton(onClick = { showSecret = !showSecret }, shapes = IconButtonDefaults.shapes()) {
+                                            IconButton(onClick = { showSecret = !showSecret }, shapes = appIconButtonShapes()) {
                                                 Icon(
                                                     if (showSecret) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                                     contentDescription = if (showSecret) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
@@ -437,7 +441,7 @@ private fun SourcePresetRow(
         AdaptiveTrailingRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             trailingContent = {
-                TextButton(onClick = onChangePreset, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                TextButton(onClick = onChangePreset, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.outbound_api_change_preset))
                 }
             }

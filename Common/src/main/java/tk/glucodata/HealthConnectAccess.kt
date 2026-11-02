@@ -23,6 +23,9 @@ interface HealthConnect {
      * overridable so a driver that keeps no dataptr (iCan) can supply its own.
      */
     fun writeAll(sensorPtr: Long, sensorName: String)
+
+    /** Imports recent activity and step records into the journal. */
+    fun importActivity(daysBack: Int = 14)
 }
 
 object HealthConnectAccess {

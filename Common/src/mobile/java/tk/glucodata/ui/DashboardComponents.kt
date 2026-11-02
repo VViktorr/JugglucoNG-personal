@@ -240,6 +240,7 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    sensorEndTimeMs: Long = 0L,
     stackBars: Boolean = false,
     glucoseWidthPercent: Int = 70,
     currentDay: Int = 0,
@@ -695,8 +696,7 @@ fun DashboardCombinedHeader(
                             text = statusCopy.title,
                             style = statusTitleStyle,
                             color = glucoseContentColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+                            softWrap = true,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Start
                         )
@@ -1141,6 +1141,21 @@ fun DashboardCombinedHeader(
                              }
                          }
                      }
+                    if (sensorEndTimeMs > 0L) {
+                        val expiryText = remember(sensorEndTimeMs) {
+                            java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(sensorEndTimeMs))
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = expiryText,
+                            style = if (stackBars) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
+                            color = sensorContentColor.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
