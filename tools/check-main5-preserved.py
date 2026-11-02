@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the requested 1.2.8 NFC/Libre2 callback and other sensor code freeze.
+"""Verify the requested 1.2.8 NFC, shared GATT and other sensor code freeze.
 
 Reads recorded SHA-256 values; does not require git history or an Android SDK.
 """

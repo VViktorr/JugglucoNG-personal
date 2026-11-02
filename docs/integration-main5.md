@@ -13,13 +13,13 @@ Source `main`: `ba606f408428d2885421887c83c8531a3cd50b54`. The review covers all
 - Charts: user scale limits, readable target-boundary and foreground axis labels, label collision handling, translucent label backgrounds and consistent control styling.
 - Clinical PDF reports: report groups/pages, AGP percentiles, calendar ranges, meal profiles, injection annotations, fonts and Polish/default strings.
 - Settings: category navigation combined with 1.2.8's complete adaptive control groups and localized deep-link search. The older topic-key search does not replace the newer index.
-- Libre 2: diagnostic scan logging only in `SensorBluetooth.java`; no replacement of its roster/pause/reconnect logic. LibreView region/unit configuration, reauthentication, token/device-registration retry, timeout/cooldown handling and masked payload diagnostics are integrated for Libre 2.
+- Libre 2: the subsequently authorized hybrid callback preserves upstream lifecycle safeguards and the 150-second soft watchdog, adds bounded hard escalation and private diagnostics (see `libre2-hybrid-main5.md`). Diagnostic scan logging in `SensorBluetooth.java` leaves its roster/pause/reconnect logic intact. LibreView region/unit configuration, reauthentication, token/device-registration retry, timeout/cooldown handling and masked payload diagnostics are integrated for Libre 2.
 - Shared display/infrastructure: current-value freshness, AOD status rendering, notification status typography, value-available alert, Health Connect journal activity import, Wear timestamp/framing/order checks, complication refresh coalescing and bitmap caching. The newer standard notification text/forwarding policy and independent smoothing/collapse settings are preserved.
 - Support: manual phone/Wear builders, fork README, portable distribution path handling and relevant regression tools. App version, SDK, dependency versions and newer upstream CI remain from 1.2.8. No release was published or APK build requested.
 
 ## Explicit exclusions and holds
 
-1. **`Libre2GattCallback.java` stays byte-for-byte at 1.2.8** until a separate user decision. The personal 120-second watchdog, hard GATT recovery, cooldown and extra wake lock are not enabled.
+1. **Libre2 callback hold lifted by the user for the hybrid implementation.** The personal 120-second stream watchdog is not copied; upstream 150-second soft recovery precedes one bounded hard escalation. See `libre2-hybrid-main5.md` for exact timing, privacy changes and validation.
 2. **NFC stays at 1.2.8.** `AlgNfcV`, `ScanNfcV`, native `libre2.cpp`, `SensorGlucoseData.hpp`, `share/savehistory.cpp` and `g.cpp` are unchanged. `NfcRawHistory.hpp` is not added. NFC/raw-only history import/export, its storage/overlap changes, NFC-as-current notification selection and related native widget supplement remain deferred together.
 3. **Other sensors stay at 1.2.8.** The complete driver tree, Libre3 source tree and sensor setup screens are preserved. Common `SuperGattCallback` remains original. In the shared `Libreview.java`, Libre3 calls explicitly delegate to preserved 1.2.8 method bodies, and its original config fetch is retained. The new Libre2 cloud behavior does not replace those methods.
 4. **Personal MetricStyle and glucose Live Update are excluded**, including classes, legacy/Compose toggles, resources, receiver, permission and tests. Features already in 1.2.8 are retained.
@@ -29,7 +29,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 
 ## Validation
 
-- `python tools/check-main5-preserved.py`: confirms **224 protected files** against recorded upstream SHA-256 values, and verifies original Libre3 cloud method bodies after internal renaming.
+- `python tools/check-main5-preserved.py`: confirms **223 protected files** against recorded upstream SHA-256 values, and verifies original Libre3 cloud method bodies after internal renaming.
 - Production Libre2 LibreView replay: unit/region selection, forced registration, finite auth/device retries, HTTP/JSON rate limits, timeouts and connection cleanup pass.
 - Widget production-dispatch replay: both home and Glance renderers deliver an update racing with completion.
 - Wear production-ingestion replay: all **16 scenarios** pass, including malformed frames, out-of-order timestamps, ownership/disabled gates and phone Libre2 handling. Native/Room/platform APIs use test doubles; no sensor is contacted.
@@ -84,7 +84,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 | `Common/src/main/java/tk/glucodata/HistoryRepositoryAccess.kt` | Already identical to main |
 | `Common/src/main/java/tk/glucodata/HistoryRepositoryBridge.kt` | Already identical to main |
 | `Common/src/main/java/tk/glucodata/LeadingTrailingRefresh.kt` | Integrated personal delta over 1.2.8 |
-| `Common/src/main/java/tk/glucodata/Libre2GattCallback.java` | Frozen at original 1.2.8 pending separate user decision |
+| `Common/src/main/java/tk/glucodata/Libre2GattCallback.java` | Authorized hybrid: upstream 150-second soft recovery, one additional hard recovery after 150 further seconds, private detailed diagnostics; NFC still deferred |
 | `Common/src/main/java/tk/glucodata/MessageReceiver.kt` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/java/tk/glucodata/MessageSender.kt` | Integrated personal delta over 1.2.8 |
 | `Common/src/main/java/tk/glucodata/Natives.java` | Merged country/auth/alert bridge |
@@ -412,7 +412,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 | `tools/notification-native-view-probe/evidence/status-font-ibm-compact.png` | Already identical to main |
 | `tools/notification-native-view-probe/src/tk/glucodata/ProductionPreview.java` | Already identical to main |
 | `tools/test-air-driver.py` | Integrated personal support/tooling delta |
-| `tools/test-libre2-connect.py` | Frozen at original 1.2.8 pending separate user decision |
+| `tools/test-libre2-connect.py` | Authorized hybrid: upstream 150-second soft recovery, one additional hard recovery after 150 further seconds, private detailed diagnostics; NFC still deferred |
 | `tools/test-libre3-connect.py` | Preserved original 1.2.8 per user: other sensor implementations and common BLE callback lifecycle are not replaced |
 | `tools/test-libreview-config.py` | Integrated personal regression/tooling/support file |
 | `tools/test-sensor-lifecycle.py` | Not imported: coupled to out-of-scope callback lifetime changes for other sensors |
@@ -421,3 +421,7 @@ The source differences listed below have no unreviewed entries. Deferred NFC and
 | `tools/tests/history_recovery_regression.py` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
 | `tools/tests/sensor_history_sync_regression.py` | Deferred with NFC/native history lane integration; original 1.2.8 retained |
 | `tools/tests/stale_notification_regression.py` | Not added: coupled to deferred NFC-as-current selection or older notification policy |
+
+## Authorized Libre 2 follow-up
+
+See [Libre 2 hybrid design and validation](libre2-hybrid-main5.md). Only the callback was removed from the original-file freeze manifest; the remaining 223 protected sensor/NFC/native files retain their original hashes. Shared Java/C++ log sinks now redact identities, credentials, byte dumps and pointer values before writes. This changes diagnostic text for all callers, not other sensor algorithms. No full APK build was requested.

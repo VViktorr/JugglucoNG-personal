@@ -1,3 +1,4 @@
+#include "logprivacy.hpp"
 /*      This file is part of Juggluco, an Android app to receive and display */
 /*      glucose values from Freestyle Libre 2 and 3 sensors. */
 /*                                                                                   */
@@ -100,7 +101,7 @@ extern "C" {
 #endif
 // extern bool mute;
 typedef int (*opent)(const char *__path, int __flags, ...);
-#ifndef NOLOG
+#if !defined(NOLOG) && !defined(LOGCAT)
 __attribute__((__visibility__("default"))) extern int
 loggert(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
@@ -152,14 +153,14 @@ static inline int loggert(const char *format, ...) {
   if (logcat_should_drop(buf)) {
     return 0;
   }
-  return __android_log_print(ANDROID_LOG_INFO, "cpp", "%s", buf);
+  return __android_log_print(ANDROID_LOG_INFO, "cpp", "%s", privacy_log_message(buf, strlen(buf)));
 }
 
 static inline void logstring(const char *msg) {
   if (logcat_should_drop(msg)) {
     return;
   }
-  __android_log_write(ANDROID_LOG_INFO, "cpp", msg);
+  __android_log_write(ANDROID_LOG_INFO, "cpp", privacy_log_message(msg, strlen(msg)));
 }
 
 #define LOGGER(...) loggert(__VA_ARGS__)
@@ -182,7 +183,7 @@ static inline int logprint(const char *format, ...) {
   if (logcat_should_drop(buf)) {
     return 0;
   }
-  return __android_log_print(ANDROID_LOG_INFO, "print", "%s", buf);
+  return __android_log_print(ANDROID_LOG_INFO, "print", "%s", privacy_log_message(buf, strlen(buf)));
 }
 
 #define LOGGERN(buf, len)                                                      \
@@ -193,8 +194,7 @@ static inline int logprint(const char *format, ...) {
 
 inline void lerror(const char *str) {
   int waser = errno;
-  __android_log_print(ANDROID_LOG_INFO, "error", "%s: %s\n", (char *)str,
-                      strerror(waser));
+  LOGGER("%s: %s\n", str, strerror(waser));
 }
 inline void flerror(const char *fmt, ...) {
   int waser = errno;

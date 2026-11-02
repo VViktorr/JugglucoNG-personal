@@ -218,7 +218,7 @@ private fun readRecentSensorTraceLines(
 /** Named for the sensor and the moment, the way the debug log export is. */
 internal fun sensorTraceExportName(serial: String, at: Date = Date()): String {
     val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(at)
-    val safe = serial.filter { it.isLetterOrDigit() }.take(24).ifEmpty { "sensor" }
+    val safe = tk.glucodata.LogPrivacy.sensorAlias(serial)
     return "juggluco-connection-$safe-$stamp.txt"
 }
 
@@ -229,6 +229,7 @@ internal fun SensorTraceLog(sensor: SensorInfo) {
     val identifiers = remember(sensor.serial, sensor.deviceAddress) {
         buildSet {
             add(sensor.serial)
+            add(tk.glucodata.LogPrivacy.sensorAlias(sensor.serial))
             sensor.deviceAddress.takeUnless { it.equals("Unknown", ignoreCase = true) }?.let(::add)
             runCatching { SensorIdentity.resolveNativeHistorySensorNames(sensor.serial) }
                 .getOrDefault(emptyList())
@@ -257,7 +258,7 @@ internal fun SensorTraceLog(sensor: SensorInfo) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val rendered = remember(lines) {
         lines.joinToString("\n") { line ->
-            formatSensorTraceLine(line) { millis -> timeFormat.format(Date(millis)) }
+            tk.glucodata.LogPrivacy.sanitize(formatSensorTraceLine(line) { millis -> timeFormat.format(Date(millis)) })
         }
     }
 

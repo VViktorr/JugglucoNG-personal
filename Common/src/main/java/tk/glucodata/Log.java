@@ -79,6 +79,7 @@ public static void refreshDoLog() {
 	}
 static final private String LOG_ID="Log";
 private static void log(String type,String one,String two) {
+	one=LogPrivacy.sanitize(one); two=LogPrivacy.sanitize(two);
    	if(!Applic.Nativesloaded)  {
 		android.util.Log.e(one, two);
 		return;
@@ -97,12 +98,13 @@ private static void log(String type,String one,String two) {
 	  	Natives.log(str);
 		}
 	catch(Throwable e) {
-		android.util.Log.e(LOG_ID, android.util.Log.getStackTraceString(e));
+		android.util.Log.e(LOG_ID, stackstring("logging failed",e));
 		android.util.Log.e(one, two);
 		}
 		}
 	  }
 public static void info(String str) {
+	str=LogPrivacy.sanitize(str);
 	SensorTraceRing.add(' ',null,str);
 	if(doLog) {
 		if(Applic.Nativesloaded)  {
@@ -116,7 +118,7 @@ public static void info(String str) {
 	stack(id,"",e);
    	}
 public static String stackline(Throwable e) {
-	String str=android.util.Log.getStackTraceString(e);
+	String str=stackstring("",e);
 	final int len=str.length();
 	if(len>100) {
 		int end=str.indexOf("\n");
@@ -129,12 +131,15 @@ public static String stackline(Throwable e) {
 	return str;
 	}
 public static String stackstring(String mess,Throwable e) {
-	String str=android.util.Log.getStackTraceString(e);
-	String all=str==null?mess+" Exception":mess+" "+str;
-	return all;
-	}
+    // Exception messages and causes may embed credentials or platform device identifiers.
+    StringBuilder safe = new StringBuilder(LogPrivacy.sanitize(mess));
+    safe.append(" ").append(e.getClass().getName());
+    for (StackTraceElement frame : e.getStackTrace()) safe.append("\n at ").append(frame);
+    return LogPrivacy.sanitize(safe.toString());
+    }
    public static void stack(String id,String mess,Throwable e) {
 	String all=Log.stackstring(mess,e);
+	id=LogPrivacy.sanitize(id);
 	if(!doLog||!Applic.Nativesloaded)
 		android.util.Log.e(id,all);
 	else
@@ -142,6 +147,7 @@ public static String stackstring(String mess,Throwable e) {
 
    	}
 public static void e(String one,String two) {
+	one=LogPrivacy.sanitize(one); two=LogPrivacy.sanitize(two);
 	SensorTraceRing.add('E',one,two);
 	if(!doLog||!Applic.Nativesloaded)
 		android.util.Log.e(one,two);
@@ -156,7 +162,7 @@ public static void e(String one,String two) {
  */
 public static void format(String format, Object... args) {
 	if(doLog) {
-		String form=String.format(usedlocale,format,args);
+		String form=LogPrivacy.sanitize(String.format(usedlocale,format,args));
 		if(Applic.Nativesloaded) 
 			Natives.log(form);
 		else
@@ -172,21 +178,19 @@ public static void annolog(String mess) {
    final String cl=aan.getClassName();
    final String fun=aan.getMethodName() ;
    final String tag=cl+"."+fun+"("+filename+":"+ln+"): ";
-   Natives.log("FIND "+tag+mess);
+   Natives.log(LogPrivacy.sanitize("FIND "+tag+mess));
   // Natives.log(all);
    }
 //s/public static void \([a-z]\).*\(log.*\);/public static void \1(String one,String two) 	{ if(Applic.Nativesloaded) {\2 else android.util.Log.\1(one,two);};/g
 
-public static void d(String one,String two) 	{ SensorTraceRing.add('D',one,two); if(doLog) {if(Applic.Nativesloaded) {log("D",one,two);} else android.util.Log.d(one,two);}};
-public static void w(String one,String two) 	{ SensorTraceRing.add('W',one,two); if(doLog) {if(Applic.Nativesloaded) {log("W",one,two);} else android.util.Log.w(one,two);}};
-public static void v(String one,String two) 	{ SensorTraceRing.add('V',one,two); if(doLog) {if(Applic.Nativesloaded) {log("V",one,two);} else android.util.Log.v(one,two);}};
-public static void i(String one,String two) 	{ SensorTraceRing.add('I',one,two); if(doLog) {if(Applic.Nativesloaded) {log("I",one,two);} else android.util.Log.i(one,two);}};
-public static void  showbytes(String mess,byte[] ar) {
-	if(doLog)
-		{if(doLog){Natives.showbytes(mess,ar);};}
-	}
-
-
+public static void d(String one,String two) 	{ one=LogPrivacy.sanitize(one); two=LogPrivacy.sanitize(two); SensorTraceRing.add('D',one,two); if(doLog) {if(Applic.Nativesloaded) {log("D",one,two);} else android.util.Log.d(one,two);}};
+public static void w(String one,String two) 	{ one=LogPrivacy.sanitize(one); two=LogPrivacy.sanitize(two); SensorTraceRing.add('W',one,two); if(doLog) {if(Applic.Nativesloaded) {log("W",one,two);} else android.util.Log.w(one,two);}};
+public static void v(String one,String two) 	{ one=LogPrivacy.sanitize(one); two=LogPrivacy.sanitize(two); SensorTraceRing.add('V',one,two); if(doLog) {if(Applic.Nativesloaded) {log("V",one,two);} else android.util.Log.v(one,two);}};
+public static void i(String one,String two) 	{ one=LogPrivacy.sanitize(one); two=LogPrivacy.sanitize(two); SensorTraceRing.add('I',one,two); if(doLog) {if(Applic.Nativesloaded) {log("I",one,two);} else android.util.Log.i(one,two);}};
+public static void showbytes(String mess,byte[] ar) {
+    // No raw payloads: authentication and glucose travel through the same byte-dump helper.
+    i("Payload", LogPrivacy.sanitize(mess) + " bytes omitted, length=" + (ar == null ? 0 : ar.length));
+    }
 
 //invoke-virtual {v0}, Landroid/bluetooth/BluetoothDevice;->getName()Ljava/lang/String;
 /*

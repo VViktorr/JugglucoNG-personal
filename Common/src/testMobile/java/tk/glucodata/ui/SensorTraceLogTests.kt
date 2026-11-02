@@ -157,7 +157,7 @@ class SensorTraceLogTests {
             .parse("2026-09-09 22:57:04")!!
 
         assertEquals(
-            "juggluco-connection-70D07E2552DB-20260909-225704.txt",
+            "juggluco-connection-${tk.glucodata.LogPrivacy.sensorAlias("70D07E2552DB")}-20260909-225704.txt",
             sensorTraceExportName("70D07E2552DB", at),
         )
     }
@@ -166,7 +166,7 @@ class SensorTraceLogTests {
     fun anExportNameSurvivesAWkwardSerials() {
         // A picker filename is not a place for path separators or colons.
         assertEquals(
-            "juggluco-connection-70D07E2552DB-20260909-225704.txt",
+            "juggluco-connection-${tk.glucodata.LogPrivacy.sensorAlias("70:D0:7E:25:52:DB")}-20260909-225704.txt",
             sensorTraceExportName("70:D0:7E:25:52:DB", stamp),
         )
         assertTrue(sensorTraceExportName("", stamp).startsWith("juggluco-connection-sensor-"))

@@ -1,7 +1,6 @@
 {
   "base": "a4fbdcce5c7312ca05fe0ef74a52848df0965ae8",
   "files": {
-    "Common/src/main/java/tk/glucodata/Libre2GattCallback.java": "75bb44b6fb3e135112b595f1b4267a4b6008bc0095de8a213fab3072f7ccce19",
     "Common/src/main/java/tk/glucodata/SuperGattCallback.java": "850ef129dcf6720f5efc3436b40a7df8d90cedd4c3eee6b0a189ff2f26c45459",
     "Common/src/main/java/tk/glucodata/AlgNfcV.java": "160845112da44cff9dc1f899b1f0cd23bf46513413091a7f4a19f2a00d2e8e98",
     "Common/src/main/java/tk/glucodata/ScanNfcV.java": "fca0d46863ea10ab7321f38ea4d9143b6899390284a437d480c9fe150ca2c62a",

@@ -20,6 +20,7 @@
 
 #include "fromjava.h"
 #include "logs.hpp"
+#include "logprivacy.hpp"
 #include "settings/settings.hpp"
 
 #ifndef NOLOG
@@ -266,35 +267,25 @@ dest([jstr,str,env]() {env->ReleaseStringUTFChars(jstr, str);}); if(jbytes) {
     } */
 
 extern "C" JNIEXPORT void JNICALL fromjava(showbytes)(JNIEnv *env, jclass thiz,
-                                                      jstring jmess,
-                                                      jbyteArray jar) {
+                                                      jstring jmess, jbyteArray jar) {
 #ifndef NOLOG
-  if (dolog) {
-    const jint len = env->GetStringUTFLength(jmess);
-
-    constexpr const char nullstr[] = " null";
-    constexpr const int nulllen = sizeof(nullstr) - 1;
-    const jsize vallen = jar ? env->GetArrayLength(jar) : 0;
-
-    constexpr const int startlen = 0;
-    const int totlen = startlen + len + (jar ? (vallen * 3) : nulllen) + 1;
-    char mess[totlen];
-    const jint jlen = env->GetStringLength(jmess);
-    env->GetStringUTFRegion(jmess, 0, jlen, mess + startlen);
-    int pos = startlen + len;
-    if (jar) {
-      if (vallen) {
-        uint8_t value[vallen];
-        env->GetByteArrayRegion(jar, 0, vallen, (jbyte *)value);
-        for (int i = 0; i < vallen; i++) {
-          pos += sprintf(mess + pos, " %02X", value[i]);
-        }
-      }
-    } else {
-      memcpy(mess + pos, nullstr, nulllen);
-      pos += nulllen;
-    }
-    LOGGERN(mess, pos);
-  }
+  if (!dolog || !jmess) return;
+  const char *label = env->GetStringUTFChars(jmess, nullptr);
+  if (!label) return;
+  LOGGER("%s bytes omitted, length=%d\n", label, jar ? env->GetArrayLength(jar) : 0);
+  env->ReleaseStringUTFChars(jmess, label);
 #endif
+}
+
+extern "C" JNIEXPORT void JNICALL Java_tk_glucodata_LogPrivacy_registerNative(
+    JNIEnv *env, jclass, jstring identity, jstring alias) {
+  if (!identity || !alias) return;
+  const char *raw = env->GetStringUTFChars(identity, nullptr);
+  if (!raw) return;
+  const char *safe = env->GetStringUTFChars(alias, nullptr);
+  if (safe) {
+    privacy_log_identity(raw, safe);
+    env->ReleaseStringUTFChars(alias, safe);
+  }
+  env->ReleaseStringUTFChars(identity, raw);
 }

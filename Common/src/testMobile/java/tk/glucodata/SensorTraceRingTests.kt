@@ -34,14 +34,15 @@ class SensorTraceRingTests {
     }
 
     @Test
-    fun anUntaggedLineKeepsItsMessageWhole() {
+    fun anUntaggedLineKeepsItsMessageAndPrivateAlias() {
+        val alias = LogPrivacy.sensorAlias("D76C7BB368A3")
         SensorTraceRing.add(' ', null, "mirror: marking D76C7BB368A3 as Clone")
         val line = SensorTraceRing.snapshot().single()
 
-        assertTrue(line.endsWith(" mirror: marking D76C7BB368A3 as Clone"))
+        assertTrue(line.endsWith(" mirror: marking $alias as Clone"))
         assertEquals(
             listOf(line),
-            filterRecentSensorTraceLines(lines = listOf(line), identifiers = listOf("D76C7BB368A3")),
+            filterRecentSensorTraceLines(lines = listOf(line), identifiers = listOf(alias)),
         )
     }
 
@@ -72,13 +73,13 @@ class SensorTraceRingTests {
 
     @Test
     fun aRunawayLineIsTruncatedRatherThanPinnedWhole() {
-        SensorTraceRing.add('D', "Anytime", "payload " + "AB".repeat(4_000))
+        SensorTraceRing.add('D', "Anytime", "diagnostic " + "long message ".repeat(1_000))
         val line = SensorTraceRing.snapshot().single()
 
         assertTrue("expected an ellipsis marking the cut, got ${line.takeLast(8)}", line.endsWith("…"))
-        // prefix + the 256 kept characters + the marker, nothing like the 8k that went in.
-        assertTrue("line was ${line.length} chars", line.length < 320)
-        assertTrue(line.contains("D/Anytime payload AB"))
+        // prefix + the 1024 kept characters + the marker, nothing like the 8k that went in.
+        assertTrue("line was ${line.length} chars", line.length < 1100)
+        assertTrue(line.contains("D/Anytime diagnostic long message"))
     }
 
     @Test

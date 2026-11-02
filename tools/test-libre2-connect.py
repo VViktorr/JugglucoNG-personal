@@ -36,7 +36,7 @@ base_methods = '\n'.join(method(base, signature) for signature in [
     'private synchronized void markConnectRunnableStarted(', 'private synchronized void clearPendingConnect(',
     'public final synchronized void closeGattTransport(', 'public synchronized void disconnect(',
     'public synchronized void setPause(', 'public void onConnectionStateChange(',
-    'public void close()', 'protected boolean useAutoConnect(',
+    'public void close()', 'public long resetdataptr(', 'protected boolean useAutoConnect(',
     'protected void onConnectionAttemptTimeout(',
 ])
 libre_methods = '\n'.join(method(libre, signature) for signature in [
@@ -52,6 +52,10 @@ libre_methods = '\n'.join(method(libre, signature) for signature in [
     'private Runnable forCurrentGatt(', 'private void endBLEHandler(',
     'private void streamPacketReceived(', 'private synchronized void streamSilent(',
     'private void logLinkEnd(',
+    'private String bluetoothAdapterState(', 'private boolean canRecoverLocally(', 'private void libre2Diag(',
+    'private synchronized void hardRecoverGatt(', 'private synchronized void resumeRecovery(',
+    'private void releaseRecoveryWakeLock(', 'private void cancelRecovery(',
+    'public synchronized long resetdataptr(',
 ])
 
 # Fields and all lifecycle/entry-point methods above come from production sources.
@@ -83,7 +87,9 @@ class SuperGattCallback {
     static class CloneSensorRegistry { static boolean clone; static boolean isCloneSensor(String s){return clone;} }
     static class SensorOwnershipRuntime { static boolean blocked; static boolean blocksLocalConnection(String s){return blocked;} }
     static class WearSensorClaim { static int releases; static void onLocalGattDisconnected(String s){releases++;} }
-    static class Natives { static int resets; static void resetbluetooth(long ptr){resets++;} }
+    static class Natives { static int resets; static void resetbluetooth(long ptr){resets++;}
+        static void freedataptr(long ptr){} static long getdataptr(String s){return 2L;}
+        static String getDeviceAddress(long ptr,boolean fresh){return "fake";} }
     static class SystemClock { static long elapsedRealtime(){return Applic.scheduler.now;} }
     static class Build { static class VERSION { static int SDK_INT=37; } static class VERSION_CODES { static int M=23; } }
     static class R { static class string { static int turn_on_nearby_devices_permission=0; } }
@@ -122,10 +128,26 @@ class SuperGattCallback {
     static class BluetoothGattService {
         BluetoothGattCharacteristic getCharacteristic(UUID u){return new BluetoothGattCharacteristic();}
     }
+    static final Applic app=Applic.app;
+    static final String POWER_SERVICE="power";
+    static class LogPrivacy {
+        static String sensorAlias(String s){return "sensor-1";} static void registerAddress(String s,String a){}
+    }
+    static class BluetoothAdapter { static BluetoothAdapter getDefaultAdapter(){return null;} int getState(){return 12;} }
+    static class PowerManager {
+        static final int PARTIAL_WAKE_LOCK=1;
+        WakeLock newWakeLock(int level,String tag){return new WakeLock();}
+        static class WakeLock {
+            boolean held; long timeout;
+            void setReferenceCounted(boolean b){} void acquire(long t){held=true;timeout=t;}
+            boolean isHeld(){return held;} void release(){held=false;}
+        }
+    }
     static class Applic {
         static final Applic app=new Applic(); static Scheduler scheduler;
         static Applic getContext(){return app;} String getString(int id){return "";}
         static void Toaster(String s){} static void Toaster(int id){} static boolean mayscan(){return true;}
+        Object getSystemService(String s){return new PowerManager();}
         Handler getHandler(){return new Handler();}
     }
     static class Handler { void removeCallbacks(Runnable task){} }
@@ -160,6 +182,7 @@ java += '\n' + base_methods + '\n}\nclass Libre2GattCallback extends SuperGattCa
 java += field(libre, 'private final GattConnectDeadline<BluetoothGatt> disconnectDeadline', '}, this::retryAfterDisconnect);')
 java += field(libre, 'private static final long STREAM_SILENCE_MILLIS', ';')
 java += field(libre, 'private final GattConnectDeadline<BluetoothGatt> streamDeadline', '}, this::streamSilent);')
+java += libre[libre.index('private boolean softRecoveryTried'):libre.index('private boolean canRecoverLocally')]
 java += field(libre, 'private long linkConnectedAt', ';') + field(libre, 'private int linkPackets', ';')
 java += r'''
     BluetoothGatt disconnectingGatt;
@@ -233,6 +256,42 @@ java += r'''
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);cb.onServicesDiscovered(current,0);
         Applic.scheduler.advance(150_000);check(current.disconnected==1,"stalled handshake not recovered");
         Applic.scheduler.advance(2_000);check(current.closed==1&&cb.mActiveBluetoothDevice.calls==2,"stalled handshake got no fresh GATT");
+
+        // Failed soft recovery escalates at an absolute deadline, even across connection failures.
+        cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        Applic.scheduler.advance(150_000);Applic.scheduler.advance(2_000);
+        for(int n=0;n<4;n++){cb.onConnectionStateChange(cb.mBluetoothGatt,133,0);Applic.scheduler.advance(30_000);}
+        Applic.scheduler.advance(27_999);check(Natives.resets==0,"hard recovery early");
+        old=cb.mBluetoothGatt;Applic.scheduler.advance(1);
+        check(Natives.resets==1&&cb.recoveryInProgress&&old.closed==1,"failed soft recovery not escalated");
+        int calls=cb.mActiveBluetoothDevice.calls;
+        PowerManager.WakeLock lock=cb.recoveryWakeLock;
+        check(lock.isHeld()&&lock.timeout==15_000,"bounded recovery wake lock missing");
+        cb.connectDevice(0);cb.onConnectionStateChange(old,0,2);
+        Applic.scheduler.advance(5_999);check(cb.mActiveBluetoothDevice.calls==calls,"six-second delay bypassed");
+        Applic.scheduler.advance(1);check(cb.mActiveBluetoothDevice.calls==calls+1&&lock.isHeld(),"hard recovery did not retain bounded lock for queued connect");
+        current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        check(!lock.isHeld(),"connection result did not release recovery wake lock");
+        Applic.scheduler.advance(600_000);check(Natives.resets==1,"hard recovery repeated without packet");
+        // A complete packet starts a new episode; RSSI/handshake never do.
+        current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);cb.streamPacketReceived();
+        check(!cb.hardRecoveryUsed,"complete packet did not restore recovery budget");
+        Applic.scheduler.advance(300_000);check(Natives.resets==2,"new episode could not escalate");
+
+        // Cancellation and ownership changes cannot revive a hard recovery.
+        for(int guard=0;guard<5;guard++){
+            cb=fresh();cb.onConnectionStateChange(cb.mBluetoothGatt,0,2);Applic.scheduler.advance(300_000);
+            lock=cb.recoveryWakeLock;calls=cb.mActiveBluetoothDevice.calls;
+            if(guard==0)cb.setPause(true);else if(guard==1)cb.close();
+            else if(guard==2)cb.dataptr=0;else if(guard==3)SensorOwnershipRuntime.blocked=true;
+            else {long generation=cb.nativeStreamGeneration;cb.resetdataptr();check(cb.nativeStreamGeneration==generation+1,"native reload not diagnosed");}
+            Applic.scheduler.advance(6_000);
+            check(cb.mActiveBluetoothDevice.calls==calls&&!lock.isHeld(),"cancelled/remote hard recovery resurrected sensor");
+        }
+        // Wear keeps the upstream soft policy, without native reset or recovery wake lock.
+        cb=fresh();isWearable=true;cb.onConnectionStateChange(cb.mBluetoothGatt,0,2);
+        Applic.scheduler.advance(600_000);check(Natives.resets==0&&!cb.hardRecoveryUsed,"Wear used phone hard recovery");
+        isWearable=false;
 
         // Pause and close cancel it.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);cb.setPause(true);
