@@ -307,3 +307,18 @@ Static review covered resource references, defaults, mode/field key separation,
 supported location bounds, empty/unknown trend slots, timestamp source, fallback
 and the existing notification fingerprint prefix. No compilation or tests were
 run, per user instruction. Expanded/lock-screen rendering requires device checks.
+
+
+## Unified Live Update settings (2026-11-03)
+
+This section supersedes the separate Live Update/MetricStyle controls described above.
+Only Live Update has an enable switch, content controls and capsule layout. When enabled,
+API 36 uses the standard template; API 37+ automatically attempts MetricStyle and requests
+promotion. A MetricStyle exception restores standard content and capsule using the same
+Live Update preferences. Existing Live Update choices and defaults are retained; legacy
+MetricStyle enable/content/capsule preferences are ignored and no longer initialized.
+The main content position maps to the MetricStyle metric or standard expanded body.
+Empty required MetricStyle fields remain represented by a dash. Capsule controls remain
+independent of notification content. Disabling Live Update disables both templates.
+
+Validation: static review only; no build or tests were run. Device behavior remains to be confirmed.

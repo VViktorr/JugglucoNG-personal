@@ -30,28 +30,24 @@ public final class SystemGlucoseNotification {
             throw new IllegalArgumentException("field");
     }
 
+    // The boolean parameter is retained for source compatibility; both templates share Live Update keys.
     public static String contentVisibleKey(boolean metric, String field) {
         validateContentField(field);
-        return "notification_system_" + (metric ? "metric" : "live") + "_content_" + field + "_visible_v1";
+        return "notification_system_live_content_" + field + "_visible_v1";
     }
 
     public static String contentPositionKey(boolean metric, String field) {
         validateContentField(field);
-        return "notification_system_" + (metric ? "metric" : "live") + "_content_" + field + "_position_v1";
+        return "notification_system_" + "live" + "_content_" + field + "_position_v1";
     }
 
     public static boolean defaultContentVisible(boolean metric, String field) {
         validateContentField(field);
-        return !FIELD_TIME.equals(field) && (!metric || FIELD_VALUE.equals(field) || FIELD_TREND.equals(field));
+        return !FIELD_TIME.equals(field);
     }
 
     public static int defaultContentPosition(boolean metric, String field) {
         validateContentField(field);
-        if (metric) {
-            if (FIELD_VALUE.equals(field)) return POSITION_MAIN;
-            if (FIELD_TREND.equals(field) || FIELD_UNIT.equals(field)) return POSITION_CAPTION;
-            return POSITION_HEADER;
-        }
         return FIELD_TIME.equals(field) || FIELD_LABEL.equals(field) ? POSITION_CAPTION : POSITION_HEADER;
     }
 
@@ -118,14 +114,8 @@ public final class SystemGlucoseNotification {
 
     public static SharedPreferences preferences(Context context) {
         SharedPreferences prefs = context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
-        // Split the formerly shared choice once, retaining the current appearance.
-        // Later changes to either key must not alter the other mode.
-        synchronized (SystemGlucoseNotification.class) {
-            if (!prefs.contains(METRIC_CAPSULE_LAYOUT)) {
-                prefs.edit().putInt(METRIC_CAPSULE_LAYOUT,
-                        prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE)).apply();
-            }
-        }
+        // Retain Live Update preferences as the shared source for both templates.
+        // Legacy MetricStyle keys are intentionally ignored.
         return prefs;
     }
 
@@ -146,8 +136,8 @@ public final class SystemGlucoseNotification {
             return original;
         SharedPreferences prefs = preferences(context);
         final boolean live = prefs.getBoolean(LIVE_UPDATE, false);
-        final boolean metric = Build.VERSION.SDK_INT >= 37 && prefs.getBoolean(METRIC_STYLE, false);
-        if (!live && !metric) return original;
+        final boolean metric = Build.VERSION.SDK_INT >= 37;
+        if (!live) return original;
         try {
             return Api36.render(context, original, reading, rate, live, metric);
         } catch (RuntimeException | LinkageError error) {
@@ -180,13 +170,13 @@ public final class SystemGlucoseNotification {
             }
             if (metric) {
                 try {
-                    final ContentSlots metricContent = notificationContent(context, prefs, true, reading, displayRate);
+                    final ContentSlots metricContent = liveContent;
                     builder.setContentTitle(metricContent.header.isEmpty()
                                     ? context.getString(R.string.app_name) : metricContent.header)
                             .setContentText(null).setSubText(null).setContentInfo(null).setShowWhen(false);
                     if (live) {
                         applyCapsule(context, builder, value, rate,
-                                prefs.getInt(METRIC_CAPSULE_LAYOUT, ARROW_THEN_VALUE));
+                                prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
                     }
                     // MetricStyle requires a nonblank value and label; a dash denotes
                     // an intentionally empty slot, never a fabricated glucose reading.
@@ -195,8 +185,7 @@ public final class SystemGlucoseNotification {
                     return builder.build();
                 } catch (RuntimeException | LinkageError unavailable) {
                     Log.stack("SystemGlucoseNotification", "MetricStyle unavailable; standard fallback", unavailable);
-                    // A device missing MetricStyle can still show the independently requested Live Update.
-                    if (!live) return original;
+                    // Restore the standard template using the same content and capsule settings.
                     applyStandardContent(context, builder, liveContent);
                     applyCapsule(context, builder, value, rate,
                             prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
@@ -240,7 +229,7 @@ public final class SystemGlucoseNotification {
     @RequiresApi(37)
     private static final class Api37 {
         static void apply(Notification.Builder builder, String value, String caption) {
-            // Both strings are already resolved from this mode's content settings.
+            // Both strings are resolved from the shared Live Update settings.
             // Keep critical metric disabled so capsule settings remain independent.
             builder.setStyle(new Notification.MetricStyle()
                     .addMetric(new Notification.Metric(new Notification.Metric.FixedText(value), caption))

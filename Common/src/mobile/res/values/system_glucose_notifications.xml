@@ -2,10 +2,10 @@
 <resources>
     <string name="system_glucose_notification_section">System glucose notification</string>
     <string name="system_glucose_live_title">Live Update</string>
-    <string name="system_glucose_live_summary">Android 16+. Request a glucose value in the system status chip.</string>
+    <string name="system_glucose_live_summary">Android 16+. Enable the system glucose notification and status chip. Uses MetricStyle automatically on Android 17+.</string>
     <string name="system_glucose_metric_title">MetricStyle</string>
     <string name="system_glucose_metric_summary">Android 17+. Display glucose using the system metric template.</string>
-    <string name="system_glucose_notification_note">Independent of the floating overlay. Each mode keeps its own chip layout. With both enabled, MetricStyle provides the notification and chip layout, while Live Update requests the status chip. MetricStyle alone does not request a chip. The system controls promotion; without fresh data the normal notification returns.</string>
+    <string name="system_glucose_notification_note">Independent of the floating overlay. Live Update and automatic MetricStyle on Android 17+ share notification content and chip settings. If MetricStyle fails, standard Live Update uses the same settings. The system controls promotion; without fresh data the normal notification returns.</string>
     <string name="system_glucose_notification_permission">Live Update system settings</string>
     <string name="system_glucose_capsule_settings">Status chip</string>
     <string name="system_glucose_capsule_layout">Chip layout</string>
@@ -24,9 +24,9 @@
     <string name="system_glucose_content_label_desc">Add a short description of the displayed reading.</string>
     <string name="system_glucose_content_position">Display location</string>
     <string name="system_glucose_content_header">Header</string>
-    <string name="system_glucose_content_metric">Main metric</string>
-    <string name="system_glucose_content_body">Expanded body</string>
+    <string name="system_glucose_content_metric">Main content</string>
+    <string name="system_glucose_content_body">Main content</string>
     <string name="system_glucose_content_caption">Caption</string>
     <string name="system_glucose_content_live_note">These options affect this notification only. Main text is shown in the expanded notification; when it is empty, the caption is used as the body. Android controls final placement and may shorten text. App identity can remain visible.</string>
-    <string name="system_glucose_content_metric_note">These options affect MetricStyle notification content only. Android controls font sizes and placement. An empty main metric or caption is represented by a dash because MetricStyle requires nonblank fields. App identity can remain visible.</string>
+    <string name="system_glucose_content_metric_note">Shared Live Update settings. On Android 17+, main content is the MetricStyle metric; in the standard fallback it is the expanded body. An empty MetricStyle metric or caption is represented by a dash because nonblank fields are required. Android controls font sizes and final placement.</string>
 </resources>

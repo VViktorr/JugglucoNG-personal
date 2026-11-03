@@ -535,7 +535,6 @@ private fun rememberSystemGlucoseIntOption(key: String, defaultValue: Int): andr
 fun LiveUpdateSettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemLive by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
-    val systemMetric by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_STYLE)
 
     SettingsScreenScaffold(navController = navController, title = stringResource(R.string.system_glucose_live_title)) {
         SectionLabel(
@@ -555,7 +554,7 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
             icon = Icons.Default.Layers,
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
-        SystemGlucoseNotificationContentSettings(metric = false)
+        SystemGlucoseNotificationContentSettings(metric = android.os.Build.VERSION.SDK_INT >= 37)
         SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT)
 
         if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
@@ -575,25 +574,6 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
             }
         }
 
-        SectionLabel(
-            stringResource(R.string.system_glucose_metric_title),
-            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
-        )
-        MasterSwitchCard(
-            title = stringResource(R.string.system_glucose_metric_title),
-            subtitle = stringResource(R.string.system_glucose_metric_summary),
-            checked = systemMetric,
-            enabled = android.os.Build.VERSION.SDK_INT >= 37,
-            onCheckedChange = {
-                tk.glucodata.SystemGlucoseNotification.setEnabled(
-                    context, tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, it
-                )
-            },
-            icon = Icons.Default.CropSquare,
-            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
-        )
-        SystemGlucoseNotificationContentSettings(metric = true)
-        SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.METRIC_CAPSULE_LAYOUT)
         Text(
             stringResource(R.string.system_glucose_notification_note),
             style = MaterialTheme.typography.bodySmall,
@@ -677,7 +657,7 @@ private fun SystemGlucoseNotificationContentSettings(metric: Boolean) {
 @Composable
 private fun SystemGlucoseCapsuleSettings(preferenceKey: String) {
     val context = LocalContext.current
-    // Keyed state/listeners ensure that changing one section never changes the other.
+    // One capsule preference is shared by both system templates.
     val layout by rememberSystemGlucoseIntOption(
         preferenceKey, tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE
     )

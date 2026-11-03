@@ -2,10 +2,10 @@
 <resources>
     <string name="system_glucose_notification_section">Systemowe powiadomienie glukozy</string>
     <string name="system_glucose_live_title">Live Update</string>
-    <string name="system_glucose_live_summary">Android 16+. Poproś o wartość glukozy w wyróżnionej ikonie na pasku stanu.</string>
+    <string name="system_glucose_live_summary">Android 16+. Włącz systemowe powiadomienie glukozy i kapsułkę. Od Androida 17 automatycznie używa MetricStyle.</string>
     <string name="system_glucose_metric_title">MetricStyle</string>
     <string name="system_glucose_metric_summary">Android 17+. Pokaż glukozę w systemowym szablonie pomiarów.</string>
-    <string name="system_glucose_notification_note">Niezależne od pływającej nakładki. Każdy tryb zapisuje własny układ kapsułki. Gdy oba są włączone, MetricStyle określa wygląd powiadomienia i kapsułki, a Live Update prosi system o jej wyświetlenie. Sam MetricStyle nie włącza kapsułki. O wyróżnieniu decyduje system; bez świeżych danych wraca zwykłe powiadomienie.</string>
+    <string name="system_glucose_notification_note">Niezależne od pływającej nakładki. Jeden zestaw ustawień treści i kapsułki dla Live Update oraz automatycznego MetricStyle od Androida 17. W razie błędu MetricStyle wraca standardowy Live Update z tymi samymi ustawieniami. O wyróżnieniu decyduje system; bez świeżych danych wraca zwykłe powiadomienie.</string>
     <string name="system_glucose_notification_permission">Ustawienia systemowe Live Update</string>
     <string name="system_glucose_capsule_settings">Kapsułka na pasku stanu</string>
     <string name="system_glucose_capsule_layout">Układ kapsułki</string>
@@ -24,9 +24,9 @@
     <string name="system_glucose_content_label_desc">Dodaj krótki opis wyświetlanego pomiaru.</string>
     <string name="system_glucose_content_position">Miejsce wyświetlania</string>
     <string name="system_glucose_content_header">Nagłówek</string>
-    <string name="system_glucose_content_metric">Główny pomiar</string>
-    <string name="system_glucose_content_body">Treść główna po rozwinięciu</string>
+    <string name="system_glucose_content_metric">Treść główna</string>
+    <string name="system_glucose_content_body">Treść główna</string>
     <string name="system_glucose_content_caption">Podpis</string>
     <string name="system_glucose_content_live_note">Opcje dotyczą tylko tego powiadomienia. Treść główna jest wyświetlana po rozwinięciu; gdy jest pusta, podpis jest używany jako treść. Android ustala końcowy układ i może skracać tekst. Nazwa lub ikona aplikacji mogą pozostać widoczne.</string>
-    <string name="system_glucose_content_metric_note">Opcje dotyczą tylko treści powiadomienia MetricStyle. Android ustala rozmiary czcionek i położenie pól. Pusty główny pomiar lub podpis zastępuje kreska, ponieważ MetricStyle wymaga niepustych pól. Nazwa lub ikona aplikacji mogą pozostać widoczne.</string>
+    <string name="system_glucose_content_metric_note">Wspólne ustawienia Live Update. Od Androida 17 treść główna jest głównym pomiarem MetricStyle; przy powrocie do standardowego wyglądu jest treścią po rozwinięciu. Pusty pomiar lub podpis MetricStyle zastępuje kreska, ponieważ wymaga on niepustych pól. Android ustala rozmiary czcionek i końcowy układ.</string>
 </resources>
