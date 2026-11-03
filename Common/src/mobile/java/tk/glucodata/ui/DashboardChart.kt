@@ -5502,15 +5502,7 @@ fun InteractiveGlucoseChart(
                 modifier = Modifier
                     .widthIn(max = maxWidth) // Hard cap: NEVER overflow the container
                     .wrapContentWidth()
-                    .background(
-                        // Opaque once it stands on its own, like every other card the chart's
-                        // grid passes behind; the same tone the see-through version showed
-                        // over the background. In the collapsed card it fades into the card.
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
-                            .compositeOver(MaterialTheme.colorScheme.background)
-                            .copy(alpha = safeExpandedProgress),
-                        shape = RoundedCornerShape(scaled(16.dp))
-                    )
+                    // Inherit the chart card background at every expansion state.
                     .padding(
                         horizontal = scaled(baseInnerPadding),
                         vertical = scaled(baseVerticalPadding)
