@@ -2869,7 +2869,6 @@ fun InteractiveGlucoseChart(
                 val backdropBottomStart = size.height + pickerOverhangPx.floatValue
                 val backdropBottom = backdropBottomStart + backdropBleedPx
                 val backdropGridColor = gridColor.copy(alpha = gridColor.alpha * backdropAlpha)
-                val backdropDateLineColor = gridColor.copy(alpha = 0.8f * backdropAlpha)
                 // A line that marks a moment runs the full height of the plot, and on into
                 // the backdrop above it when that shows, so it comes out from behind the
                 // hero like the grid does instead of starting in mid-air.
@@ -2960,12 +2959,7 @@ fun InteractiveGlucoseChart(
                             val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
                             val m = cal.get(java.util.Calendar.MINUTE)
                             val isMidnight = h == 0 && m == 0
-                            if (drawBackdrop) {
-                                val color = if (isMidnight) backdropDateLineColor else backdropGridColor
-                                val stroke = if (isMidnight) 3f else 1f
-                                drawLine(color, Offset(x, backdropTop), Offset(x, 0f), stroke)
-                                drawLine(color, Offset(x, backdropBottomStart), Offset(x, backdropBottom), stroke)
-                            }
+                            // Time grid and day separators stay inside the plot.
                             val isFullHour = m == 0
                             drawLine(
                                 color = when {
