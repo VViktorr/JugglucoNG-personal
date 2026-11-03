@@ -178,3 +178,33 @@ No compilation or tests run, per user instruction.
 References:
 - https://developer.android.com/reference/android/app/Notification.Metric.FixedText
 - https://developer.android.com/reference/android/app/Notification.MetricStyle
+
+## Capsule simplified to exactly two layouts (2026-11-03)
+
+This supersedes the earlier multi-control capsule settings. The capsule now has
+one two-option choice:
+- Arrow icon + value system text (default).
+- Value icon + arrow system text.
+
+The value icon reuses the phone StatusIcon renderer with the display-formatted
+primary string, so there is no integer conversion or loss of decimal formatting.
+The text contains only the trend glyph in that layout. Unknown trend uses a dash
+in text, never a false flat arrow; the opposite layout keeps the value text and
+uses the standard icon if trend is unavailable. Both are phone-only, API 36+.
+
+A new capsule-layout key isolates these complete layouts from legacy show-trend,
+unit, icon-hide and text-order flags. Those old capsule controls and their
+unreferenced strings/search keywords are removed; previously saved obsolete flags
+are not read by this presentation. Their disk entries need not be deleted.
+The system notification reading timestamp is hidden without changing the real
+reading time or freshness handling.
+
+MetricStyle always uses METRIC_INDEX_NONE so a critical native metric cannot
+replace the chosen short text (especially the arrow-only text in value-icon mode).
+Its minimal lock-screen layout and separate larger-header option remain; the
+header control is moved out of the capsule section. No change to Wear OS.
+
+Static review checked shared-flavour StatusIcon method availability, the two
+complete layouts, unknown trend, existing preference invalidation, XML references,
+and the MetricStyle fallback. No compilation or tests were run, per instruction.
+Actual bitmap scaling and OEM chip rendering still require device validation.

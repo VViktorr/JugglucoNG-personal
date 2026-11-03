@@ -11,19 +11,15 @@ public final class SystemGlucoseNotification {
     // New keys intentionally do not reuse preferences from the older personal implementation.
     public static final String LIVE_UPDATE = "notification_system_live_update_v1";
     public static final String METRIC_STYLE = "notification_system_metric_style_v1";
-    public static final String SHOW_TREND = "notification_system_show_trend_v1";
-    public static final String TEXT_TREND = "notification_system_text_trend_v1";
-    public static final String TEXT_UNIT = "notification_system_text_unit_v1";
-    public static final String SHOW_TIME = "notification_system_show_time_v1";
     public static final String METRIC_HEADER = "notification_system_metric_header_v1";
-    public static final String METRIC_CRITICAL = "notification_system_metric_critical_v1";
-    public static final String ICON_MODE = "notification_system_icon_mode_v1";
-    public static final String TEXT_ORDER = "notification_system_text_order_v1";
+    public static final String CAPSULE_LAYOUT = "notification_system_capsule_layout_v1";
+    public static final int ARROW_THEN_VALUE = 0;
+    public static final int VALUE_THEN_ARROW = 1;
     private SystemGlucoseNotification() { }
 
     public static void setIntOption(Context context, String key, int value) {
-        int maximum = ICON_MODE.equals(key) ? 2 : TEXT_ORDER.equals(key) ? 1 : -1;
-        if (value < 0 || value > maximum) throw new IllegalArgumentException("option");
+        if (!CAPSULE_LAYOUT.equals(key) || value < ARROW_THEN_VALUE || value > VALUE_THEN_ARROW)
+            throw new IllegalArgumentException("option");
         preferences(context).edit().putInt(key, value).apply();
         refreshPresentation();
     }
@@ -38,9 +34,7 @@ public final class SystemGlucoseNotification {
     }
 
     public static void setEnabled(Context context, String key, boolean enabled) {
-        if (!LIVE_UPDATE.equals(key) && !METRIC_STYLE.equals(key)
-                && !SHOW_TREND.equals(key) && !TEXT_TREND.equals(key) && !TEXT_UNIT.equals(key)
-                && !SHOW_TIME.equals(key) && !METRIC_CRITICAL.equals(key) && !METRIC_HEADER.equals(key))
+        if (!LIVE_UPDATE.equals(key) && !METRIC_STYLE.equals(key) && !METRIC_HEADER.equals(key))
             throw new IllegalArgumentException("key");
         preferences(context).edit().putBoolean(key, enabled).apply();
         refreshPresentation();
@@ -71,9 +65,7 @@ public final class SystemGlucoseNotification {
         static Notification render(Context context, Notification original,
                 CurrentDisplaySource.Snapshot reading, float rate, boolean live, boolean metric) {
             final SharedPreferences prefs = preferences(context);
-            final boolean showTrend = prefs.getBoolean(SHOW_TREND, true);
-            final float displayRate = showTrend ? rate : Float.NaN;
-            final boolean criticalMetric = prefs.getBoolean(METRIC_CRITICAL, true);
+            final float displayRate = rate;
             final String value = reading.getPrimaryStr();
             final String unit = context.getString(reading.isMmol() ? R.string.mmolL : R.string.mgdL);
             final String label = context.getString(R.string.system_glucose_reading_label);
@@ -86,32 +78,26 @@ public final class SystemGlucoseNotification {
                     .setGroup(null).setGroupSummary(false).setColorized(false)
                     .setOngoing(true).setAutoCancel(false).setCategory(Notification.CATEGORY_STATUS)
                     .setSubText(null).setContentInfo(null)
-                    .setWhen(reading.getTimeMillis()).setShowWhen(prefs.getBoolean(SHOW_TIME, true));
+                    .setWhen(reading.getTimeMillis()).setShowWhen(false);
             applyStandardContent(builder, label, text);
             builder.getExtras().putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, live);
             if (live) {
-                String chipText = value;
-                if (showTrend && prefs.getBoolean(TEXT_TREND, false)) {
-                    String arrow = ExchangeTrend.fromRate(rate).arrow;
-                    if (!arrow.isEmpty()) {
-                        chipText = prefs.getInt(TEXT_ORDER, 0) == 1
-                                ? arrow + " " + value : value + " " + arrow;
-                    }
-                }
-                if (prefs.getBoolean(TEXT_UNIT, false)) chipText += " " + unit;
-                builder.setShortCriticalText(chipText);
-                // The original small icon contains a painted glucose number.
-                // A promoted chip would show it alongside the same number as system text.
-                int iconMode = prefs.contains(ICON_MODE) ? prefs.getInt(ICON_MODE, 0)
-                        : prefs.getBoolean("notification_hide_status_icon", false) ? 2 : 0;
-                if (iconMode == 2) {
-                    builder.setSmallIcon(R.drawable.transparent_icon);
-                } else if (iconMode == 0 && showTrend && Float.isFinite(rate)) {
-                    builder.setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(
-                            NotificationChartDrawer.drawArrow(context, rate, reading.isMmol(),
-                                    android.graphics.Color.WHITE, 1.0f, false, false)));
+                final String arrow = ExchangeTrend.fromRate(rate).arrow;
+                final boolean valueIcon = prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE) == VALUE_THEN_ARROW;
+                if (valueIcon) {
+                    // A single number painted as the icon, with only the arrow as system text.
+                    // Reuse the regular status icon renderer so locale and font preferences agree.
+                    builder.setSmallIcon(new StatusIcon(context).getIcon(value));
+                    builder.setShortCriticalText(arrow.isEmpty() ? "—" : arrow);
                 } else {
-                    builder.setSmallIcon(R.drawable.novalue);
+                    builder.setShortCriticalText(value);
+                    if (Float.isFinite(rate)) {
+                        builder.setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(
+                                NotificationChartDrawer.drawArrow(context, rate, reading.isMmol(),
+                                        android.graphics.Color.WHITE, 1.0f, false, false)));
+                    } else {
+                        builder.setSmallIcon(R.drawable.novalue);
+                    }
                 }
             }
             if (metric) {
@@ -126,14 +112,13 @@ public final class SystemGlucoseNotification {
                     final boolean splitHeader = headerLayout && !arrow.isEmpty();
                     builder.setContentTitle(splitHeader ? value : context.getString(R.string.app_name))
                             .setContentText(null).setSubText(null).setContentInfo(null).setShowWhen(false);
-                    Api37.apply(builder, splitHeader ? arrow : metricText,
-                            !headerLayout && criticalMetric);
+                    Api37.apply(builder, splitHeader ? arrow : metricText);
                     return builder.build();
                 } catch (RuntimeException | LinkageError unavailable) {
                     // A device missing MetricStyle can still show the independently requested Live Update.
                     if (!live) return original;
                     applyStandardContent(builder, label, text);
-                    builder.setShowWhen(prefs.getBoolean(SHOW_TIME, true));
+                    builder.setShowWhen(false);
                 }
             }
             return builder.build();
@@ -148,12 +133,12 @@ public final class SystemGlucoseNotification {
 
     @RequiresApi(37)
     private static final class Api37 {
-        static void apply(Notification.Builder builder, String metricText, boolean criticalMetric) {
+        static void apply(Notification.Builder builder, String metricText) {
             // FixedText keeps the display-formatted value and arrow together in
             // the main metric field. No label, unit or arbitrary font-size span.
             builder.setStyle(new Notification.MetricStyle()
                     .addMetric(new Notification.Metric(new Notification.Metric.FixedText(metricText), ""))
-                    .setCriticalMetric(criticalMetric ? 0 : Notification.MetricStyle.METRIC_INDEX_NONE));
+                    .setCriticalMetric(Notification.MetricStyle.METRIC_INDEX_NONE));
         }
     }
 }

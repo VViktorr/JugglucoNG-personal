@@ -536,17 +536,11 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemLive by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
     val systemMetric by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_STYLE)
-    val showTrend by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.SHOW_TREND, true)
-    val textTrend by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.TEXT_TREND)
-    val textUnit by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.TEXT_UNIT)
-    val showTime by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.SHOW_TIME, true)
     val metricHeader by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, true)
-    val metricCritical by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_CRITICAL, true)
-    val prefs = remember(context) { tk.glucodata.SystemGlucoseNotification.preferences(context) }
-    val defaultIconMode = if (prefs.getBoolean("notification_hide_status_icon", false)) 2 else 0
-    val iconMode by rememberSystemGlucoseIntOption(tk.glucodata.SystemGlucoseNotification.ICON_MODE, defaultIconMode)
-    val textOrder by rememberSystemGlucoseIntOption(tk.glucodata.SystemGlucoseNotification.TEXT_ORDER, 0)
-
+    val capsuleLayout by rememberSystemGlucoseIntOption(
+        tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT,
+        tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE
+    )
 
     SettingsScreenScaffold(navController = navController, title = stringResource(R.string.system_glucose_live_title)) {
             MasterSwitchCard(
@@ -576,6 +570,14 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
                 },
                 position = CardPosition.SINGLE
             )
+            SettingsSwitchItem(
+                title = stringResource(R.string.system_glucose_metric_header),
+                subtitle = stringResource(R.string.system_glucose_metric_header_desc),
+                checked = metricHeader,
+                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric,
+                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, it) },
+                position = CardPosition.SINGLE
+            )
             Text(
                 stringResource(R.string.system_glucose_notification_note),
                 style = MaterialTheme.typography.bodySmall,
@@ -602,86 +604,26 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
             stringResource(R.string.system_glucose_capsule_settings),
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
-        Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_show_trend),
-                checked = showTrend,
-                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.SHOW_TREND, it) },
-                position = CardPosition.SINGLE
-            )
-            SettingsControlsCard(position = CardPosition.SINGLE) {
-                SettingsChoice(
-                    title = stringResource(R.string.system_glucose_icon_choice),
-                    options = listOf(0, 1, 2),
-                    labels = listOf(
-                        stringResource(R.string.system_glucose_icon_trend),
-                        stringResource(R.string.system_glucose_icon_app),
-                        stringResource(R.string.system_glucose_icon_hidden)
-                    ),
-                    selectedOption = iconMode,
-                    onOptionSelected = { tk.glucodata.SystemGlucoseNotification.setIntOption(context, tk.glucodata.SystemGlucoseNotification.ICON_MODE, it) }
-                )
-            }
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_metric_header),
-                subtitle = stringResource(R.string.system_glucose_metric_header_desc),
-                checked = metricHeader,
-                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric,
-                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, it) },
-                position = CardPosition.SINGLE
-            )
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_metric_critical),
-                subtitle = stringResource(R.string.system_glucose_metric_critical_desc),
-                checked = metricCritical,
-                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric && !metricHeader,
-                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_CRITICAL, it) },
-                position = CardPosition.SINGLE
-            )
-            // MetricStyle's critical metric may replace short critical text.
-            if (!systemMetric || !metricCritical || metricHeader) {
-                SettingsSwitchItem(
-                    title = stringResource(R.string.system_glucose_text_trend),
-                    checked = textTrend,
-                    enabled = showTrend,
-                    onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.TEXT_TREND, it) },
-                    position = CardPosition.TOP
-                )
-                SettingsSwitchItem(
-                    title = stringResource(R.string.system_glucose_text_unit),
-                    checked = textUnit,
-                    onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.TEXT_UNIT, it) },
-                    position = CardPosition.BOTTOM
-                )
-                if (showTrend && textTrend) {
-                    SettingsControlsCard(position = CardPosition.SINGLE) {
-                        SettingsChoice(
-                            title = stringResource(R.string.system_glucose_text_order),
-                            options = listOf(0, 1),
-                            labels = listOf(
-                                stringResource(R.string.system_glucose_value_first),
-                                stringResource(R.string.system_glucose_arrow_first)
-                            ),
-                            selectedOption = textOrder,
-                            onOptionSelected = { tk.glucodata.SystemGlucoseNotification.setIntOption(context, tk.glucodata.SystemGlucoseNotification.TEXT_ORDER, it) }
-                        )
-                    }
-                }
-            }
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_show_time),
-                subtitle = stringResource(R.string.system_glucose_show_time_desc),
-                checked = showTime,
-                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.SHOW_TIME, it) },
-                position = CardPosition.SINGLE
-            )
-            Text(
-                stringResource(R.string.system_glucose_capsule_limits),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 8.dp)
+        SettingsControlsCard(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+            SettingsChoice(
+                title = stringResource(R.string.system_glucose_capsule_layout),
+                options = listOf(
+                    tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE,
+                    tk.glucodata.SystemGlucoseNotification.VALUE_THEN_ARROW
+                ),
+                labels = listOf(
+                    stringResource(R.string.system_glucose_layout_arrow_value),
+                    stringResource(R.string.system_glucose_layout_value_arrow)
+                ),
+                selectedOption = capsuleLayout,
+                onOptionSelected = {
+                    tk.glucodata.SystemGlucoseNotification.setIntOption(
+                        context, tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT, it
+                    )
+                },
+                maxItemsPerRow = 1
             )
         }
-
     }
 }
 
