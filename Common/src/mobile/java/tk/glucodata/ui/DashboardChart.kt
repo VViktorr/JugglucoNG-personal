@@ -881,37 +881,13 @@ fun DashboardChartSection(
                 }
         }
     }
-    val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
-    // No dead zone: the 6% one meant the colour and the corner radius sat still while
-    // the card was already pulling in from the edges, so the shape led the paint.
-    val collapseVisualProgress = 1f - safeExpandedProgress
-    val containerColor = androidx.compose.ui.graphics.lerp(
-        MaterialTheme.colorScheme.background,
-        MaterialTheme.colorScheme.surfaceContainerHigh,
-        collapseVisualProgress
-    )
-    val cornerRadius = (16.dp * collapseVisualProgress).coerceAtLeast(0.dp)
-    val density = LocalDensity.current
-    // The card is painted at its own bounds; only the clip reaches past them, by the
-    // backdrop's share of the bleed, so the grid that carries on behind the hero and the
-    // readings is let through while expanded and drawn back into the card as it forms.
-    val clipShape = with(density) {
-        ChartBleedClipShape(
-            cornerRadiusPx = cornerRadius.toPx(),
-            bleedPx = backdropBleed.toPx() * chartBackdropProgress(safeExpandedProgress)
-        )
-    }
+    // Preserve the journal-style card even when the dashboard viewport expands.
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val cornerRadius = 16.dp
     Surface(
-        modifier = modifier.background(containerColor, RoundedCornerShape(cornerRadius)),
-        shape = clipShape,
-        color = Color.Transparent,
-        contentColor = contentColorFor(containerColor),
-        // Deliberately no tonalElevation. Material's Surface only applies it when the
-        // colour is exactly colorScheme.surface, so with a lerped colour it switches on
-        // and off at whichever endpoint happens to match in the current scheme — a tint
-        // that pops at the end of the animation in some themes and never appears in
-        // others. surfaceContainerHigh is already the elevated tone, so the lerp alone
-        // carries the intent.
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius),
+        color = containerColor,
         shadowElevation = 0.dp
     ) {
         chartContent()
@@ -1013,7 +989,7 @@ fun InteractiveGlucoseChart(
     val secondaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     val tertiaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) // Lighter shade for 3rd line
     val pointColor = MaterialTheme.colorScheme.onSurface
-    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.16f else 0.08f)
     // A dedicated override may replace the in-range hue; without one, the band
     // follows IN_RANGE. The 0.12 alpha restores the original target-band weight.
     val targetBandColor =
@@ -1024,7 +1000,8 @@ fun InteractiveGlucoseChart(
     // Axis labels were android.graphics.Color.GRAY and the min/max labels DKGRAY, which is
     // near-invisible on a dark surface. Theme roles instead: quiet for the axis, full
     // contrast for the min/max values that are actually being called out.
-    val axisTextColorArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val axisTextColorArgb = (if (isDark) MaterialTheme.colorScheme.onSurface
+        else MaterialTheme.colorScheme.onSurfaceVariant).toArgb()
     val indicatorTextColorArgb = MaterialTheme.colorScheme.onSurface.toArgb()
     val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
     val chartUnderlayBottomDp = expandedUnderlayBottom * safeExpandedProgress
@@ -1044,7 +1021,8 @@ fun InteractiveGlucoseChart(
     // The grid that carries on past the chart's top and bottom edges when expanded. It is
     // drawn at full extent and faded, while the host's clip pulls the extent itself in.
     val backdropBleedPx = with(LocalDensity.current) { backdropBleed.toPx() }
-    val backdropAlpha = if (backdropBleedPx > 0f) chartBackdropProgress(safeExpandedProgress) else 0f
+    // The chart remains a bounded card, like the journal; do not draw behind dashboard cards.
+    val backdropAlpha = 0f
     // How far the range picker reaches below the plot, written by the layout below and
     // read only while drawing, so a picker that changes height costs a redraw, not a
     // recomposition.
@@ -2963,8 +2941,8 @@ fun InteractiveGlucoseChart(
                             val isFullHour = m == 0
                             drawLine(
                                 color = when {
-                                    isMidnight -> gridColor.copy(alpha = 0.20f)
-                                    isFullHour -> gridColor.copy(alpha = 0.13f)
+                                    isMidnight -> gridColor.copy(alpha = if (isDark) 0.32f else 0.20f)
+                                    isFullHour -> gridColor.copy(alpha = if (isDark) 0.22f else 0.13f)
                                     else -> gridColor
                                 },
                                 start = Offset(x, 0f), end = Offset(x, chartHeight),
