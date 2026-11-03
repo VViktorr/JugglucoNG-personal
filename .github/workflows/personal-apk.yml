@@ -151,3 +151,69 @@ jobs:
           path: build/personal-wear-apk/
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish phone and Wear OS release
+    needs: [phone, wear]
+    if: github.repository == 'VViktorr/JugglucoNG-personal' && github.ref == 'refs/heads/main5'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Download phone APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "${{ github.run_id }}" --name "JugglucoNG-main5-phone-arm64-${{ github.sha }}" --dir build/release/phone
+      - name: Download Wear OS APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "${{ github.run_id }}" --name "JugglucoNG-main5-wear-arm-${{ github.sha }}" --dir build/release/wear
+      - name: Prepare release files and changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/release/assets
+          cp build/release/phone/*.apk build/release/wear/*.apk build/release/assets/
+          cp build/release/phone/build-info.json build/release/assets/phone-build-info.json
+          cp build/release/wear/build-info.json build/release/assets/wear-build-info.json
+          cat build/release/phone/SHA256SUMS.txt build/release/wear/SHA256SUMS.txt > build/release/assets/SHA256SUMS.txt
+          (cd build/release/assets && sha256sum --check SHA256SUMS.txt)
+          previous=$(git describe --tags --match 'main5-build-*' --abbrev=0 HEAD^ 2>/dev/null || true)
+          if [ -z "$previous" ]; then
+            previous=3ceeab9d09a66552b9e691a6c0f70d552e732a3e
+          fi
+          {
+            echo '## JugglucoNG personal — main5'
+            echo
+            echo '- Phone: release APK for ARM64.'
+            echo '- Wear OS: release APK for ARM32 and ARM64.'
+            echo '- Both APKs compiled from the same commit; bundled sensor libraries and APK signatures verified.'
+            echo '- Build success does not confirm operation on a physical device.'
+            echo
+            echo '## Changes'
+            echo
+            git log --no-merges --format='- %s (%h)' "$previous..HEAD"
+            echo
+            echo "Source commit: ${GITHUB_SHA}"
+            echo "Build: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } > build/release/notes.md
+      - name: Publish release with both APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="main5-build-${GITHUB_SHA:0:8}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" build/release/assets/* --clobber
+            gh release edit "$tag" --notes-file build/release/notes.md
+          else
+            gh release create "$tag" build/release/assets/* \
+              --target "$GITHUB_SHA" \
+              --title "JugglucoNG personal main5 — ${GITHUB_SHA:0:8}" \
+              --notes-file build/release/notes.md
+          fi
