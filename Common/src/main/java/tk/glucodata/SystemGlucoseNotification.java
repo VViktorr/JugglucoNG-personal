@@ -12,12 +12,14 @@ public final class SystemGlucoseNotification {
     public static final String LIVE_UPDATE = "notification_system_live_update_v1";
     public static final String METRIC_STYLE = "notification_system_metric_style_v1";
     public static final String CAPSULE_LAYOUT = "notification_system_capsule_layout_v1";
+    public static final String METRIC_CAPSULE_LAYOUT = "notification_system_metric_capsule_layout_v1";
     public static final int ARROW_THEN_VALUE = 0;
     public static final int VALUE_THEN_ARROW = 1;
     private SystemGlucoseNotification() { }
 
     public static void setIntOption(Context context, String key, int value) {
-        if (!CAPSULE_LAYOUT.equals(key) || value < ARROW_THEN_VALUE || value > VALUE_THEN_ARROW)
+        if ((!CAPSULE_LAYOUT.equals(key) && !METRIC_CAPSULE_LAYOUT.equals(key))
+                || value < ARROW_THEN_VALUE || value > VALUE_THEN_ARROW)
             throw new IllegalArgumentException("option");
         preferences(context).edit().putInt(key, value).apply();
         refreshPresentation();
@@ -29,7 +31,16 @@ public final class SystemGlucoseNotification {
     }
 
     public static SharedPreferences preferences(Context context) {
-        return context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE);
+        // Split the formerly shared choice once, retaining the current appearance.
+        // Later changes to either key must not alter the other mode.
+        synchronized (SystemGlucoseNotification.class) {
+            if (!prefs.contains(METRIC_CAPSULE_LAYOUT)) {
+                prefs.edit().putInt(METRIC_CAPSULE_LAYOUT,
+                        prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE)).apply();
+            }
+        }
+        return prefs;
     }
 
     public static void setEnabled(Context context, String key, boolean enabled) {
@@ -81,23 +92,8 @@ public final class SystemGlucoseNotification {
             applyStandardContent(builder, label, text);
             builder.getExtras().putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, live);
             if (live) {
-                final String arrow = ExchangeTrend.fromRate(rate).arrow;
-                final boolean valueIcon = prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE) == VALUE_THEN_ARROW;
-                if (valueIcon) {
-                    // A single number painted as the icon, with only the arrow as system text.
-                    // Reuse the regular status icon renderer so locale and font preferences agree.
-                    builder.setSmallIcon(new StatusIcon(context).getIcon(value));
-                    builder.setShortCriticalText(arrow.isEmpty() ? "—" : arrow);
-                } else {
-                    builder.setShortCriticalText(value);
-                    if (!arrow.isEmpty()) {
-                        // Use the same seven-state glyph as the text and MetricStyle label.
-                        // A continuous-angle renderer can disagree with a flat textual arrow.
-                        builder.setSmallIcon(new StatusIcon(context).getIcon(arrow));
-                    } else {
-                        builder.setSmallIcon(R.drawable.novalue);
-                    }
-                }
+                applyCapsule(context, builder, value, rate,
+                        prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
             }
             if (metric) {
                 try {
@@ -106,6 +102,10 @@ public final class SystemGlucoseNotification {
                     final String arrow = ExchangeTrend.fromRate(rate).arrow;
                     builder.setContentTitle(context.getString(R.string.app_name))
                             .setContentText(null).setSubText(null).setContentInfo(null).setShowWhen(false);
+                    if (live) {
+                        applyCapsule(context, builder, value, rate,
+                                prefs.getInt(METRIC_CAPSULE_LAYOUT, ARROW_THEN_VALUE));
+                    }
                     Api37.apply(builder, value, arrow.isEmpty() ? "—" : arrow);
                     return builder.build();
                 } catch (RuntimeException | LinkageError unavailable) {
@@ -113,10 +113,33 @@ public final class SystemGlucoseNotification {
                     // A device missing MetricStyle can still show the independently requested Live Update.
                     if (!live) return original;
                     applyStandardContent(builder, label, text);
+                    applyCapsule(context, builder, value, rate,
+                            prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
                     builder.setShowWhen(false);
                 }
             }
             return builder.build();
+        }
+
+        private static void applyCapsule(Context context, Notification.Builder builder,
+                String value, float rate, int layout) {
+            final String arrow = ExchangeTrend.fromRate(rate).arrow;
+            final boolean valueIcon = layout == VALUE_THEN_ARROW;
+            if (valueIcon) {
+                // A single number painted as the icon, with only the arrow as system text.
+                // Reuse the regular status icon renderer so locale and font preferences agree.
+                builder.setSmallIcon(new StatusIcon(context).getIcon(value));
+                builder.setShortCriticalText(arrow.isEmpty() ? "—" : arrow);
+            } else {
+                builder.setShortCriticalText(value);
+                if (!arrow.isEmpty()) {
+                    // Use the same seven-state glyph as the text and MetricStyle label.
+                    // A continuous-angle renderer can disagree with a flat textual arrow.
+                    builder.setSmallIcon(new StatusIcon(context).getIcon(arrow));
+                } else {
+                    builder.setSmallIcon(R.drawable.novalue);
+                }
+            }
         }
 
         private static void applyStandardContent(Notification.Builder builder, String label, String text) {

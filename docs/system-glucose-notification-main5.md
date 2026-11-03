@@ -243,3 +243,28 @@ selection, new resource references, publication fingerprint and fallback logging
 
 Android source confirming the constructor requirement:
 https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/core/java/android/app/Notification.java
+
+## Separate Live Update and MetricStyle settings (2026-11-03)
+
+The Live Update detail route now contains two distinct sections. Each has its
+own master switch and its own two-option capsule selector (arrow icon/value text
+or value icon/arrow text), without additional capsule controls.
+
+The existing notification_system_capsule_layout_v1 key now belongs only to Live
+Update. MetricStyle uses notification_system_metric_capsule_layout_v1. A one-time,
+synchronised initialisation copies the former shared choice into the new key,
+preserving appearance; subsequent saves touch only the selected mode's key.
+Both selectors use keyed preference state and listeners. Preference changes
+invalidate and refresh the same existing notification as before.
+
+When only Live Update is on, its layout is applied. With both modes on, successful
+MetricStyle uses its own layout, with Live Update providing promotion. If
+MetricStyle fails and standard Live Update is restored, the Live Update layout
+is also restored. MetricStyle alone still does not request promotion; its stored
+capsule setting takes effect when Live Update is enabled with it. The two modes
+do not create two notifications or move the system capsule.
+
+Static review covered the four enable combinations, one-time migration,
+independent preference saves, fallback layout restoration, API gates and
+default/Polish descriptions. No compilation or tests run, per user instruction.
+Device rendering and notification behaviour require user confirmation.

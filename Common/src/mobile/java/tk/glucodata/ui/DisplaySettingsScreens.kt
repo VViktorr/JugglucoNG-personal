@@ -536,50 +536,33 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemLive by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
     val systemMetric by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_STYLE)
-    val capsuleLayout by rememberSystemGlucoseIntOption(
-        tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT,
-        tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE
-    )
 
     SettingsScreenScaffold(navController = navController, title = stringResource(R.string.system_glucose_live_title)) {
-            MasterSwitchCard(
-                title = stringResource(R.string.system_glucose_live_title),
-                subtitle = stringResource(R.string.system_glucose_live_summary),
-                checked = systemLive,
-                enabled = android.os.Build.VERSION.SDK_INT >= 36,
-                onCheckedChange = {
-                    tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it)
-                },
-                icon = Icons.Default.Layers,
-                modifier = Modifier.padding(horizontal = screenHorizontalPadding)
-            )
-
         SectionLabel(
-            stringResource(R.string.system_glucose_notification_section),
+            stringResource(R.string.system_glucose_live_title),
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
-        Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_metric_title),
-                subtitle = stringResource(R.string.system_glucose_metric_summary),
-                checked = systemMetric,
-                enabled = android.os.Build.VERSION.SDK_INT >= 37,
-                onCheckedChange = {
-                    tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, it)
-                },
-                position = CardPosition.SINGLE
-            )
-            Text(
-                stringResource(R.string.system_glucose_notification_note),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
+        MasterSwitchCard(
+            title = stringResource(R.string.system_glucose_live_title),
+            subtitle = stringResource(R.string.system_glucose_live_summary),
+            checked = systemLive,
+            enabled = android.os.Build.VERSION.SDK_INT >= 36,
+            onCheckedChange = {
+                tk.glucodata.SystemGlucoseNotification.setEnabled(
+                    context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it
+                )
+            },
+            icon = Icons.Default.Layers,
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        )
+        SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT)
+
+        if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
+            Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
                 OutlinedButton(onClick = {
                     val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
                         .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
                     runCatching { context.startActivity(intent) }.onFailure {
-                        // Some OEMs omit the promotion page; app notification settings remain available.
                         runCatching {
                             context.startActivity(
                                 Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
@@ -592,29 +575,55 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
         }
 
         SectionLabel(
-            stringResource(R.string.system_glucose_capsule_settings),
+            stringResource(R.string.system_glucose_metric_title),
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
-        SettingsControlsCard(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
-            SettingsChoice(
-                title = stringResource(R.string.system_glucose_capsule_layout),
-                options = listOf(
-                    tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE,
-                    tk.glucodata.SystemGlucoseNotification.VALUE_THEN_ARROW
-                ),
-                labels = listOf(
-                    stringResource(R.string.system_glucose_layout_arrow_value),
-                    stringResource(R.string.system_glucose_layout_value_arrow)
-                ),
-                selectedOption = capsuleLayout,
-                onOptionSelected = {
-                    tk.glucodata.SystemGlucoseNotification.setIntOption(
-                        context, tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT, it
-                    )
-                },
-                maxItemsPerRow = 1
-            )
-        }
+        MasterSwitchCard(
+            title = stringResource(R.string.system_glucose_metric_title),
+            subtitle = stringResource(R.string.system_glucose_metric_summary),
+            checked = systemMetric,
+            enabled = android.os.Build.VERSION.SDK_INT >= 37,
+            onCheckedChange = {
+                tk.glucodata.SystemGlucoseNotification.setEnabled(
+                    context, tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, it
+                )
+            },
+            icon = Icons.Default.CropSquare,
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        )
+        SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.METRIC_CAPSULE_LAYOUT)
+        Text(
+            stringResource(R.string.system_glucose_notification_note),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SystemGlucoseCapsuleSettings(preferenceKey: String) {
+    val context = LocalContext.current
+    // Keyed state/listeners ensure that changing one section never changes the other.
+    val layout by rememberSystemGlucoseIntOption(
+        preferenceKey, tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE
+    )
+    SettingsControlsCard(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+        SettingsChoice(
+            title = stringResource(R.string.system_glucose_capsule_layout),
+            options = listOf(
+                tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE,
+                tk.glucodata.SystemGlucoseNotification.VALUE_THEN_ARROW
+            ),
+            labels = listOf(
+                stringResource(R.string.system_glucose_layout_arrow_value),
+                stringResource(R.string.system_glucose_layout_value_arrow)
+            ),
+            selectedOption = layout,
+            onOptionSelected = {
+                tk.glucodata.SystemGlucoseNotification.setIntOption(context, preferenceKey, it)
+            },
+            maxItemsPerRow = 1
+        )
     }
 }
 
