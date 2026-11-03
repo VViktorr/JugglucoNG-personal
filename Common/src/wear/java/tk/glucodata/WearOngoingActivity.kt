@@ -1,11 +1,9 @@
 package tk.glucodata
 
 import android.app.NotificationManager
-import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Handler
 import android.os.Looper
-import tk.glucodata.glucosecomplication.ComplicationRenderer
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -22,7 +20,6 @@ object WearOngoingActivity : OngoingNotification {
     const val MODE_VALUE = 1
     const val MODE_TREND = 2
     private const val PREFS = "wear_ongoing_icon"
-    private const val ICON_SIZE = 96
     @Volatile private var currentNotificationId: Int? = null
     private val expiryHandler = Handler(Looper.getMainLooper())
     private val expiryLock = Any()
@@ -87,7 +84,10 @@ object WearOngoingActivity : OngoingNotification {
                 .build()
                 .apply(context)
             scheduleExpiry(context.applicationContext, notificationId, reading)
-            builder.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT }
+            builder.build().also {
+                it.flags = it.flags or Notification.FLAG_ONGOING_EVENT
+                Log.i(LOG_ID, "attached mode=$mode iconType=${it.smallIcon?.type} readingPresent=${reading != null}")
+            }
         } catch (th: Throwable) {
             Log.stack(LOG_ID, "attach", th)
             notification
@@ -117,16 +117,13 @@ object WearOngoingActivity : OngoingNotification {
     }
 
     private fun icon(context: Context, reading: CurrentDisplaySource.Snapshot?, mode: Int): Icon {
-        if (mode == MODE_NORMAL) return Icon.createWithResource(context, R.drawable.novalue)
-        val bitmap = when {
-            reading == null -> ComplicationRenderer.valueBitmap(ICON_SIZE, "—", 0f, false, Color.WHITE)
-            mode == MODE_VALUE -> ComplicationRenderer.valueBitmap(
-                ICON_SIZE, reading.primaryStr, reading.primaryValue, reading.isMmol, Color.WHITE,
-            )
-            reading.rate.isFinite() -> ComplicationRenderer.arrowBitmap(ICON_SIZE, reading.rate, Color.WHITE)
-            else -> ComplicationRenderer.valueBitmap(ICON_SIZE, "—", 0f, false, Color.WHITE)
+        val resource = when {
+            mode == MODE_NORMAL -> R.drawable.novalue
+            reading == null -> R.drawable.wear_ongoing_unknown
+            mode == MODE_VALUE -> WearOngoingIconResources.value(reading.primaryStr)
+            else -> WearOngoingIconResources.trend(reading.rate)
         }
-        return Icon.createWithBitmap(bitmap)
+        return Icon.createWithResource(context, resource)
     }
 
     private fun scheduleExpiry(context: Context, notificationId: Int, reading: CurrentDisplaySource.Snapshot?) {

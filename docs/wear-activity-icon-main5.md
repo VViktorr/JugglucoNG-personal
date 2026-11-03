@@ -62,3 +62,35 @@ Przejrzano wywołania i zachowanie dla zmiany trybu, braku odczytu oraz
 nieobecnego powiadomienia. Bez kompilacji i testów zgodnie z poleceniem
 użytkownika. Pominięcie ID 81432 jest potwierdzone w kodzie; nie potwierdza
 jeszcze obsługi dynamicznej bitmapy przez System UI konkretnego zegarka.
+
+## Resource-backed Wear icons after repeated device failure (2026-11-03)
+
+The user still sees the standard icon but neither generated numeric nor trend
+bitmap icons. This isolates an important difference (TYPE_RESOURCE vs TYPE_BITMAP)
+but is not a proven System UI root cause without device logs.
+
+Replace all three icon fields (notification, static and animated OngoingActivity)
+with resource-backed Icons in every mode. Numeric artwork reuses 719 existing
+mobileNosi drawable-xxxhdpi/glucose_*.png blobs byte for byte under unique Wear-only
+drawable-nodpi names (2,170,881 bytes before APK compression). A representative
+215 asset was visually inspected: white digits on transparent background.
+Explicit R references retain the library under resource shrinking.
+
+Value selection matches the formatted display string, normalising decimal comma
+and point and a trailing decimal zero. It never clamps a reading to another
+number. The existing artwork covers every integer 40..500 and every tenth
+2.2..27.8; unsupported text or missing/stale data uses a packaged dash.
+Trends use seven white vector resources selected with ExchangeTrend.fromRate,
+matching the shared textual trend categories rather than continuous rotation.
+Unknown rate also uses the dash. Unit/display/calibration processing is unchanged.
+
+Both the foreground 81431 and reading/alarm 81432 paths already call the icon
+provider and now receive resource Icons. Added attach diagnostics log mode,
+outgoing small-icon type and reading presence only; no sensor identifiers,
+glucose values or credentials. Retained selection persistence, expiry handling,
+notification IDs, channel/actions and no-resurrection behaviour.
+
+Static review checked all resource names against the branch tree, number coverage,
+source-set availability and both publication paths. No compilation or tests run,
+per user instruction. This is a compatibility change requiring device validation,
+not a claim that every Wear OEM can display arbitrary ongoing-activity icons.
