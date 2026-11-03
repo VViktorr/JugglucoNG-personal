@@ -8,8 +8,6 @@
     <string name="system_glucose_notification_note">Niezależne od pływającej nakładki. Te tryby zastępują wykres powiadomienia szablonem systemowym. Włącz oba, aby połączyć MetricStyle z Live Update. O wyróżnieniu decyduje system; bez świeżych danych wraca zwykłe powiadomienie.</string>
     <string name="system_glucose_notification_permission">Ustawienia systemowe Live Update</string>
     <string name="system_glucose_capsule_settings">Kapsułka na pasku stanu</string>
-    <string name="system_glucose_metric_header">Wartość w większym nagłówku</string>
-    <string name="system_glucose_metric_header_desc">Pokaż wartość w tytule powiadomienia, a strzałkę w polu pomiaru. Wyłącz, aby pokazać wartość i strzałkę razem jako jeden pomiar. Ich rozmiar ustala system. Przy braku strzałki używany jest wspólny pomiar.</string>
     <string name="system_glucose_capsule_layout">Układ kapsułki</string>
     <string name="system_glucose_layout_arrow_value">Ikona strzałki + tekst wartości: → 108</string>
     <string name="system_glucose_layout_value_arrow">Ikona wartości + tekst strzałki: 108 →</string>

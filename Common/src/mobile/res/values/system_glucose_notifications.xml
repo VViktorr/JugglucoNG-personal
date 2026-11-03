@@ -8,8 +8,6 @@
     <string name="system_glucose_notification_note">Independent of the floating overlay. These modes replace the notification chart with a system template. Enable both for MetricStyle with Live Update. The system controls promotion; without fresh data the normal notification returns.</string>
     <string name="system_glucose_notification_permission">Live Update system settings</string>
     <string name="system_glucose_capsule_settings">Status chip</string>
-    <string name="system_glucose_metric_header">Value in the larger header</string>
-    <string name="system_glucose_metric_header_desc">Show the value in the notification title and the arrow in the metric field. Turn off to show value and arrow together as one metric. The system controls their actual sizes. With no arrow, the combined metric is used.</string>
     <string name="system_glucose_capsule_layout">Chip layout</string>
     <string name="system_glucose_layout_arrow_value">Arrow icon + value text: → 108</string>
     <string name="system_glucose_layout_value_arrow">Value icon + arrow text: 108 →</string>

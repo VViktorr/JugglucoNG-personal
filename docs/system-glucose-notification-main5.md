@@ -208,3 +208,38 @@ Static review checked shared-flavour StatusIcon method availability, the two
 complete layouts, unknown trend, existing preference invalidation, XML references,
 and the MetricStyle fallback. No compilation or tests were run, per instruction.
 Actual bitmap scaling and OEM chip rendering still require device validation.
+
+## Fix invalid MetricStyle label and inconsistent trend icon (2026-11-03)
+
+The user screenshots still show the standard Live Update title with units and
+Glucose body, and report that the arrow does not update. Source inspection found
+a definite bug in our minimal MetricStyle: its Metric label was empty.
+Android 17 Metric constructors require a nonblank label (IllegalArgumentException:
+Metric label is required), so the exception triggered the standard fallback.
+
+Replace the invalid layout with one FixedText metric containing the formatted
+glucose value and the trend glyph as its required nonblank label (a dash for
+unknown trend). Keep the app name as the required notification title; no unit,
+Glucose body, Current reading description or timestamp in successful MetricStyle.
+There is one visible number, plus the trend. The old larger-header experiment
+and switch are removed rather than retaining a misleading or duplicate layout.
+Actual System UI font sizing remains system-controlled.
+
+Add a logged MetricStyle fallback reason so a remaining device/API incompatibility
+can be diagnosed instead of silently changing style.
+
+The screenshot also shows a flat textual arrow beside a diagonal bitmap icon.
+The icon had used continuous TrendArrowAngle rotation while text/metric used the
+seven ExchangeTrend states. Use StatusIcon to paint the exact ExchangeTrend glyph
+for the arrow-icon layout; the opposite layout uses that same glyph as system text,
+and MetricStyle uses it as its label. The reading fingerprint in Notify already
+includes rate and timestamp, so changing trend is not intentionally deduplicated.
+This corrects inconsistent direction thresholds; without device traces it is not
+proof of the cause of any separate stalled refresh. Unknown trend is not flat.
+
+Both capsule choices and default layout from the preceding commit remain.
+No build or tests run; source checks covered nonblank labels, shared arrow
+selection, new resource references, publication fingerprint and fallback logging.
+
+Android source confirming the constructor requirement:
+https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/core/java/android/app/Notification.java

@@ -536,7 +536,6 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemLive by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
     val systemMetric by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_STYLE)
-    val metricHeader by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, true)
     val capsuleLayout by rememberSystemGlucoseIntOption(
         tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT,
         tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE
@@ -568,14 +567,6 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
                 onCheckedChange = {
                     tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_STYLE, it)
                 },
-                position = CardPosition.SINGLE
-            )
-            SettingsSwitchItem(
-                title = stringResource(R.string.system_glucose_metric_header),
-                subtitle = stringResource(R.string.system_glucose_metric_header_desc),
-                checked = metricHeader,
-                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric,
-                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, it) },
                 position = CardPosition.SINGLE
             )
             Text(

@@ -11,7 +11,6 @@ public final class SystemGlucoseNotification {
     // New keys intentionally do not reuse preferences from the older personal implementation.
     public static final String LIVE_UPDATE = "notification_system_live_update_v1";
     public static final String METRIC_STYLE = "notification_system_metric_style_v1";
-    public static final String METRIC_HEADER = "notification_system_metric_header_v1";
     public static final String CAPSULE_LAYOUT = "notification_system_capsule_layout_v1";
     public static final int ARROW_THEN_VALUE = 0;
     public static final int VALUE_THEN_ARROW = 1;
@@ -34,7 +33,7 @@ public final class SystemGlucoseNotification {
     }
 
     public static void setEnabled(Context context, String key, boolean enabled) {
-        if (!LIVE_UPDATE.equals(key) && !METRIC_STYLE.equals(key) && !METRIC_HEADER.equals(key))
+        if (!LIVE_UPDATE.equals(key) && !METRIC_STYLE.equals(key))
             throw new IllegalArgumentException("key");
         preferences(context).edit().putBoolean(key, enabled).apply();
         refreshPresentation();
@@ -91,10 +90,10 @@ public final class SystemGlucoseNotification {
                     builder.setShortCriticalText(arrow.isEmpty() ? "—" : arrow);
                 } else {
                     builder.setShortCriticalText(value);
-                    if (Float.isFinite(rate)) {
-                        builder.setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(
-                                NotificationChartDrawer.drawArrow(context, rate, reading.isMmol(),
-                                        android.graphics.Color.WHITE, 1.0f, false, false)));
+                    if (!arrow.isEmpty()) {
+                        // Use the same seven-state glyph as the text and MetricStyle label.
+                        // A continuous-angle renderer can disagree with a flat textual arrow.
+                        builder.setSmallIcon(new StatusIcon(context).getIcon(arrow));
                     } else {
                         builder.setSmallIcon(R.drawable.novalue);
                     }
@@ -102,19 +101,15 @@ public final class SystemGlucoseNotification {
             }
             if (metric) {
                 try {
-                    // Keep a real title for promotion/accessibility and never repeat the number.
-                    final String metricText = GlucoseNotificationText.title(value,
-                            java.util.Collections.emptyList(), displayRate);
-                    final boolean headerLayout = prefs.getBoolean(METRIC_HEADER, true);
-                    final String arrow = ExchangeTrend.fromRate(displayRate).arrow;
-                    // Use the title slot that this device renders larger for the number,
-                    // and the native metric slot for the arrow, without duplicate numbers.
-                    final boolean splitHeader = headerLayout && !arrow.isEmpty();
-                    builder.setContentTitle(splitHeader ? value : context.getString(R.string.app_name))
+                    // Android rejects blank metric labels. Use the trend glyph as
+                    // the required label and show the glucose number only once.
+                    final String arrow = ExchangeTrend.fromRate(rate).arrow;
+                    builder.setContentTitle(context.getString(R.string.app_name))
                             .setContentText(null).setSubText(null).setContentInfo(null).setShowWhen(false);
-                    Api37.apply(builder, splitHeader ? arrow : metricText);
+                    Api37.apply(builder, value, arrow.isEmpty() ? "—" : arrow);
                     return builder.build();
                 } catch (RuntimeException | LinkageError unavailable) {
+                    Log.stack("SystemGlucoseNotification", "MetricStyle unavailable; standard fallback", unavailable);
                     // A device missing MetricStyle can still show the independently requested Live Update.
                     if (!live) return original;
                     applyStandardContent(builder, label, text);
@@ -133,11 +128,11 @@ public final class SystemGlucoseNotification {
 
     @RequiresApi(37)
     private static final class Api37 {
-        static void apply(Notification.Builder builder, String metricText) {
-            // FixedText keeps the display-formatted value and arrow together in
-            // the main metric field. No label, unit or arbitrary font-size span.
+        static void apply(Notification.Builder builder, String value, String trendLabel) {
+            // The label must be nonblank. A trend glyph satisfies this contract
+            // without adding descriptions or repeating the displayed value.
             builder.setStyle(new Notification.MetricStyle()
-                    .addMetric(new Notification.Metric(new Notification.Metric.FixedText(metricText), ""))
+                    .addMetric(new Notification.Metric(new Notification.Metric.FixedText(value), trendLabel))
                     .setCriticalMetric(Notification.MetricStyle.METRIC_INDEX_NONE));
         }
     }
