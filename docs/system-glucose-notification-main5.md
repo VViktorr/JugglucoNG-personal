@@ -106,3 +106,41 @@ No new notification ID, preference or transport changes. Static review covered
 both Live Update styles, unknown trend, the existing hide preference and API
 gates. No compilation or tests were run, per user instruction. Final System UI
 appearance still requires confirmation on device.
+
+## Supported capsule presentation options (2026-11-03)
+
+Added phone settings with matching default/Polish strings and search keywords:
+- show/hide trend (notification text and trend icon);
+- icon selection: trend, standard or transparent;
+- optional trend and unit in short critical text;
+- text order: value then arrow, or arrow then value;
+- show/hide reading timestamp in the notification;
+- MetricStyle critical metric on/off (setCriticalMetric(0) or METRIC_INDEX_NONE).
+
+Default presentation remains arrow icon, value-only chip text, reading time shown,
+and MetricStyle critical metric enabled. The old global hide-icon preference is
+respected until the dedicated icon choice is saved. Boolean/int preference changes
+invalidate notification presentation and schedule its normal refresh. Choice state
+uses preference listeners and retains identity across navigation. New keys share
+the notification_ prefix already hashed by the notification fingerprint.
+
+When MetricStyle critical metric is enabled, short-text formatting controls are
+hidden because system metric presentation can override them. Disabling it requests
+the formatted short critical text with the independently enabled Live Update.
+Final selection and truncation remain OEM-controlled. The time toggle affects the
+notification header, not a new countdown or a fabricated reading time.
+
+No controls for native capsule font size, screen position, geometry or background
+opacity were added: the public system template provides no such controls.
+Left/right here means the ordering of value and trend inside short critical text,
+not moving the entire capsule. Transparent icons can still reserve system space.
+These limits are explained on the settings screen.
+
+Static review covered key validation/defaults, formatter combinations, unknown trend,
+resource references, API gates, stale fallback and preservation of the existing
+single notification lifecycle. No compilation or tests were run, per user instruction.
+Device rendering and the MetricStyle text fallback need user validation.
+
+References:
+- https://developer.android.com/develop/ui/views/notifications/live-update
+- https://developer.android.com/reference/android/app/Notification.MetricStyle

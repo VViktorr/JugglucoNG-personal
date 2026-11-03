@@ -7,4 +7,19 @@
     <string name="system_glucose_metric_summary">Android 17+. Pokaż glukozę w systemowym szablonie pomiarów.</string>
     <string name="system_glucose_notification_note">Niezależne od pływającej nakładki. Te tryby zastępują wykres powiadomienia szablonem systemowym. Włącz oba, aby połączyć MetricStyle z Live Update. O wyróżnieniu decyduje system; bez świeżych danych wraca zwykłe powiadomienie.</string>
     <string name="system_glucose_notification_permission">Ustawienia systemowe Live Update</string>
+    <string name="system_glucose_capsule_settings">Kapsułka na pasku stanu</string>
+    <string name="system_glucose_show_trend">Pokazuj strzałkę trendu</string>
+    <string name="system_glucose_icon_choice">Ikona kapsułki</string>
+    <string name="system_glucose_icon_trend">Strzałka trendu</string>
+    <string name="system_glucose_icon_app">Ikona standardowa</string>
+    <string name="system_glucose_icon_hidden">Ikona przezroczysta</string>
+    <string name="system_glucose_metric_critical">Używaj systemowego pomiaru w kapsułce</string>
+    <string name="system_glucose_metric_critical_desc">MetricStyle może pokazywać własny pomiar glukozy zamiast sformatowanego tekstu. Wyłącz, aby przekazać systemowi poniższe opcje tekstu.</string>
+    <string name="system_glucose_text_trend">Strzałka w tekście kapsułki</string>
+    <string name="system_glucose_text_unit">Jednostka w tekście kapsułki</string>
+    <string name="system_glucose_text_order">Kolejność wartości i strzałki w tekście</string>
+    <string name="system_glucose_value_first">Najpierw wartość: 108 →</string>
+    <string name="system_glucose_arrow_first">Najpierw strzałka: → 108</string>
+    <string name="system_glucose_show_time">Czas odczytu w powiadomieniu</string>
+    <string name="system_glucose_capsule_limits">Android ustala położenie kapsułki, rozmiar czcionki i krycie tła. Długi tekst może zostać skrócony lub ukryty. Przezroczysta ikona może nadal zajmować miejsce. Opcje tekstu dotyczą włączonego Live Update; MetricStyle i oprogramowanie telefonu mogą prezentować je inaczej.</string>
 </resources>

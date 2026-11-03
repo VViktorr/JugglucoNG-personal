@@ -7,4 +7,19 @@
     <string name="system_glucose_metric_summary">Android 17+. Display glucose using the system metric template.</string>
     <string name="system_glucose_notification_note">Independent of the floating overlay. These modes replace the notification chart with a system template. Enable both for MetricStyle with Live Update. The system controls promotion; without fresh data the normal notification returns.</string>
     <string name="system_glucose_notification_permission">Live Update system settings</string>
+    <string name="system_glucose_capsule_settings">Status chip</string>
+    <string name="system_glucose_show_trend">Show trend arrow</string>
+    <string name="system_glucose_icon_choice">Chip icon</string>
+    <string name="system_glucose_icon_trend">Trend arrow</string>
+    <string name="system_glucose_icon_app">Standard icon</string>
+    <string name="system_glucose_icon_hidden">Transparent icon</string>
+    <string name="system_glucose_metric_critical">Use system metric in the chip</string>
+    <string name="system_glucose_metric_critical_desc">MetricStyle may display its native glucose metric instead of formatted chip text. Turn this off to request the text options below.</string>
+    <string name="system_glucose_text_trend">Arrow in chip text</string>
+    <string name="system_glucose_text_unit">Unit in chip text</string>
+    <string name="system_glucose_text_order">Value and arrow order in text</string>
+    <string name="system_glucose_value_first">Value first: 108 →</string>
+    <string name="system_glucose_arrow_first">Arrow first: → 108</string>
+    <string name="system_glucose_show_time">Reading time in the notification</string>
+    <string name="system_glucose_capsule_limits">Android controls chip position, font size and background opacity. Long text may be shortened or hidden. A transparent icon may still occupy space. Text options apply when Live Update is enabled; MetricStyle and device software may present them differently.</string>
 </resources>
