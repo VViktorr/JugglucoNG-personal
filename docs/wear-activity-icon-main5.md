@@ -94,3 +94,30 @@ Static review checked all resource names against the branch tree, number coverag
 source-set availability and both publication paths. No compilation or tests run,
 per user instruction. This is a compatibility change requiring device validation,
 not a claim that every Wear OEM can display arbitrary ongoing-activity icons.
+
+## Refresh while the watch app is closed (2026-11-03)
+
+After confirming resource icons display correctly, the user reported that the
+value stays unchanged until the watch application is opened. The background data
+path reached WearComplicationValue.updateall but that method only refreshed
+complications and tiles. OngoingActivity was refreshed on notification posts or
+activity/service work, not every background data update.
+
+Add WearOngoingActivity.requestRefresh to updateall, so BLE updates through
+SuperGattCallback and synced history through WearSync2 -> UiRefreshBus ->
+GlucoseValueRefreshAccess refresh the ongoing icon without opening the app.
+Existing UiRefreshBus leading/trailing coalescing remains (up to 20 seconds for
+a trailing refresh during a burst). A main-handler task merges simultaneous icon
+refresh requests, recovers an existing ongoing notification ID after process
+recreation and refreshes both foreground and existing reading notification icons.
+It does not create missing notifications or invoke alarm delivery.
+
+Icon/status/expiry selection now uses GlucoseComplicationData.currentReading,
+which compares the processed live and synced readings, rather than reading only
+the potentially older live cache. The selected sensor, units, calibration and
+display processing follow the same provider as complications. Resource-backed
+icons from the confirmed display fix are retained.
+
+Static review traced BLE and Data Layer refresh callers and checked selection,
+expiry, ID recovery and no-resurrection paths. No compilation or tests were run,
+per user instruction. Background updates on the physical watch require validation.

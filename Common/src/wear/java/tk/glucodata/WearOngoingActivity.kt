@@ -1,5 +1,7 @@
 package tk.glucodata
 
+import tk.glucodata.glucosecomplication.GlucoseComplicationData
+import java.util.concurrent.atomic.AtomicBoolean
 import android.app.NotificationManager
 import android.graphics.drawable.Icon
 import android.os.Handler
@@ -24,6 +26,22 @@ object WearOngoingActivity : OngoingNotification {
     private val expiryHandler = Handler(Looper.getMainLooper())
     private val expiryLock = Any()
     private var expiryTask: Runnable? = null
+    private val refreshQueued = AtomicBoolean(false)
+
+    /** Every data refresh reaches this path even while the watch app is closed. */
+    @JvmStatic
+    fun requestRefresh() {
+        if (!refreshQueued.compareAndSet(false, true)) return
+        expiryHandler.post {
+            refreshQueued.set(false)
+            val context = Applic.app ?: return@post
+            val id = currentNotificationId ?: runCatching {
+                OngoingActivity.recoverOngoingActivity(context)?.notificationId
+            }.getOrNull()
+            id?.let { updateStatus(context, it) }
+            Notify.refreshWearNotificationIcon()
+        }
+    }
 
     fun iconMode(context: Context): Int = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         .getInt("mode", MODE_NORMAL).takeIf { it in MODE_NORMAL..MODE_TREND } ?: MODE_NORMAL
@@ -44,7 +62,7 @@ object WearOngoingActivity : OngoingNotification {
     override fun applySmallIcon(context: Context, notification: Notification): Notification {
         return try {
             val mode = iconMode(context)
-            val reading = CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout)
+            val reading = GlucoseComplicationData.currentReading()
             Notification.Builder.recoverBuilder(context, notification)
                 .apply {
                     if (mode == MODE_NORMAL) setSmallIcon(R.drawable.novalue)
@@ -60,7 +78,7 @@ object WearOngoingActivity : OngoingNotification {
     override fun attach(context: Context, notification: Notification, notificationId: Int): Notification {
         return try {
             currentNotificationId = notificationId
-            val reading = CurrentDisplaySource.resolveCurrent(Notify.glucosetimeout)
+            val reading = GlucoseComplicationData.currentReading()
             val mode = iconMode(context)
             val displayIcon = icon(context, reading, mode)
             // Keep the active, ambient and notification-fallback icon paths consistent.
@@ -109,24 +127,24 @@ object WearOngoingActivity : OngoingNotification {
         }
     }
 
-    private fun status(context: Context, reading: CurrentDisplaySource.Snapshot?): Status {
-        val value = reading?.primaryStr
+    private fun status(context: Context, reading: GlucoseComplicationData.Reading?): Status {
+        val value = reading?.text
             ?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.novalue)
         return Status.forPart(Status.TextPart(value))
     }
 
-    private fun icon(context: Context, reading: CurrentDisplaySource.Snapshot?, mode: Int): Icon {
+    private fun icon(context: Context, reading: GlucoseComplicationData.Reading?, mode: Int): Icon {
         val resource = when {
             mode == MODE_NORMAL -> R.drawable.novalue
             reading == null -> R.drawable.wear_ongoing_unknown
-            mode == MODE_VALUE -> WearOngoingIconResources.value(reading.primaryStr)
+            mode == MODE_VALUE -> WearOngoingIconResources.value(reading.text)
             else -> WearOngoingIconResources.trend(reading.rate)
         }
         return Icon.createWithResource(context, resource)
     }
 
-    private fun scheduleExpiry(context: Context, notificationId: Int, reading: CurrentDisplaySource.Snapshot?) {
+    private fun scheduleExpiry(context: Context, notificationId: Int, reading: GlucoseComplicationData.Reading?) {
         synchronized(expiryLock) {
             expiryTask?.let { expiryHandler.removeCallbacks(it) }
             expiryTask = null

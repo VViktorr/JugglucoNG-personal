@@ -321,6 +321,9 @@ Bitmap previewbitmap() {
 
 
 static public void updateall() {
+    // Refresh the ongoing icon on BLE, mirrored data, display settings and expiry updates.
+    // This must not depend on opening the activity or posting an alarm notification.
+    tk.glucodata.WearOngoingActivity.requestRefresh();
 	ArrowValueDataSourceService.Companion.update();
 	NumberDataSourceService.Companion.update();
 	ArrowDataSourceService.Companion.update();
