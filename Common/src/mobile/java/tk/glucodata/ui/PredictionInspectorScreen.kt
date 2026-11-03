@@ -22,18 +22,14 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -174,7 +170,7 @@ internal fun PredictionInspectorContent(
 
         if (list.size > 1) {
             var dragging by remember(selected) { mutableFloatStateOf(selected.toFloat()) }
-            Slider(
+            tk.glucodata.ui.components.AppSlider(
                 value = dragging,
                 onValueChange = { dragging = it },
                 onValueChangeFinished = { onSelect(dragging.roundToInt()) },

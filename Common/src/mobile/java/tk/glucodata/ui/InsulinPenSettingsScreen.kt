@@ -5,12 +5,11 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.components.AppSlider
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipColors
-import tk.glucodata.ui.util.appFilterChipShapes
 
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material.icons.filled.Vaccines
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -41,17 +39,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import tk.glucodata.ui.components.AppTopBar
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
@@ -447,12 +442,10 @@ private fun PenDetailSheet(
             Spacer(Modifier.size(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 presets.forEach { preset ->
-                    FilterChip(
+                    SettingsChoiceChip(
                         selected = preset.id == pen.insulinPresetId,
                         onClick = { onSelected(preset) },
                         label = { Text(preset.displayName) },
-                        shapes = appFilterChipShapes(),
-                        colors = appFilterChipColors(),
                     )
                 }
             }

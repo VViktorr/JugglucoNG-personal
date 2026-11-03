@@ -212,9 +212,6 @@ private fun CloneSendPanel(
                 onOptionSelected = { if (it != send.kind) onKind(it) },
                 labelText = kindLabel,
                 label = { kind -> Text(kindLabel(kind)) },
-                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                selectedContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(16.dp))

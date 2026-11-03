@@ -37,10 +37,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -272,9 +270,6 @@ fun StatsRangeSelectorControl(
                 )
             },
             itemHeight = 40.dp,
-            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-            selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -382,9 +377,6 @@ fun StatsDateRangeSheet(
                     )
                 },
                 itemHeight = 40.dp,
-                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                unselectedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)

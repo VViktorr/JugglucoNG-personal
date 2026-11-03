@@ -1,8 +1,8 @@
 package tk.glucodata.ui.calibration
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipColors
-import tk.glucodata.ui.util.appFilterChipShapes
 import tk.glucodata.ui.util.appIconButtonShapes
 
 import androidx.compose.material3.FilledTonalIconButton
@@ -18,19 +18,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1015,7 +1009,7 @@ private fun CalibrationWeightControl(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             modes.forEach { mode ->
-                FilterChip(
+                SettingsChoiceChip(
                     selected = mode == selectedMode,
                     onClick = { if (enabled) onSelectMode(mode) },
                     enabled = enabled,
@@ -1031,8 +1025,6 @@ private fun CalibrationWeightControl(
                         )
                     },
                     modifier = Modifier.weight(1f),
-                    shapes = appFilterChipShapes(),
-                    colors = appFilterChipColors()
                 )
             }
         }

@@ -1,12 +1,11 @@
 package tk.glucodata.ui.components
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.components.AppSlider
-import tk.glucodata.ui.util.appFilterChipColors
-import tk.glucodata.ui.util.appFilterChipShapes
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -15,7 +14,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -274,8 +271,8 @@ fun SettingsItem(
     ) {
         AdaptiveTrailingRow(
             modifier = Modifier
-                .heightIn(min = 72.dp) // M3 Two-line item standard
-                .padding(horizontal = 16.dp, vertical = 16.dp), // Coherent spacing
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             trailingContent = {
                 if (trailingContent != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) { trailingContent() }
@@ -296,11 +293,11 @@ fun SettingsItem(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium) // Heavier weight (500) for legibility
+                    Text(title, style = MaterialTheme.typography.bodyMedium)
                     if (subtitle != null) {
                         Text(
                             subtitle,
-                            style = subtitleStyle ?: MaterialTheme.typography.bodyMedium,
+                            style = subtitleStyle ?: MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -413,66 +410,17 @@ fun MasterSwitchCard(
     iconTint: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true,
 ) {
-    val containerColor by animateColorAsState(
-        targetValue = if (checked) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
-        },
-        label = "masterSwitchCardContainer"
+    // A master setting uses the same neutral row and switch as ordinary settings.
+    SettingsSwitchItem(
+        title = title,
+        subtitle = subtitle,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        icon = icon,
+        iconTint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
+        enabled = enabled,
+        modifier = modifier,
     )
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            1.dp,
-            if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.26f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        AdaptiveTrailingRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 84.dp)
-                .clickable(enabled = enabled) { onCheckedChange(!checked) }
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            trailingContent = {
-                StyledSwitch(
-                    checked = checked,
-                    enabled = enabled,
-                    onCheckedChange = onCheckedChange
-                )
-            }
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile(
-                    icon = icon,
-                    tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
-                    containerColor = if (checked) {
-                        iconTint.copy(alpha = IconTileDefaults.ContainerAlpha)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    },
-                )
-
-                Spacer(modifier = Modifier.width(IconTileDefaults.Gap))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMediumEmphasized,)
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -531,21 +479,17 @@ fun AlarmItem(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        FilterChip(
+                        SettingsChoiceChip(
                             selected = soundMode == 0,
                             onClick = { onSoundChange(0) },
                             label = { Text(stringResource(R.string.vibrate_only)) },
                             leadingIcon = { if(soundMode == 0) Icon(Icons.Filled.Check, null) },
-                            shapes = appFilterChipShapes(),
-                            colors = appFilterChipColors()
                         )
-                        FilterChip(
+                        SettingsChoiceChip(
                             selected = soundMode == 1,
                             onClick = { onSoundChange(1) },
                             label = { Text(stringResource(R.string.sound_vibrate)) },
                             leadingIcon = { if(soundMode == 1) Icon(Icons.Filled.Check, null) },
-                            shapes = appFilterChipShapes(),
-                            colors = appFilterChipColors()
                         )
                     }
                 }
@@ -597,16 +541,12 @@ fun SettingsSlider(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Slider(
+        Text(title, style = MaterialTheme.typography.bodyMedium)
+        AppSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = range,
             steps = steps,
-            colors = SliderDefaults.colors(
-                activeTickColor = Color.Transparent,
-                inactiveTickColor = Color.Transparent
-            ),
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -634,13 +574,13 @@ fun <T> SettingsChoice(
     // The bottom padding matches the room a slider leaves under its track.
     Column(
         modifier = modifier.fillMaxWidth().padding(bottom = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (titleTrailingContent == null) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(title, style = MaterialTheme.typography.labelMedium)
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                 // Let a 48dp help target extend into the card inset and title gap,
                 // keeping the same title height as the other settings choices.
                 Box(Modifier.height(24.dp).wrapContentHeight(unbounded = true)) {
@@ -658,12 +598,7 @@ fun <T> SettingsChoice(
                     onOptionSelected = onOptionSelected,
                     label = {},
                     labelText = { labels[options.indexOf(it)] },
-                    modifier = Modifier.fillMaxWidth(),
-                    selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                    selectedContentColor = MaterialTheme.colorScheme.onSecondary,
-                    // Match the recessed unselected controls used by alert settings.
-                    unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

@@ -2,9 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipColors
-import tk.glucodata.ui.util.appFilterChipShapes
 import tk.glucodata.ui.util.appIconButtonShapes
 
 import tk.glucodata.ui.components.IconButtonTooltip
@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -497,7 +495,7 @@ private fun SmsAlertTypePicker(policy: SmsPolicy, onChange: (SmsPolicy) -> Unit)
         ) {
             AlertType.settingsEntries.forEach { type ->
                 val selected = type.id in policy.alarmAlertIds
-                FilterChip(
+                SettingsChoiceChip(
                     selected = selected,
                     onClick = {
                         val next = if (selected) {
@@ -508,8 +506,6 @@ private fun SmsAlertTypePicker(policy: SmsPolicy, onChange: (SmsPolicy) -> Unit)
                         onChange(policy.copy(alarmAlertIds = next))
                     },
                     label = { Text(stringResource(type.nameResId)) },
-                    shapes = appFilterChipShapes(),
-                    colors = appFilterChipColors()
                 )
             }
         }

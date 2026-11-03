@@ -2,11 +2,11 @@
 
 package tk.glucodata.widgets
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.components.AppSlider
 
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipShapes
-import tk.glucodata.ui.util.appFilterChipColors
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -24,26 +24,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import tk.glucodata.ui.components.AppTopBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -178,9 +172,7 @@ private fun WidgetDetailSettings(
         Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             WidgetFontFamily.entries.forEach { family ->
-                FilterChip(
-                    shapes = appFilterChipShapes(),
-                    colors = appFilterChipColors(),
+                SettingsChoiceChip(
                     selected = config.fontFamily == family,
                     onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
                     label = { Text(stringResource(if (family == WidgetFontFamily.IBM_PLEX) R.string.widget_font_ibm_plex else R.string.widget_font_system)) })
@@ -189,9 +181,7 @@ private fun WidgetDetailSettings(
         Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
-                FilterChip(
-                    shapes = appFilterChipShapes(),
-                    colors = appFilterChipColors(),
+                SettingsChoiceChip(
                     selected = config.primaryFontWeight == weight,
                     onClick = { onChange(config.copy(primaryFontWeight = weight, secondaryFontWeight = weight)) },
                     label = { Text(weight.toString()) })
@@ -327,9 +317,7 @@ private fun WidgetDetailSettings(
             Text(stringResource(R.string.widget_graph_hours), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(1, 3, 6, 12, 24).forEach { hours ->
-                    FilterChip(
-                        shapes = appFilterChipShapes(),
-                        colors = appFilterChipColors(),
+                    SettingsChoiceChip(
                         selected = config.graphHours == hours,
                         onClick = { onChange(config.copy(graphHours = hours)) },
                         label = { Text(stringResource(R.string.widget_hours_short, hours)) }
@@ -350,9 +338,7 @@ private fun WidgetDetailSettings(
                     WidgetStatsPeriod.DAY to R.string.widget_period_24h,
                     WidgetStatsPeriod.WEEK to R.string.widget_period_7d
                 ).forEach { (period, label) ->
-                    FilterChip(
-                        shapes = appFilterChipShapes(),
-                        colors = appFilterChipColors(),
+                    SettingsChoiceChip(
                         selected = config.statsPeriod == period,
                         onClick = { onChange(config.copy(statsPeriod = period)) },
                         label = { Text(stringResource(label)) }
@@ -370,9 +356,7 @@ private fun BackgroundChip(
     config: WidgetConfig,
     onChange: (WidgetConfig) -> Unit
 ) {
-    FilterChip(
-        shapes = appFilterChipShapes(),
-        colors = appFilterChipColors(),
+    SettingsChoiceChip(
         selected = config.background == background,
         onClick = { onChange(config.copy(background = background)) },
         label = { Text(stringResource(label)) }
@@ -381,13 +365,9 @@ private fun BackgroundChip(
 
 @Composable
 private fun WidgetSwitch(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(title, modifier = Modifier.weight(1f))
-        StyledSwitch(checked = checked, onCheckedChange = onCheckedChange)
-    }
+    tk.glucodata.ui.components.SettingsSwitchItem(
+        title = title,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+    )
 }
-

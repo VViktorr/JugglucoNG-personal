@@ -1,10 +1,10 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.components.AppSlider
 
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipColors
-import tk.glucodata.ui.util.appFilterChipShapes
 
 import androidx.compose.material3.ButtonDefaults
 import android.graphics.Color as AndroidColor
@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,10 +22,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -86,7 +83,7 @@ fun GlucosePalettePresetSelector(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         BASE_PRESETS.forEach { preset ->
-            FilterChip(
+            SettingsChoiceChip(
                 selected = activePreset == preset && !hasOverrides,
                 onClick = {
                     GlucosePaletteState.setPalette(context, preset)
@@ -94,8 +91,6 @@ fun GlucosePalettePresetSelector(modifier: Modifier = Modifier) {
                 },
                 label = { Text(stringResource(presetLabelRes(preset))) },
                 modifier = Modifier.weight(1f),
-                shapes = appFilterChipShapes(),
-                colors = appFilterChipColors()
             )
         }
     }

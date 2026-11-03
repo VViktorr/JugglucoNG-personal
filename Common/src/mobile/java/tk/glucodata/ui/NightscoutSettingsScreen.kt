@@ -5,7 +5,6 @@ import tk.glucodata.ui.util.appIconButtonShapes
 import tk.glucodata.ui.util.appButtonShapes
 
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -63,14 +62,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -548,10 +544,6 @@ fun NightscoutSettingsScreen(navController: NavController) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                     itemHeight = 48.dp,
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

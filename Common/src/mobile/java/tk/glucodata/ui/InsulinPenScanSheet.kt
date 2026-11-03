@@ -5,9 +5,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.SettingsChoiceChip
+
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipColors
-import tk.glucodata.ui.util.appFilterChipShapes
 
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.Arrangement
@@ -32,21 +32,17 @@ import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import tk.glucodata.ui.components.StableModalBottomSheet
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -116,12 +112,10 @@ fun InsulinPenScanSheetHost() {
             Spacer(Modifier.size(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 selectableInsulins.forEach { preset ->
-                    FilterChip(
+                    SettingsChoiceChip(
                         selected = preset.id == chosenInsulin?.id,
                         onClick = { chosenInsulinId = preset.id },
                         label = { Text(preset.displayName) },
-                        shapes = appFilterChipShapes(),
-                        colors = appFilterChipColors(),
                     )
                 }
             }

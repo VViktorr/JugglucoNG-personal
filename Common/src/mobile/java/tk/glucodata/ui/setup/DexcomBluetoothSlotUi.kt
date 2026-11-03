@@ -24,10 +24,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -93,10 +91,6 @@ internal fun DexcomBluetoothSlotSelector(
             icon = { dexcomSlotIcon(it) },
             modifier = Modifier.fillMaxWidth(),
             itemHeight = 48.dp,
-            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-            selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
         Text(
