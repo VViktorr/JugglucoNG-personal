@@ -1,5 +1,8 @@
 package tk.glucodata.ui
 
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.setValue
+
 import tk.glucodata.ui.components.AppSlider
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle

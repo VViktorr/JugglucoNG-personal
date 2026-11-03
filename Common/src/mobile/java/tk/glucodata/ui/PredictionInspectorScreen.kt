@@ -1,5 +1,10 @@
 package tk.glucodata.ui
 
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import tk.glucodata.ui.util.appIconButtonShapes
 
 import androidx.compose.foundation.Canvas

@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui.stats
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import tk.glucodata.ui.util.appButtonShapes
 
 import tk.glucodata.ui.components.AdaptiveButtonRow

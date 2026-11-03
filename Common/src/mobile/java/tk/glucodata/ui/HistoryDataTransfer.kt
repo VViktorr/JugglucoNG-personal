@@ -1,5 +1,9 @@
 package tk.glucodata.ui
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import tk.glucodata.ui.components.AppSlider
 
 import tk.glucodata.ui.util.appButtonShapes

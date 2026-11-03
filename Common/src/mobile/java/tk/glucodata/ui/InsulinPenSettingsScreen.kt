@@ -5,6 +5,14 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appFilterChipColors
+import tk.glucodata.ui.util.appFilterChipShapes
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.Slider
+
 import tk.glucodata.ui.util.SettingsChoiceChip
 
 import tk.glucodata.ui.components.AppSlider

@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 import tk.glucodata.ui.util.appButtonShapes
 
 import android.text.format.Formatter
