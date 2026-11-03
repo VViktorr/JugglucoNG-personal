@@ -22,4 +22,7 @@
     <string name="system_glucose_arrow_first">Arrow first: → 108</string>
     <string name="system_glucose_show_time">Reading time in the notification</string>
     <string name="system_glucose_capsule_limits">Android controls chip position, font size and background opacity. Long text may be shortened or hidden. A transparent icon may still occupy space. Text options apply when Live Update is enabled; MetricStyle and device software may present them differently.</string>
+    <string name="system_glucose_metric_header">Value in the larger header</string>
+    <string name="system_glucose_metric_header_desc">Show the value in the notification title and the arrow in the metric field. Turn off to show value and arrow together as one metric. The system controls their actual sizes. With no arrow, the combined metric is used.</string>
+    <string name="system_glucose_show_time_desc">Applies to standard Live Update. The minimal MetricStyle layout hides the time.</string>
 </resources>

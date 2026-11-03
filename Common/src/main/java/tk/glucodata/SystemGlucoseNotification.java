@@ -15,6 +15,7 @@ public final class SystemGlucoseNotification {
     public static final String TEXT_TREND = "notification_system_text_trend_v1";
     public static final String TEXT_UNIT = "notification_system_text_unit_v1";
     public static final String SHOW_TIME = "notification_system_show_time_v1";
+    public static final String METRIC_HEADER = "notification_system_metric_header_v1";
     public static final String METRIC_CRITICAL = "notification_system_metric_critical_v1";
     public static final String ICON_MODE = "notification_system_icon_mode_v1";
     public static final String TEXT_ORDER = "notification_system_text_order_v1";
@@ -39,7 +40,7 @@ public final class SystemGlucoseNotification {
     public static void setEnabled(Context context, String key, boolean enabled) {
         if (!LIVE_UPDATE.equals(key) && !METRIC_STYLE.equals(key)
                 && !SHOW_TREND.equals(key) && !TEXT_TREND.equals(key) && !TEXT_UNIT.equals(key)
-                && !SHOW_TIME.equals(key) && !METRIC_CRITICAL.equals(key))
+                && !SHOW_TIME.equals(key) && !METRIC_CRITICAL.equals(key) && !METRIC_HEADER.equals(key))
             throw new IllegalArgumentException("key");
         preferences(context).edit().putBoolean(key, enabled).apply();
         refreshPresentation();
@@ -115,16 +116,24 @@ public final class SystemGlucoseNotification {
             }
             if (metric) {
                 try {
-                    // MetricStyle supplies the number and unit itself; don't repeat them in the title.
-                    builder.setContentTitle(GlucoseNotificationText.title(label,
-                            java.util.Collections.emptyList(), displayRate)).setContentText(null);
-                    Api37.apply(builder, reading, unit,
-                            context.getString(R.string.system_glucose_current_reading), criticalMetric);
+                    // Keep a real title for promotion/accessibility and never repeat the number.
+                    final String metricText = GlucoseNotificationText.title(value,
+                            java.util.Collections.emptyList(), displayRate);
+                    final boolean headerLayout = prefs.getBoolean(METRIC_HEADER, true);
+                    final String arrow = ExchangeTrend.fromRate(displayRate).arrow;
+                    // Use the title slot that this device renders larger for the number,
+                    // and the native metric slot for the arrow, without duplicate numbers.
+                    final boolean splitHeader = headerLayout && !arrow.isEmpty();
+                    builder.setContentTitle(splitHeader ? value : context.getString(R.string.app_name))
+                            .setContentText(null).setSubText(null).setContentInfo(null).setShowWhen(false);
+                    Api37.apply(builder, splitHeader ? arrow : metricText,
+                            !headerLayout && criticalMetric);
                     return builder.build();
                 } catch (RuntimeException | LinkageError unavailable) {
                     // A device missing MetricStyle can still show the independently requested Live Update.
                     if (!live) return original;
                     applyStandardContent(builder, label, text);
+                    builder.setShowWhen(prefs.getBoolean(SHOW_TIME, true));
                 }
             }
             return builder.build();
@@ -139,13 +148,11 @@ public final class SystemGlucoseNotification {
 
     @RequiresApi(37)
     private static final class Api37 {
-        static void apply(Notification.Builder builder, CurrentDisplaySource.Snapshot reading,
-                String unit, String label, boolean criticalMetric) {
-            Notification.Metric.MetricValue number = reading.isMmol()
-                    ? new Notification.Metric.FixedFloat(reading.getPrimaryValue(), unit, 1, 1)
-                    : new Notification.Metric.FixedInt(Math.round(reading.getPrimaryValue()), unit);
+        static void apply(Notification.Builder builder, String metricText, boolean criticalMetric) {
+            // FixedText keeps the display-formatted value and arrow together in
+            // the main metric field. No label, unit or arbitrary font-size span.
             builder.setStyle(new Notification.MetricStyle()
-                    .addMetric(new Notification.Metric(number, label))
+                    .addMetric(new Notification.Metric(new Notification.Metric.FixedText(metricText), ""))
                     .setCriticalMetric(criticalMetric ? 0 : Notification.MetricStyle.METRIC_INDEX_NONE));
         }
     }

@@ -540,6 +540,7 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
     val textTrend by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.TEXT_TREND)
     val textUnit by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.TEXT_UNIT)
     val showTime by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.SHOW_TIME, true)
+    val metricHeader by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, true)
     val metricCritical by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.METRIC_CRITICAL, true)
     val prefs = remember(context) { tk.glucodata.SystemGlucoseNotification.preferences(context) }
     val defaultIconMode = if (prefs.getBoolean("notification_hide_status_icon", false)) 2 else 0
@@ -622,15 +623,23 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
                 )
             }
             SettingsSwitchItem(
+                title = stringResource(R.string.system_glucose_metric_header),
+                subtitle = stringResource(R.string.system_glucose_metric_header_desc),
+                checked = metricHeader,
+                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric,
+                onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_HEADER, it) },
+                position = CardPosition.SINGLE
+            )
+            SettingsSwitchItem(
                 title = stringResource(R.string.system_glucose_metric_critical),
                 subtitle = stringResource(R.string.system_glucose_metric_critical_desc),
                 checked = metricCritical,
-                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric,
+                enabled = android.os.Build.VERSION.SDK_INT >= 37 && systemMetric && !metricHeader,
                 onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.METRIC_CRITICAL, it) },
                 position = CardPosition.SINGLE
             )
             // MetricStyle's critical metric may replace short critical text.
-            if (!systemMetric || !metricCritical) {
+            if (!systemMetric || !metricCritical || metricHeader) {
                 SettingsSwitchItem(
                     title = stringResource(R.string.system_glucose_text_trend),
                     checked = textTrend,
@@ -661,6 +670,7 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
             }
             SettingsSwitchItem(
                 title = stringResource(R.string.system_glucose_show_time),
+                subtitle = stringResource(R.string.system_glucose_show_time_desc),
                 checked = showTime,
                 onCheckedChange = { tk.glucodata.SystemGlucoseNotification.setEnabled(context, tk.glucodata.SystemGlucoseNotification.SHOW_TIME, it) },
                 position = CardPosition.SINGLE

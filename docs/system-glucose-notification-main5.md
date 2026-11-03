@@ -144,3 +144,37 @@ Device rendering and the MetricStyle text fallback need user validation.
 References:
 - https://developer.android.com/develop/ui/views/notifications/live-update
 - https://developer.android.com/reference/android/app/Notification.MetricStyle
+
+## Minimal readable MetricStyle layout (2026-11-03)
+
+User requested only value and trend on the lock screen, noting that the previous
+description in the title was rendered larger on their phone. Replace the old
+Glucose / Current reading / unit descriptions with a minimal presentation:
+- default header layout puts the display-formatted number in contentTitle and
+  the trend arrow in an unlabelled, unitless FixedText metric;
+- the new Value in the larger header switch can be disabled to put value and
+  trend together in one unlabelled FixedText metric, with the app name as title;
+- unknown/disabled trend falls back to the combined value metric and app title;
+- no notification timestamp is shown for MetricStyle. Original time/freshness
+  data is retained, and the ordinary Live Update time preference still applies.
+
+Header layout never selects the arrow as a critical metric; it uses
+METRIC_INDEX_NONE so Live Update can request the configured value short text.
+The existing system-critical-metric switch is disabled in header layout, and
+short-text controls are available instead. The combined layout retains the
+critical-metric option. API 37 FixedText supports the display string directly,
+preserving decimal separators and the configured trend visibility.
+
+The system app identity/header can remain visible. No absolute font size, spans,
+custom RemoteViews, hidden-title characters or extra notification were introduced.
+The selected template slots seek better readability; their actual font sizes and
+placement require user confirmation on the target device. A failed MetricStyle
+render restores standard Live Update content and its show-time preference.
+
+Static review covered both layouts, known/unknown/disabled trend, mg/dL and mmol/L
+display strings, critical metric handling, API gating and fallback.
+No compilation or tests run, per user instruction.
+
+References:
+- https://developer.android.com/reference/android/app/Notification.Metric.FixedText
+- https://developer.android.com/reference/android/app/Notification.MetricStyle
