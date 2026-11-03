@@ -268,3 +268,42 @@ Static review covered the four enable combinations, one-time migration,
 independent preference saves, fallback layout restoration, API gates and
 default/Polish descriptions. No compilation or tests run, per user instruction.
 Device rendering and notification behaviour require user confirmation.
+
+## Independent notification content fields (2026-11-03)
+
+Added Notification content subsections inside each of the Live Update and
+MetricStyle sections. Each has five described visibility switches: glucose value,
+trend, unit, actual reading time, and the dedicated Glucose label. Each visible
+element has its own three-way location selector. All keys include the mode,
+field and setting, so neither mode's changes overwrite the other mode.
+
+Locations map to public system template fields:
+- Header: contentTitle (app name remains when no elements are placed there).
+- Live Update main: BigText body, shown in the expanded notification.
+- Live Update caption: summary text; when main is empty, caption becomes the body.
+- MetricStyle main: one FixedText metric.
+- MetricStyle caption: the required nonblank Metric label.
+
+In MetricStyle an intentionally empty main or caption slot uses a dash rather
+than an invalid blank string or an invented glucose value. Default MetricStyle
+remains value in main with trend in caption; unit/Glucose label/time are off.
+Default standard Live Update remains value/trend/unit in header and Glucose in
+the caption; reading time is off. Showing time formats the displayed snapshot's
+timestamp using the system locale/time format, never the publication time.
+An unknown trend is omitted rather than rendered as a false flat direction.
+
+Fields in the same slot are joined in semantic order: Glucose label, value, trend,
+unit, then reading time. The system controls final font sizes, truncation and
+placement; arbitrary coordinates and font controls were not added. Labels and
+limitations are provided in default and Polish resources. Search keywords include
+the new content controls.
+
+Capsule helpers, its two independent per-mode keys, critical-metric suppression,
+promotion policy, notification identity, freshness and alarm paths are unchanged.
+Content visibility never changes capsule content. MetricStyle failure restores
+both the Live Update content slots and its capsule layout.
+
+Static review covered resource references, defaults, mode/field key separation,
+supported location bounds, empty/unknown trend slots, timestamp source, fallback
+and the existing notification fingerprint prefix. No compilation or tests were
+run, per user instruction. Expanded/lock-screen rendering requires device checks.

@@ -11,4 +11,22 @@
     <string name="system_glucose_capsule_layout">Układ kapsułki</string>
     <string name="system_glucose_layout_arrow_value">Ikona strzałki + tekst wartości: → 108</string>
     <string name="system_glucose_layout_value_arrow">Ikona wartości + tekst strzałki: 108 →</string>
+    <string name="system_glucose_content_section">Treść powiadomienia</string>
+    <string name="system_glucose_content_value">Pokazuj wartość glukozy</string>
+    <string name="system_glucose_content_value_desc">Aktualny wynik w treści powiadomienia. Nie zmienia kapsułki na pasku stanu.</string>
+    <string name="system_glucose_content_trend">Pokazuj strzałkę trendu</string>
+    <string name="system_glucose_content_trend_desc">Kierunek zmian glukozy. Nieznany trend nie jest pokazywany jako strzałka pozioma.</string>
+    <string name="system_glucose_content_unit">Pokazuj jednostkę</string>
+    <string name="system_glucose_content_unit_desc">Wyświetlaj mg/dL lub mmol/L zgodnie z wybraną jednostką glukozy.</string>
+    <string name="system_glucose_content_time">Pokazuj czas odczytu</string>
+    <string name="system_glucose_content_time_desc">Godzina wykonania wyświetlanego pomiaru, nie godzina odświeżenia powiadomienia.</string>
+    <string name="system_glucose_content_label">Pokazuj napis „Glukoza”</string>
+    <string name="system_glucose_content_label_desc">Dodaj krótki opis wyświetlanego pomiaru.</string>
+    <string name="system_glucose_content_position">Miejsce wyświetlania</string>
+    <string name="system_glucose_content_header">Nagłówek</string>
+    <string name="system_glucose_content_metric">Główny pomiar</string>
+    <string name="system_glucose_content_body">Treść główna po rozwinięciu</string>
+    <string name="system_glucose_content_caption">Podpis</string>
+    <string name="system_glucose_content_live_note">Opcje dotyczą tylko tego powiadomienia. Treść główna jest wyświetlana po rozwinięciu; gdy jest pusta, podpis jest używany jako treść. Android ustala końcowy układ i może skracać tekst. Nazwa lub ikona aplikacji mogą pozostać widoczne.</string>
+    <string name="system_glucose_content_metric_note">Opcje dotyczą tylko treści powiadomienia MetricStyle. Android ustala rozmiary czcionek i położenie pól. Pusty główny pomiar lub podpis zastępuje kreska, ponieważ MetricStyle wymaga niepustych pól. Nazwa lub ikona aplikacji mogą pozostać widoczne.</string>
 </resources>

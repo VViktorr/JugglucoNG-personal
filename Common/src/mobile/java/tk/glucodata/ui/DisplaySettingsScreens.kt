@@ -555,6 +555,7 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
             icon = Icons.Default.Layers,
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
+        SystemGlucoseNotificationContentSettings(metric = false)
         SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT)
 
         if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
@@ -591,11 +592,84 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
             icon = Icons.Default.CropSquare,
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
+        SystemGlucoseNotificationContentSettings(metric = true)
         SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.METRIC_CAPSULE_LAYOUT)
         Text(
             stringResource(R.string.system_glucose_notification_note),
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = screenHorizontalPadding, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SystemGlucoseNotificationContentSettings(metric: Boolean) {
+    val context = LocalContext.current
+    val fields = listOf(
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_VALUE,
+            R.string.system_glucose_content_value, R.string.system_glucose_content_value_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_TREND,
+            R.string.system_glucose_content_trend, R.string.system_glucose_content_trend_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_UNIT,
+            R.string.system_glucose_content_unit, R.string.system_glucose_content_unit_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_TIME,
+            R.string.system_glucose_content_time, R.string.system_glucose_content_time_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_LABEL,
+            R.string.system_glucose_content_label, R.string.system_glucose_content_label_desc)
+    )
+    SectionLabel(
+        stringResource(R.string.system_glucose_content_section),
+        modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+    )
+    Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+        fields.forEach { (field, title, description) ->
+            androidx.compose.runtime.key(metric, field) {
+                val visible by rememberSystemGlucoseEnabled(
+                    tk.glucodata.SystemGlucoseNotification.contentVisibleKey(metric, field),
+                    tk.glucodata.SystemGlucoseNotification.defaultContentVisible(metric, field)
+                )
+                val position by rememberSystemGlucoseIntOption(
+                    tk.glucodata.SystemGlucoseNotification.contentPositionKey(metric, field),
+                    tk.glucodata.SystemGlucoseNotification.defaultContentPosition(metric, field)
+                )
+                SettingsSwitchItem(
+                    title = stringResource(title),
+                    subtitle = stringResource(description),
+                    checked = visible,
+                    onCheckedChange = {
+                        tk.glucodata.SystemGlucoseNotification.setContentVisible(context, metric, field, it)
+                    },
+                    position = if (visible) CardPosition.TOP else CardPosition.SINGLE
+                )
+                if (visible) {
+                    SettingsControlsCard(position = CardPosition.BOTTOM) {
+                        SettingsChoice(
+                            title = stringResource(R.string.system_glucose_content_position),
+                            options = listOf(
+                                tk.glucodata.SystemGlucoseNotification.POSITION_HEADER,
+                                tk.glucodata.SystemGlucoseNotification.POSITION_MAIN,
+                                tk.glucodata.SystemGlucoseNotification.POSITION_CAPTION
+                            ),
+                            labels = listOf(
+                                stringResource(R.string.system_glucose_content_header),
+                                stringResource(if (metric) R.string.system_glucose_content_metric else R.string.system_glucose_content_body),
+                                stringResource(R.string.system_glucose_content_caption)
+                            ),
+                            selectedOption = position,
+                            onOptionSelected = {
+                                tk.glucodata.SystemGlucoseNotification.setContentPosition(context, metric, field, it)
+                            },
+                            maxItemsPerRow = 1
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        Text(
+            stringResource(if (metric) R.string.system_glucose_content_metric_note else R.string.system_glucose_content_live_note),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(vertical = 8.dp)
         )
     }
 }

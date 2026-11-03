@@ -11,4 +11,22 @@
     <string name="system_glucose_capsule_layout">Chip layout</string>
     <string name="system_glucose_layout_arrow_value">Arrow icon + value text: → 108</string>
     <string name="system_glucose_layout_value_arrow">Value icon + arrow text: 108 →</string>
+    <string name="system_glucose_content_section">Notification content</string>
+    <string name="system_glucose_content_value">Show glucose value</string>
+    <string name="system_glucose_content_value_desc">Current reading in the notification. Does not change the status chip.</string>
+    <string name="system_glucose_content_trend">Show trend arrow</string>
+    <string name="system_glucose_content_trend_desc">Direction of glucose change. An unknown trend is not shown as a flat arrow.</string>
+    <string name="system_glucose_content_unit">Show unit</string>
+    <string name="system_glucose_content_unit_desc">Display mg/dL or mmol/L according to the selected glucose unit.</string>
+    <string name="system_glucose_content_time">Show reading time</string>
+    <string name="system_glucose_content_time_desc">Time when the displayed reading was taken, not when the notification was refreshed.</string>
+    <string name="system_glucose_content_label">Show the Glucose label</string>
+    <string name="system_glucose_content_label_desc">Add a short description of the displayed reading.</string>
+    <string name="system_glucose_content_position">Display location</string>
+    <string name="system_glucose_content_header">Header</string>
+    <string name="system_glucose_content_metric">Main metric</string>
+    <string name="system_glucose_content_body">Expanded body</string>
+    <string name="system_glucose_content_caption">Caption</string>
+    <string name="system_glucose_content_live_note">These options affect this notification only. Main text is shown in the expanded notification; when it is empty, the caption is used as the body. Android controls final placement and may shorten text. App identity can remain visible.</string>
+    <string name="system_glucose_content_metric_note">These options affect MetricStyle notification content only. Android controls font sizes and placement. An empty main metric or caption is represented by a dash because MetricStyle requires nonblank fields. App identity can remain visible.</string>
 </resources>
