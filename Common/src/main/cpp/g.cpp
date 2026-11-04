@@ -40,6 +40,7 @@
 #include <sys/uio.h>
 #include <sys/wait.h>
 #include <thread>
+#include <tuple>
 #include <unistd.h>
 #include <vector>
 extern "C" {
@@ -714,7 +715,22 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(getSensorEndData)(JNIEnv *env,
   }
   env->ReleaseStringUTFChars(jsensor, sensorChars);
   jlong show = (!(sens->pollcount() && sens->isLibre3() > 0));
-  return sens->expectedEndTime() | show << 32;
+  const auto expectedEnd = sens->expectedEndTime();
+#ifndef NOLOG
+  if (sens->isLibre2()) {
+    const auto start = sens->getstarttime();
+    const auto wear = sens->getweardurationMIN();
+    const auto officialEnd = sens->officialendtime();
+    auto expiry = std::make_tuple(sens, start, wear, officialEnd, expectedEnd);
+    static thread_local decltype(expiry) lastExpiry{};
+    if (expiry != lastExpiry) {
+      LOGGER("LIBRE2_EXPIRY stage=display-end start=%u wearMinutes=%d officialEnd=%u calendarEnd=%u\n",
+             start, wear, officialEnd, expectedEnd);
+      lastExpiry = expiry;
+    }
+  }
+#endif
+  return expectedEnd | show << 32;
 }
 static SensorGlucoseData *ensureDirectStreamShellForId(const char *sensorId,
                                                        uint32_t startTimeSec,

@@ -612,7 +612,8 @@ scanstate *Abbott::initnewsensor( scandata *data) {
 
     timevalues times= patchtimevalues(data->info) ;
 
-    if(int sindex=sensors->sensorindex(serial.data());sindex>=0) {
+    const int sindex=sensors->sensorindex(serial.data());
+    if(sindex>=0) {
         sensorindex=sindex;
          hist=sensors->getSensorData(sindex);
 
@@ -639,6 +640,9 @@ extern bool streamHistory() ;
         if(streamHistory()) 
             setstartedwithStreamhistory();
         }
+   LOGGER("LIBRE2_EXPIRY stage=nfc-init scan=%lld abbottStart=%lld existing=%d storedStart=%u wearMinutes=%d\n",
+          static_cast<long long>(data->gettime()), static_cast<long long>(start),
+          sindex >= 0, hist->getstarttime(), hist->getweardurationMIN());
    sensor *sen=sensors->getsensor(sensorindex);
    sen->halfdays=times.wear/(30*24)+1;
 
@@ -1376,7 +1380,16 @@ if(alg) {
         int gid=gl.getId();
         LOGGER("processStream %d %d %.1f\n",gid,qual,gluc/convfactordL);
         if(!qual&&gluc) {
-            if(hist->savepoll(nutime,gid,gluc,gl.trend(),gl.rate())) {
+            const bool firstPoll = hist->pollcount() == 0;
+            const auto previousStart = hist->getstarttime();
+            const bool saved = hist->savepoll(nutime,gid,gluc,gl.trend(),gl.rate());
+            if (firstPoll) {
+                LOGGER("LIBRE2_EXPIRY stage=first-ble received=%u readingId=%d previousStart=%u estimatedStart=%lld storedStart=%u correctionSeconds=0 saved=%d\n",
+                       nutime, gid, previousStart,
+                       static_cast<long long>(nutime) - 60LL * gid,
+                       hist->getstarttime(), saved);
+            }
+            if(saved) {
                 if(streamHistory()) {
                          addStreamHistory(alg->history(), nutime,gid, *hist) ;
                     }
@@ -1435,6 +1448,8 @@ extern "C" JNIEXPORT jbyteArray  JNICALL fromjava(bluetoothOnKey)(JNIEnv *envin,
     else {
        timevalues times= patchtimevalues(info) ;
         SensorGlucoseData::mkdatabase(pathconcat(sensorbasedir,serial),starttime,(const char *)uid->data(),(const char *)info->data(),&times,3,starttime,(const char *)info->data());
+        LOGGER("LIBRE2_EXPIRY stage=nfc-ble-bootstrap phoneStart=%lld wearMinutes=%d\n",
+               static_cast<long long>(starttime), times.wear);
         int ind=sensors->addsensor(serial.data());
         sensor *sen=sensors->getsensor(ind);
         sen->halfdays=times.wear/(30*24)+1;
