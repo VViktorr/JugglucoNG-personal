@@ -3,9 +3,6 @@ run-name: Phone and Wear OS APKs from ${{ github.ref_name }} at ${{ github.sha }
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main5]
-    paths: [README.md]
 
 env:
   APK_VERSION: 1.2.8.${{ github.run_number }}
