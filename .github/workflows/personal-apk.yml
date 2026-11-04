@@ -2,8 +2,6 @@ name: Personal phone and Wear OS APKs
 run-name: Phone and Wear OS APKs from ${{ github.ref_name }} at ${{ github.sha }}
 
 on:
-  push:
-    branches: [main5]
   workflow_dispatch:
 
 permissions:
