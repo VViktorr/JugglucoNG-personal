@@ -3,6 +3,9 @@ run-name: Phone and Wear OS APKs from ${{ github.ref_name }} at ${{ github.sha }
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main5]
+    paths: [README.md]
 
 env:
   APK_VERSION: 1.2.8.${{ github.run_number }}
@@ -201,7 +204,8 @@ jobs:
             echo '- Both APKs compiled from the same commit; bundled sensor libraries and APK signatures verified.'
             echo '- Build success does not confirm operation on a physical device.'
             echo
-            echo '## Changes'
+            awk '/^## Changes in this fork$/{show=1; print; next} show && /^## /{exit} show{print}' README.md
+            echo '## Commits in this release'
             echo
             git log --no-merges --format='- %s (%h)' "$previous..HEAD"
             echo
