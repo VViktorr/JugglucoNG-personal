@@ -211,17 +211,30 @@ jobs:
           } > build/release/notes.md
       - name: Publish release with both APKs
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.APK_RELEASE_TOKEN || github.token }}
         shell: bash
         run: |
           set -euo pipefail
           tag="main5-v${APK_VERSION}"
+          # Create the tag separately so a permission failure identifies the blocked operation.
+          if ! git ls-remote --exit-code --refs origin "refs/tags/$tag" >/dev/null; then
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f "ref=refs/tags/$tag" -f "sha=$GITHUB_SHA" >/dev/null || {
+              echo "::error::Could not create $tag. Check tag rules and the APK_RELEASE_TOKEN repository secret."
+              exit 1
+            }
+          fi
+          git fetch --no-tags origin "refs/tags/$tag"
+          if [ "$(git rev-parse 'FETCH_HEAD^{commit}')" != "$GITHUB_SHA" ]; then
+            echo "::error::Release tag $tag does not point at the APK source commit."
+            exit 1
+          fi
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" build/release/assets/* --clobber
             gh release edit "$tag" --notes-file build/release/notes.md
           else
             gh release create "$tag" build/release/assets/* \
-              --target "$GITHUB_SHA" \
+              --verify-tag \
               --title "JugglucoNG personal main5 — ${APK_VERSION}" \
               --notes-file build/release/notes.md
           fi
