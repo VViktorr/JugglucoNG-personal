@@ -431,6 +431,14 @@ fun WearOsConfigScreen(navController: NavController) {
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
 
+    val watchIconSetting = tk.glucodata.settings.SettingsRegistry.WATCH_ICON
+    var watchIconMode by remember { mutableStateOf(watchIconSetting.readInt(context)) }
+    var showWatchIconDialog by remember { mutableStateOf(false) }
+    val watchIconOptions = listOf(
+        R.string.phone_watch_icon_standard, R.string.phone_watch_icon_value, R.string.phone_watch_icon_trend,
+        R.string.phone_watch_icon_combined,
+    )
+
     var nodes by remember { mutableStateOf<List<WatchInterop.WearNodeInfo>>(emptyList()) }
     var selectedNodeId by rememberSaveable { mutableStateOf("") }
     var directOnWatch by rememberSaveable { mutableStateOf(false) }
@@ -763,6 +771,15 @@ fun WearOsConfigScreen(navController: NavController) {
             item("wear_actions") {
                 SectionLabel(stringResource(R.string.actions_section), topPadding = 0.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SettingsItem(
+                        title = stringResource(R.string.phone_watch_icon_title),
+                        subtitle = stringResource(watchIconOptions.getOrNull(watchIconMode)
+                            ?: R.string.phone_watch_icon_unset),
+                        icon = Icons.Default.Watch,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        position = CardPosition.SINGLE,
+                        onClick = { showWatchIconDialog = true },
+                    )
                     FilledTonalButton(
                         onClick = {
                             if (selected == null) {
@@ -854,6 +871,37 @@ fun WearOsConfigScreen(navController: NavController) {
                 }
             }
         }
+    }
+    if (showWatchIconDialog) {
+        AlertDialog(
+            onDismissRequest = { showWatchIconDialog = false },
+            title = { Text(stringResource(R.string.phone_watch_icon_title)) },
+            text = {
+                Column {
+                    watchIconOptions.forEachIndexed { mode, label ->
+                        Row(
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
+                                watchIconSetting.prefs(context)?.edit()
+                                    ?.putInt(watchIconSetting.key, mode)?.apply()
+                                watchIconMode = mode
+                                tk.glucodata.WearPrefsSync.push()
+                                showWatchIconDialog = false
+                            },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = watchIconMode == mode, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(label))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showWatchIconDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 }
 

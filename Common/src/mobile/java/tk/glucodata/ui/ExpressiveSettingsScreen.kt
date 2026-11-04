@@ -210,13 +210,6 @@ fun ExpressiveSettingsScreen(
     }
 
     // Dialog states
-    val watchIconSetting = tk.glucodata.settings.SettingsRegistry.WATCH_ICON
-    var watchIconMode by remember { mutableStateOf(watchIconSetting.readInt(context)) }
-    var showWatchIconDialog by remember { mutableStateOf(false) }
-    val watchIconOptions = listOf(
-        R.string.phone_watch_icon_standard, R.string.phone_watch_icon_value, R.string.phone_watch_icon_trend,
-        R.string.phone_watch_icon_combined,
-    )
     var showUnitDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
@@ -462,17 +455,6 @@ fun ExpressiveSettingsScreen(
         // Each setting belongs to one category, matching main. Keep the newer
         // screen routes and search/reveal behavior from 1.2.8.
         if (category == "appearance") {
-            item(key = "watch_notification_icon") {
-                SettingsItem(
-                    title = stringResource(R.string.phone_watch_icon_title),
-                    subtitle = stringResource(watchIconOptions.getOrNull(watchIconMode)
-                        ?: R.string.phone_watch_icon_unset),
-                    icon = Icons.Default.Watch,
-                    iconTint = displayColor,
-                    position = CardPosition.SINGLE,
-                    onClick = { showWatchIconDialog = true },
-                )
-            }
             item(key = "theme_title") {
                 SettingsItem(
                     title = stringResource(R.string.theme_title),
@@ -992,37 +974,6 @@ fun ExpressiveSettingsScreen(
                 showSealGraceDialog = false
             },
             onDismiss = { showSealGraceDialog = false }
-        )
-    }
-    if (showWatchIconDialog) {
-        AlertDialog(
-            onDismissRequest = { showWatchIconDialog = false },
-            title = { Text(stringResource(R.string.phone_watch_icon_title)) },
-            text = {
-                Column {
-                    watchIconOptions.forEachIndexed { mode, label ->
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
-                                watchIconSetting.prefs(context)?.edit()
-                                    ?.putInt(watchIconSetting.key, mode)?.apply()
-                                watchIconMode = mode
-                                tk.glucodata.WearPrefsSync.push()
-                                showWatchIconDialog = false
-                            },
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = watchIconMode == mode, onClick = null)
-                            Spacer(Modifier.width(12.dp))
-                            Text(stringResource(label))
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showWatchIconDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
         )
     }
     if (showUnitDialog) UnitPickerDialog(isMmol, { 
