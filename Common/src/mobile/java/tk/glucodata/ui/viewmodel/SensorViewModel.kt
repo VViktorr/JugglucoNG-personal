@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import tk.glucodata.Applic
 import tk.glucodata.BleErrorEvent
 import tk.glucodata.BleErrorHistory
+import tk.glucodata.Libre2GattCallback
 import tk.glucodata.MultiSensorSelection
 import tk.glucodata.NativeSensorTermination
 import tk.glucodata.SensorBluetooth
@@ -600,7 +601,11 @@ class SensorViewModel : ViewModel() {
                         // When paused (stop=true), the sensor is NOT actively receiving regardless
                         // of what the native streamingIsEnabled flag says (it lags).
                         val isPaused = SensorBluetooth.isSensorPaused(gatt)
-                        val isActivelyReceiving = !isPaused && (nativeStatus.isNotEmpty() || gatt.streamingEnabled())
+                        val isActivelyReceiving = !isPaused && if (gatt is Libre2GattCallback) {
+                            gatt.hasLocallyConnectedGatt()
+                        } else {
+                            nativeStatus.isNotEmpty() || gatt.streamingEnabled()
+                        }
 
                         // constatstatusstr records the LAST connection event
                         // ("Status=N", "Loss of signal", ...) and is never cleared
