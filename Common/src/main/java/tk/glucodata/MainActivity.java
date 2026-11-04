@@ -143,9 +143,32 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         }
     }
 
+    private static final String WEAR_NOTIFICATION_PROMPT_ANSWERED = "wear_notification_prompt_answered";
+    private boolean wearNotificationPromptAttempted;
+
+    private void maybeRequestWearNotificationPermission() {
+        if (!isWearable || Build.VERSION.SDK_INT < 33 || !hasWindowFocus()
+                || isFinishing() || isDestroyed() || locationPermissionRequestInFlight
+                || wearNotificationPromptAttempted) {
+            return;
+        }
+        var permission = Manifest.permission.POST_NOTIFICATIONS;
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+                || getPreferences(MODE_PRIVATE).getBoolean(WEAR_NOTIFICATION_PROMPT_ANSWERED, false)) {
+            return;
+        }
+        wearNotificationPromptAttempted = true;
+        requestPermissions(new String[] { permission }, NOTIFICATION_PERMISSION_REQUEST_CODE);
+    }
+
     boolean askNotify() {
         if (Build.VERSION.SDK_INT >= 33) {
             var perm = Manifest.permission.POST_NOTIFICATIONS;
+            if (isWearable
+                    && ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+                // Wear asks from a focused window, even when Bluetooth has not been configured.
+                return false;
+            }
             if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
                 {
                     if (doLog) {
@@ -1229,6 +1252,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         if (hasFocus) {
             hideSystemUI();
             requestRender();
+            getWindow().getDecorView().post(this::maybeRequestWearNotificationPermission);
         }
     }
 
@@ -1516,6 +1540,12 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         var granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
         switch (requestCode) {
             case NOTIFICATION_PERMISSION_REQUEST_CODE: {
+                if (isWearable) {
+                    // An interrupted request has no answer. Retry on a later activity launch.
+                    if (grantResults.length == 0) return;
+                    getPreferences(MODE_PRIVATE).edit()
+                            .putBoolean(WEAR_NOTIFICATION_PROMPT_ANSWERED, true).apply();
+                }
                 if (granted) {
                     {
                         if (doLog) {
@@ -1552,6 +1582,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
              */
             case LOCATION_PERMISSION_REQUEST_CODE: {
                 locationPermissionRequestInFlight = false;
+                getWindow().getDecorView().post(this::maybeRequestWearNotificationPermission);
                 if (doLog) {
                     Log.i(LOG_ID, "onRequestPermissionsResult(LOCATION_PERMISSION_REQUEST_CODE) " + granted);
                 }
