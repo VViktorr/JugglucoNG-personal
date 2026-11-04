@@ -57,6 +57,7 @@ import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Icon;
 import android.graphics.Bitmap; // Added Import
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -4946,7 +4947,20 @@ public class Notify {
         try {
             for (var active : onenot.notificationManager.getActiveNotifications()) {
                 if (active.getId() != glucosealarmid || active.getTag() != null) continue;
-                Notification refreshed = ongoing.applySmallIcon(Applic.app, active.getNotification());
+                Notification current = active.getNotification();
+                Notification refreshed = ongoing.applySmallIcon(Applic.app, current);
+                if (refreshed == current) break;
+                if (Build.VERSION.SDK_INT >= 28) {
+                    var oldIcon = current.getSmallIcon();
+                    var newIcon = refreshed.getSmallIcon();
+                    if (oldIcon != null && newIcon != null
+                            && oldIcon.getType() == Icon.TYPE_RESOURCE
+                            && newIcon.getType() == Icon.TYPE_RESOURCE
+                            && oldIcon.getResId() == newIcon.getResId()
+                            && java.util.Objects.equals(oldIcon.getResPackage(), newIcon.getResPackage())) {
+                        break;
+                    }
+                }
                 refreshed = Notification.Builder.recoverBuilder(Applic.app, refreshed)
                         .setOnlyAlertOnce(true).build();
                 onenot.notificationManager.notify(glucosealarmid, refreshed);
@@ -4971,11 +4985,9 @@ public class Notify {
         ;
         if (isWearable) {
             var ongoing = OngoingNotificationAccess.get();
-            if (ongoing != null) {
-                ongoing.updateStatus(Applic.app, glucosenotificationid);
-                notif = ongoing.applySmallIcon(Applic.app, notif);
-            }
+            if (ongoing != null) notif = ongoing.applySmallIcon(Applic.app, notif);
             notificationManager.notify(glucosealarmid, notif);
+            if (ongoing != null) ongoing.updateStatus(Applic.app, glucosenotificationid);
         } else {
             synchronized (foregroundPublicationLock) {
                 publishPhoneForegroundLocked(notif);
