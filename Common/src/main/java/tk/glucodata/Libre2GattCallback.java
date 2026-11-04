@@ -324,8 +324,9 @@ public class Libre2GattCallback extends SuperGattCallback {
 	@Override
 	public synchronized boolean reconnect(long now) {
 		final long old = now - showtime + 20;
-		// A queued loss alarm must not interrupt a fresh glucose stream.
-		if (charcha[0] < old && charcha[1] < old && connectTime < now - 60_000L) {
+		// Protect a healthy link without blocking a disconnected ownership handoff.
+		if (hasLocallyConnectedGatt() && charcha[0] >= old) return true;
+		if (charcha[1] < old && connectTime < now - 60_000L) {
 			noteLossOfSignal(now);
 			return connectDevice(0L);
 		}
@@ -438,7 +439,10 @@ private boolean connected=false;
 		}
 		if (disconnectingGatt != null && newState != BluetoothProfile.STATE_DISCONNECTED) return;
 		if (!acceptConnectionAttemptCallback(bluetoothGatt, newState)) return;
-		if (newState == BluetoothProfile.STATE_CONNECTED && status == GATT_SUCCESS && connected) return;
+		if (newState == BluetoothProfile.STATE_CONNECTED && status == GATT_SUCCESS && connected) {
+			libre2Diag("duplicate-connected", "ignored=true");
+			return;
+		}
 		noteFirstGattCallback("onConnectionStateChange", bluetoothGatt);
 		super.onConnectionStateChange(bluetoothGatt, status, newState);
 		releaseRecoveryWakeLock();
@@ -570,7 +574,10 @@ private boolean connected=false;
     @Override // android.bluetooth.BluetoothGattCallback
 	public synchronized void onServicesDiscovered(BluetoothGatt bluetoothGatt, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
-		if (status == GATT_SUCCESS && conphase != 0) return;
+		if (status == GATT_SUCCESS && conphase != 0) {
+			libre2Diag("duplicate-service-discovery", "ignored=true");
+			return;
+		}
 		servicesAt = SystemClock.elapsedRealtime();
 		libre2Diag("onServicesDiscovered", "status=" + status);
 		{if(doLog) {Log.i(LOG_ID, "BLE onServicesDiscovered invoked, status: " + status);};};
