@@ -224,6 +224,10 @@ object SettingsRegistry {
         SettingScope.MIRRORED, SettingBackup.INCLUDED,
     )
 
+    val WATCH_ICON = SettingDefinition(
+        "watch_notification_icon_mode", SettingType.INT, -1, SettingScope.MIRRORED,
+    )
+
     val definitions: List<SettingDefinition> = listOf(
         SMOOTHING_MINUTES,
         SMOOTHING_GRAPH_ONLY,
@@ -241,6 +245,7 @@ object SettingsRegistry {
         PREDICTION_ADAPTIVE,
         SENSOR_SELECTION,
         SENSOR_COLORS,
+        WATCH_ICON,
     )
 
     /**

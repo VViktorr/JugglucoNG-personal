@@ -35,6 +35,7 @@ object WearPrefsSync {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private fun mirrorValue(definition: SettingDefinition, source: SharedPreferences): String? {
+        if (definition == SettingsRegistry.WATCH_ICON && definition.readInt(source) !in 0..2) return null
         definition.effectiveString?.let { return it() }
         return when (definition.type) {
             SettingType.INT -> definition.readInt(source).toString()
@@ -94,6 +95,7 @@ object WearPrefsSync {
         var written = 0
         var sensorSelectionChanged = false
         var sensorColorsChanged = false
+        var watchIconMode: Int? = null
         lines.forEach { line ->
             val typeSplit = line.indexOf(':')
             val valueSplit = line.indexOf('=')
@@ -105,6 +107,12 @@ object WearPrefsSync {
             // writing it would give this device a pref it cannot read back.
             val definition = SettingsRegistry.find(key) ?: return@forEach
             if (definition.type.wire != type) return@forEach
+            if (definition == SettingsRegistry.WATCH_ICON) {
+                val mode = raw.toIntOrNull()?.takeIf { it in 0..2 } ?: return@forEach
+                watchIconMode = mode
+                written++
+                return@forEach
+            }
             when (definition.type) {
                 SettingType.INT -> raw.toIntOrNull()?.let { editor.putInt(key, it); written++ }
                 SettingType.BOOL -> raw.toBooleanStrictOrNull()?.let { editor.putBoolean(key, it); written++ }
@@ -131,6 +139,7 @@ object WearPrefsSync {
         }
         if (written == 0) return 0
         editor.apply()
+        watchIconMode?.let { OngoingNotificationAccess.get()?.syncIconMode(context, it) }
         if (sensorColorsChanged) SensorVisuals.invalidateOverrides()
         if (sensorSelectionChanged) {
             MultiSensorSelection.notifyStoredChanged()

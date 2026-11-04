@@ -24,4 +24,9 @@
     <string name="settings_bars_stacked_summary">Belki jedna pod drugą</string>
     <string name="settings_bars_side_summary">Belki obok siebie</string>
     <string name="settings_reset_description">Usuwanie historii, danych aplikacji i reset fabryczny</string>
+    <string name="phone_watch_icon_title">Ikona powiadomienia na zegarku</string>
+    <string name="phone_watch_icon_unset">Ustawiana na zegarku</string>
+    <string name="phone_watch_icon_standard">Standardowa ikona</string>
+    <string name="phone_watch_icon_value">Wartość glukozy</string>
+    <string name="phone_watch_icon_trend">Strzałka trendu</string>
 </resources>

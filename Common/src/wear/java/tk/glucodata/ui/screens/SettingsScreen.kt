@@ -1,9 +1,11 @@
 package tk.glucodata.ui.screens
 
+import android.content.SharedPreferences
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -32,6 +34,14 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     var ongoingIconMode by remember { mutableIntStateOf(WearOngoingActivity.iconMode(context)) }
+    DisposableEffect(context) {
+        val prefs = WearOngoingActivity.iconPreferences(context)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            ongoingIconMode = WearOngoingActivity.iconMode(context)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     ScreenScaffold(timeText = { TimeText() }) {
         ScalingLazyColumn(
             modifier = Modifier.fillMaxSize(),

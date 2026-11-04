@@ -24,4 +24,9 @@
     <string name="settings_bars_stacked_summary">Stacked bars</string>
     <string name="settings_bars_side_summary">Side-by-side bars</string>
     <string name="settings_reset_description">Clear history, clear app data and factory reset</string>
+    <string name="phone_watch_icon_title">Watch notification icon</string>
+    <string name="phone_watch_icon_unset">Set on the watch</string>
+    <string name="phone_watch_icon_standard">Standard icon</string>
+    <string name="phone_watch_icon_value">Glucose value</string>
+    <string name="phone_watch_icon_trend">Trend arrow</string>
 </resources>

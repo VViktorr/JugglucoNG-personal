@@ -43,12 +43,18 @@ object WearOngoingActivity : OngoingNotification {
         }
     }
 
-    fun iconMode(context: Context): Int = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        .getInt("mode", MODE_NORMAL).takeIf { it in MODE_NORMAL..MODE_TREND } ?: MODE_NORMAL
+    internal fun iconPreferences(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    fun iconMode(context: Context): Int = iconPreferences(context).getInt("mode", MODE_NORMAL).takeIf { it in MODE_NORMAL..MODE_TREND } ?: MODE_NORMAL
+
+    override fun syncIconMode(context: Context, mode: Int) {
+        expiryHandler.post { if (iconMode(context) != mode) setIconMode(context, mode) }
+    }
 
     fun setIconMode(context: Context, mode: Int) {
         require(mode in MODE_NORMAL..MODE_TREND)
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt("mode", mode).apply()
+        iconPreferences(context).edit().putInt("mode", mode).apply()
         // The foreground notification may outlive this object after process recreation.
         val notificationId = currentNotificationId ?: runCatching {
             OngoingActivity.recoverOngoingActivity(context)?.notificationId
