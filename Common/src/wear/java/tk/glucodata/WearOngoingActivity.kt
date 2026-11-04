@@ -47,7 +47,7 @@ object WearOngoingActivity : OngoingNotification {
     internal fun iconPreferences(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun iconMode(context: Context): Int = iconPreferences(context).getInt("mode", MODE_NORMAL).takeIf { it in MODE_NORMAL..MODE_VALUE_AND_TREND } ?: MODE_NORMAL
+    fun iconMode(context: Context): Int = iconPreferences(context).getInt("mode", MODE_VALUE).takeIf { it in MODE_NORMAL..MODE_VALUE_AND_TREND } ?: MODE_NORMAL
 
     override fun syncIconMode(context: Context, mode: Int) {
         expiryHandler.post { if (iconMode(context) != mode) setIconMode(context, mode) }
