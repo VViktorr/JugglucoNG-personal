@@ -4,9 +4,9 @@
 
 This is an independent personal fork of [JugglucoNG](https://github.com/ctqvva/JugglucoNG), an experimental continuous glucose monitoring app for Android.
 
-The `main5` branch integrates personal UI, widgets, clinical PDF reports, diagnostics and LibreView changes over upstream **1.2.8-Alpha** (`a4fbdcce5c7312ca05fe0ef74a52848df0965ae8`). The focus of this fork is Libre 2. Other sensor drivers remain from 1.2.8. Libre 2 NFC integration and `Libre2GattCallback.java` are intentionally unchanged until a separate decision; the 120-second recovery from `main` is not enabled here.
+The `main5` branch builds on upstream **1.2.8-Alpha** and focuses on Libre 2 connectivity, phone and Wear OS customization, and reporting.
 
-See the [integration audit](docs/integration-main5.md) for the scope, preserved upstream solutions and deferred changes.
+See the [integration audit](docs/integration-main5.md) for the original port and the [fork releases](https://github.com/VViktorr/JugglucoNG-personal/releases) for APK downloads.
 
 Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap Korthals Altes, it continues to evolve with a modern Compose UI using Material 3, a sensor-independent data layer, support for multiple CGM systems, a treatment journal with IOB/eIOB/COB tracking, predictive simulation, a redesigned alarm engine, and bidirectional Nightscout integration.
 
@@ -19,9 +19,22 @@ Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap 
 >
 > JugglucoNG may contain bugs and may display incorrect, delayed, or missing data. Do not rely on it as the sole basis for treatment, insulin dosing, diagnosis, or other medical decisions. Always verify clinically significant readings using the manufacturer's official system or another appropriate method.
 
+## Changes in this fork
+
+- **Libre 2 and Libre 2 Plus BLE:** a 150-second stream watchdog, bounded GATT recovery escalation on the phone, protection against stale loss alarms and duplicate Android connection callbacks, and improved reconnection when the phone or watch takes over the sensor. The sensor screen reports local GATT connection state.
+- **Libre 2 NFC and diagnostics:** raw one-minute NFC trend samples are stored separately for supported Libre 2 sensors, so an NFC scan cannot advance the live BLE duplicate cursor on that path. Diagnostic traces cover the BLE connection lifecycle, first readings and the official and calendar expiry times.
+- **LibreView:** Libre 2 region and unit selection, reauthentication, registration retry and timeout handling.
+- **Home-screen widgets:** configurable classic, chart, range and clock/weather layouts, resizing, font and background options, and charts that can span sensor handovers. Refresh handling clears stale values.
+- **Dashboard and charts:** stacked information bars, adjustable bar proportions, sensor end time and clearer stale-reading status. Chart changes include custom scale limits, more readable axis and target labels, and consistent range controls.
+- **Appearance and settings:** organized settings categories, localized search, and a phone-wide choice of IBM Plex Sans or system typography for themed screens. Widgets retain their own font selection.
+- **Phone notifications and overlays:** configurable glucose presentation through Live Update and MetricStyle where supported, plus refinements to the floating glucose and always-on display.
+- **Wear OS:** choose a standard icon, glucose value, trend arrow, or value and arrow together. The choice can be synced from **Sensors and devices → Watch → Wear OS → Configuration → Actions**. Fresh installs default to the glucose value. The watch requests notification permission when its window is ready and prioritizes refreshing the notification panel.
+- **Reports and journal:** expanded clinical PDF reports with AGP percentiles, calendar ranges, meal profiles and injection annotations, plus Health Connect activity import for the journal.
+- **APK distribution:** numbered `1.2.8.N` releases bundle separate phone and Wear OS APKs. Each APK includes both ARM32 and ARM64.
+
 ## Builds
 
-Personal phone and Wear APK builders are available as manually started workflows in this repository's [Actions](https://github.com/VViktorr/JugglucoNG-personal/actions). Select `main5` when running them. This fork does not claim upstream release artifacts as its own.
+Download both APKs from [Releases](https://github.com/VViktorr/JugglucoNG-personal/releases), or select `main5` in the [manual build workflow](https://github.com/VViktorr/JugglucoNG-personal/actions/workflows/personal-apk.yml).
 
 ## Sensor and data-source support
 
