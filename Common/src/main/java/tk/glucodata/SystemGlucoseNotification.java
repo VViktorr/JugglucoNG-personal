@@ -165,7 +165,7 @@ public final class SystemGlucoseNotification {
             applyStandardContent(context, builder, liveContent);
             builder.getExtras().putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, live);
             if (live) {
-                applyCapsule(context, builder, value, rate,
+                applyCapsule(context, builder, value, rate, reading.isMmol(),
                         prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
             }
             if (metric) {
@@ -175,7 +175,7 @@ public final class SystemGlucoseNotification {
                                     ? context.getString(R.string.app_name) : metricContent.header)
                             .setContentText(null).setSubText(null).setContentInfo(null).setShowWhen(false);
                     if (live) {
-                        applyCapsule(context, builder, value, rate,
+                        applyCapsule(context, builder, value, rate, reading.isMmol(),
                                 prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
                     }
                     // MetricStyle requires a nonblank value and label; a dash denotes
@@ -187,7 +187,7 @@ public final class SystemGlucoseNotification {
                     Log.stack("SystemGlucoseNotification", "MetricStyle unavailable; standard fallback", unavailable);
                     // Restore the standard template using the same content and capsule settings.
                     applyStandardContent(context, builder, liveContent);
-                    applyCapsule(context, builder, value, rate,
+                    applyCapsule(context, builder, value, rate, reading.isMmol(),
                             prefs.getInt(CAPSULE_LAYOUT, ARROW_THEN_VALUE));
                     builder.setShowWhen(false);
                 }
@@ -196,7 +196,7 @@ public final class SystemGlucoseNotification {
         }
 
         private static void applyCapsule(Context context, Notification.Builder builder,
-                String value, float rate, int layout) {
+                String value, float rate, boolean isMmol, int layout) {
             final String arrow = ExchangeTrend.fromDisplayRate(rate).arrow;
             final boolean valueIcon = layout == VALUE_THEN_ARROW;
             if (valueIcon) {
@@ -207,9 +207,9 @@ public final class SystemGlucoseNotification {
             } else {
                 builder.setShortCriticalText(value);
                 if (!arrow.isEmpty()) {
-                    // Use the same seven-state glyph as the text and MetricStyle label.
-                    // A continuous-angle renderer can disagree with a flat textual arrow.
-                    builder.setSmallIcon(new StatusIcon(context).getIcon(arrow));
+                    builder.setSmallIcon(android.graphics.drawable.Icon.createWithBitmap(
+                            NotificationChartDrawer.drawArrow(context, rate, isMmol,
+                                    android.graphics.Color.WHITE, 1.0f, false, false)));
                 } else {
                     builder.setSmallIcon(R.drawable.novalue);
                 }
