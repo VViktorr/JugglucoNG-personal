@@ -277,6 +277,9 @@ fun DashboardCombinedHeader(
             tk.glucodata.logic.TrendEngine.TrendResult(tk.glucodata.logic.TrendEngine.TrendState.Unknown, 0f, 0f, 0f, 0f)
         }
     }
+    val arrowTrend = currentSnapshot?.rate?.takeIf { it.isFinite() }?.let { rate ->
+        trendResult.copy(state = tk.glucodata.logic.TrendEngine.stateFor(rate), velocity = rate)
+    } ?: trendResult
     // Signed change over the selected interval — a raw
     // number to sanity-check the estimated arrow against. Same computation as
     // the per-row deltas in the readings list, anchored at the newest point.
@@ -663,7 +666,7 @@ fun DashboardCombinedHeader(
                             primarySecondaryStyle = secondaryInlineStyle,
                             primaryColor = heroValueColor,
                             primaryRangeText = currentRangeText,
-                            primaryTrend = trendResult,
+                            primaryTrend = arrowTrend,
                             primaryArrowColor = heroArrowColor,
                             primaryDeltaText = heroDeltaText,
                             peer = secondaryPeer,
@@ -741,7 +744,7 @@ fun DashboardCombinedHeader(
                             }
 
                             HeroTrendWithDelta(
-                                trendResult = trendResult,
+                                trendResult = arrowTrend,
                                 arrowColor = heroArrowColor,
                                 deltaText = heroDeltaText.takeIf { deltaByArrow },
                                 contentColor = glucoseContentColor,
@@ -824,7 +827,7 @@ fun DashboardCombinedHeader(
                             Spacer(modifier = Modifier.width(resolvedClusterGap))
 
                             HeroTrendWithDelta(
-                                trendResult = trendResult,
+                                trendResult = arrowTrend,
                                 arrowColor = heroArrowColor,
                                 deltaText = heroDeltaText.takeIf { deltaByArrow },
                                 contentColor = glucoseContentColor,

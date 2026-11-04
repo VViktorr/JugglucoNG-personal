@@ -78,7 +78,7 @@ public final class SystemGlucoseNotification {
         String[] content = {
                 context.getString(R.string.system_glucose_reading_label),
                 reading.getPrimaryStr(),
-                ExchangeTrend.fromRate(rate).arrow,
+                ExchangeTrend.fromDisplayRate(rate).arrow,
                 context.getString(reading.isMmol() ? R.string.mmolL : R.string.mgdL),
                 android.text.format.DateFormat.getTimeFormat(context).format(new java.util.Date(reading.getTimeMillis()))
         };
@@ -197,7 +197,7 @@ public final class SystemGlucoseNotification {
 
         private static void applyCapsule(Context context, Notification.Builder builder,
                 String value, float rate, int layout) {
-            final String arrow = ExchangeTrend.fromRate(rate).arrow;
+            final String arrow = ExchangeTrend.fromDisplayRate(rate).arrow;
             final boolean valueIcon = layout == VALUE_THEN_ARROW;
             if (valueIcon) {
                 // A single number painted as the icon, with only the arrow as system text.

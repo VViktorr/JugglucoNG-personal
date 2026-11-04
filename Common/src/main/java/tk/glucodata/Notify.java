@@ -3794,17 +3794,11 @@ public class Notify {
 
                 float displayRate = glucose.rate;
                 try {
-                    // The alarm arrow must not disagree with the main notification and the
-                    // dashboard hero: regress over the same canonical trend list they use,
-                    // not a bare 10-minute wall-clock slice.
                     final CurrentDisplaySource.Snapshot alarmSnapshot = resolveNotificationCurrentSnapshot(
                             activeSensorSerial);
-                    java.util.List<GlucosePoint> trendPoints = NotificationHistorySource.getDisplayHistory(
-                            endT - 2 * DisplayTrendSource.TREND_WINDOW_MS, isMmol, activeSensorSerial);
-                    trendPoints = DisplayTrendSource.resolveTrendPoints(trendPoints, alarmSnapshot,
-                            activeSensorSerial);
-                    displayRate = DisplayTrendSource.resolveArrowRate(trendPoints, alarmSnapshot, viewMode, isMmol,
-                            glucose.rate);
+                    if (alarmSnapshot != null && Float.isFinite(alarmSnapshot.getRate())) {
+                        displayRate = alarmSnapshot.getRate();
+                    }
                 } catch (Throwable t) {
                     // keep original rate if fails
                 }
@@ -4214,11 +4208,6 @@ public class Notify {
             viewMode = resolveSensorViewMode(activeSensorSerial);
         }
 
-        // Keep the notification arrow aligned with the same 20-minute trend window the
-        // dashboard TrendEngine uses, while still appending the live point before Room
-        // persistence catches up.
-        rate = DisplayTrendSource.resolveArrowRate(nativePoints, resolvedDisplay, viewMode, isMmol, rate);
-
         // If ViewMode == 3 (Combined), we force appending Raw if available
         boolean isRawMode = (viewMode == 1 || viewMode == 3);
 
@@ -4236,6 +4225,10 @@ public class Notify {
                         nativePoints,
                         viewMode,
                         isMmol);
+        if (fallbackDisplay != null && Float.isFinite(fallbackDisplay.getRate())) {
+            rate = fallbackDisplay.getRate();
+        }
+
 
         CharSequence valueText = buildFormattedGlucoseText(fallbackDisplay, glvalue);
         final float displayGlucoseValue = fallbackDisplay != null ? fallbackDisplay.getPrimaryValue() : glvalue;
@@ -4648,11 +4641,6 @@ public class Notify {
             chartPoints = new java.util.ArrayList<>();
         }
 
-        // Same canonical trend list as the update path, the dashboard hero and the broadcast.
-        java.util.List<GlucosePoint> nativePoints = DisplayTrendSource.resolveTrendPoints(
-                DisplayTrendSource.endingAtShown(chartPoints, current), current,
-                activeSensorSerial);
-
         // Identify ViewMode for Startup
         int viewMode = 0;
         if (viewMode == 0) {
@@ -4752,7 +4740,7 @@ public class Notify {
         }
         int glucoseColor = NotificationChartDrawer.getGlucoseColor(Applic.app, colorVal, isMmol);
 
-        float startupRate = DisplayTrendSource.resolveArrowRate(nativePoints, current, viewMode, isMmol, 0f);
+        float startupRate = current != null && Float.isFinite(current.getRate()) ? current.getRate() : 0f;
 
         arrowBitmap = NotificationChartDrawer.drawArrow(Applic.app, startupRate, isMmol,
                 glucoseColor);
