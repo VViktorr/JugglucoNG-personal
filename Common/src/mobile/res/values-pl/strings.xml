@@ -29,4 +29,5 @@
     <string name="phone_watch_icon_standard">Standardowa ikona</string>
     <string name="phone_watch_icon_value">Wartość glukozy</string>
     <string name="phone_watch_icon_trend">Strzałka trendu</string>
+    <string name="phone_watch_icon_combined">Wartość i strzałka trendu</string>
 </resources>

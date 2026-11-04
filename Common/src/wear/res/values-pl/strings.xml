@@ -44,4 +44,5 @@
     <string name="wear_ongoing_icon_normal">Standardowa ikona</string>
     <string name="wear_ongoing_icon_value">Wartość glukozy</string>
     <string name="wear_ongoing_icon_trend">Strzałka trendu</string>
+    <string name="wear_ongoing_icon_combined">Wartość i strzałka trendu</string>
 </resources>

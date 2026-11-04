@@ -35,7 +35,7 @@ object WearPrefsSync {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private fun mirrorValue(definition: SettingDefinition, source: SharedPreferences): String? {
-        if (definition == SettingsRegistry.WATCH_ICON && definition.readInt(source) !in 0..2) return null
+        if (definition == SettingsRegistry.WATCH_ICON && definition.readInt(source) !in 0..3) return null
         definition.effectiveString?.let { return it() }
         return when (definition.type) {
             SettingType.INT -> definition.readInt(source).toString()
@@ -108,7 +108,7 @@ object WearPrefsSync {
             val definition = SettingsRegistry.find(key) ?: return@forEach
             if (definition.type.wire != type) return@forEach
             if (definition == SettingsRegistry.WATCH_ICON) {
-                val mode = raw.toIntOrNull()?.takeIf { it in 0..2 } ?: return@forEach
+                val mode = raw.toIntOrNull()?.takeIf { it in 0..3 } ?: return@forEach
                 watchIconMode = mode
                 written++
                 return@forEach

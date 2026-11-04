@@ -215,6 +215,7 @@ fun ExpressiveSettingsScreen(
     var showWatchIconDialog by remember { mutableStateOf(false) }
     val watchIconOptions = listOf(
         R.string.phone_watch_icon_standard, R.string.phone_watch_icon_value, R.string.phone_watch_icon_trend,
+        R.string.phone_watch_icon_combined,
     )
     var showUnitDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }

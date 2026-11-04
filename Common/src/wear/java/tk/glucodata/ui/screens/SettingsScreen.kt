@@ -61,6 +61,7 @@ fun SettingsScreen(
                 R.string.wear_ongoing_icon_normal,
                 R.string.wear_ongoing_icon_value,
                 R.string.wear_ongoing_icon_trend,
+                R.string.wear_ongoing_icon_combined,
             )
             items(iconOptions.size) { mode ->
                 RadioButton(

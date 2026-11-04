@@ -61,4 +61,5 @@
     <string name="wear_ongoing_icon_normal">Standard icon</string>
     <string name="wear_ongoing_icon_value">Glucose value</string>
     <string name="wear_ongoing_icon_trend">Trend arrow</string>
+    <string name="wear_ongoing_icon_combined">Value and trend arrow</string>
 </resources>

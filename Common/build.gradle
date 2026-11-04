@@ -339,6 +339,49 @@ android {
     }
 }
 
+// Wear system surfaces require resource-backed icons. Compose the existing artwork
+// at build time so every value and trend combination has its own drawable ID.
+abstract class GenerateWearCombinedIcons extends DefaultTask {
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract DirectoryProperty getWearResources()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDirectory()
+
+    @TaskAction
+    void generate() {
+        def source = wearResources.get().asFile
+        def output = outputDirectory.get().asFile
+        output.deleteDir()
+        def drawables = new File(output, 'drawable')
+        drawables.mkdirs()
+        def values = new File(source, 'drawable-nodpi').listFiles().findAll {
+            it.name.startsWith('wear_ongoing_value_') && it.name.endsWith('.png')
+        }
+        def arrows = new File(source, 'drawable').listFiles().findAll {
+            it.name.startsWith('wear_ongoing_trend_') && it.name.endsWith('.xml')
+        }
+        values.each { value ->
+            def valueName = value.name - '.png'
+            def valueKey = valueName - 'wear_ongoing_value_'
+            arrows.each { arrow ->
+                def arrowName = arrow.name - '.xml'
+                def arrowKey = arrowName - 'wear_ongoing_trend_'
+                new File(drawables, "wear_ongoing_combined_${valueKey}_${arrowKey}.xml").text = """<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:paddingMode="stack">
+    <item android:drawable="@drawable/${valueName}" android:width="20dp" android:height="20dp" android:gravity="top|left"/>
+    <item android:drawable="@drawable/${arrowName}" android:left="20dp" android:top="5dp" android:width="10dp" android:height="10dp" android:gravity="top|left"/>
+</layer-list>
+"""
+            }
+        }
+        def raw = new File(output, 'raw')
+        raw.mkdirs()
+        new File(raw, 'tk.glucodata.wear_combined_icons.keep.xml').text =
+            '<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/wear_ongoing_combined_*"/>'
+    }
+}
+
 // APK filenames. The default is "Common-mobile-release.apk" -- module name first,
 // no version. Produce JugglucoNG-<version>[-wear][-<build type>].apk instead, e.g.
 // JugglucoNG-1.0.9-Alpha.apk / JugglucoNG-1.0.9-Alpha-dub.apk.
@@ -347,6 +390,13 @@ androidComponents {
         def buildTypeTag = [release: '', releasedub: 'dub', releasedub2: 'dub2', debug: 'debug']
                 .get(variant.buildType, variant.buildType)
         def isWear = variant.productFlavors.any { flavor -> flavor.second == 'wear' }
+        if (isWear) {
+            def generateIcons = tasks.register("generate${variant.name.capitalize()}CombinedIcons", GenerateWearCombinedIcons) {
+                wearResources.set(layout.projectDirectory.dir('src/wear/res'))
+                outputDirectory.set(layout.buildDirectory.dir("generated/wearCombinedIcons/${variant.name}"))
+            }
+            variant.sources.res.addGeneratedSourceDirectory(generateIcons) { it.outputDirectory }
+        }
         def parts = [isWear ? 'wear' : '', buildTypeTag].findAll { it }
         def suffix = parts ? '-' + parts.join('-') : ''
         variant.outputs.each { output ->

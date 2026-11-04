@@ -21,6 +21,7 @@ object WearOngoingActivity : OngoingNotification {
     const val MODE_NORMAL = 0
     const val MODE_VALUE = 1
     const val MODE_TREND = 2
+    const val MODE_VALUE_AND_TREND = 3
     private const val PREFS = "wear_ongoing_icon"
     @Volatile private var currentNotificationId: Int? = null
     private val expiryHandler = Handler(Looper.getMainLooper())
@@ -46,14 +47,14 @@ object WearOngoingActivity : OngoingNotification {
     internal fun iconPreferences(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun iconMode(context: Context): Int = iconPreferences(context).getInt("mode", MODE_NORMAL).takeIf { it in MODE_NORMAL..MODE_TREND } ?: MODE_NORMAL
+    fun iconMode(context: Context): Int = iconPreferences(context).getInt("mode", MODE_NORMAL).takeIf { it in MODE_NORMAL..MODE_VALUE_AND_TREND } ?: MODE_NORMAL
 
     override fun syncIconMode(context: Context, mode: Int) {
         expiryHandler.post { if (iconMode(context) != mode) setIconMode(context, mode) }
     }
 
     fun setIconMode(context: Context, mode: Int) {
-        require(mode in MODE_NORMAL..MODE_TREND)
+        require(mode in MODE_NORMAL..MODE_VALUE_AND_TREND)
         iconPreferences(context).edit().putInt("mode", mode).apply()
         // The foreground notification may outlive this object after process recreation.
         val notificationId = currentNotificationId ?: runCatching {
@@ -145,6 +146,7 @@ object WearOngoingActivity : OngoingNotification {
             mode == MODE_NORMAL -> R.drawable.novalue
             reading == null -> R.drawable.wear_ongoing_unknown
             mode == MODE_VALUE -> WearOngoingIconResources.value(reading.text)
+            mode == MODE_VALUE_AND_TREND -> WearOngoingIconResources.valueAndTrend(context, reading.text, reading.rate)
             else -> WearOngoingIconResources.trend(reading.rate)
         }
         return Icon.createWithResource(context, resource)

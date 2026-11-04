@@ -1,5 +1,7 @@
 package tk.glucodata
 
+import android.content.Context
+
 /**
  * Resource-backed icons for Wear system surfaces that do not render bitmap Icons.
  * Number artwork reuses the project's existing glucose_ PNGs byte for byte.
@@ -9,6 +11,20 @@ internal object WearOngoingIconResources {
     fun value(text: String): Int {
         val key = text.trim().replace(',', '_').replace('.', '_').removeSuffix("_0")
         return values[key] ?: R.drawable.wear_ongoing_unknown
+    }
+
+    fun valueAndTrend(context: Context, text: String, rate: Float): Int {
+        val value = value(text)
+        if (value == R.drawable.wear_ongoing_unknown) return value
+        val arrow = trend(rate)
+        if (arrow == R.drawable.wear_ongoing_unknown) return value
+        val resources = context.resources
+        val valueKey = resources.getResourceEntryName(value).removePrefix("wear_ongoing_value_")
+        val arrowKey = resources.getResourceEntryName(arrow).removePrefix("wear_ongoing_trend_")
+        val combined = resources.getIdentifier(
+            "wear_ongoing_combined_${valueKey}_$arrowKey", "drawable", context.packageName,
+        )
+        return if (combined != 0) combined else value
     }
 
     fun trend(rate: Float): Int = when (ExchangeTrend.fromRate(rate).index) {
