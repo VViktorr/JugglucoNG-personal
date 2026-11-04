@@ -212,6 +212,8 @@ fun ExpressiveSettingsScreen(
     // Dialog states
     var showUnitDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showFontDialog by remember { mutableStateOf(false) }
+    val appFont = LocalAppFontPreference.current
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
@@ -464,6 +466,18 @@ fun ExpressiveSettingsScreen(
                     position = CardPosition.SINGLE,
                     onClick = { showThemeDialog = true }
                 )
+            }
+            if (appFont != null) {
+                item(key = "app_font") {
+                    SettingsItem(
+                        title = stringResource(R.string.app_font_title),
+                        subtitle = stringResource(if (appFont.useSystemFont) R.string.app_font_system else R.string.app_font_ibm),
+                        icon = Icons.Default.TextFields,
+                        iconTint = generalColor,
+                        position = CardPosition.SINGLE,
+                        onClick = { showFontDialog = true }
+                    )
+                }
             }
             item(key = "languagename") {
                 SettingsItem(
@@ -981,6 +995,15 @@ fun ExpressiveSettingsScreen(
         showUnitDialog = false
         context.findActivity()?.hardRestart() 
     }, { showUnitDialog = false })
+    if (showFontDialog && appFont != null) {
+        AppearancePickerDialog(
+            title = stringResource(R.string.app_font_title),
+            options = listOf(false to R.string.app_font_ibm, true to R.string.app_font_system),
+            current = appFont.useSystemFont,
+            onSelect = { appFont.select(it); showFontDialog = false },
+            onDismiss = { showFontDialog = false },
+        )
+    }
     if (showThemeDialog) ThemePickerDialog(themeMode, { onThemeChanged(it); showThemeDialog = false }, { showThemeDialog = false })
     if (showLanguageDialog) LanguagePickerDialog { showLanguageDialog = false }
     if (showClearHistoryDialog) ConfirmActionDialog(stringResource(R.string.clean_history_confirm), stringResource(R.string.clear_history_desc_long), Icons.Filled.History, { scope.launch { tk.glucodata.data.DataManagement.clearHistory() }; showClearHistoryDialog = false }, { showClearHistoryDialog = false })
@@ -1511,6 +1534,27 @@ private fun UnitPickerDialog(isMmol: Boolean, onSelect: (Int) -> Unit, onDismiss
 
 @Composable
 private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit, onDismiss: () -> Unit) {
+    AppearancePickerDialog(
+        title = stringResource(R.string.choose_theme),
+        options = listOf(
+            ThemeMode.SYSTEM to R.string.theme_system,
+            ThemeMode.LIGHT to R.string.theme_light,
+            ThemeMode.DARK to R.string.theme_dark,
+        ),
+        current = current,
+        onSelect = onSelect,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun <T> AppearancePickerDialog(
+    title: String,
+    options: List<Pair<T, Int>>,
+    current: T,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit,
+) {
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
@@ -1519,12 +1563,11 @@ private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit,
         ) {
             Column(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
                 Text(
-                    text = stringResource(R.string.choose_theme),
+                    text = title,
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                 )
-                ThemeMode.values().forEach { mode ->
-                    val label = when(mode) { ThemeMode.SYSTEM -> stringResource(R.string.theme_system); ThemeMode.LIGHT -> stringResource(R.string.theme_light); ThemeMode.DARK -> stringResource(R.string.theme_dark) }
+                options.forEach { (mode, label) ->
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -1535,7 +1578,7 @@ private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit,
                     ) {
                         RadioButton(selected = current == mode, onClick = null)
                         Spacer(Modifier.width(16.dp))
-                        Text(label, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
                 Row(

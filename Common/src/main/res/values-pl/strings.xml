@@ -981,6 +981,9 @@
     <string name="theme_dark">Dark</string>
     <string name="theme_light">Light</string>
     <string name="theme_system">System Default</string>
+    <string name="app_font_title">Czcionka aplikacji</string>
+    <string name="app_font_ibm">IBM Plex Sans</string>
+    <string name="app_font_system">Systemowa</string>
     <string name="theme_title">Theme</string>
     <string name="trend_falling">Trend spada o %1$s procent.</string>
     <string name="trend_rising">Trend rośnie o %1$s procent.</string>

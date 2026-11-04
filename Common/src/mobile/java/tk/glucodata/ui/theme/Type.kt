@@ -324,35 +324,43 @@ private fun TextStyle.emphasized(): TextStyle =
     copy(fontWeight = if ((fontSize.value) >= 36f) FontWeight.Medium else FontWeight.SemiBold)
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
-val AppTypography = Typography(
-    displayLarge = BaseTypography.displayLarge,
-    displayLargeEmphasized = BaseTypography.displayLarge.emphasized(),
-    displayMedium = BaseTypography.displayMedium,
-    displayMediumEmphasized = BaseTypography.displayMedium.emphasized(),
-    displaySmall = BaseTypography.displaySmall,
-    displaySmallEmphasized = BaseTypography.displaySmall.emphasized(),
-    headlineLarge = BaseTypography.headlineLarge,
-    headlineLargeEmphasized = BaseTypography.headlineLarge.emphasized(),
-    headlineMedium = BaseTypography.headlineMedium,
-    headlineMediumEmphasized = BaseTypography.headlineMedium.emphasized(),
-    headlineSmall = BaseTypography.headlineSmall,
-    headlineSmallEmphasized = BaseTypography.headlineSmall.emphasized(),
-    titleLarge = BaseTypography.titleLarge,
-    titleLargeEmphasized = BaseTypography.titleLarge.emphasized(),
-    titleMedium = BaseTypography.titleMedium,
-    titleMediumEmphasized = BaseTypography.titleMedium.emphasized(),
-    titleSmall = BaseTypography.titleSmall,
-    titleSmallEmphasized = BaseTypography.titleSmall.emphasized(),
-    bodyLarge = BaseTypography.bodyLarge,
-    bodyLargeEmphasized = BaseTypography.bodyLarge.emphasized(),
-    bodyMedium = BaseTypography.bodyMedium,
-    bodyMediumEmphasized = BaseTypography.bodyMedium.emphasized(),
-    bodySmall = BaseTypography.bodySmall,
-    bodySmallEmphasized = BaseTypography.bodySmall.emphasized(),
-    labelLarge = BaseTypography.labelLarge,
-    labelLargeEmphasized = BaseTypography.labelLarge.emphasized(),
-    labelMedium = BaseTypography.labelMedium,
-    labelMediumEmphasized = BaseTypography.labelMedium.emphasized(),
-    labelSmall = BaseTypography.labelSmall,
-    labelSmallEmphasized = BaseTypography.labelSmall.emphasized()
-)
+private fun appTypography(fontFamily: FontFamily? = null): Typography {
+    fun TextStyle.withAppFont(): TextStyle =
+        if (fontFamily == null) this else copy(fontFamily = fontFamily)
+
+    return Typography(
+        displayLarge = BaseTypography.displayLarge.withAppFont(),
+        displayLargeEmphasized = BaseTypography.displayLarge.withAppFont().emphasized(),
+        displayMedium = BaseTypography.displayMedium.withAppFont(),
+        displayMediumEmphasized = BaseTypography.displayMedium.withAppFont().emphasized(),
+        displaySmall = BaseTypography.displaySmall.withAppFont(),
+        displaySmallEmphasized = BaseTypography.displaySmall.withAppFont().emphasized(),
+        headlineLarge = BaseTypography.headlineLarge.withAppFont(),
+        headlineLargeEmphasized = BaseTypography.headlineLarge.withAppFont().emphasized(),
+        headlineMedium = BaseTypography.headlineMedium.withAppFont(),
+        headlineMediumEmphasized = BaseTypography.headlineMedium.withAppFont().emphasized(),
+        headlineSmall = BaseTypography.headlineSmall.withAppFont(),
+        headlineSmallEmphasized = BaseTypography.headlineSmall.withAppFont().emphasized(),
+        titleLarge = BaseTypography.titleLarge.withAppFont(),
+        titleLargeEmphasized = BaseTypography.titleLarge.withAppFont().emphasized(),
+        titleMedium = BaseTypography.titleMedium.withAppFont(),
+        titleMediumEmphasized = BaseTypography.titleMedium.withAppFont().emphasized(),
+        titleSmall = BaseTypography.titleSmall.withAppFont(),
+        titleSmallEmphasized = BaseTypography.titleSmall.withAppFont().emphasized(),
+        bodyLarge = BaseTypography.bodyLarge.withAppFont(),
+        bodyLargeEmphasized = BaseTypography.bodyLarge.withAppFont().emphasized(),
+        bodyMedium = BaseTypography.bodyMedium.withAppFont(),
+        bodyMediumEmphasized = BaseTypography.bodyMedium.withAppFont().emphasized(),
+        bodySmall = BaseTypography.bodySmall.withAppFont(),
+        bodySmallEmphasized = BaseTypography.bodySmall.withAppFont().emphasized(),
+        labelLarge = BaseTypography.labelLarge.withAppFont(),
+        labelLargeEmphasized = BaseTypography.labelLarge.withAppFont().emphasized(),
+        labelMedium = BaseTypography.labelMedium.withAppFont(),
+        labelMediumEmphasized = BaseTypography.labelMedium.withAppFont().emphasized(),
+        labelSmall = BaseTypography.labelSmall.withAppFont(),
+        labelSmallEmphasized = BaseTypography.labelSmall.withAppFont().emphasized()
+    )
+}
+
+val AppTypography = appTypography()
+val SystemAppTypography = appTypography(FontFamily.Default)

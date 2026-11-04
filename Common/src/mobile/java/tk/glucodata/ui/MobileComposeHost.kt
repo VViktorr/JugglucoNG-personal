@@ -1,13 +1,28 @@
 package tk.glucodata.ui
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.view.View
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
+internal class AppFontPreference(private val prefs: SharedPreferences) {
+    var useSystemFont by mutableStateOf(prefs.getBoolean("app_use_system_font", false))
+        private set
+
+    fun select(system: Boolean) {
+        useSystemFont = system
+        prefs.edit().putBoolean("app_use_system_font", system).apply()
+    }
+}
+
+internal val LocalAppFontPreference = staticCompositionLocalOf<AppFontPreference?> { null }
 
 /**
  * Mobile Compose entry point (plan P1/Q1, category R). Registered from the
@@ -26,14 +41,17 @@ object MobileComposeHost : ComposeHost {
             val savedTheme = prefs.getString("theme_mode", "SYSTEM") ?: "SYSTEM"
             var themeMode by remember { mutableStateOf(ThemeMode.valueOf(savedTheme)) }
 
-            JugglucoTheme(themeMode = themeMode) {
-                MainApp(
-                    themeMode = themeMode,
-                    onThemeChanged = { newMode ->
-                        themeMode = newMode
-                        prefs.edit().putString("theme_mode", newMode.name).apply()
-                    }
-                )
+            val appFont = remember(prefs) { AppFontPreference(prefs) }
+            CompositionLocalProvider(LocalAppFontPreference provides appFont) {
+                JugglucoTheme(themeMode = themeMode) {
+                    MainApp(
+                        themeMode = themeMode,
+                        onThemeChanged = { newMode ->
+                            themeMode = newMode
+                            prefs.edit().putString("theme_mode", newMode.name).apply()
+                        }
+                    )
+                }
             }
         }
     }

@@ -653,6 +653,9 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="hours_short">%1$dh</string>
     
     <!-- Settings Strings -->
+    <string name="app_font_title">App font</string>
+    <string name="app_font_ibm">IBM Plex Sans</string>
+    <string name="app_font_system">System</string>
     <string name="theme_title">Theme</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>

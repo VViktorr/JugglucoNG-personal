@@ -91,7 +91,11 @@ fun JugglucoTheme(
     MaterialExpressiveTheme(
         colorScheme = colorScheme,
         motionScheme = MotionScheme.expressive(),
-        typography = tk.glucodata.ui.theme.AppTypography,
+        typography = if (LocalAppFontPreference.current?.useSystemFont == true) {
+            tk.glucodata.ui.theme.SystemAppTypography
+        } else {
+            tk.glucodata.ui.theme.AppTypography
+        },
     ) {
         // Display size (density) may grow at most 10% past the device's native density, so an
         // extreme Display Size setting cannot break M3 layouts. Font size is not capped here:
