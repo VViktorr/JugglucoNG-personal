@@ -60,7 +60,8 @@ public final class GlucoseDelta {
      * up would defeat the purpose) or further than 20 minutes.
      */
     public static float delta(long newMillis, float newValue, long prevMillis, float prevValue, int intervalMinutes) {
-        if (!Float.isFinite(newValue) || !Float.isFinite(prevValue))
+        // A missing glucose sample can be represented as zero.
+        if (!Float.isFinite(newValue) || !Float.isFinite(prevValue) || newValue <= 0f || prevValue <= 0f)
             return Float.NaN;
         final long gap = newMillis - prevMillis;
         final long window = windowMillis(intervalMinutes);
