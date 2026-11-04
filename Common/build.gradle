@@ -9,10 +9,11 @@ ext {
     // Bump the app version here only. Wear releases use appVersionCode + 1000000
     // so Play accepts both APKs in one release (distinct versionCodes per form
     // factor). Scheme originates on the wearos branch — keep the two in step.
-    appVersionCode = 1028
+    appVersionCode = 1028 + (providers.gradleProperty('personalBuildNumber').orElse('0').get().toInteger())
     // Base version, without the flavour/build-type suffix chain that gets appended
     // to versionName. Used for the APK filename so it stays readable.
-    appVersionName = '1.2.8-Alpha'
+    appVersionName = providers.gradleProperty('personalBuildNumber')
+        .map { "1.2.8.${it}" }.orElse('1.2.8-Alpha').get()
 
     ndkver       = '29.0.14206865'
     CMAKEVERSION = '4.1.2'
@@ -134,7 +135,7 @@ android {
     productFlavors {
         mobile {
             dimension = 'wearos'
-            versionNameSuffix = '-phone'
+            versionNameSuffix = project.hasProperty('personalBuildNumber') ? '' : '-phone'
             buildConfigField 'int', 'isWear', '0'
         }
         wear {
@@ -144,7 +145,7 @@ android {
             buildConfigField 'int', 'minSDK', "$minSdk"
             manifestPlaceholders["minSDK"] = "$minSdk"
             versionCode = 1000000 + appVersionCode //WATCH: mobile versionCode + 1M offset
-            versionNameSuffix = '-wear'
+            versionNameSuffix = project.hasProperty('personalBuildNumber') ? '' : '-wear'
             signingConfig = signingConfigs.alg
             buildConfigField 'int', 'isWear', '1'
             externalNativeBuild.cmake {

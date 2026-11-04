@@ -4,6 +4,9 @@ run-name: Phone and Wear OS APKs from ${{ github.ref_name }} at ${{ github.sha }
 on:
   workflow_dispatch:
 
+env:
+  APK_VERSION: 1.2.8.${{ github.run_number }}
+
 permissions:
   contents: read
 
@@ -13,7 +16,7 @@ concurrency:
 
 jobs:
   phone:
-    name: Phone release APK (ARM64)
+    name: Phone release APK (ARM32 + ARM64)
     if: github.repository == 'VViktorr/JugglucoNG-personal'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -36,8 +39,9 @@ jobs:
       - name: Assemble phone release
         run: >-
           ./gradlew :Common:assembleMobileRelease
-          -PjugglucoAbi=arm64-v8a
-          --no-daemon --no-configuration-cache --max-workers=2 --stacktrace
+          -PjugglucoAbi=arm64-v8a,armeabi-v7a
+          -PpersonalBuildNumber=${{ github.run_number }}
+          --no-daemon --no-configuration-cache --max-workers=1 --stacktrace
       - name: Verify and stage APK
         shell: python
         run: |
@@ -57,26 +61,28 @@ jobs:
           subprocess.run([str(signer), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
           inventory = json.loads(Path('scripts/dist/build-inputs.json').read_text())
           with zipfile.ZipFile(apk) as archive:
+              for abi in ('arm64-v8a', 'armeabi-v7a'):
+                  archive.getinfo(f'lib/{abi}/libg.so')
               for spec in inventory['files']:
                   relative = spec['path'].split('/jniLibs/')[1]
-                  if relative.startswith('arm64-v8a/'):
+                  if relative.split('/')[0] in {'arm64-v8a', 'armeabi-v7a'}:
                       payload = archive.read('lib/' + relative)
                       if hashlib.sha256(payload).hexdigest() != spec['sha256']:
                           raise SystemExit(f'Packaged sensor library mismatch: {relative}')
           out = Path('build/personal-apk')
           out.mkdir(parents=True, exist_ok=True)
-          staged = out / f'JugglucoNG-main5-arm64-{os.environ["GITHUB_SHA"][:8]}.apk'
+          staged = out / f'JugglucoNG-{os.environ["APK_VERSION"]}-phone.apk'
           shutil.copy2(apk, staged)
           digest = hashlib.sha256(staged.read_bytes()).hexdigest()
           (out / 'SHA256SUMS.txt').write_text(f'{digest}  {staged.name}\n')
           (out / 'build-info.json').write_text(json.dumps({
-              'sha': os.environ['GITHUB_SHA'], 'branch': os.environ['GITHUB_REF_NAME'],
-              'abi': 'arm64-v8a', 'variant': 'mobileRelease',
+              'version': os.environ['APK_VERSION'], 'sha': os.environ['GITHUB_SHA'], 'branch': os.environ['GITHUB_REF_NAME'],
+              'abis': ['arm64-v8a', 'armeabi-v7a'], 'variant': 'mobileRelease',
               'signing': 'repository fallback key', 'sha256': digest
           }, indent=2) + '\n')
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JugglucoNG-main5-phone-arm64-${{ github.sha }}
+          name: JugglucoNG-main5-phone-arm-${{ github.sha }}
           path: build/personal-apk/
           if-no-files-found: error
           retention-days: 14
@@ -106,6 +112,7 @@ jobs:
         run: >-
           ./gradlew :Common:assembleWearRelease
           -PjugglucoAbi=arm64-v8a,armeabi-v7a
+          -PpersonalBuildNumber=${{ github.run_number }}
           --no-daemon --no-configuration-cache --max-workers=1 --stacktrace
       - name: Verify and stage APK
         shell: python
@@ -126,6 +133,8 @@ jobs:
           subprocess.run([str(signer), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
           inventory = json.loads(Path('scripts/dist/build-inputs.json').read_text())
           with zipfile.ZipFile(apk) as archive:
+              for abi in ('arm64-v8a', 'armeabi-v7a'):
+                  archive.getinfo(f'lib/{abi}/libg.so')
               for spec in inventory['files']:
                   relative = spec['path'].split('/jniLibs/')[1]
                   if relative.split('/')[0] in {'arm64-v8a', 'armeabi-v7a'}:
@@ -134,12 +143,12 @@ jobs:
                           raise SystemExit(f'Packaged sensor library mismatch: {relative}')
           out = Path('build/personal-wear-apk')
           out.mkdir(parents=True, exist_ok=True)
-          staged = out / f'JugglucoNG-main5-wear-arm-{os.environ["GITHUB_SHA"][:8]}.apk'
+          staged = out / f'JugglucoNG-{os.environ["APK_VERSION"]}-wear.apk'
           shutil.copy2(apk, staged)
           digest = hashlib.sha256(staged.read_bytes()).hexdigest()
           (out / 'SHA256SUMS.txt').write_text(f'{digest}  {staged.name}\n')
           (out / 'build-info.json').write_text(json.dumps({
-              'sha': os.environ['GITHUB_SHA'], 'branch': os.environ['GITHUB_REF_NAME'],
+              'version': os.environ['APK_VERSION'], 'sha': os.environ['GITHUB_SHA'], 'branch': os.environ['GITHUB_REF_NAME'],
               'abis': ['arm64-v8a', 'armeabi-v7a'], 'variant': 'wearRelease',
               'signing': 'repository fallback key', 'sha256': digest
           }, indent=2) + '\n')
@@ -165,7 +174,7 @@ jobs:
       - name: Download phone APK
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh run download "${{ github.run_id }}" --name "JugglucoNG-main5-phone-arm64-${{ github.sha }}" --dir build/release/phone
+        run: gh run download "${{ github.run_id }}" --name "JugglucoNG-main5-phone-arm-${{ github.sha }}" --dir build/release/phone
       - name: Download Wear OS APK
         env:
           GH_TOKEN: ${{ github.token }}
@@ -180,14 +189,14 @@ jobs:
           cp build/release/wear/build-info.json build/release/assets/wear-build-info.json
           cat build/release/phone/SHA256SUMS.txt build/release/wear/SHA256SUMS.txt > build/release/assets/SHA256SUMS.txt
           (cd build/release/assets && sha256sum --check SHA256SUMS.txt)
-          previous=$(git describe --tags --match 'main5-build-*' --abbrev=0 HEAD^ 2>/dev/null || true)
+          previous=$(git describe --tags --match 'main5-build-*' --match 'main5-v1.2.8.*' --abbrev=0 HEAD^ 2>/dev/null || true)
           if [ -z "$previous" ]; then
             previous=3ceeab9d09a66552b9e691a6c0f70d552e732a3e
           fi
           {
             echo '## JugglucoNG personal — main5'
             echo
-            echo '- Phone: release APK for ARM64.'
+            echo '- Phone: release APK for ARM32 and ARM64.'
             echo '- Wear OS: release APK for ARM32 and ARM64.'
             echo '- Both APKs compiled from the same commit; bundled sensor libraries and APK signatures verified.'
             echo '- Build success does not confirm operation on a physical device.'
@@ -205,13 +214,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag="main5-build-${GITHUB_SHA:0:8}"
+          tag="main5-v${APK_VERSION}"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" build/release/assets/* --clobber
             gh release edit "$tag" --notes-file build/release/notes.md
           else
             gh release create "$tag" build/release/assets/* \
               --target "$GITHUB_SHA" \
-              --title "JugglucoNG personal main5 — ${GITHUB_SHA:0:8}" \
+              --title "JugglucoNG personal main5 — ${APK_VERSION}" \
               --notes-file build/release/notes.md
           fi
