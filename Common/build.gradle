@@ -377,7 +377,7 @@ abstract class GenerateWearCombinedIcons extends DefaultTask {
         }
         def raw = new File(output, 'raw')
         raw.mkdirs()
-        new File(raw, 'tk.glucodata.wear_combined_icons.keep.xml').text =
+        new File(raw, 'tk_glucodata_wear_combined_icons_keep.xml').text =
             '<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/wear_ongoing_combined_*"/>'
     }
 }
