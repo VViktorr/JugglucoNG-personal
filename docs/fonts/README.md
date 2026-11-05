@@ -20,7 +20,7 @@ Samsung One, MiSans and Apple SF Pro are not bundled.
 ## Two independent settings
 
 - **Appearance and display → App font** sets `app_font_family` in the existing app preference file. Stable enum names, rather than list indices, are persisted. `app_use_system_font` remains readable and is also written for compatibility. If no new selection exists, all surfaces retain their previous defaults.
-- **Widgets → Widget font** is one shared selector above the widget types. It uses the existing `global_widget_font_family` key; the old per-kind JSON remains readable. It changes all widget providers together. Font weights, sizes, visibility and placement remain configured by the existing controls.
+- **Widgets → Widget font** is one shared selector above the widget types. Every family name is rendered in that family as an inline preview. It uses the existing `global_widget_font_family` key; the old per-kind JSON remains readable. It changes all widget providers together. Font weights, sizes, visibility and placement remain configured by the existing controls.
 
 The app preference participates in SettingsRegistry/WearPrefsSync using the existing phone-to-watch protocol. Compose observes SharedPreferences updates, including incoming watch synchronization. A watch connected to an older phone retains its previous font until a supported font setting arrives. The widget font is phone-local and does not follow the app font.
 
@@ -31,18 +31,23 @@ The app preference participates in SettingsRegistry/WearPrefsSync using the exis
 - Dashboard chart labels, default-font report text, alarm screen text and floating/lock-screen overlay text follow the app choice. Explicit serif/Outfit report styles remain available.
 - Notification/AOD bitmap text and numeric status icons use the app family. Trend arrow rendering is unchanged.
 - All widget Canvas text uses the independent widget family, including weather, temperature, metadata and statistics. Legacy BASIC widget drawing and CHART widget axes use the same preference.
-- Twelve additional native RemoteViews layouts reference packaged font-family resources. TextClock remains a real TextClock, preserving minute/date/locale/time-zone updates and the existing weight/size/layout controls. Original IBM and system layouts remain in use for those choices.
+- The shared clock/weather layout preserves its existing weight, size and placement controls. Android deliberately ignores custom font resources when the launcher inflates RemoteViews in a restricted context. For an explicitly selected bundled widget family, the layout is applied locally on the main looper, its TextViews/TextClocks receive the widget typeface, and the complete header is drawn into a bitmap within the existing pixel budget. Both CLOCK_WEATHER and CHART use this path. The system-font option retains the native launcher TextClock.
+- Custom-font clock/date bitmaps refresh on system minute, time/date/time-zone/locale changes and screen-on/unlock broadcasts while the app process is alive, independently of sensor readings. No exact alarm or new foreground service is used. An active Glance session also observes a separate clock revision so cached headers redraw even when readings and settings are unchanged. After a force stop, bitmap clocks resume when the app runs again; the native system-font clock remains autonomous. Local rendering failures are logged with the WidgetFonts tag and keep the native layout as a safe fallback.
 - Wear Material typography observes the synchronized family; app-rendered complication text also uses it. System-rendered complications remain controlled by the watch face.
 - Full font licences are accessible through **About → Font licences** and watch settings.
 
 ## Platform limits and fallbacks
 
-- Android owns the standard LiveUpdate/MetricStyle templates and `setShortCriticalText` capsule text. These APIs accept strings, not custom typefaces; those strings keep the device font. The capsule's numeric bitmap icon follows the app family where supported. Custom notification bitmap text and the app's own overlay are covered. Native RemoteViews fields that cannot carry a custom typeface continue with their safe existing font; no unsupported RemoteViews setter is called.
+- Android owns the standard LiveUpdate/MetricStyle templates and `setShortCriticalText` capsule text. These APIs accept strings, not custom typefaces; those strings keep the device font. The capsule's numeric bitmap icon follows the app family where supported. Custom notification bitmap text and the app's own overlay are covered. Notification RemoteViews fields that cannot carry a custom typeface continue with their safe existing font; no unsupported RemoteViews setter is called.
 - Legacy native NanoVG/OpenGL chart text uses fonts embedded in the native renderer. This change does not rewrite that renderer or its native assets.
 - Static fonts use the nearest shipped weight when the family does not supply an exact one (for example Ubuntu/HarmonyOS at 600). Android may synthesize style differences. Other glyphs/scripts fall back through Android's normal font fallback chain.
 - Every bundled new family contains all checked Polish letters, including Ł/ł, and digits; see `glyph-coverage.txt`. Urbanist was excluded at the user's request because its upstream font lacks Ł/ł. Its binaries, resources, metadata and licence are not bundled. There are 14 available choices. No glyph was inserted or font binary altered.
 - A font-loading failure uses the system typeface; an unknown saved family falls back to the prior default. No network font provider is needed at runtime.
 - Active bitmap notifications/AOD/complications pick up the new family on their next normal redraw; widgets are explicitly refreshed when their selector changes. Restart/reopen an already open legacy standalone dialog if its contents do not relayout.
+
+## RemoteViews restriction reference
+
+Android CTS explicitly checks that RemoteViews ignore custom font files: https://android.googlesource.com/platform/cts/+/a21f4a13d2fa84132139721d565fe102278e6ae5/tests/tests/text/src/android/text/cts/FontResourceTest.java . Merely setting fontFamily in the widget XML does not bypass this restriction.
 
 ## Validation status
 

@@ -6,7 +6,7 @@ import tk.glucodata.R
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** One native TextClock/glucose header for the standalone and chart widgets. */
+/** Shared clock/glucose layout; bundled fonts are rasterized locally for the launcher. */
 object ClockWeatherWidgetViews {
     fun create(
         context: Context,
@@ -21,7 +21,7 @@ object ClockWeatherWidgetViews {
         reserveTrendArrowSpace: Boolean = false
     ): RemoteViews {
         val renderer = WidgetRenderer(context)
-        return RemoteViews(context.packageName,
+        val views = RemoteViews(context.packageName,
             when (config.fontFamily) {
                 WidgetFontFamily.HARMONYOS -> R.layout.home_widget_clock_weather_harmonyos
                 WidgetFontFamily.COMFORTAA -> R.layout.home_widget_clock_weather_comfortaa
@@ -121,6 +121,98 @@ object ClockWeatherWidgetViews {
                 renderer.render(WidgetKind.CLOCK_WEATHER, config, snapshot, w, h, pxPerDp,
                     weather, includeBackground = includeBackground))
             setContentDescription(R.id.home_widget_image, renderer.describe(snapshot))
+        }
+        // A launcher inflates RemoteViews with a restricted context, so custom
+        // font resources on its TextViews/TextClocks are intentionally ignored.
+        // Render the same layout in our process and send only its bitmap instead.
+        return if (WidgetClockRefresh.usesBitmapClock(context)) {
+            bitmapViews(context, views, config, w, h, pxPerDp, renderer.describe(snapshot))
+        } else views
+    }
+
+    private fun bitmapViews(
+        context: Context,
+        nativeViews: RemoteViews,
+        config: WidgetConfig,
+        w: Float,
+        h: Float,
+        pxPerDp: Float,
+        description: String
+    ): RemoteViews {
+        val draw = java.util.concurrent.Callable {
+            val local = nativeViews.apply(context, null)
+            val now = System.currentTimeMillis()
+            val primaryIds = setOf(
+                R.id.home_widget_clock_300, R.id.home_widget_clock_400, R.id.home_widget_clock_500,
+                R.id.home_widget_clock_600, R.id.home_widget_clock_700,
+                R.id.home_widget_glucose_300, R.id.home_widget_glucose_400, R.id.home_widget_glucose_500,
+                R.id.home_widget_glucose_600, R.id.home_widget_glucose_700
+            )
+            fun applyFont(view: android.view.View) {
+                if (view is android.widget.TextView) {
+                    val weight = if (view.id in primaryIds) config.primaryFontWeight else config.secondaryFontWeight
+                    // These are local Views, so setTypeface is supported. Never send
+                    // it as a RemoteViews action or use the application's font here.
+                    view.setFontVariationSettings(null)
+                    view.typeface = tk.glucodata.FontCatalog.typeface(context, config.fontFamily, weight, false)
+                    if (view is android.widget.TextClock) {
+                        val pattern = if (android.text.format.DateFormat.is24HourFormat(context))
+                            view.format24Hour else view.format12Hour
+                        view.text = android.text.format.DateFormat.format(pattern ?: "HH:mm", now)
+                    }
+                }
+                if (view is android.view.ViewGroup) {
+                    for (index in 0 until view.childCount) applyFont(view.getChildAt(index))
+                }
+            }
+            applyFont(local)
+            // Measure in the same dp/sp coordinates as the original launcher layout,
+            // then draw into the caller's existing Binder-safe pixel budget.
+            val density = context.resources.displayMetrics.density
+            val width = (w * density).roundToInt().coerceAtLeast(1)
+            val height = (h * density).roundToInt().coerceAtLeast(1)
+            local.measure(
+                android.view.View.MeasureSpec.makeMeasureSpec(width, android.view.View.MeasureSpec.EXACTLY),
+                android.view.View.MeasureSpec.makeMeasureSpec(height, android.view.View.MeasureSpec.EXACTLY)
+            )
+            local.layout(0, 0, width, height)
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                (w * pxPerDp).roundToInt().coerceAtLeast(1),
+                (h * pxPerDp).roundToInt().coerceAtLeast(1),
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            canvas.scale(bitmap.width.toFloat() / width, bitmap.height.toFloat() / height)
+            local.draw(canvas)
+            val accessibility = buildList {
+                add(description)
+                fun addClocks(view: android.view.View) {
+                    if (view.visibility != android.view.View.VISIBLE) return
+                    if (view is android.widget.TextClock) add(view.text.toString())
+                    if (view is android.view.ViewGroup) {
+                        for (index in 0 until view.childCount) addClocks(view.getChildAt(index))
+                    }
+                }
+                addClocks(local)
+            }.joinToString(", ")
+            RemoteViews(context.packageName, R.layout.home_widget).apply {
+                setImageViewBitmap(R.id.home_widget_image, bitmap)
+                setContentDescription(R.id.home_widget_image, accessibility)
+            }
+        }
+        return try {
+            // TextClock owns a Handler. Inflate, configure and draw it on the
+            // main looper, even when the widget updater runs on its worker thread.
+            if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) draw.call()
+            else {
+                val task = java.util.concurrent.FutureTask(draw)
+                android.os.Handler(android.os.Looper.getMainLooper()).post(task)
+                try { task.get(5, java.util.concurrent.TimeUnit.SECONDS) }
+                catch (failure: Exception) { task.cancel(false); throw failure }
+            }
+        } catch (failure: Exception) {
+            tk.glucodata.Log.stack("WidgetFonts", "Local clock rendering failed; native fallback", failure)
+            nativeViews
         }
     }
 }

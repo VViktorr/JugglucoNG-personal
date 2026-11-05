@@ -58,6 +58,7 @@ Common/src/main/res/font/ubuntu_500.ttf
 Common/src/main/res/font/ubuntu_700.ttf
 Common/src/main/res/values-pl/font_selection.xml
 Common/src/main/res/values/font_selection.xml
+Common/src/mobile/java/tk/glucodata/Specific.java
 Common/src/mobile/java/tk/glucodata/ui/AlarmScreen.kt
 Common/src/mobile/java/tk/glucodata/ui/DashboardChart.kt
 Common/src/mobile/java/tk/glucodata/ui/ExpressiveSettingsScreen.kt
@@ -69,6 +70,7 @@ Common/src/mobile/java/tk/glucodata/ui/stats/StatsReportExporter.kt
 Common/src/mobile/java/tk/glucodata/ui/theme/Type.kt
 Common/src/mobile/java/tk/glucodata/widget/ExpressiveAppWidget.kt
 Common/src/mobile/java/tk/glucodata/widgets/ClockWeatherWidgetViews.kt
+Common/src/mobile/java/tk/glucodata/widgets/WidgetClockRefresh.kt
 Common/src/mobile/java/tk/glucodata/widgets/WidgetConfig.kt
 Common/src/mobile/java/tk/glucodata/widgets/WidgetRenderer.kt
 Common/src/mobile/java/tk/glucodata/widgets/WidgetSettingsScreen.kt

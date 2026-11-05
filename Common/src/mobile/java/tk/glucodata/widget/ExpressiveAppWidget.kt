@@ -42,6 +42,7 @@ import kotlin.math.roundToInt
 import tk.glucodata.GlucoseUpdateBroadcaster
 import tk.glucodata.MainActivity
 import tk.glucodata.NotificationChartDrawer
+import tk.glucodata.widgets.WidgetClockRefresh
 import tk.glucodata.widgets.ClockWeatherWidgetViews
 import tk.glucodata.widgets.WidgetBackground
 import tk.glucodata.widgets.WidgetConfig
@@ -68,12 +69,13 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             GlanceTheme {
                 val tick by GlucoseUpdateBroadcaster.tick.collectAsState()
                 val revision by WidgetConfigStore.revision.collectAsState()
+                val clockRevision by WidgetClockRefresh.revision.collectAsState()
                 val state by produceState(initialValue = initialState, key1 = tick, key2 = revision) {
                     if (tick != initialTick || revision != initialRevision) {
                         value = withContext(Dispatchers.IO) { loadWidgetState(context) }
                     }
                 }
-                WidgetContent(state)
+                WidgetContent(state, clockRevision)
             }
         }
     }
@@ -111,7 +113,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun WidgetContent(state: WidgetState) {
+    private fun WidgetContent(state: WidgetState, clockRevision: Long) {
         val context = LocalContext.current
         val size = LocalSize.current
         val config = state.config
@@ -123,7 +125,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         )
         val chartHeightDp = ChartWidgetSizing.chartHeightDp(size.height.value, headerHeightDp)
         val showChart = snapshot.history.size >= 2 && chartHeightDp >= 60f
-        val headerViews = remember(snapshot, state.weather, config, size.width, headerHeightDp) {
+        val headerViews = remember(snapshot, state.weather, config, size.width, headerHeightDp, clockRevision) {
             ClockWeatherWidgetViews.create(
                 context, config, snapshot, size.width.value, headerHeightDp, density,
                 state.weather, includeBackground = false,
@@ -170,7 +172,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Native TextClock keeps ticking without a sensor update or running activity.
+            // System font uses native TextClock; custom-font bitmaps follow clockRevision.
             AndroidRemoteViews(
                 remoteViews = headerViews,
                 modifier = GlanceModifier.fillMaxWidth().height(headerHeightDp.dp)

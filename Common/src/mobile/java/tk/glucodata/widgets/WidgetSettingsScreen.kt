@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import tk.glucodata.composeFamily
 import tk.glucodata.GlucoseWidget
 import tk.glucodata.R
 import tk.glucodata.widget.ExpressiveWidgetReceiver
@@ -110,7 +111,7 @@ fun WidgetSettingsScreen(navController: NavController) {
                                 WidgetConfigStore.save(context, WidgetSettingsKind.BASIC, config.copy(fontFamily = family))
                                 refreshAllWidgetFonts(context)
                             },
-                            label = { Text(family.displayName(context)) }
+                            label = { Text(family.displayName(context), fontFamily = family.composeFamily(context)) }
                         )
                     }
                 }
