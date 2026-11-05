@@ -71,26 +71,31 @@ object ClockWeatherWidgetViews {
             val staleStatus = !snapshot.hasFreshReading
             // The chart header can have different proportions and larger arrows than
             // the standalone clock widget. Reserve the full arrow box plus an 8dp gap.
-            val glucoseEndPaddingDp = if (reserveTrendArrowSpace && config.showArrow &&
+            val glucoseEndPaddingDp = if (config.showArrow &&
                 snapshot.hasFreshReading && snapshot.rate.isFinite()) {
-                val arrowSizeDp = min(w * 0.09f, h * 0.32f) * config.glucoseScale / 100f
-                maxOf(38f, w * 0.07f + arrowSizeDp / 2f + 8f)
-            } else 38f
-            // Keep stale text in its own measured column, outside the weather bitmap.
-            // Weather can reach 67.1% of the width at its rightmost configured position.
-            val hasWeather = config.showWeather && weather != null &&
-                (config.showWeatherIcon || config.showTemperature)
-            val staleStartDp = if (hasWeather) w * 0.68f + 8f else w * 0.48f
+                val arrowSizeDp = min(min(w * 0.09f, h * 0.32f) * config.glucoseScale / 100f, min(w * .10f, h * .40f))
+                maxOf(12f, w * 0.07f + arrowSizeDp / 2f + 8f)
+            } else 12f
+            // Status occupies the detail row, never the weather/value row.
+            val density = context.resources.displayMetrics.density
             setViewPadding(R.id.home_widget_stale_container,
-                (staleStartDp * pxPerDp).roundToInt(), 0, 0, 0)
+                (w * .51f * density).roundToInt(), (h * .5f * density).roundToInt(), 0, 0)
             setViewVisibility(R.id.home_widget_stale_container, if (staleStatus) android.view.View.VISIBLE else android.view.View.GONE)
             val detailText = if (!snapshot.hasFreshReading) snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue) else buildList {
                 if (config.showDelta) snapshot.delta?.let { add(renderer.deltaText(it, snapshot.isMmol)) }
                 if (config.showUnit) add(snapshot.unitText)
                 if (config.showTime) snapshot.current?.let { add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis))) }
             }.joinToString("  ")
-            val glucoseText = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
+            val glucoseText = if (staleStatus) "—" else valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
             val glucoseColor = if (snapshot.hasFreshReading) renderer.glucoseTextColor(snapshot, config) else textColor
+            val statusPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = tk.glucodata.FontCatalog.typeface(context, config.fontFamily, config.secondaryFontWeight, false)
+                textSize = dateSize * context.resources.displayMetrics.scaledDensity
+            }
+            val statusMetrics = statusPaint.fontMetrics
+            val statusFit = minOf(1f,
+                ((w * .49f - 12f) * density - 2f).coerceAtLeast(1f) / statusPaint.measureText(detailText).coerceAtLeast(1f),
+                (h * .5f * density - 2f).coerceAtLeast(1f) / (statusMetrics.bottom - statusMetrics.top).coerceAtLeast(1f))
             weights.indices.forEach { index ->
                 val clockId = clockIds[index]
                 val dateId = dateIds[index]
@@ -98,14 +103,12 @@ object ClockWeatherWidgetViews {
                 val glucoseId = glucoseIds[index]
                 val staleId = staleIds[index]
                 setViewVisibility(clockId, if (weights[index] == primaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                setViewVisibility(glucoseId, if (!staleStatus && weights[index] == primaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
+                setViewVisibility(glucoseId, if (weights[index] == primaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewText(glucoseId, glucoseText)
                 setTextViewTextSize(glucoseId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                 setTextColor(glucoseId, glucoseColor)
-                if (reserveTrendArrowSpace) {
-                    setViewPadding(glucoseId, 0, 0,
-                        (glucoseEndPaddingDp * pxPerDp).roundToInt(), 0)
-                }
+                setViewPadding(glucoseId, 0, 0,
+                    (glucoseEndPaddingDp * context.resources.displayMetrics.density).roundToInt(), 0)
                 setViewVisibility(dateId, if (config.showDate && weights[index] == secondaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
                 setTextColor(clockId, textColor)
@@ -113,15 +116,15 @@ object ClockWeatherWidgetViews {
                 setTextViewText(detailId, detailText)
                 setInt(detailId, "setMaxLines", 1)
                 // Reuse the space above the status instead of shrinking its font.
-                val density = context.resources.displayMetrics.density
                 val halfWidth = (w * 0.48f * density).roundToInt()
                 setViewPadding(detailId, 0, 0, (12f * density).roundToInt(), 0)
                 setViewPadding(dateId, (14f * density).roundToInt(), 0,
-                    if (staleStatus) halfWidth else 0, 0)
+                    halfWidth, 0)
                 setViewVisibility(staleId, if (staleStatus && weights[index] == secondaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewText(staleId, detailText)
+                setInt(staleId, "setMaxLines", 1)
                 setViewPadding(staleId, 0, 0, (12f * density).roundToInt(), 0)
-                setTextViewTextSize(staleId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                setTextViewTextSize(staleId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize * statusFit)
                 setTextColor(staleId, textColor)
                 setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
                 setTextColor(detailId, textColor)

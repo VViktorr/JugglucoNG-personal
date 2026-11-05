@@ -50,7 +50,8 @@ class WidgetRenderer(private val context: Context) {
                 height.toFloat(),
                 config,
                 snapshot,
-                weather
+                weather,
+                pxPerDp
             )
         }
         return bitmap
@@ -97,7 +98,11 @@ class WidgetRenderer(private val context: Context) {
             p.textAlign = Paint.Align.LEFT
             val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
                 else left + 1f - min(0f, bounds.left.toFloat())
-            canvas.drawText(value, x, (top + bottom - a - b) / 2f, p)
+            // Align visible glyph centers, not family-dependent line-box centers.
+            // Font extents above still constrain size so accents cannot be clipped.
+            val glyphTop = if (bounds.height() > 0) bounds.top.toFloat() else a
+            val glyphBottom = if (bounds.height() > 0) bounds.bottom.toFloat() else b
+            canvas.drawText(value, x, (top + bottom - glyphTop - glyphBottom) / 2f, p)
         }
         val now = java.util.Date()
         val clock = android.text.format.DateFormat.getTimeFormat(context).format(now)
@@ -106,9 +111,9 @@ class WidgetRenderer(private val context: Context) {
         if (config.showDate) text(date, 14f * pxPerDp, w * .49f, h / 2f, h, detailSize, false, false)
         val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
         if (snapshot.hasFreshReading) {
-            val arrowSize = min(w * .09f, h * .32f) * config.glucoseScale / 100f
-            val endPadding = if (reserveTrendArrowSpace && config.showArrow && snapshot.rate.isFinite())
-                max(38f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 38f * pxPerDp
+            val arrowSize = clockArrowSize(w, h, config)
+            val endPadding = if (config.showArrow && snapshot.rate.isFinite())
+                max(12f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 12f * pxPerDp
             val value = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
             text(value, rightStart, w - endPadding, 0f, h / 2f, mainSize, true, true,
                 glucoseTextColor(snapshot, config))
@@ -122,7 +127,8 @@ class WidgetRenderer(private val context: Context) {
             text(detail, w * .51f, w - 12f * pxPerDp, h / 2f, h, detailSize, false, true)
         } else {
             val status = snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue)
-            text(status, rightStart, w - 12f * pxPerDp, 0f, h, detailSize, false, true)
+            text("—", rightStart, w - 12f * pxPerDp, 0f, h / 2f, mainSize, true, true)
+            text(status, w * .51f, w - 12f * pxPerDp, h / 2f, h, detailSize, false, true)
         }
         return bitmap
     }
@@ -306,13 +312,25 @@ class WidgetRenderer(private val context: Context) {
         )
     }
 
+    private fun visibleBaseline(text: String, paint: Paint, centerY: Float): Float {
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        return if (bounds.height() > 0) centerY - (bounds.top + bounds.bottom) / 2f
+            else baselineCenter(paint, centerY)
+    }
+
+    private fun clockArrowSize(w: Float, h: Float, config: WidgetConfig): Float =
+        min(min(w * .09f, h * .32f) * config.glucoseScale / 100f,
+            min(w * .10f, h * .40f))
+
     private fun drawClockWeather(
         canvas: Canvas,
         w: Float,
         h: Float,
         c: WidgetConfig,
         s: WidgetSnapshot,
-        weather: WidgetWeather?
+        weather: WidgetWeather?,
+        pxPerDp: Float
     ) {
         val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
         val foreground =
@@ -321,8 +339,8 @@ class WidgetRenderer(private val context: Context) {
         fun componentScale(component: Int): Int =
             component.coerceIn(50, 260)
 
-        val weatherCenterX = (w * 0.44f - c.weatherShiftDp * density)
-            .coerceIn(w * 0.27f, w * 0.54f)
+        val weatherCenterX = (w * 0.44f - c.weatherShiftDp * pxPerDp)
+            .coerceIn(w * 0.40f, w * 0.51f)
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -340,37 +358,35 @@ class WidgetRenderer(private val context: Context) {
             val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt().coerceIn(45, 300)
             val iconMaxW = w * 0.11f
             val tempMaxW = w * 0.14f
-            val gap = 5f * density
+            val gap = min(5f * pxPerDp, w * .02f)
 
-            var iconW = 0f
-            if (c.showWeatherIcon) {
-                val iconPaint = fitText(symbol, iconMaxW, h * 0.44f, foreground, iconScale, c, false)
-                iconW = iconPaint.measureText(symbol)
-                val iconX = weatherCenterX - if (c.showTemperature) w * 0.045f else 0f
-                canvas.drawText(symbol, iconX, baselineCenter(iconPaint, h * 0.34f), iconPaint)
+            val temperature = "${weather.temperatureC}°"
+            val iconPaint = if (c.showWeatherIcon)
+                fitText(symbol, iconMaxW, h * .40f, foreground, iconScale, c, false) else null
+            val tempPaint = if (c.showTemperature)
+                fitText(temperature, tempMaxW, h * .40f, foreground, tempScale, c, false) else null
+            val iconW = iconPaint?.measureText(symbol) ?: 0f
+            val tempW = tempPaint?.measureText(temperature) ?: 0f
+            val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
+            val groupWidth = iconW + spacing + tempW
+            val center = weatherCenterX.coerceIn(w * .32f + groupWidth / 2f,
+                w * .66f - groupWidth / 2f)
+            val start = center - groupWidth / 2f
+            iconPaint?.let {
+                canvas.drawText(symbol, start + iconW / 2f,
+                    visibleBaseline(symbol, it, h * .25f), it)
             }
-
-            if (c.showTemperature) {
-                val temperature = "${weather.temperatureC}°"
-                val tempPaint = fitText(temperature, tempMaxW, h * 0.42f, foreground, tempScale, c, false)
-                val tempX = weatherCenterX + if (c.showWeatherIcon) max(iconW * 0.55f, gap) else 0f
-                canvas.drawText(temperature, tempX, baselineCenter(tempPaint, h * 0.34f), tempPaint)
+            tempPaint?.let {
+                canvas.drawText(temperature, start + iconW + spacing + tempW / 2f,
+                    visibleBaseline(temperature, it, h * .25f), it)
             }
         }
 
-        val glucoseCenterX = w * 0.80f
-        val glucoseText = if (s.hasFreshReading) s.valueText else "—"
         val glucoseColor = if (s.hasFreshReading) contentColor(s, c) else foreground
-        val glucosePaint = fitText(
-            glucoseText, w * 0.25f, h * 0.56f, glucoseColor,
-            c.glucoseScale, c.copy(fontFamily = c.mainFontFamily), true
-        )
-        // Glucose value is a native TextView beside TextClock, sharing its exact font and row.
-
         if (c.showArrow && s.hasFreshReading && s.rate.isFinite()) {
             drawTrendArrow(
-                canvas, w * 0.93f, h * 0.36f,
-                min(w * 0.09f, h * 0.32f) * c.glucoseScale / 100f,
+                canvas, w * 0.93f, h * 0.25f,
+                clockArrowSize(w, h, c),
                 s.rate, glucoseColor, s.isMmol
             )
         }
