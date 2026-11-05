@@ -1263,7 +1263,7 @@ public class NotificationChartDrawer {
             boolean outline, boolean largeArrow) {
         float density = context.getResources().getDisplayMetrics().density;
         // Arrow size: 20dp * scale (slightly smaller than 24dp for notifications)
-        int size = (int) (20 * density * arrowScale);
+        int size = Math.max(1, (int) (20 * density * arrowScale));
 
         // Render at actual size (no upscaling since ImageView is wrap_content)
         int bitmapSize = size;
@@ -1350,11 +1350,6 @@ public class NotificationChartDrawer {
         pArrow.lineTo(arrowTipX, cy);
         pArrow.lineTo(arrowWingX, cy + headSpan / 2.0f);
 
-        if (outlinePaint != null) {
-            canvas.drawPath(pArrow, outlinePaint);
-        }
-        canvas.drawPath(pArrow, paint);
-
         if (showDouble) {
             // 2. Draw Second Head (>)
             float secondTipX = arrowTipX + gap + headDepth;
@@ -1365,11 +1360,27 @@ public class NotificationChartDrawer {
             pSecond.lineTo(secondTipX, cy);
             pSecond.lineTo(secondWingX, cy + headSpan / 2.0f);
 
-            if (outlinePaint != null) {
-                canvas.drawPath(pSecond, outlinePaint);
-            }
-            canvas.drawPath(pSecond, paint);
+            pArrow.addPath(pSecond);
         }
+
+        // Fit the rotated geometry INCLUDING round stroke caps and outline.
+        // A 95%-long centerline alone leaves only 2.5% at each edge, less
+        // than the 5% stroke radius (and even less than the outline radius).
+        Path rotated = new Path(pArrow);
+        android.graphics.Matrix rotationMatrix = new android.graphics.Matrix();
+        rotationMatrix.setRotate(rotation, cx, cy);
+        rotated.transform(rotationMatrix);
+        android.graphics.RectF bounds = new android.graphics.RectF();
+        rotated.computeBounds(bounds, true);
+        float radius = (outlinePaint != null ? outlinePaint.getStrokeWidth() : strokeWidth) / 2f;
+        float extentX = Math.max(Math.abs(bounds.left - cx), Math.abs(bounds.right - cx)) + radius;
+        float extentY = Math.max(Math.abs(bounds.top - cy), Math.abs(bounds.bottom - cy)) + radius;
+        float available = Math.max(0.01f, bitmapSize / 2f - 1f);
+        float fit = Math.min(1f, Math.min(available / Math.max(.01f, extentX),
+                available / Math.max(.01f, extentY)));
+        canvas.scale(fit, fit, cx, cy);
+        if (outlinePaint != null) canvas.drawPath(pArrow, outlinePaint);
+        canvas.drawPath(pArrow, paint);
 
         canvas.restore();
         return bitmap;
