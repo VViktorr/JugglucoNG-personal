@@ -73,7 +73,7 @@ object ClockWeatherWidgetViews {
             // the standalone clock widget. Reserve the full arrow box plus an 8dp gap.
             val glucoseEndPaddingDp = if (config.showArrow &&
                 snapshot.hasFreshReading && snapshot.rate.isFinite()) {
-                val arrowSizeDp = min(min(w * 0.09f, h * 0.32f) * config.glucoseScale / 100f, min(w * .10f, h * .40f))
+                val arrowSizeDp = min(w * .10f, h * .40f)
                 maxOf(12f, w * 0.07f + arrowSizeDp / 2f + 8f)
             } else 12f
             // Status occupies the detail row, never the weather/value row.
@@ -88,14 +88,23 @@ object ClockWeatherWidgetViews {
             }.joinToString("  ")
             val glucoseText = if (staleStatus) "—" else valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
             val glucoseColor = if (snapshot.hasFreshReading) renderer.glucoseTextColor(snapshot, config) else textColor
-            val statusPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                typeface = tk.glucodata.FontCatalog.typeface(context, config.fontFamily, config.secondaryFontWeight, false)
-                textSize = dateSize * context.resources.displayMetrics.scaledDensity
+            fun fittedSize(text: String, sizeSp: Float, widthDp: Float, heightDp: Float, weight: Int): Float {
+                val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                    typeface = tk.glucodata.FontCatalog.typeface(context, config.fontFamily, weight, false)
+                    textSize = sizeSp * context.resources.displayMetrics.scaledDensity
+                }
+                val fm = p.fontMetrics
+                return sizeSp / (1f + maxOf(p.measureText(text) / (widthDp * density).coerceAtLeast(1f),
+                    (fm.bottom - fm.top) / (heightDp * density).coerceAtLeast(1f)))
             }
-            val statusMetrics = statusPaint.fontMetrics
-            val statusFit = minOf(1f,
-                ((w * .49f - 12f) * density - 2f).coerceAtLeast(1f) / statusPaint.measureText(detailText).coerceAtLeast(1f),
-                (h * .5f * density - 2f).coerceAtLeast(1f) / (statusMetrics.bottom - statusMetrics.top).coerceAtLeast(1f))
+            val hasWeather = config.showWeather && weather != null && (config.showWeatherIcon || config.showTemperature)
+            val clockText = android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date())
+            val dateText = android.text.format.DateFormat.format("EEEE, d MMMM", java.util.Date()).toString()
+            val fittedClock = fittedSize(clockText, clockSize, w * (if (hasWeather) .30f else .48f) - 12f, h * .5f, primaryWeight)
+            val fittedGlucose = fittedSize(glucoseText, clockSize,
+                w - glucoseEndPaddingDp - (if (hasWeather) w * .68f + 8f else w * .50f), h * .5f, primaryWeight)
+            val fittedDate = fittedSize(dateText, dateSize, w * .49f - 14f, h * .5f, secondaryWeight)
+            val fittedDetail = fittedSize(detailText, dateSize, w * .49f - 12f, h * .5f, secondaryWeight)
             weights.indices.forEach { index ->
                 val clockId = clockIds[index]
                 val dateId = dateIds[index]
@@ -105,12 +114,12 @@ object ClockWeatherWidgetViews {
                 setViewVisibility(clockId, if (weights[index] == primaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setViewVisibility(glucoseId, if (weights[index] == primaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewText(glucoseId, glucoseText)
-                setTextViewTextSize(glucoseId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
+                setTextViewTextSize(glucoseId, android.util.TypedValue.COMPLEX_UNIT_SP, fittedGlucose)
                 setTextColor(glucoseId, glucoseColor)
                 setViewPadding(glucoseId, 0, 0,
                     (glucoseEndPaddingDp * context.resources.displayMetrics.density).roundToInt(), 0)
                 setViewVisibility(dateId, if (config.showDate && weights[index] == secondaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
-                setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, clockSize)
+                setTextViewTextSize(clockId, android.util.TypedValue.COMPLEX_UNIT_SP, fittedClock)
                 setTextColor(clockId, textColor)
                 setViewVisibility(detailId, if (!staleStatus && detailText.isNotBlank() && weights[index] == secondaryWeight) android.view.View.VISIBLE else android.view.View.GONE)
                 setTextViewText(detailId, detailText)
@@ -124,11 +133,11 @@ object ClockWeatherWidgetViews {
                 setTextViewText(staleId, detailText)
                 setInt(staleId, "setMaxLines", 1)
                 setViewPadding(staleId, 0, 0, (12f * density).roundToInt(), 0)
-                setTextViewTextSize(staleId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize * statusFit)
+                setTextViewTextSize(staleId, android.util.TypedValue.COMPLEX_UNIT_SP, fittedDetail)
                 setTextColor(staleId, textColor)
-                setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                setTextViewTextSize(detailId, android.util.TypedValue.COMPLEX_UNIT_SP, fittedDetail)
                 setTextColor(detailId, textColor)
-                setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, dateSize)
+                setTextViewTextSize(dateId, android.util.TypedValue.COMPLEX_UNIT_SP, fittedDate)
                 setTextColor(dateId, textColor)
             }
             setImageViewBitmap(R.id.home_widget_image,

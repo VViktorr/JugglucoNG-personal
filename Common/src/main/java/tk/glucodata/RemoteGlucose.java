@@ -281,27 +281,22 @@ class RemoteGlucose {
       final boolean compactSquare = canvasWidth <= canvasHeight * 1.45f;
       if (compactSquare) {
          final float compactInset = Math.max(2f, usedensity * 4f);
-         final float compactTimeSize = Math.max(reducedTimeSize,
+         final float compactTimeSize = Math.max(timesize * .95f,
                Math.min(canvasWidth, canvasHeight) * 0.12f);
          final String valueStr = snapshot.getPrimaryStr();
 
          glucosePaint.setTextAlign(Paint.Align.CENTER);
-         glucosePaint.setTextSize(Math.max(useglsize, canvasHeight * 0.46f));
+         glucosePaint.setTextSize(Math.max(glucosesize, canvasHeight * 0.46f)
+               * basicWidgetInt("glucoseScale", 100) / 100f);
          float compactValueSize = glucosePaint.getTextSize();
          float compactValueWidth = glucosePaint.measureText(valueStr);
          final float compactMaxWidth = Math.max(1f, canvasWidth - compactInset * 2f);
-         if (compactValueWidth > compactMaxWidth) {
-            compactValueSize *= compactMaxWidth / compactValueWidth;
-            glucosePaint.setTextSize(compactValueSize);
-         }
          Paint.FontMetrics compactMetrics = glucosePaint.getFontMetrics();
          final float compactMaxHeight = canvasHeight * 0.58f;
-         final float compactTextHeight = compactMetrics.bottom - compactMetrics.top;
-         if (compactTextHeight > compactMaxHeight) {
-            compactValueSize *= compactMaxHeight / compactTextHeight;
-            glucosePaint.setTextSize(compactValueSize);
-            compactMetrics = glucosePaint.getFontMetrics();
-         }
+         compactValueSize /= 1f + Math.max(compactValueWidth / compactMaxWidth,
+               (compactMetrics.bottom - compactMetrics.top) / compactMaxHeight);
+         glucosePaint.setTextSize(compactValueSize);
+         compactMetrics = glucosePaint.getFontMetrics();
          final float valueCenterY = canvasHeight * 0.50f;
          final float valueBaseline = valueCenterY
                - (compactMetrics.top + compactMetrics.bottom) / 2f;
@@ -310,9 +305,10 @@ class RemoteGlucose {
          if (arrowBitmap != null) {
             final float rawArrowWidth = arrowBitmap.getWidth();
             final float rawArrowHeight = arrowBitmap.getHeight();
-            final float maxArrowSize = Math.min(canvasWidth, canvasHeight) * 0.28f;
-            final float arrowScaleToFit = Math.min(1f,
-                  maxArrowSize / Math.max(1f, Math.max(rawArrowWidth, rawArrowHeight)));
+            final float arrowLimit = Math.min(canvasWidth, canvasHeight) * 0.28f;
+            final float desiredArrowSize = arrowLimit * basicWidgetInt("glucoseScale", 100) / 100f;
+            final float maxArrowSize = desiredArrowSize / (1f + desiredArrowSize / arrowLimit);
+            final float arrowScaleToFit = maxArrowSize / Math.max(1f, Math.max(rawArrowWidth, rawArrowHeight));
             final int drawArrowWidth = Math.max(1, Math.round(rawArrowWidth * arrowScaleToFit));
             final int drawArrowHeight = Math.max(1, Math.round(rawArrowHeight * arrowScaleToFit));
             final int arrowRight = Math.round(canvasWidth - compactInset);
@@ -326,11 +322,15 @@ class RemoteGlucose {
          }
 
          if (showTime) {
-         glucosePaint.setTextSize(compactTimeSize);
+         glucosePaint.setTextSize(compactTimeSize * detailScale);
          applyWidgetTypeface(glucosePaint, false);
          glucosePaint.setTextAlign(Paint.Align.CENTER);
          glucosePaint.setAlpha(200);
          Paint.FontMetrics compactTimeMetrics = glucosePaint.getFontMetrics();
+         glucosePaint.setTextSize(glucosePaint.getTextSize() / (1f + Math.max(
+               glucosePaint.measureText(timestr) / compactMaxWidth,
+               (compactTimeMetrics.bottom - compactTimeMetrics.top) / (canvasHeight * .20f))));
+         compactTimeMetrics = glucosePaint.getFontMetrics();
          final float timeBaseline = canvasHeight - compactInset - compactTimeMetrics.bottom;
          canvas.drawText(timestr, canvasWidth / 2f, timeBaseline, glucosePaint);
          glucosePaint.setAlpha(255);
@@ -365,19 +365,13 @@ class RemoteGlucose {
       applyWidgetTypeface(glucosePaint, true);
       float effectiveSize = useglsize;
       float valueWidth = glucosePaint.measureText(valueStr);
-      if (maxValueWidth > 0 && valueWidth > maxValueWidth) {
-         effectiveSize = useglsize * (maxValueWidth / valueWidth);
-         glucosePaint.setTextSize(effectiveSize);
-      }
       Paint.FontMetrics valueMetrics = glucosePaint.getFontMetrics();
-      // Font size alone does not constrain a family's full vertical extent.
       float maxValueHeight = Math.max(1f, canvasHeight - usedensity * 4f);
+      effectiveSize /= 1f + Math.max(valueWidth / Math.max(1f, maxValueWidth),
+            (valueMetrics.bottom - valueMetrics.top) / maxValueHeight);
+      glucosePaint.setTextSize(effectiveSize);
+      valueMetrics = glucosePaint.getFontMetrics();
       float valueTextHeight = valueMetrics.bottom - valueMetrics.top;
-      if (valueTextHeight > maxValueHeight) {
-         glucosePaint.setTextSize(glucosePaint.getTextSize() * maxValueHeight / valueTextHeight);
-         valueMetrics = glucosePaint.getFontMetrics();
-         valueTextHeight = valueMetrics.bottom - valueMetrics.top;
-      }
       // Vertically center the value in the canvas (less timeHeight reserve
       // since we no longer use that bottom strip — time moved into the cluster).
       float gety = (canvasHeight + valueTextHeight) / 2f - valueMetrics.bottom;

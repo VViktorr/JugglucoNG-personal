@@ -66,3 +66,21 @@ The basic widget now also fits the glucose value using full vertical font extent
 Clock/weather and chart headers use two aligned rows: clock, weather, glucose and trend in the upper half; date and reading details in the lower half. Weather and arrow use the same upper-row center as text. Visible glyph bounds determine optical centering across families. Weather icon/temperature are measured as one non-overlapping group; horizontal weather shifting and arrow scaling are constrained to their allocated slots. Arrow padding is reserved for both native and bitmap headers, independently of bitmap pixel density.
 
 The shared two-row header is used by both CLOCK_WEATHER and CHART. Missing/stale readings show an em dash in the value slot and the source status (or localized no-value fallback) instead of delta/unit/reading time in the second row. Freshness rules continue to suppress the trend arrow.
+
+### Widget settings source audit, 2026-11-05
+
+Size fitting now approaches slot limits smoothly instead of hard-clamping multiple slider positions to one size. This applies to clock/chart text, range/statistics text and weather. Compact BASIC no longer imposes a glucose/time minimum after applying the user's scale. Clock arrow sizing follows the slider below its slot limit; padding reserves that limit independently of the current scale. Weather icon and temperature no longer hit an arbitrary combined 300% cap. The weather shift slider maps its full range onto the available weather slot, preserving separation from clock/glucose. Bitmap corner radius uses bitmap pixels per dp rather than device density.
+
+Every slider still saves and refreshes on movement, with an additional final refresh when released. Existing preference ranges and visibility choices remain unchanged.
+
+| Settings reviewed | BASIC | CLOCK_WEATHER / CHART | RANGE |
+| --- | --- | --- | --- |
+| Family, weight | Shared family + configured weight | Shared family + configured weight | Shared family + configured weight |
+| Main / detail sizes | Value + time | Clock/value/arrow + date/details/status | Value/TIR/arrow + details/stat labels |
+| Background, opacity, corner radius | Own bitmap background | Clock bitmap / Glance chart container | Own bitmap background |
+| Visibility | Arrow, reading time | Arrow, date, delta, unit, reading time, weather/icon/temperature | Arrow, delta, unit, reading time |
+| Weather scale / component scales / shift | Not exposed | Applied to shared clock/chart header | Not exposed |
+| Graph period / target band | Not exposed | CHART history load + chart rendering | Not exposed |
+| Statistics period | Not exposed | Not exposed | Snapshot statistics and history window |
+
+Settings are persisted in WidgetConfigStore (BASIC reads the same JSON in RemoteGlucose). BASIC explicitly clears its render cache/throttle; CLOCK_WEATHER/RANGE serialize updates with a final rerender when requests coalesce; CHART observes the settings revision and reloads history as needed. Missing/stale readings retain source status and suppress fresh-only details/arrows. This is a source audit, not a claim of device validation. Launcher delivery, touch behavior and rendering still require phone verification; no build or test suite was run.
