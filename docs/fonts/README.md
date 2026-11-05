@@ -1,14 +1,14 @@
 # Application and widget fonts
 
-The font catalogue in `Common/src/main/java/tk/glucodata/FontCatalog.java` contains 15 choices: IBM Plex Sans, System, HarmonyOS Sans, Comfortaa, Ubuntu, Roboto Condensed, Oswald, Rubik, Poppins, Plus Jakarta Sans, Noto Sans, Urbanist, Inter, DM Sans and Roboto Flex.
+The font catalogue in `Common/src/main/java/tk/glucodata/FontCatalog.java` contains 14 choices: IBM Plex Sans, System, HarmonyOS Sans, Comfortaa, Ubuntu, Roboto Condensed, Oswald, Rubik, Poppins, Plus Jakarta Sans, Noto Sans, Inter, DM Sans and Roboto Flex.
 
 ## Sources and distribution
 
-`bundled-fonts.json` records the exact upstream URLs, original filenames/weights and SHA-256 checksums of the 13 newly bundled families. All binaries are unmodified. The Google Fonts `METADATA.pb` files retained here identify the designers, copyright, upstream source repositories and variable axes. Downloads were made on 2026-11-05. The full upstream licence texts and copyright notices are packaged into **both phone and Wear APKs** under `Common/src/main/assets/font_licenses/`.
+`bundled-fonts.json` records the exact upstream URLs, original filenames/weights and SHA-256 checksums of the 12 newly bundled families. All binaries are unmodified. The Google Fonts `METADATA.pb` files retained here identify the designers, copyright, upstream source repositories and variable axes. Downloads were made on 2026-11-05. The full upstream licence texts and copyright notices are packaged into **both phone and Wear APKs** under `Common/src/main/assets/font_licenses/`.
 
 | Families | Distribution source | Licence |
 | --- | --- | --- |
-| Comfortaa, Roboto Condensed, Oswald, Rubik, Poppins, Plus Jakarta Sans, Noto Sans, Urbanist, Inter, DM Sans, Roboto Flex | https://github.com/google/fonts/tree/main/ofl | SIL Open Font License 1.1; each family's own copyright and full OFL retained |
+| Comfortaa, Roboto Condensed, Oswald, Rubik, Poppins, Plus Jakarta Sans, Noto Sans, Inter, DM Sans, Roboto Flex | https://github.com/google/fonts/tree/main/ofl | SIL Open Font License 1.1; each family's own copyright and full OFL retained |
 | Ubuntu | https://github.com/google/fonts/tree/main/ufl/ubuntu | Ubuntu Font Licence 1.0; full UFL retained |
 | HarmonyOS Sans | https://github.com/openharmony/resources/tree/master/fonts | Huawei HarmonyOS Sans Fonts License Agreement, from the same repository's LICENSE_Fonts |
 | Existing IBM Plex Sans Variable | Existing app resource; https://github.com/IBM/plex/blob/master/LICENSE.txt | SIL OFL 1.1; original resource copyright (2019 IBM) additionally retained in NOTICE.txt |
@@ -31,7 +31,7 @@ The app preference participates in SettingsRegistry/WearPrefsSync using the exis
 - Dashboard chart labels, default-font report text, alarm screen text and floating/lock-screen overlay text follow the app choice. Explicit serif/Outfit report styles remain available.
 - Notification/AOD bitmap text and numeric status icons use the app family. Trend arrow rendering is unchanged.
 - All widget Canvas text uses the independent widget family, including weather, temperature, metadata and statistics. Legacy BASIC widget drawing and CHART widget axes use the same preference.
-- Thirteen additional native RemoteViews layouts reference packaged font-family resources. TextClock remains a real TextClock, preserving minute/date/locale/time-zone updates and the existing weight/size/layout controls. Original IBM and system layouts remain in use for those choices.
+- Twelve additional native RemoteViews layouts reference packaged font-family resources. TextClock remains a real TextClock, preserving minute/date/locale/time-zone updates and the existing weight/size/layout controls. Original IBM and system layouts remain in use for those choices.
 - Wear Material typography observes the synchronized family; app-rendered complication text also uses it. System-rendered complications remain controlled by the watch face.
 - Full font licences are accessible through **About → Font licences** and watch settings.
 
@@ -40,7 +40,7 @@ The app preference participates in SettingsRegistry/WearPrefsSync using the exis
 - Android owns the standard LiveUpdate/MetricStyle templates and `setShortCriticalText` capsule text. These APIs accept strings, not custom typefaces; those strings keep the device font. The capsule's numeric bitmap icon follows the app family where supported. Custom notification bitmap text and the app's own overlay are covered. Native RemoteViews fields that cannot carry a custom typeface continue with their safe existing font; no unsupported RemoteViews setter is called.
 - Legacy native NanoVG/OpenGL chart text uses fonts embedded in the native renderer. This change does not rewrite that renderer or its native assets.
 - Static fonts use the nearest shipped weight when the family does not supply an exact one (for example Ubuntu/HarmonyOS at 600). Android may synthesize style differences. Other glyphs/scripts fall back through Android's normal font fallback chain.
-- Inspection of the original font cmap tables found all Polish letters and digits in every new family **except Urbanist, which lacks Ł/ł**. Android falls back for those two glyphs; see `glyph-coverage.txt`. No glyph was inserted or font binary altered.
+- Every bundled new family contains all checked Polish letters, including Ł/ł, and digits; see `glyph-coverage.txt`. Urbanist was excluded at the user's request because its upstream font lacks Ł/ł. Its binaries, resources, metadata and licence are not bundled. There are 14 available choices. No glyph was inserted or font binary altered.
 - A font-loading failure uses the system typeface; an unknown saved family falls back to the prior default. No network font provider is needed at runtime.
 - Active bitmap notifications/AOD/complications pick up the new family on their next normal redraw; widgets are explicitly refreshed when their selector changes. Restart/reopen an already open legacy standalone dialog if its contents do not relayout.
 

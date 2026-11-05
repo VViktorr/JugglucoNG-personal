@@ -31,7 +31,6 @@ public final class FontCatalog {
         POPPINS("Poppins", R.font.poppins, "poppins.txt"),
         PLUS_JAKARTA("Plus Jakarta Sans", R.font.plusjakartasans, "plusjakartasans.txt"),
         NOTO_SANS("Noto Sans", R.font.notosans, "notosans.txt"),
-        URBANIST("Urbanist", R.font.urbanist, "urbanist.txt"),
         INTER("Inter", R.font.inter, "inter.txt"),
         DM_SANS("DM Sans", R.font.dmsans, "dmsans.txt"),
         ROBOTO_FLEX("Roboto Flex", R.font.robotoflex, "robotoflex.txt");

@@ -120,15 +120,6 @@
       "variable": true
     }
   ],
-  "urbanist": [
-    {
-      "file": "urbanist_var.ttf",
-      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/urbanist/Urbanist%5Bwght%5D.ttf",
-      "sha256": "748362d51eb276840e9f0023cd2d98299bf709a95fb3a5ae4ffcb624c638ebb9",
-      "weight": 400,
-      "variable": true
-    }
-  ],
   "inter": [
     {
       "file": "inter_var.ttf",

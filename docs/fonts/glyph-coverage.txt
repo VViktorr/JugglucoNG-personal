@@ -6,7 +6,6 @@ rubik: Polish/numerals missing: none; axes: {'wght': (300.0, 900.0)}
 poppins: Polish/numerals missing: none; axes: {}
 plusjakartasans: Polish/numerals missing: none; axes: {'wght': (200.0, 800.0)}
 notosans: Polish/numerals missing: none; axes: {'wght': (100.0, 900.0), 'wdth': (62.5, 100.0)}
-urbanist: Polish/numerals missing: Łł; axes: {'wght': (100.0, 900.0)}
 inter: Polish/numerals missing: none; axes: {'opsz': (14.0, 32.0), 'wght': (100.0, 900.0)}
 dmsans: Polish/numerals missing: none; axes: {'opsz': (9.0, 40.0), 'wght': (100.0, 1000.0)}
 robotoflex: Polish/numerals missing: none; axes: {'opsz': (8.0, 144.0), 'wght': (100.0, 1000.0), 'GRAD': (-200.0, 150.0), 'wdth': (25.0, 151.0), 'slnt': (-10.0, 0.0), 'XOPQ': (27.0, 175.0), 'YOPQ': (25.0, 135.0), 'XTRA': (323.0, 603.0), 'YTUC': (528.0, 760.0), 'YTLC': (416.0, 570.0), 'YTAS': (649.0, 854.0), 'YTDE': (-305.0, -98.0), 'YTFI': (560.0, 788.0)}

@@ -12,7 +12,6 @@ Common/src/main/assets/font_licenses/robotocondensed.txt
 Common/src/main/assets/font_licenses/robotoflex.txt
 Common/src/main/assets/font_licenses/rubik.txt
 Common/src/main/assets/font_licenses/ubuntu.txt
-Common/src/main/assets/font_licenses/urbanist.txt
 Common/src/main/java/tk/glucodata/Applic.java
 Common/src/main/java/tk/glucodata/FontCatalog.java
 Common/src/main/java/tk/glucodata/FontLicenses.java
@@ -57,8 +56,6 @@ Common/src/main/res/font/ubuntu_300.ttf
 Common/src/main/res/font/ubuntu_400.ttf
 Common/src/main/res/font/ubuntu_500.ttf
 Common/src/main/res/font/ubuntu_700.ttf
-Common/src/main/res/font/urbanist.xml
-Common/src/main/res/font/urbanist_var.ttf
 Common/src/main/res/values-pl/font_selection.xml
 Common/src/main/res/values/font_selection.xml
 Common/src/mobile/java/tk/glucodata/ui/AlarmScreen.kt
@@ -87,7 +84,6 @@ Common/src/mobile/res/layout/home_widget_clock_weather_robotocondensed.xml
 Common/src/mobile/res/layout/home_widget_clock_weather_robotoflex.xml
 Common/src/mobile/res/layout/home_widget_clock_weather_rubik.xml
 Common/src/mobile/res/layout/home_widget_clock_weather_ubuntu.xml
-Common/src/mobile/res/layout/home_widget_clock_weather_urbanist.xml
 Common/src/mobileSi/java/tk/glucodata/StatusIcon.java
 Common/src/wear/java/tk/glucodata/glucosecomplication/ComplicationRenderer.kt
 Common/src/wear/java/tk/glucodata/ui/screens/SettingsScreen.kt
@@ -107,4 +103,3 @@ docs/fonts/robotocondensed_METADATA.pb
 docs/fonts/robotoflex_METADATA.pb
 docs/fonts/rubik_METADATA.pb
 docs/fonts/ubuntu_METADATA.pb
-docs/fonts/urbanist_METADATA.pb

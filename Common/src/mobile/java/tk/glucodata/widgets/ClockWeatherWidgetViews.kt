@@ -32,7 +32,6 @@ object ClockWeatherWidgetViews {
                 WidgetFontFamily.POPPINS -> R.layout.home_widget_clock_weather_poppins
                 WidgetFontFamily.PLUS_JAKARTA -> R.layout.home_widget_clock_weather_plusjakartasans
                 WidgetFontFamily.NOTO_SANS -> R.layout.home_widget_clock_weather_notosans
-                WidgetFontFamily.URBANIST -> R.layout.home_widget_clock_weather_urbanist
                 WidgetFontFamily.INTER -> R.layout.home_widget_clock_weather_inter
                 WidgetFontFamily.DM_SANS -> R.layout.home_widget_clock_weather_dmsans
                 WidgetFontFamily.ROBOTO_FLEX -> R.layout.home_widget_clock_weather_robotoflex
