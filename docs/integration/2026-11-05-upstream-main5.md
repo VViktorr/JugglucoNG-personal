@@ -27,7 +27,11 @@ References: https://github.com/ctqvva/JugglucoNG/pulls (PR numbers above).
 - Personal Material/Expressive control shapes. Journal step buttons use the existing appIconButtonShapes() helper.
 - The main row's delta/history policy and the shared DisplayTrendSource. Peer smoothing is applied only to the existing enabled smoothing window; the shared current-trend renderer is unchanged.
 
-## Deliberately omitted
+## Initial exclusions — completed in the follow-up
+
+The sensor changes below were initially omitted, then imported after the user's next instruction. See [the sensor follow-up](2026-11-05-other-sensors.md) for the final scope and native requirements.
+
+### Original exclusion list
 
 - Dexcom, iCan and Ottai driver fixes, Lumiflex cloud upload and follower UI.
 - The Ottai/iCan/MQ driver-call changes from #818. Their scope remains unchanged; only the shared per-sender counter improvement was selected.
