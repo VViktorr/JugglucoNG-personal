@@ -78,7 +78,10 @@ class WidgetRenderer(private val context: Context) {
         fun text(value: String, left: Float, right: Float, top: Float, bottom: Float,
                  size: Float, primary: Boolean, end: Boolean, tint: Int = color) {
             if (value.isBlank() || right <= left || bottom <= top) return
-            val p = paint(size, tint, config, primary)
+            val selectedScale = if (primary) config.glucoseScale else config.detailScale
+            // Fit ONCE at the fixed slider maximum, then apply the user's ratio.
+            // The fitted reference is independent of the current slider value.
+            val p = paint(size * 180f / selectedScale, tint, config, primary)
             // Include glyph overhangs and full font extents (accents/descenders),
             // leaving a pixel of breathing room even at reduced bitmap density.
             val bounds = Rect()
@@ -94,6 +97,7 @@ class WidgetRenderer(private val context: Context) {
                 val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
                 p.textSize *= min(1f, min(availableW / max(1f, span), availableH / max(1f, b - a)))
             }
+            p.textSize *= selectedScale / 180f
             val (a, b) = extents()
             p.textAlign = Paint.Align.LEFT
             val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
@@ -111,7 +115,7 @@ class WidgetRenderer(private val context: Context) {
         if (config.showDate) text(date, 14f * pxPerDp, w * .49f, h / 2f, h, detailSize, false, false)
         val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
         if (snapshot.hasFreshReading) {
-            val arrowSize = clockArrowSize(w, h, config)
+            val arrowSize = min(w * .10f, h * .40f)
             val endPadding = if (config.showArrow && snapshot.rate.isFinite())
                 max(12f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 12f * pxPerDp
             val value = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
@@ -230,9 +234,10 @@ class WidgetRenderer(private val context: Context) {
         color: Int,
         scale: Int,
         config: WidgetConfig,
-        bold: Boolean = true
+        bold: Boolean = true,
+        referenceScale: Int = 180
     ): Paint {
-        var size = maxH * 0.82f * scale / 100f
+        var size = maxH * 0.82f * referenceScale / 100f
         val p = paint(size, color, config, bold)
         val measured = p.measureText(text)
         if (measured > maxW && measured > 0f) {
@@ -244,6 +249,7 @@ class WidgetRenderer(private val context: Context) {
         if (textH > maxH && textH > 0f) {
             p.textSize *= maxH / textH
         }
+        p.textSize *= scale.toFloat() / referenceScale
         return p
     }
 
@@ -299,7 +305,7 @@ class WidgetRenderer(private val context: Context) {
         } ?: return
         val rawW = arrow.width.toFloat().coerceAtLeast(1f)
         val rawH = arrow.height.toFloat().coerceAtLeast(1f)
-        val fit = min(1f, maxSize / max(rawW, rawH))
+        val fit = maxSize / max(rawW, rawH)
         val drawW = max(1, (rawW * fit).roundToInt())
         val drawH = max(1, (rawH * fit).roundToInt())
         val left = (cx - drawW / 2f).roundToInt()
@@ -320,8 +326,7 @@ class WidgetRenderer(private val context: Context) {
     }
 
     private fun clockArrowSize(w: Float, h: Float, config: WidgetConfig): Float =
-        min(min(w * .09f, h * .32f) * config.glucoseScale / 100f,
-            min(w * .10f, h * .40f))
+        min(w * .10f, h * .40f) * config.glucoseScale / 180f
 
     private fun drawClockWeather(
         canvas: Canvas,
@@ -339,8 +344,7 @@ class WidgetRenderer(private val context: Context) {
         fun componentScale(component: Int): Int =
             component.coerceIn(50, 260)
 
-        val weatherCenterX = (w * 0.44f - c.weatherShiftDp * pxPerDp)
-            .coerceIn(w * 0.40f, w * 0.51f)
+        val shiftFraction = c.weatherShiftDp.coerceIn(0, 40) / 40f
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -354,23 +358,24 @@ class WidgetRenderer(private val context: Context) {
             }
 
             val weatherBase = componentScale(c.weatherScale)
-            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt().coerceIn(45, 300)
-            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt().coerceIn(45, 300)
+            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt()
+            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt()
             val iconMaxW = w * 0.11f
             val tempMaxW = w * 0.14f
             val gap = min(5f * pxPerDp, w * .02f)
 
             val temperature = "${weather.temperatureC}°"
             val iconPaint = if (c.showWeatherIcon)
-                fitText(symbol, iconMaxW, h * .40f, foreground, iconScale, c, false) else null
+                fitText(symbol, iconMaxW, h * .40f, foreground, iconScale, c, false, referenceScale = 440) else null
             val tempPaint = if (c.showTemperature)
-                fitText(temperature, tempMaxW, h * .40f, foreground, tempScale, c, false) else null
+                fitText(temperature, tempMaxW, h * .40f, foreground, tempScale, c, false, referenceScale = 400) else null
             val iconW = iconPaint?.measureText(symbol) ?: 0f
             val tempW = tempPaint?.measureText(temperature) ?: 0f
             val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
             val groupWidth = iconW + spacing + tempW
-            val center = weatherCenterX.coerceIn(w * .32f + groupWidth / 2f,
-                w * .66f - groupWidth / 2f)
+            val leftCenter = w * .32f + groupWidth / 2f
+            val rightCenter = w * .66f - groupWidth / 2f
+            val center = rightCenter - (rightCenter - leftCenter) * shiftFraction
             val start = center - groupWidth / 2f
             iconPaint?.let {
                 canvas.drawText(symbol, start + iconW / 2f,

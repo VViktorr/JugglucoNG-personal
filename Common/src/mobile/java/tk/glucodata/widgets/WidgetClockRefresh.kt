@@ -18,8 +18,8 @@ object WidgetClockRefresh {
     private val mutableRevision = MutableStateFlow(0L)
     val revision = mutableRevision.asStateFlow()
 
-    // TextClock now ticks in the launcher for every font choice.
-    fun usesBitmapClock(context: Context): Boolean = false
+    // Every header uses bitmap text, including the system-font selection.
+    fun usesBitmapClock(context: Context): Boolean = true
 
     @Synchronized
     fun install(context: Context) {
