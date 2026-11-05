@@ -407,7 +407,9 @@ internal object ComplicationRenderer {
         paint.reset()
         paint.isAntiAlias = true
         paint.style = Paint.Style.FILL
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.typeface = if (tk.glucodata.FontCatalog.hasSelection(Applic.app))
+            tk.glucodata.FontCatalog.appTypeface(Applic.app, 700)
+        else Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         paint.textAlign = Paint.Align.CENTER
         paint.color = color
 
@@ -436,7 +438,9 @@ internal object ComplicationRenderer {
         if (text.isEmpty() || height <= 0f) return 0f
         paint.reset()
         paint.isAntiAlias = true
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.typeface = if (tk.glucodata.FontCatalog.hasSelection(Applic.app))
+            tk.glucodata.FontCatalog.appTypeface(Applic.app, 700)
+        else Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         paint.textSize = height
         val metrics = paint.fontMetrics
         val glyphHeight = (metrics.descent - metrics.ascent).coerceAtLeast(1f)

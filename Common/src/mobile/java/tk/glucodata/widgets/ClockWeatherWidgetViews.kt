@@ -22,7 +22,21 @@ object ClockWeatherWidgetViews {
     ): RemoteViews {
         val renderer = WidgetRenderer(context)
         return RemoteViews(context.packageName,
-            when {
+            when (config.fontFamily) {
+                WidgetFontFamily.HARMONYOS -> R.layout.home_widget_clock_weather_harmonyos
+                WidgetFontFamily.COMFORTAA -> R.layout.home_widget_clock_weather_comfortaa
+                WidgetFontFamily.UBUNTU -> R.layout.home_widget_clock_weather_ubuntu
+                WidgetFontFamily.ROBOTO_CONDENSED -> R.layout.home_widget_clock_weather_robotocondensed
+                WidgetFontFamily.OSWALD -> R.layout.home_widget_clock_weather_oswald
+                WidgetFontFamily.RUBIK -> R.layout.home_widget_clock_weather_rubik
+                WidgetFontFamily.POPPINS -> R.layout.home_widget_clock_weather_poppins
+                WidgetFontFamily.PLUS_JAKARTA -> R.layout.home_widget_clock_weather_plusjakartasans
+                WidgetFontFamily.NOTO_SANS -> R.layout.home_widget_clock_weather_notosans
+                WidgetFontFamily.URBANIST -> R.layout.home_widget_clock_weather_urbanist
+                WidgetFontFamily.INTER -> R.layout.home_widget_clock_weather_inter
+                WidgetFontFamily.DM_SANS -> R.layout.home_widget_clock_weather_dmsans
+                WidgetFontFamily.ROBOTO_FLEX -> R.layout.home_widget_clock_weather_robotoflex
+                else -> when {
                 config.mainFontFamily == WidgetFontFamily.IBM_PLEX && config.detailFontFamily == WidgetFontFamily.IBM_PLEX ->
                     R.layout.home_widget_clock_weather_ibm
                 config.mainFontFamily == WidgetFontFamily.SYSTEM && config.detailFontFamily == WidgetFontFamily.IBM_PLEX ->
@@ -30,6 +44,7 @@ object ClockWeatherWidgetViews {
                 config.mainFontFamily == WidgetFontFamily.IBM_PLEX && config.detailFontFamily == WidgetFontFamily.SYSTEM ->
                     R.layout.home_widget_clock_weather_ibm_main_system_detail
                 else -> R.layout.home_widget_clock_weather
+                }
             }
         ).apply {
             val clockSize=min(w*0.145f,h*0.46f)*config.glucoseScale/100f

@@ -1451,6 +1451,11 @@ public class NotificationChartDrawer {
             }
         }
 
+        if (FontCatalog.hasSelection(context)) {
+            paint.setFontVariationSettings(null);
+            paint.setTypeface(FontCatalog.appTypeface(context, fontWeight));
+        }
+
         // Parse up to 3 parts: "Primary / Secondary · Tertiary" (hero card format)
         String part1 = text;
         String part2 = "";
@@ -1715,6 +1720,10 @@ public class NotificationChartDrawer {
             paint.setTypeface(android.graphics.Typeface.DEFAULT);
         }
 
+        if (FontCatalog.hasSelection(context)) {
+            paint.setFontVariationSettings(null);
+            paint.setTypeface(FontCatalog.appTypeface(context, 400));
+        }
         float textWidth = paint.measureText(text);
         int width = (int) (textWidth + 1);
         int height = (int) (14 * density);
@@ -2251,6 +2260,12 @@ public class NotificationChartDrawer {
             android.graphics.Typeface tf = androidx.core.content.res.ResourcesCompat.getFont(context,
                     R.font.ibm_plex_sans_var);
             textPaint.setTypeface(tf);
+            if (widgetAxes) {
+                textPaint.setTypeface(FontCatalog.typeface(context,
+                        FontCatalog.widgetFamily(context, FontCatalog.Family.IBM_PLEX), 400, false));
+            } else if (FontCatalog.hasSelection(context)) {
+                textPaint.setTypeface(FontCatalog.appTypeface(context, 400));
+            }
         } catch (Throwable t) {
             // ignore
         }

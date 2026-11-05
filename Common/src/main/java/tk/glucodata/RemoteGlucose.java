@@ -221,23 +221,13 @@ class RemoteGlucose {
          int legacyConfiguredWeight = basicWidgetInt("fontWeight", legacyWeight);
          int fontWeight = Math.max(300, Math.min(700,
                basicWidgetInt(primary ? "primaryFontWeight" : "secondaryFontWeight", legacyConfiguredWeight)));
-         boolean useSystemFont = "SYSTEM".equals(family);
-
-         android.graphics.Typeface tf;
-         if (useSystemFont) {
-            tf = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL);
-         } else {
-            tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app, R.font.ibm_plex_sans_var);
-            if (tf == null) {
-               tf = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL);
-            }
-         }
-         if (android.os.Build.VERSION.SDK_INT >= 28) {
-            tf = android.graphics.Typeface.create(tf, fontWeight, false);
-         }
-         paint.setTypeface(tf);
-         if (!useSystemFont && android.os.Build.VERSION.SDK_INT >= 26) {
-            paint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
+         String shared = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE)
+               .getString("global_widget_font_family", family);
+         FontCatalog.Family selected = FontCatalog.parse(shared, FontCatalog.Family.IBM_PLEX);
+         paint.setTypeface(FontCatalog.typeface(Applic.app, selected, fontWeight, false));
+         if (android.os.Build.VERSION.SDK_INT >= 26) {
+            paint.setFontVariationSettings(selected == FontCatalog.Family.IBM_PLEX
+                  ? "'wght' " + fontWeight + ", 'wdth' 100" : null);
          }
       } catch (Throwable t) {
       }
@@ -438,13 +428,7 @@ class RemoteGlucose {
       final var usedensity = density;
       glucosePaint.setTextSize(useglsize);
 
-      // Set Font
-      try {
-         android.graphics.Typeface tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app,
-               R.font.ibm_plex_sans_var);
-         glucosePaint.setTypeface(tf);
-      } catch (Throwable t) {
-      }
+      applyWidgetTypeface(glucosePaint, true);
 
       if (isNaN(rate)) {
          getx *= 0.82f;

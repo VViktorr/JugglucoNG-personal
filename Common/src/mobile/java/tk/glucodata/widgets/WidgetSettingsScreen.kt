@@ -98,6 +98,22 @@ fun WidgetSettingsScreen(navController: NavController) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                var globalFont by remember { mutableStateOf(WidgetConfigStore.load(context, WidgetSettingsKind.BASIC).fontFamily) }
+                Text(stringResource(R.string.widget_font_title), style = MaterialTheme.typography.titleMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    WidgetFontFamily.values().forEach { family ->
+                        SettingsChoiceChip(
+                            selected = globalFont == family,
+                            onClick = {
+                                globalFont = family
+                                val config = WidgetConfigStore.load(context, WidgetSettingsKind.BASIC)
+                                WidgetConfigStore.save(context, WidgetSettingsKind.BASIC, config.copy(fontFamily = family))
+                                refreshAllWidgetFonts(context)
+                            },
+                            label = { Text(family.displayName(context)) }
+                        )
+                    }
+                }
                 WidgetSettingsKind.entries.forEach { kind ->
                     WidgetCard(kind = kind, onClick = { selected = kind })
                 }
@@ -150,6 +166,12 @@ private fun WidgetCard(kind: WidgetSettingsKind, onClick: () -> Unit) {
     }
 }
 
+private fun refreshAllWidgetFonts(context: android.content.Context) {
+    GlucoseWidget.refreshSettings()
+    ExpressiveWidgetReceiver.updateAll(context)
+    WidgetUpdater.requestUpdateAll(context)
+}
+
 private fun refreshWidget(context: android.content.Context, kind: WidgetSettingsKind) {
     when (kind) {
         WidgetSettingsKind.BASIC -> GlucoseWidget.refreshSettings()
@@ -178,15 +200,6 @@ private fun WidgetDetailSettings(
         Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            WidgetFontFamily.entries.forEach { family ->
-                SettingsChoiceChip(
-                    selected = config.fontFamily == family,
-                    onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
-                    label = { Text(stringResource(if (family == WidgetFontFamily.IBM_PLEX) R.string.widget_font_ibm_plex else R.string.widget_font_system)) })
-            }
-        }
         Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->

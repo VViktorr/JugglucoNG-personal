@@ -99,6 +99,13 @@ fun SettingsScreen(
                 )
             }
             item {
+                Text(stringResource(R.string.font_notice), style = MaterialTheme.typography.bodySmall)
+            }
+            item {
+                WearNavigationRow(stringResource(R.string.font_licenses_title),
+                    onClick = { tk.glucodata.FontLicenses.show(context) })
+            }
+            item {
                 Text(
                     text = BuildConfig.VERSION_NAME,
                     style = MaterialTheme.typography.labelSmall,

@@ -9,6 +9,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.tween
 import android.view.MotionEvent
 import android.content.Intent
+import tk.glucodata.composeFamily
 import android.graphics.Typeface // Added for Google Sans
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
@@ -257,7 +258,10 @@ fun FloatingGlucoseOverlay(
         else -> 400
     }
     
-    val fontFamily = remember(fontSource, weightVal) {
+    val selectedFont = tk.glucodata.rememberAppFont()
+    val fontFamily = remember(fontSource, weightVal, selectedFont) {
+        if (tk.glucodata.FontCatalog.hasSelection(context)) selectedFont.composeFamily(context)
+        else
         if (fontSource == "APP") {
             try {
                 FontFamily(Font(MainFontFile,

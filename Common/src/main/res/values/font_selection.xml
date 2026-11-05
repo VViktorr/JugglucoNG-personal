@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_font_title">Widget font</string>
+    <string name="font_licenses_title">Font licences</string>
+    <string name="font_notice">This application uses HarmonyOS Sans Fonts (Copyright 2021 Huawei Device Co., Ltd.) and other bundled fonts. Full licences and copyright notices are available below.</string>
+</resources>

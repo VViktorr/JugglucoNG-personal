@@ -13,12 +13,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 internal class AppFontPreference(private val prefs: SharedPreferences) {
-    var useSystemFont by mutableStateOf(prefs.getBoolean("app_use_system_font", false))
+    var family by mutableStateOf(tk.glucodata.FontCatalog.appFamily(tk.glucodata.Applic.app))
         private set
 
-    fun select(system: Boolean) {
-        useSystemFont = system
-        prefs.edit().putBoolean("app_use_system_font", system).apply()
+    fun select(selected: tk.glucodata.FontCatalog.Family) {
+        family = selected
+        tk.glucodata.FontCatalog.select(tk.glucodata.Applic.app, selected)
     }
 }
 

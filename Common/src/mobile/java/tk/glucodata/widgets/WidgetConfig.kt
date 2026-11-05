@@ -47,7 +47,7 @@ enum class WidgetSettingsKind(
 enum class WidgetBackground { SURFACE, RANGE, TRANSPARENT }
 enum class WidgetShape { SYSTEM, ROUND, PILL, SQUARE }
 enum class WidgetStatsPeriod(val hours: Int) { TODAY(0), DAY(24), WEEK(168) }
-enum class WidgetFontFamily { IBM_PLEX, SYSTEM }
+typealias WidgetFontFamily = tk.glucodata.FontCatalog.Family
 
 data class WidgetConfig(
     val background: WidgetBackground = WidgetBackground.SURFACE,

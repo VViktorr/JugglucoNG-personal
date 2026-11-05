@@ -324,7 +324,7 @@ private fun TextStyle.emphasized(): TextStyle =
     copy(fontWeight = if ((fontSize.value) >= 36f) FontWeight.Medium else FontWeight.SemiBold)
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
-private fun appTypography(fontFamily: FontFamily? = null): Typography {
+fun appTypography(fontFamily: FontFamily? = null): Typography {
     fun TextStyle.withAppFont(): TextStyle =
         if (fontFamily == null) this else copy(fontFamily = fontFamily)
 

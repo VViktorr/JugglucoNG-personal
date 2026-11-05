@@ -36,6 +36,11 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static tk.glucodata.Log.doLog;
 
 public class Layout extends ViewGroup {
+@Override public void onViewAdded(View child) {
+    super.onViewAdded(child);
+    FontCatalog.applyTree(child);
+}
+
 static View.AccessibilityDelegate  accessDeli=new View.AccessibilityDelegate () {
         @Override
         public void onInitializeAccessibilityNodeInfo( View host, AccessibilityNodeInfo info) {

@@ -132,7 +132,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
             )
         }
         val chartBitmap = remember(
-            snapshot, showChart, size.width, chartHeightDp, config.graphHours, config.showTargetBand
+            snapshot, showChart, size.width, chartHeightDp, config.graphHours, config.showTargetBand, config.fontFamily
         ) {
             if (!showChart) null else NotificationChartDrawer.drawWidgetChart(
                 context,

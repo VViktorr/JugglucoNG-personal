@@ -4755,7 +4755,7 @@ public class Notify {
         String family = "sans-serif";
         boolean isBold = false;
 
-        if (fontFamily == 0) { // App Font (IBM Plex) - Render as Bitmap
+        if (fontFamily == 0 || FontCatalog.hasSelection(Applic.app)) { // Render bundled app font as bitmap
             remoteViews.setViewVisibility(R.id.notification_glucose, View.GONE);
             remoteViews.setViewVisibility(R.id.notification_glucose_image, View.VISIBLE);
 
@@ -4769,9 +4769,11 @@ public class Notify {
 
                 android.graphics.Typeface tf = androidx.core.content.res.ResourcesCompat.getFont(Applic.app,
                         R.font.ibm_plex_sans_var);
-                textPaint.setTypeface(tf);
+                textPaint.setTypeface(FontCatalog.hasSelection(Applic.app)
+                        ? FontCatalog.appTypeface(Applic.app, fontWeight) : tf);
                 if (android.os.Build.VERSION.SDK_INT >= 26) {
-                    textPaint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
+                    if (!FontCatalog.hasSelection(Applic.app) || FontCatalog.appFamily(Applic.app) == FontCatalog.Family.IBM_PLEX)
+                        textPaint.setFontVariationSettings("'wght' " + fontWeight + ", 'wdth' 100");
                 }
 
                 int desiredWidth = (int) Math.ceil(android.text.Layout.getDesiredWidth(startupValue, textPaint));

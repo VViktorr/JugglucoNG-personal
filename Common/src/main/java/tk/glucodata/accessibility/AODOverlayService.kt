@@ -701,6 +701,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
              chartImg?.visibility = View.GONE
         }
 
+        tk.glucodata.FontCatalog.applyTree(view)
         val statusView = view.findViewById<TextView>(R.id.notification_status)
         if (statusView != null) {
             // Apply Scaling

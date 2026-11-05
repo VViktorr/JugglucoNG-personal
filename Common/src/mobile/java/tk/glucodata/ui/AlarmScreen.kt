@@ -484,7 +484,10 @@ private fun rememberAlarmTypographyChoice(): AlarmTypographyChoice {
     }
     val fontFamilyPref = prefs.getInt("notification_font_family", 0)
     val fontWeightPref = prefs.getInt("notification_font_weight", 400).coerceIn(300, 500)
-    val fontFamily = if (fontFamilyPref == 1) {
+    val selectedFont = tk.glucodata.rememberAppFont()
+    val fontFamily = if (tk.glucodata.FontCatalog.hasSelection(context)) {
+        androidx.compose.ui.text.font.FontFamily(tk.glucodata.FontCatalog.typeface(context, selectedFont, fontWeightPref, false))
+    } else if (fontFamilyPref == 1) {
         FontFamily.SansSerif
     } else {
         AppTypography.displayLarge.fontFamily ?: FontFamily.SansSerif

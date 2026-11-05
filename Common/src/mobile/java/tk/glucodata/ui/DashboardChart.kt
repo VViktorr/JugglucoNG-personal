@@ -1099,8 +1099,9 @@ fun InteractiveGlucoseChart(
     }
     var isAdjustingScrubLabel by remember { mutableStateOf(false) }
     
-    val graphFont = remember(context) {
-        ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
+    val selectedFont = tk.glucodata.rememberAppFont()
+    val graphFont = remember(context, selectedFont) {
+        tk.glucodata.FontCatalog.typeface(context, selectedFont, 400, false)
     }
     val graphFontBold = remember(graphFont) {
         if (graphFont != null) android.graphics.Typeface.create(graphFont, android.graphics.Typeface.BOLD) else android.graphics.Typeface.DEFAULT_BOLD

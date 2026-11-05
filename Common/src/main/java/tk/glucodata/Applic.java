@@ -1112,6 +1112,7 @@ public class Applic extends Application implements androidx.work.Configuration.P
     @Override
     public void onCreate() {
         super.onCreate();
+        FontCatalog.install(this);
         // Before anything else: Application.onCreate precedes every component
         // (boot receiver, restarted service, activity), so this is the only
         // place that guarantees the trend/alert bridges exist before the first

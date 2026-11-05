@@ -2,7 +2,11 @@
 
 package tk.glucodata.ui
 
+import androidx.compose.runtime.remember
 import android.app.Activity
+import tk.glucodata.composeFamily
+import tk.glucodata.rememberAppFont
+import tk.glucodata.FontCatalog
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -85,17 +89,18 @@ fun JugglucoTheme(
         }
     }
 
+    val selectedAppFont = rememberAppFont()
+    val selectedTypography = remember(context, selectedAppFont) {
+        if (selectedAppFont == FontCatalog.Family.IBM_PLEX) tk.glucodata.ui.theme.AppTypography
+        else tk.glucodata.ui.theme.appTypography(selectedAppFont.composeFamily(context))
+    }
     // Expressive theme and motion: switches, sliders, navigation indicators, sheets and
     // buttons all move on the same springs as the hand-built components (ExpressiveMotion
     // mirrors MotionScheme.expressive()).
     MaterialExpressiveTheme(
         colorScheme = colorScheme,
         motionScheme = MotionScheme.expressive(),
-        typography = if (LocalAppFontPreference.current?.useSystemFont == true) {
-            tk.glucodata.ui.theme.SystemAppTypography
-        } else {
-            tk.glucodata.ui.theme.AppTypography
-        },
+        typography = selectedTypography,
     ) {
         // Display size (density) may grow at most 10% past the device's native density, so an
         // extreme Display Size setting cannot break M3 layouts. Font size is not capped here:

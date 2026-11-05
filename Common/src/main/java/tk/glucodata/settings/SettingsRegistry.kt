@@ -228,7 +228,16 @@ object SettingsRegistry {
         "watch_notification_icon_mode", SettingType.INT, -1, SettingScope.MIRRORED,
     )
 
+    val APP_FONT = SettingDefinition(
+        "app_font_family", SettingType.STRING, "", SettingScope.MIRRORED, SettingBackup.INCLUDED,
+    )
+    val LEGACY_APP_FONT = SettingDefinition(
+        "app_use_system_font", SettingType.BOOL, false, SettingScope.MIRRORED, SettingBackup.INCLUDED,
+    )
+
     val definitions: List<SettingDefinition> = listOf(
+        APP_FONT,
+        LEGACY_APP_FONT,
         SMOOTHING_MINUTES,
         SMOOTHING_GRAPH_ONLY,
         SMOOTHING_COLLAPSE_CHUNKS,

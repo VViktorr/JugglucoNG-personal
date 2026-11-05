@@ -128,18 +128,7 @@ class WidgetRenderer(private val context: Context) {
 
     private fun configuredTypeface(config: WidgetConfig, bold: Boolean): Typeface {
         val weight = if (bold) config.primaryFontWeight else config.secondaryFontWeight
-        return try {
-            val base = if (config.fontFamily == WidgetFontFamily.IBM_PLEX) {
-                ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
-                    ?: Typeface.create("sans-serif", Typeface.NORMAL)
-            } else {
-                Typeface.create("sans-serif", Typeface.NORMAL)
-            }
-            if (Build.VERSION.SDK_INT >= 28) Typeface.create(base, weight, false) else base
-        } catch (_: Throwable) {
-            val fallback = Typeface.create("sans-serif", Typeface.NORMAL)
-            if (Build.VERSION.SDK_INT >= 28) Typeface.create(fallback, weight, false) else fallback
-        }
+        return tk.glucodata.FontCatalog.typeface(context, config.fontFamily, weight, false)
     }
 
     private fun paint(

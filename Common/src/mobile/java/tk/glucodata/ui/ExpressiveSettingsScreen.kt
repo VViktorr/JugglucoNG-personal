@@ -471,7 +471,7 @@ fun ExpressiveSettingsScreen(
                 item(key = "app_font") {
                     SettingsItem(
                         title = stringResource(R.string.app_font_title),
-                        subtitle = stringResource(if (appFont.useSystemFont) R.string.app_font_system else R.string.app_font_ibm),
+                        subtitle = appFont.family.displayName(context),
                         icon = Icons.Default.TextFields,
                         iconTint = generalColor,
                         position = CardPosition.SINGLE,
@@ -966,6 +966,11 @@ fun ExpressiveSettingsScreen(
             ) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.font_notice), style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp))
+                androidx.compose.material3.TextButton(onClick = { tk.glucodata.FontLicenses.show(context) }) {
+                    Text(stringResource(R.string.font_licenses_title))
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 // ui-guardrails: allow text_literal - a version number, the same in every language
                 Text(
@@ -996,12 +1001,10 @@ fun ExpressiveSettingsScreen(
         context.findActivity()?.hardRestart() 
     }, { showUnitDialog = false })
     if (showFontDialog && appFont != null) {
-        AppearancePickerDialog(
-            title = stringResource(R.string.app_font_title),
-            options = listOf(false to R.string.app_font_ibm, true to R.string.app_font_system),
-            current = appFont.useSystemFont,
+        FontPickerDialog(
+            current = appFont.family,
             onSelect = { appFont.select(it); showFontDialog = false },
-            onDismiss = { showFontDialog = false },
+            onDismiss = { showFontDialog = false }
         )
     }
     if (showThemeDialog) ThemePickerDialog(themeMode, { onThemeChanged(it); showThemeDialog = false }, { showThemeDialog = false })
