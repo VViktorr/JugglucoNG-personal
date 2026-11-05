@@ -2360,7 +2360,7 @@ class ICanHealthBleManager(
             if (sensorPtr != 0L || nativeWriteName.isNotBlank()) {
                 adoptNativeSensorIfAppropriate(SerialNumber, nativeWriteName)
             }
-            Natives.wakebackup()
+            Natives.wakestreamonly()
         }.onFailure {
             Log.stack(TAG, "storeMeasurement", it)
         }
@@ -3697,7 +3697,7 @@ class ICanHealthBleManager(
             if (nativeWriteName.isNotBlank()) {
                 adoptNativeSensorIfAppropriate(SerialNumber, nativeWriteName)
             }
-            Natives.wakebackup()
+            Natives.wakehereonly()
         }.onFailure {
             Log.stack(TAG, "mirrorHistoryBatchIntoNative", it)
         }
