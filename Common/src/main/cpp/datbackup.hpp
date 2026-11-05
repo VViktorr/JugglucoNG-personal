@@ -234,7 +234,8 @@ struct updatedata {
   uint8_t reservedturn[3];
   turnserver_t turnserver[1];
 
-  void wakesender(uintptr_t kind = 8 /*wakeall*/);
+  // sourcesOnly: only the hosts this phone receives data from.
+  void wakesender(uintptr_t kind = 8 /*wakeall*/, bool sourcesOnly = false);
   void wakestreamsender();
 };
 
@@ -1244,6 +1245,9 @@ sendindex); extern bool doend(int sendindex); */
 #endif
     }
     uintptr_t current = 0;
+    // Count stream wakes per sender thread, rather than sharing an unlocked
+    // function-static counter between Clone hosts.
+    int streamwakes = 0;
     if (resumeCloneRecoveryForHost(allindex, sendindex) == 1) {
       con_vars[sendindex]->wakebackup(wakerecovery);
     }
@@ -1262,11 +1266,10 @@ sendindex); extern bool doend(int sendindex); */
       if (!passive) {
         notpassive(current, sendindex);
       }
-      static int count = 0;
-      if (current == wakestream) {
-        if (count++ % 5 == 4) {
-          current = wakeall;
-        }
+      // Keep any reconnect/number flags when promoting every fifth stream wake.
+      if ((current & wakestream) && !(current & wakeall) &&
+          streamwakes++ % 5 == 4) {
+        current = (current & ~wakestream) | wakeall;
       }
       doupdates(current, sendindex);
     }
