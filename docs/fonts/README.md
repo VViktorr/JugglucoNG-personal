@@ -34,3 +34,9 @@ Not included: Samsung One and MiSans (redistribution permissions not established
 - Do not alter glucose readings, glucose thresholds, trend arrows, or BLE/sensor code.
 
 This file is a source/licensing checklist, **not** the full legal texts. Each font's actual upstream license must accompany its binaries.
+
+## Widget font selection — incremental implementation
+
+The widget settings already provide a single font-family control per widget kind. As of commit b0c2a80d, `WidgetConfigStore` persists `global_widget_font_family` so all widget kinds read the same selection and normalize main/detail font families to it. This does **not** yet add the optional 13 font binaries or enable them in the selector.
+
+Important renderer limitation: clock/weather widgets use Android RemoteViews with XML TextView/TextClock font attributes and layouts selected by IBM Plex/system combinations. Their fonts cannot be universally replaced by changing Canvas Paint alone. Before claiming full widget coverage, adapt these RemoteViews layouts (or compatible bitmap rendering) for each bundled font and verify clock, glucose, detail, weather, date and fallback fields. Existing text sizes and weights must remain configurable.
