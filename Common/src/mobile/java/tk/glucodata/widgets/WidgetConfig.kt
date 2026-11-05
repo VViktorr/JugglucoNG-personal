@@ -196,6 +196,8 @@ private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
 
 object WidgetConfigStore {
     private const val PREFS = "home_widget_defaults"
+    // One font choice shared by every widget type and every text field.
+    private const val GLOBAL_WIDGET_FONT = "global_widget_font_family"
     private val mutableRevision = MutableStateFlow(0L)
     val revision = mutableRevision.asStateFlow()
 
@@ -239,16 +241,27 @@ object WidgetConfigStore {
 
     fun load(context: Context, kind: WidgetSettingsKind): WidgetConfig {
         migrateOpacityTo65(context)
-        val saved = WidgetConfig.fromJson(prefs(context).getString(kind.name, null), defaults(context, kind))
+        val preferences = prefs(context)
+        val saved = WidgetConfig.fromJson(preferences.getString(kind.name, null), defaults(context, kind))
+        val globalFont = runCatching {
+            WidgetFontFamily.valueOf(preferences.getString(GLOBAL_WIDGET_FONT, saved.fontFamily.name) ?: saved.fontFamily.name)
+        }.getOrDefault(saved.fontFamily)
         return saved.copy(
-            mainFontFamily = saved.fontFamily,
-            detailFontFamily = saved.fontFamily,
+            fontFamily = globalFont,
+            mainFontFamily = globalFont,
+            detailFontFamily = globalFont,
             secondaryFontWeight = saved.primaryFontWeight
         )
     }
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {
-        prefs(context).edit().putString(kind.name, config.toJson().toString()).apply()
+        prefs(context).edit()
+            .putString(GLOBAL_WIDGET_FONT, config.fontFamily.name)
+            .putString(kind.name, config.copy(
+                mainFontFamily = config.fontFamily,
+                detailFontFamily = config.fontFamily
+            ).toJson().toString())
+            .apply()
         // Active Glance sessions must reload settings even without a glucose tick.
         synchronized(mutableRevision) {
             mutableRevision.value = mutableRevision.value + 1L
