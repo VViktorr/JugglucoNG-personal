@@ -20,6 +20,7 @@ object ClockWeatherWidgetViews {
         valueText: String = snapshot.valueText,
         reserveTrendArrowSpace: Boolean = false
     ): RemoteViews {
+        tk.glucodata.Log.i("WidgetSettingsTrace", "header main=${config.glucoseScale} detail=${config.detailScale} weather=${config.weatherScale} bitmap=${WidgetClockRefresh.usesBitmapClock(context)} width=$w height=$h pxPerDp=$pxPerDp")
         val renderer = WidgetRenderer(context)
         if (WidgetClockRefresh.usesBitmapClock(context)) {
             val bitmap = renderer.renderClockHeader(config, snapshot, w, h, pxPerDp,

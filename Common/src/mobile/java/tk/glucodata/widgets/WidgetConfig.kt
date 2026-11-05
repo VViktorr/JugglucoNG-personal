@@ -268,6 +268,8 @@ object WidgetConfigStore {
     }
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {
+        tk.glucodata.Log.i("WidgetSettingsTrace", "save kind=$kind main=${config.glucoseScale} detail=${config.detailScale} weather=${config.weatherScale} icon=${config.weatherIconScale} temperature=${config.temperatureScale} shift=${config.weatherShiftDp} opacity=${config.opacity} radius=${config.cornerRadiusDp} font=${config.fontFamily}")
+
         prefs(context).edit()
             .putString(GLOBAL_WIDGET_FONT, config.fontFamily.name)
             .putString(kind.name, config.copy(

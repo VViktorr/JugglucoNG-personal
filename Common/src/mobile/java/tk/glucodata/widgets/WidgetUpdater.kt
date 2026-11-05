@@ -107,6 +107,7 @@ object WidgetUpdater {
                 detailFontFamily = savedConfig.fontFamily,
                 secondaryFontWeight = savedConfig.primaryFontWeight
             ) else savedConfig
+            Log.i("WidgetSettingsTrace", "render kind=$kind ids=${ids.joinToString()} main=${config.glucoseScale} detail=${config.detailScale} weather=${config.weatherScale} icon=${config.weatherIconScale} temperature=${config.temperatureScale} shift=${config.weatherShiftDp} opacity=${config.opacity} radius=${config.cornerRadiusDp}")
             ids.forEach { id ->
                 try {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
@@ -123,6 +124,7 @@ object WidgetUpdater {
                             setOnClickPendingIntent(R.id.home_widget_root, openAppIntent(context, id))
                         }
                     })
+                    Log.i("WidgetSettingsTrace", "submitted kind=$kind id=$id")
                 } catch(t:Throwable){ Log.stack(LOG_ID,"render $kind $id",t) }
             }
         }
