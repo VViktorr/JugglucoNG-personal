@@ -56,3 +56,9 @@ Source review, resource/manifest inspection and original font name/cmap/axis ins
 A complete changed-file inventory is in `changed-files.txt`.
 
 Native clock layouts select the nearest supported weight for older intermediate weight preferences, so no value is hidden by an unmatched weight. Bitmap headers retain freshness/status rules and do not change the glucose source.
+
+### Font inspection, 2026-11-05
+
+All 23 bundled catalogue font files (13 bundled families plus the device-system choice) contain `ĄąĆćĘęŁłŃńÓóŚśŹźŻż`, digits and the widget punctuation `.,−:+%°`. All 22 files in the source manifest match their recorded SHA-256 checksums; IBM Plex Sans is the pre-existing application resource. Every bundled variable family's weight axis covers widget weights 300–700. Static family XML files select their supplied weights using Android's normal nearest-weight matching. Urbanist remains excluded. Device-system glyph coverage depends on the device and cannot be inspected from APK resources.
+
+The basic widget now also fits the glucose value using full vertical font extents and keeps time descenders inside its bitmap. Clock/chart header text and range/weather text use full extents rather than only ascent/descent. This is source and font-file inspection; Android rendering, launcher behavior and device font fallback still require device verification. No app build or test suite was run for this inspection.
