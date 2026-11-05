@@ -72,16 +72,13 @@ class WidgetRenderer(private val context: Context) {
             config.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
         val fontScale = context.resources.configuration.fontScale
         val mainSize = min(widthDp * .145f, heightDp * .46f) * config.glucoseScale / 100f * pxPerDp * fontScale
-        val detailSize = min(widthDp * .042f, heightDp * .19f) * config.detailScale / 100f * pxPerDp * fontScale
+        val detailSize = min(widthDp * .050f, heightDp * .23f) * config.detailScale / 100f * pxPerDp * fontScale
         val hasWeather = config.showWeather && weather != null &&
             (config.showWeatherIcon || config.showTemperature)
         fun text(value: String, left: Float, right: Float, top: Float, bottom: Float,
                  size: Float, primary: Boolean, end: Boolean, tint: Int = color) {
             if (value.isBlank() || right <= left || bottom <= top) return
-            val selectedScale = if (primary) config.glucoseScale else config.detailScale
-            // Fit ONCE at the fixed slider maximum, then apply the user's ratio.
-            // The fitted reference is independent of the current slider value.
-            val p = paint(size * 180f / selectedScale, tint, config, primary)
+            val p = paint(size, tint, config, primary)
             // Include glyph overhangs and full font extents (accents/descenders),
             // leaving a pixel of breathing room even at reduced bitmap density.
             val bounds = Rect()
@@ -97,7 +94,6 @@ class WidgetRenderer(private val context: Context) {
                 val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
                 p.textSize *= min(1f, min(availableW / max(1f, span), availableH / max(1f, b - a)))
             }
-            p.textSize *= selectedScale / 180f
             val (a, b) = extents()
             p.textAlign = Paint.Align.LEFT
             val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
@@ -112,7 +108,42 @@ class WidgetRenderer(private val context: Context) {
         val clock = android.text.format.DateFormat.getTimeFormat(context).format(now)
         val date = android.text.format.DateFormat.format("EEEE, d MMMM", now).toString()
         text(clock, 12f * pxPerDp, w * (if (hasWeather) .30f else .48f), 0f, h / 2f, mainSize, true, false)
-        if (config.showDate) text(date, 14f * pxPerDp, w * .49f, h / 2f, h, detailSize, false, false)
+        fun detailRow(reading: String) {
+            val dateLabel = if (config.showDate) date else ""
+            if (dateLabel.isBlank() && reading.isBlank()) return
+            val p = paint(detailSize, color, config, false)
+            val left = 14f * pxPerDp
+            val right = w - 12f * pxPerDp
+            val gap = if (dateLabel.isNotBlank() && reading.isNotBlank()) 12f * pxPerDp else 0f
+            val dateBounds = Rect()
+            val readingBounds = Rect()
+            fun measure(): Pair<Float, Float> {
+                p.getTextBounds(dateLabel, 0, dateLabel.length, dateBounds)
+                p.getTextBounds(reading, 0, reading.length, readingBounds)
+                val fm = p.fontMetrics
+                val width = p.measureText(dateLabel) + p.measureText(reading) +
+                    max(0f, -dateBounds.left.toFloat()) + max(0f, -readingBounds.left.toFloat()) +
+                    max(0f, dateBounds.right - p.measureText(dateLabel)) +
+                    max(0f, readingBounds.right - p.measureText(reading))
+                val height = max(fm.bottom, max(dateBounds.bottom, readingBounds.bottom).toFloat()) -
+                    min(fm.top, min(dateBounds.top, readingBounds.top).toFloat())
+                return width to height
+            }
+            // Fit the ENTIRE row once. Never independently shrink the date.
+            repeat(2) {
+                val (width, height) = measure()
+                p.textSize *= min(1f, min((right - left - gap - 2f).coerceAtLeast(1f) / width.coerceAtLeast(1f),
+                    (h * .5f - 2f).coerceAtLeast(1f) / height.coerceAtLeast(1f)))
+            }
+            measure()
+            val fm = p.fontMetrics
+            val baseline = h * .75f - (fm.top + fm.bottom) / 2f
+            p.textAlign = Paint.Align.LEFT
+            if (dateLabel.isNotBlank()) canvas.drawText(dateLabel,
+                left - min(0f, dateBounds.left.toFloat()), baseline, p)
+            if (reading.isNotBlank()) canvas.drawText(reading,
+                right - max(p.measureText(reading), readingBounds.right.toFloat()), baseline, p)
+        }
         val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
         if (snapshot.hasFreshReading) {
             val arrowSize = min(w * .10f, h * .40f)
@@ -128,11 +159,11 @@ class WidgetRenderer(private val context: Context) {
                     add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)))
                 }
             }.joinToString("  ")
-            text(detail, w * .51f, w - 12f * pxPerDp, h / 2f, h, detailSize, false, true)
+            detailRow(detail)
         } else {
             val status = snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue)
             text("—", rightStart, w - 12f * pxPerDp, 0f, h / 2f, mainSize, true, true)
-            text(status, w * .51f, w - 12f * pxPerDp, h / 2f, h, detailSize, false, true)
+            detailRow(status)
         }
         return bitmap
     }
@@ -235,7 +266,7 @@ class WidgetRenderer(private val context: Context) {
         scale: Int,
         config: WidgetConfig,
         bold: Boolean = true,
-        referenceScale: Int = 180
+        referenceScale: Int = 100
     ): Paint {
         var size = maxH * 0.82f * referenceScale / 100f
         val p = paint(size, color, config, bold)
@@ -250,6 +281,9 @@ class WidgetRenderer(private val context: Context) {
             p.textSize *= maxH / textH
         }
         p.textSize *= scale.toFloat() / referenceScale
+        val scaledMetrics = p.fontMetrics
+        p.textSize *= min(1f, min(maxW / p.measureText(text).coerceAtLeast(1f),
+            maxH / (scaledMetrics.bottom - scaledMetrics.top).coerceAtLeast(1f)))
         return p
     }
 
@@ -326,7 +360,8 @@ class WidgetRenderer(private val context: Context) {
     }
 
     private fun clockArrowSize(w: Float, h: Float, config: WidgetConfig): Float =
-        min(w * .10f, h * .40f) * config.glucoseScale / 180f
+        min(min(w * .09f, h * .32f) * config.glucoseScale / 100f,
+            min(w * .10f, h * .40f))
 
     private fun drawClockWeather(
         canvas: Canvas,
@@ -366,9 +401,9 @@ class WidgetRenderer(private val context: Context) {
 
             val temperature = "${weather.temperatureC}°"
             val iconPaint = if (c.showWeatherIcon)
-                fitText(symbol, iconMaxW, h * .40f, foreground, iconScale, c, false, referenceScale = 440) else null
+                fitText(symbol, iconMaxW, h * .40f, foreground, iconScale, c, false, referenceScale = 100) else null
             val tempPaint = if (c.showTemperature)
-                fitText(temperature, tempMaxW, h * .40f, foreground, tempScale, c, false, referenceScale = 400) else null
+                fitText(temperature, tempMaxW, h * .40f, foreground, tempScale, c, false, referenceScale = 100) else null
             val iconW = iconPaint?.measureText(symbol) ?: 0f
             val tempW = tempPaint?.measureText(temperature) ?: 0f
             val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
