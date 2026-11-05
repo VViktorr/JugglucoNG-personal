@@ -33,7 +33,7 @@ class WidgetRenderer(private val context: Context) {
         val height = max(1, (heightDp * pxPerDp).roundToInt())
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        if (includeBackground) drawBackground(canvas, width.toFloat(), height.toFloat(), config, snapshot, pxPerDp)
+        if (includeBackground) drawBackground(canvas, width.toFloat(), height.toFloat(), config, snapshot)
 
         snapshot.statusText?.let {
             if (!snapshot.hasFreshReading && kind != WidgetKind.CLOCK_WEATHER) {
@@ -89,11 +89,11 @@ class WidgetRenderer(private val context: Context) {
             }
             val availableW = (right - left - 2f).coerceAtLeast(1f)
             val availableH = (bottom - top - 2f).coerceAtLeast(1f)
-            val (initialTop, initialBottom) = extents()
-            val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
-            // Smooth fitting leaves headroom: increasing a slider must never be
-            // cancelled by a hard clamp to the same slot size.
-            p.textSize /= 1f + max(span / availableW, (initialBottom - initialTop) / availableH)
+            repeat(2) {
+                val (a, b) = extents()
+                val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
+                p.textSize *= min(1f, min(availableW / max(1f, span), availableH / max(1f, b - a)))
+            }
             val (a, b) = extents()
             p.textAlign = Paint.Align.LEFT
             val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
@@ -111,7 +111,7 @@ class WidgetRenderer(private val context: Context) {
         if (config.showDate) text(date, 14f * pxPerDp, w * .49f, h / 2f, h, detailSize, false, false)
         val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
         if (snapshot.hasFreshReading) {
-            val arrowSize = min(w * .10f, h * .40f)
+            val arrowSize = clockArrowSize(w, h, config)
             val endPadding = if (config.showArrow && snapshot.rate.isFinite())
                 max(12f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 12f * pxPerDp
             val value = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
@@ -165,8 +165,7 @@ class WidgetRenderer(private val context: Context) {
         w: Float,
         h: Float,
         config: WidgetConfig,
-        snapshot: WidgetSnapshot,
-        pxPerDp: Float
+        snapshot: WidgetSnapshot
     ) {
         if (config.background == WidgetBackground.TRANSPARENT || config.opacity <= 0) return
         val (surface, _) = palette(snapshot)
@@ -184,7 +183,7 @@ class WidgetRenderer(private val context: Context) {
         )
         // One explicit radius for every widget. Zero means the app draws a
         // rectangular surface and leaves any launcher masking entirely to Android.
-        val radius = config.cornerRadiusDp.coerceIn(0, 24) * pxPerDp
+        val radius = config.cornerRadiusDp.coerceIn(0, 24) * density
         canvas.drawRoundRect(
             0f,
             0f,
@@ -235,12 +234,16 @@ class WidgetRenderer(private val context: Context) {
     ): Paint {
         var size = maxH * 0.82f * scale / 100f
         val p = paint(size, color, config, bold)
+        val measured = p.measureText(text)
+        if (measured > maxW && measured > 0f) {
+            size *= maxW / measured
+            p.textSize = size
+        }
         val fm = p.fontMetrics
-        val bounds = Rect()
-        p.getTextBounds(text, 0, text.length, bounds)
-        val width = max(p.measureText(text), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
-        val height = max(fm.bottom, bounds.bottom.toFloat()) - min(fm.top, bounds.top.toFloat())
-        p.textSize /= 1f + max(width / maxW.coerceAtLeast(1f), height / maxH.coerceAtLeast(1f))
+        val textH = fm.bottom - fm.top
+        if (textH > maxH && textH > 0f) {
+            p.textSize *= maxH / textH
+        }
         return p
     }
 
@@ -296,7 +299,7 @@ class WidgetRenderer(private val context: Context) {
         } ?: return
         val rawW = arrow.width.toFloat().coerceAtLeast(1f)
         val rawH = arrow.height.toFloat().coerceAtLeast(1f)
-        val fit = maxSize / max(rawW, rawH)
+        val fit = min(1f, maxSize / max(rawW, rawH))
         val drawW = max(1, (rawW * fit).roundToInt())
         val drawH = max(1, (rawH * fit).roundToInt())
         val left = (cx - drawW / 2f).roundToInt()
@@ -317,9 +320,8 @@ class WidgetRenderer(private val context: Context) {
     }
 
     private fun clockArrowSize(w: Float, h: Float, config: WidgetConfig): Float =
-        (min(w * .09f, h * .32f) * config.glucoseScale / 100f).let { desired ->
-            desired / (1f + desired / min(w * .10f, h * .40f).coerceAtLeast(1f))
-        }
+        min(min(w * .09f, h * .32f) * config.glucoseScale / 100f,
+            min(w * .10f, h * .40f))
 
     private fun drawClockWeather(
         canvas: Canvas,
@@ -337,7 +339,8 @@ class WidgetRenderer(private val context: Context) {
         fun componentScale(component: Int): Int =
             component.coerceIn(50, 260)
 
-        val weatherShift = c.weatherShiftDp.coerceIn(0, 40) / 40f
+        val weatherCenterX = (w * 0.44f - c.weatherShiftDp * pxPerDp)
+            .coerceIn(w * 0.40f, w * 0.51f)
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -351,8 +354,8 @@ class WidgetRenderer(private val context: Context) {
             }
 
             val weatherBase = componentScale(c.weatherScale)
-            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt()
-            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt()
+            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt().coerceIn(45, 300)
+            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt().coerceIn(45, 300)
             val iconMaxW = w * 0.11f
             val tempMaxW = w * 0.14f
             val gap = min(5f * pxPerDp, w * .02f)
@@ -366,9 +369,8 @@ class WidgetRenderer(private val context: Context) {
             val tempW = tempPaint?.measureText(temperature) ?: 0f
             val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
             val groupWidth = iconW + spacing + tempW
-            val leftCenter = w * .32f + groupWidth / 2f
-            val rightCenter = w * .66f - groupWidth / 2f
-            val center = rightCenter - (rightCenter - leftCenter) * weatherShift
+            val center = weatherCenterX.coerceIn(w * .32f + groupWidth / 2f,
+                w * .66f - groupWidth / 2f)
             val start = center - groupWidth / 2f
             iconPaint?.let {
                 canvas.drawText(symbol, start + iconW / 2f,

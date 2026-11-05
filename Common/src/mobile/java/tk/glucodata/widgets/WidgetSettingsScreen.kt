@@ -143,6 +143,41 @@ fun WidgetSettingsScreen(navController: NavController) {
     }
 }
 
+/** Keep unsnapped drag position separate from persisted integer percentages.
+ * Feeding rounded preferences straight back into a continuous Slider resets
+ * its thumb offset on every recomposition, swallowing small drag movements.
+ */
+@Composable
+private fun WidgetSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
+    onValueChangeFinished: () -> Unit
+) {
+    var dragValue by remember { mutableStateOf(value) }
+    var dragging by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(value, dragging) {
+        if (!dragging) dragValue = value
+    }
+    AppSlider(
+        value = dragValue,
+        valueRange = valueRange,
+        steps = steps,
+        onValueChange = {
+            dragging = true
+            dragValue = it
+            onValueChange(it)
+        },
+        onValueChangeFinished = {
+            // Commit the final thumb position before requesting the last render.
+            onValueChange(dragValue)
+            dragging = false
+            onValueChangeFinished()
+        }
+    )
+}
+
 @Composable
 private fun WidgetCard(kind: WidgetSettingsKind, onClick: () -> Unit) {
     Card(
@@ -207,7 +242,7 @@ private fun WidgetDetailSettings(
 
 
         Text(if (kind.hasWeather) stringResource(R.string.widget_clock_detail_size_value, config.detailScale) else stringResource(R.string.widget_detail_size_value, config.detailScale))
-        AppSlider(
+        WidgetSlider(
             onValueChangeFinished = onSettingsFinished,
             value = config.detailScale.toFloat(),
             onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
@@ -215,7 +250,7 @@ private fun WidgetDetailSettings(
         )
 
         Text(if (kind.hasWeather) stringResource(R.string.widget_clock_glucose_size_value, config.glucoseScale) else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
-        AppSlider(
+        WidgetSlider(
             onValueChangeFinished = onSettingsFinished,
             value = config.glucoseScale.toFloat(),
             onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
@@ -223,7 +258,7 @@ private fun WidgetDetailSettings(
         )
 
         Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
-        AppSlider(
+        WidgetSlider(
             onValueChangeFinished = onSettingsFinished,
             value = config.cornerRadiusDp.toFloat(),
             onValueChange = { onChange(config.copy(cornerRadiusDp = it.toInt().coerceIn(0, 24))) },
@@ -240,7 +275,7 @@ private fun WidgetDetailSettings(
 
         if (config.background != WidgetBackground.TRANSPARENT) {
             Text(stringResource(R.string.widget_opacity_value, config.opacity))
-            AppSlider(
+            WidgetSlider(
                 onValueChangeFinished = onSettingsFinished,
                 value = config.opacity.toFloat(),
                 onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
@@ -287,7 +322,7 @@ private fun WidgetDetailSettings(
             }
             if (config.showWeather) {
                 Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
-                AppSlider(
+                WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
                     value = config.weatherScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
@@ -295,7 +330,7 @@ private fun WidgetDetailSettings(
                 )
 
                 Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
-                AppSlider(
+                WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
                     value = config.weatherIconScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
@@ -303,7 +338,7 @@ private fun WidgetDetailSettings(
                 )
 
                 Text(stringResource(R.string.widget_temperature_size_value, config.temperatureScale))
-                AppSlider(
+                WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
                     value = config.temperatureScale.toFloat(),
                     onValueChange = { onChange(config.copy(temperatureScale = (it / 5f).toInt() * 5)) },
@@ -311,7 +346,7 @@ private fun WidgetDetailSettings(
                 )
 
                 Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
-                AppSlider(
+                WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
                     value = config.weatherShiftDp.toFloat(),
                     onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },

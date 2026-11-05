@@ -69,7 +69,9 @@ The shared two-row header is used by both CLOCK_WEATHER and CHART. Missing/stale
 
 ### Widget settings source audit, 2026-11-05
 
-Size fitting now approaches slot limits smoothly instead of hard-clamping multiple slider positions to one size. This applies to clock/chart text, range/statistics text and weather. Compact BASIC no longer imposes a glucose/time minimum after applying the user's scale. Clock arrow sizing follows the slider below its slot limit; padding reserves that limit independently of the current scale. Weather icon and temperature no longer hit an arbitrary combined 300% cap. The weather shift slider maps its full range onto the available weather slot, preserving separation from clock/glucose. Bitmap corner radius uses bitmap pixels per dp rather than device density.
+The smooth fitting change in `3601a079` was reverted after device feedback showed it reduced all elements without resolving the controls. Hard limits remain only to prevent clipping at the actual slot boundary. Compact BASIC keeps the user's scale outside its base-size minimum, so reducing glucose/time size is no longer cancelled by that minimum.
+
+Widget settings now keep an independent continuous drag position. Previously every movement fed an integer preference snapped to 5% back into a continuous Material slider, which could reset the thumb offset during the gesture. The new WidgetSlider holds the raw position until release, saves the existing rounded preferences during movement, then commits the last position and requests a final refresh. All eight controls use this wrapper (main/detail size, radius, opacity, weather size, icon size, temperature size and weather shift). Device confirmation is still required; the prior source audit did not establish actual launcher behavior.
 
 Every slider still saves and refreshes on movement, with an additional final refresh when released. Existing preference ranges and visibility choices remain unchanged.
 
