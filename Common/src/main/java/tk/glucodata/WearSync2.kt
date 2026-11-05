@@ -350,7 +350,7 @@ object WearSync2 {
             val raw10 = triples[base + 2].toInt()
             buf.putInt(if (GlucoseValuePlausibility.isPlausibleMgdl(raw10 / 10f)) raw10 else 0)
         }
-        return MessageSender.sendSyncMessageAwait(WearMessagePath.SYNC2_CHUNK, buf.array())
+        return MessageSender.sendSyncMessageAwait(WearMessagePath.SYNC2_CHUNK, buf.array(), timeoutSeconds = 5L)
     }
 
     /** Canonical storage name, so an alias cannot create a parallel record. */
