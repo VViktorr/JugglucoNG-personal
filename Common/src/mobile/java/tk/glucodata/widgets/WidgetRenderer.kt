@@ -56,6 +56,77 @@ class WidgetRenderer(private val context: Context) {
         return bitmap
     }
 
+    /** Draw text directly: detached TextViews may retain an empty/clipped layout. */
+    fun renderClockHeader(
+        config: WidgetConfig, snapshot: WidgetSnapshot, widthDp: Float, heightDp: Float,
+        pxPerDp: Float, weather: WidgetWeather?, includeBackground: Boolean,
+        valueText: String, reserveTrendArrowSpace: Boolean
+    ): Bitmap {
+        val bitmap = render(WidgetKind.CLOCK_WEATHER, config, snapshot, widthDp, heightDp,
+            pxPerDp, weather, includeBackground)
+        val canvas = Canvas(bitmap)
+        val w = bitmap.width.toFloat()
+        val h = bitmap.height.toFloat()
+        val color = if ((context.resources.configuration.uiMode and 0x30) == 0x20 ||
+            config.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
+        val fontScale = context.resources.configuration.fontScale
+        val mainSize = min(widthDp * .145f, heightDp * .46f) * config.glucoseScale / 100f * pxPerDp * fontScale
+        val detailSize = min(widthDp * .042f, heightDp * .19f) * config.detailScale / 100f * pxPerDp * fontScale
+        val hasWeather = config.showWeather && weather != null &&
+            (config.showWeatherIcon || config.showTemperature)
+        fun text(value: String, left: Float, right: Float, top: Float, bottom: Float,
+                 size: Float, primary: Boolean, end: Boolean, tint: Int = color) {
+            if (value.isBlank() || right <= left || bottom <= top) return
+            val p = paint(size, tint, config, primary)
+            // Include glyph overhangs and full font extents (accents/descenders),
+            // leaving a pixel of breathing room even at reduced bitmap density.
+            val bounds = Rect()
+            fun extents(): Pair<Float, Float> {
+                p.getTextBounds(value, 0, value.length, bounds)
+                val fm = p.fontMetrics
+                return min(fm.top, bounds.top.toFloat()) to max(fm.bottom, bounds.bottom.toFloat())
+            }
+            val availableW = (right - left - 2f).coerceAtLeast(1f)
+            val availableH = (bottom - top - 2f).coerceAtLeast(1f)
+            repeat(2) {
+                val (a, b) = extents()
+                val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
+                p.textSize *= min(1f, min(availableW / max(1f, span), availableH / max(1f, b - a)))
+            }
+            val (a, b) = extents()
+            p.textAlign = Paint.Align.LEFT
+            val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
+                else left + 1f - min(0f, bounds.left.toFloat())
+            canvas.drawText(value, x, (top + bottom - a - b) / 2f, p)
+        }
+        val now = java.util.Date()
+        val clock = android.text.format.DateFormat.getTimeFormat(context).format(now)
+        val date = android.text.format.DateFormat.format("EEEE, d MMMM", now).toString()
+        text(clock, 12f * pxPerDp, w * (if (hasWeather) .30f else .48f), 0f, h / 2f, mainSize, true, false)
+        if (config.showDate) text(date, 14f * pxPerDp, w * .49f, h / 2f, h, detailSize, false, false)
+        val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
+        if (snapshot.hasFreshReading) {
+            val arrowSize = min(w * .09f, h * .32f) * config.glucoseScale / 100f
+            val endPadding = if (reserveTrendArrowSpace && config.showArrow && snapshot.rate.isFinite())
+                max(38f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 38f * pxPerDp
+            val value = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
+            text(value, rightStart, w - endPadding, 0f, h / 2f, mainSize, true, true,
+                glucoseTextColor(snapshot, config))
+            val detail = buildList {
+                if (config.showDelta) snapshot.delta?.let { add(deltaText(it, snapshot.isMmol)) }
+                if (config.showUnit) add(snapshot.unitText)
+                if (config.showTime) snapshot.current?.let {
+                    add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)))
+                }
+            }.joinToString("  ")
+            text(detail, w * .51f, w - 12f * pxPerDp, h / 2f, h, detailSize, false, true)
+        } else {
+            val status = snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue)
+            text(status, rightStart, w - 12f * pxPerDp, 0f, h, detailSize, false, true)
+        }
+        return bitmap
+    }
+
     fun describe(snapshot: WidgetSnapshot): String =
         snapshot.statusText ?: buildString {
             append(snapshot.valueText)
@@ -163,7 +234,7 @@ class WidgetRenderer(private val context: Context) {
             p.textSize = size
         }
         val fm = p.fontMetrics
-        val textH = fm.descent - fm.ascent
+        val textH = fm.bottom - fm.top
         if (textH > maxH && textH > 0f) {
             p.textSize *= maxH / textH
         }
@@ -172,7 +243,7 @@ class WidgetRenderer(private val context: Context) {
 
     private fun baselineCenter(p: Paint, cy: Float): Float {
         val fm = p.fontMetrics
-        return cy - (fm.ascent + fm.descent) / 2f
+        return cy - (fm.top + fm.bottom) / 2f
     }
 
     private fun drawStatus(
