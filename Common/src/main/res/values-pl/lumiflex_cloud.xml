@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lumiflex_cloud_title">Chmura Lumiflex</string>
+    <string name="lumiflex_cloud_subtitle">Wysyłanie glukozy do Lumiflex</string>
+    <string name="lumiflex_account">Konto</string>
+    <string name="lumiflex_account_hint">Konto (e-mail lub telefon)</string>
+    <string name="lumiflex_password">Hasło</string>
+    <string name="lumiflex_credentials_required">Podaj login i hasło</string>
+    <string name="lumiflex_sign_in">Zaloguj się</string>
+    <string name="lumiflex_signing_in">Logowanie…</string>
+    <string name="lumiflex_sign_out">Wyloguj się</string>
+    <string name="lumiflex_last_sync">Ostatnia synchronizacja: %1$s</string>
+    <string name="lumiflex_never">nigdy</string>
+    <string name="lumiflex_manage_followers">Zarządzaj obserwatorami</string>
+    <string name="lumiflex_followers_title">Obserwatorzy Lumiflex</string>
+    <string name="lumiflex_invite_title">Zaproś obserwatora</string>
+    <string name="lumiflex_follower_account">Konto obserwatora</string>
+    <string name="lumiflex_nickname_optional">Pseudonim (opcjonalnie)</string>
+    <string name="lumiflex_send_invite">Wyślij zaproszenie</string>
+    <string name="lumiflex_my_shares">Moje udostępnienia</string>
+    <string name="lumiflex_no_followers">Brak obserwatorów</string>
+    <string name="lumiflex_switch_display">Ukryj odczyty</string>
+    <string name="lumiflex_regular_reminders">Zwykłe przypomnienia</string>
+    <string name="lumiflex_urgent_low">Alarm pilnej hipoglikemii</string>
+    <string name="lumiflex_extreme_high">Alarm skrajnie wysokiej glukozy</string>
+    <string name="lumiflex_new_nickname">Nowy pseudonim</string>
+    <string name="lumiflex_save_nickname">Zapisz pseudonim</string>
+    <string name="lumiflex_rename">Zmień nazwę</string>
+    <string name="lumiflex_remove">Usuń</string>
+    <string name="lumiflex_status_invited">Wysłano zaproszenie</string>
+    <string name="lumiflex_status_invite_failed">Nie udało się wysłać zaproszenia</string>
+    <string name="lumiflex_status_renamed">Zmieniono nazwę</string>
+    <string name="lumiflex_status_rename_failed">Nie udało się zmienić nazwy</string>
+    <string name="lumiflex_status_removed">Usunięto</string>
+    <string name="lumiflex_status_remove_failed">Nie udało się usunąć obserwatora</string>
+    <string name="lumiflex_status_load_failed">Nie udało się pobrać obserwatorów</string>
+    <string name="lumiflex_show_password">Pokaż hasło</string>
+    <string name="lumiflex_hide_password">Ukryj hasło</string>
+    <string name="lumiflex_status_signed_in">Zalogowano</string>
+    <string name="lumiflex_status_signed_out">Wylogowano</string>
+    <string name="lumiflex_status_sign_in_failed">Logowanie nie powiodło się: %1$s</string>
+    <string name="lumiflex_signed_in_as">Zalogowano jako %1$s</string>
+    <string name="lumiflex_session_note">Zalogowanie tutaj wyloguje oficjalną aplikację Lumiflex i odwrotnie: konto obsługuje jedną sesję naraz.</string>
+</resources>

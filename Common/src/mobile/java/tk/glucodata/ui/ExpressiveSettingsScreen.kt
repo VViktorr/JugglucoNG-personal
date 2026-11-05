@@ -97,6 +97,7 @@ import tk.glucodata.R
 import tk.glucodata.SensorBluetooth
 import tk.glucodata.SensorSourceResolver
 import tk.glucodata.share.DexcomShareSettings
+import tk.glucodata.share.lumiflex.LumiflexCloudSettings
 import tk.glucodata.alerts.SensorHandoverRuntime
 import tk.glucodata.data.calibration.CalibrationManager
 import tk.glucodata.data.ScheduledBackupSettings
@@ -145,6 +146,10 @@ fun ExpressiveSettingsScreen(
     val showDexcomShare = remember {
         runCatching { DexcomShareSettings.isSetUp(context) }.getOrDefault(false) ||
             hasActiveDexcomSensor()
+    }
+    val showLumiflex = remember(context, sensorStatusRevision) {
+        runCatching { LumiflexCloudSettings.isSetUp(context) }.getOrDefault(false) ||
+            hasActiveAiDexSensor()
     }
     val showOttaiSettings = remember {
         SensorBluetooth.mygatts().any { callback ->
@@ -785,6 +790,18 @@ fun ExpressiveSettingsScreen(
                         iconTint = sharingColor,
                         position = CardPosition.SINGLE,
                         onClick = { navController.navigate("settings/dexcom-share") }
+                    )
+                }
+            }
+            if (showLumiflex) {
+                item(key = "lumiflex_cloud_title") {
+                    SettingsItem(
+                        title = stringResource(R.string.lumiflex_cloud_title),
+                        subtitle = stringResource(R.string.lumiflex_cloud_subtitle),
+                        icon = Icons.Default.CloudUpload,
+                        iconTint = sharingColor,
+                        position = CardPosition.SINGLE,
+                        onClick = { navController.navigate("settings/lumiflex") }
                     )
                 }
             }
@@ -1843,3 +1860,10 @@ private val importMimeTypes = arrayOf(
     "text/tab-separated-values",
     "*/*"
 )
+
+private fun hasActiveAiDexSensor(): Boolean = runCatching {
+    Natives.activeSensors()?.filterNotNull().orEmpty().any { sensorId ->
+        SensorSourceResolver.resolveSensorKind(sensorId, SensorSourceResolver.SENSOR_KIND_UNKNOWN) ==
+            SensorSourceResolver.SENSOR_KIND_AIDEX
+    }
+}.getOrDefault(false)
