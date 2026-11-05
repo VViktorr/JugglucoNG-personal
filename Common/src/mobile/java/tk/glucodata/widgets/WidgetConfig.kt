@@ -254,6 +254,19 @@ object WidgetConfigStore {
         )
     }
 
+    /** Persist the global family before pushing fresh views to every provider. */
+    fun selectFont(context: Context, family: WidgetFontFamily) {
+        prefs(context).edit().putString(GLOBAL_WIDGET_FONT, family.name).apply()
+        synchronized(mutableRevision) {
+            mutableRevision.value = mutableRevision.value + 1L
+        }
+        // BASIC bypasses its reading-update throttle; the other providers queue
+        // an explicit render. None of these waits for a reading or clock tick.
+        tk.glucodata.GlucoseWidget.refreshSettings()
+        tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
+        WidgetUpdater.requestUpdateAll(context)
+    }
+
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {
         prefs(context).edit()
             .putString(GLOBAL_WIDGET_FONT, config.fontFamily.name)

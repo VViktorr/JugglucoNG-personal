@@ -107,9 +107,7 @@ fun WidgetSettingsScreen(navController: NavController) {
                             selected = globalFont == family,
                             onClick = {
                                 globalFont = family
-                                val config = WidgetConfigStore.load(context, WidgetSettingsKind.BASIC)
-                                WidgetConfigStore.save(context, WidgetSettingsKind.BASIC, config.copy(fontFamily = family))
-                                refreshAllWidgetFonts(context)
+                                WidgetConfigStore.selectFont(context, family)
                             },
                             label = { Text(family.displayName(context), fontFamily = family.composeFamily(context)) }
                         )
@@ -165,12 +163,6 @@ private fun WidgetCard(kind: WidgetSettingsKind, onClick: () -> Unit) {
             Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
-}
-
-private fun refreshAllWidgetFonts(context: android.content.Context) {
-    GlucoseWidget.refreshSettings()
-    ExpressiveWidgetReceiver.updateAll(context)
-    WidgetUpdater.requestUpdateAll(context)
 }
 
 private fun refreshWidget(context: android.content.Context, kind: WidgetSettingsKind) {

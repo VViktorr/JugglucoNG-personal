@@ -75,7 +75,12 @@ class ExpressiveAppWidget : GlanceAppWidget() {
                         value = withContext(Dispatchers.IO) { loadWidgetState(context) }
                     }
                 }
-                WidgetContent(state, clockRevision)
+                // Apply cheap display settings immediately. Loading history/weather
+                // may still be in flight, and must not delay a font change.
+                val displayConfig = remember(context, revision) {
+                    WidgetConfigStore.load(context, WidgetSettingsKind.CHART)
+                }
+                WidgetContent(state.copy(config = displayConfig), clockRevision)
             }
         }
     }

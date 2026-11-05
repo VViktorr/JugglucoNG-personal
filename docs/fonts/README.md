@@ -20,7 +20,7 @@ Samsung One, MiSans and Apple SF Pro are not bundled.
 ## Two independent settings
 
 - **Appearance and display → App font** sets `app_font_family` in the existing app preference file. Stable enum names, rather than list indices, are persisted. `app_use_system_font` remains readable and is also written for compatibility. If no new selection exists, all surfaces retain their previous defaults.
-- **Widgets → Widget font** is one shared selector above the widget types. Every family name is rendered in that family as an inline preview. It uses the existing `global_widget_font_family` key; the old per-kind JSON remains readable. It changes all widget providers together. Font weights, sizes, visibility and placement remain configured by the existing controls.
+- **Widgets → Widget font** is one shared selector above the widget types. Every family name is rendered in that family as an inline preview. It uses the existing `global_widget_font_family` key; the old per-kind JSON remains readable. It immediately pushes an update to all widget providers when selected, without waiting for a reading or minute tick. Active chart-widget sessions apply the new display configuration before their background history/weather reload finishes. Font weights, sizes, visibility and placement remain configured by the existing controls.
 
 The app preference participates in SettingsRegistry/WearPrefsSync using the existing phone-to-watch protocol. Compose observes SharedPreferences updates, including incoming watch synchronization. A watch connected to an older phone retains its previous font until a supported font setting arrives. The widget font is phone-local and does not follow the app font.
 
