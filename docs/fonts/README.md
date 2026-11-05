@@ -1,42 +1,51 @@
-# Optional application fonts — source and licensing manifest
+# Application and widget fonts
 
-This manifest tracks the requested fonts for the JugglucoNG main5 global font selector. It does not itself grant a license, bundle font binaries, or enable a font in the UI.
+The font catalogue in `Common/src/main/java/tk/glucodata/FontCatalog.java` contains 15 choices: IBM Plex Sans, System, HarmonyOS Sans, Comfortaa, Ubuntu, Roboto Condensed, Oswald, Rubik, Poppins, Plus Jakarta Sans, Noto Sans, Urbanist, Inter, DM Sans and Roboto Flex.
 
-**Do not add a font binary until its exact upstream release, copyright notice and applicable license have been checked and retained.** Public ROM source code or a font overlay is not proof that the font binary is freely redistributable.
+## Sources and distribution
 
-| Family | Preferred authoritative source | Licensing / packaging notes |
+`bundled-fonts.json` records the exact upstream URLs, original filenames/weights and SHA-256 checksums of the 13 newly bundled families. All binaries are unmodified. The Google Fonts `METADATA.pb` files retained here identify the designers, copyright, upstream source repositories and variable axes. Downloads were made on 2026-11-05. The full upstream licence texts and copyright notices are packaged into **both phone and Wear APKs** under `Common/src/main/assets/font_licenses/`.
+
+| Families | Distribution source | Licence |
 | --- | --- | --- |
-| Comfortaa | https://github.com/google/fonts/tree/main/ofl/comfortaa | SIL Open Font License 1.1; retain OFL.txt and copyright notices. |
-| Ubuntu | https://github.com/google/fonts/tree/main/ufl/ubuntu | Ubuntu Font Licence; retain the licence and notices. |
-| Roboto Condensed | https://github.com/google/fonts/tree/main/ofl/robotocondensed | SIL OFL 1.1 for this release; retain OFL.txt. |
-| Oswald | https://github.com/google/fonts/tree/main/ofl/oswald | SIL OFL 1.1; retain OFL.txt. |
-| Rubik | https://github.com/google/fonts/tree/main/ofl/rubik | SIL OFL 1.1; retain OFL.txt. |
-| Poppins | https://github.com/google/fonts/tree/main/ofl/poppins | SIL OFL 1.1; retain OFL.txt. |
-| Plus Jakarta Sans | https://github.com/google/fonts/tree/main/ofl/plusjakartasans | SIL OFL 1.1; retain OFL.txt. |
-| Noto Sans | https://github.com/google/fonts/tree/main/ofl/notosans | SIL OFL 1.1; retain OFL.txt. |
-| Urbanist | https://github.com/google/fonts/tree/main/ofl/urbanist | SIL OFL 1.1; retain OFL.txt. |
-| Inter | https://github.com/google/fonts/tree/main/ofl/inter | SIL OFL 1.1; retain OFL.txt. Existing report-specific Inter resources do not automatically cover app UI usage. |
-| DM Sans | https://github.com/google/fonts/tree/main/ofl/dmsans | SIL OFL 1.1; retain OFL.txt. |
-| Roboto Flex | https://github.com/google/fonts/tree/main/ofl/robotoflex | SIL OFL 1.1; retain OFL.txt. |
-| HarmonyOS Sans | Huawei official font licensing terms; verify the exact distribution | Separate Huawei terms, **not OFL**. Verify that the specific version permits embedding and distribution with this Android app; preserve full applicable license and notices before bundling. |
+| Comfortaa, Roboto Condensed, Oswald, Rubik, Poppins, Plus Jakarta Sans, Noto Sans, Urbanist, Inter, DM Sans, Roboto Flex | https://github.com/google/fonts/tree/main/ofl | SIL Open Font License 1.1; each family's own copyright and full OFL retained |
+| Ubuntu | https://github.com/google/fonts/tree/main/ufl/ubuntu | Ubuntu Font Licence 1.0; full UFL retained |
+| HarmonyOS Sans | https://github.com/openharmony/resources/tree/master/fonts | Huawei HarmonyOS Sans Fonts License Agreement, from the same repository's LICENSE_Fonts |
+| Existing IBM Plex Sans Variable | Existing app resource; https://github.com/IBM/plex/blob/master/LICENSE.txt | SIL OFL 1.1; original resource copyright (2019 IBM) additionally retained in NOTICE.txt |
 
-Existing choices: system font and IBM Plex Sans Variable. Preserve the current default until a user opts in.
+Huawei's agreement explicitly permits embedding/bundling/redistributing **unmodified** copies with software other than font software. No font conversion, subsetting or modification has been performed. A prominent usage notice and the full agreement are accessible in the app's About area and watch settings. The font files are distributed as part of this application, not as a standalone font product. HarmonyOS Sans is **not OFL**.
 
-Not included: Samsung One and MiSans (redistribution permissions not established for the intended APK).
+Samsung One, MiSans and Apple SF Pro are not bundled.
 
-## Integration checklist (not yet implemented)
+## Two independent settings
 
-- Bundle verified TTF/OTF binaries and their **unmodified full** license texts in the repository, and expose third-party notices in the app.
-- Add one persisted app-wide font preference with fallback to current system/IBM Plex typography.
-- Apply it to Compose Material 3 typography, legacy Android Views, text drawn to Canvas/bitmaps, widgets, floating overlays and the Wear OS UI, using the same preference where synchronized.
-- Respect Android-owned notification text and MetricStyle restrictions; do not claim all system surfaces can display bundled fonts.
-- Verify Polish glyphs, numeral legibility, fallback behavior, app size and font weight/width support.
-- Do not alter glucose readings, glucose thresholds, trend arrows, or BLE/sensor code.
+- **Appearance and display → App font** sets `app_font_family` in the existing app preference file. Stable enum names, rather than list indices, are persisted. `app_use_system_font` remains readable and is also written for compatibility. If no new selection exists, all surfaces retain their previous defaults.
+- **Widgets → Widget font** is one shared selector above the widget types. It uses the existing `global_widget_font_family` key; the old per-kind JSON remains readable. It changes all widget providers together. Font weights, sizes, visibility and placement remain configured by the existing controls.
 
-This file is a source/licensing checklist, **not** the full legal texts. Each font's actual upstream license must accompany its binaries.
+The app preference participates in SettingsRegistry/WearPrefsSync using the existing phone-to-watch protocol. Compose observes SharedPreferences updates, including incoming watch synchronization. A watch connected to an older phone retains its previous font until a supported font setting arrives. The widget font is phone-local and does not follow the app font.
 
-## Widget font selection — incremental implementation
+## Implemented surfaces
 
-The widget settings already provide a single font-family control per widget kind. As of commit b0c2a80d, `WidgetConfigStore` persists `global_widget_font_family` so all widget kinds read the same selection and normalize main/detail font families to it. This does **not** yet add the optional 13 font binaries or enable them in the selector.
+- All Material/Expressive mobile typography styles, including emphasized styles, preserve their existing sizes, line heights and weights. IBM retains its original per-style variable widths. Other families use their own normal widths; unsupported axes are not forced onto them.
+- Legacy Java TextViews in activities and shared Layout dialogs use the selected app family, preserving text size and weight/style. Existing installations do not receive a new legacy font until a selection is made.
+- Dashboard chart labels, default-font report text, alarm screen text and floating/lock-screen overlay text follow the app choice. Explicit serif/Outfit report styles remain available.
+- Notification/AOD bitmap text and numeric status icons use the app family. Trend arrow rendering is unchanged.
+- All widget Canvas text uses the independent widget family, including weather, temperature, metadata and statistics. Legacy BASIC widget drawing and CHART widget axes use the same preference.
+- Thirteen additional native RemoteViews layouts reference packaged font-family resources. TextClock remains a real TextClock, preserving minute/date/locale/time-zone updates and the existing weight/size/layout controls. Original IBM and system layouts remain in use for those choices.
+- Wear Material typography observes the synchronized family; app-rendered complication text also uses it. System-rendered complications remain controlled by the watch face.
+- Full font licences are accessible through **About → Font licences** and watch settings.
 
-Important renderer limitation: clock/weather widgets use Android RemoteViews with XML TextView/TextClock font attributes and layouts selected by IBM Plex/system combinations. Their fonts cannot be universally replaced by changing Canvas Paint alone. Before claiming full widget coverage, adapt these RemoteViews layouts (or compatible bitmap rendering) for each bundled font and verify clock, glucose, detail, weather, date and fallback fields. Existing text sizes and weights must remain configurable.
+## Platform limits and fallbacks
+
+- Android owns the standard LiveUpdate/MetricStyle templates and `setShortCriticalText` capsule text. These APIs accept strings, not custom typefaces; those strings keep the device font. The capsule's numeric bitmap icon follows the app family where supported. Custom notification bitmap text and the app's own overlay are covered. Native RemoteViews fields that cannot carry a custom typeface continue with their safe existing font; no unsupported RemoteViews setter is called.
+- Legacy native NanoVG/OpenGL chart text uses fonts embedded in the native renderer. This change does not rewrite that renderer or its native assets.
+- Static fonts use the nearest shipped weight when the family does not supply an exact one (for example Ubuntu/HarmonyOS at 600). Android may synthesize style differences. Other glyphs/scripts fall back through Android's normal font fallback chain.
+- Inspection of the original font cmap tables found all Polish letters and digits in every new family **except Urbanist, which lacks Ł/ł**. Android falls back for those two glyphs; see `glyph-coverage.txt`. No glyph was inserted or font binary altered.
+- A font-loading failure uses the system typeface; an unknown saved family falls back to the prior default. No network font provider is needed at runtime.
+- Active bitmap notifications/AOD/complications pick up the new family on their next normal redraw; widgets are explicitly refreshed when their selector changes. Restart/reopen an already open legacy standalone dialog if its contents do not relayout.
+
+## Validation status
+
+Source review, resource/manifest inspection and original font name/cmap/axis inspection only. **No build, test suite or emulator/device run was performed**, as requested. Device verification of font sizes, OEM RemoteViews inflation and Wear rendering remains with the user.
+
+A complete changed-file inventory is in `changed-files.txt`.

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+    <font android:font="@font/poppins_300" android:fontStyle="normal" android:fontWeight="300" />
+    <font android:font="@font/poppins_400" android:fontStyle="normal" android:fontWeight="400" />
+    <font android:font="@font/poppins_500" android:fontStyle="normal" android:fontWeight="500" />
+    <font android:font="@font/poppins_600" android:fontStyle="normal" android:fontWeight="600" />
+    <font android:font="@font/poppins_700" android:fontStyle="normal" android:fontWeight="700" />
+</font-family>
