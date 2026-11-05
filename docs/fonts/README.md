@@ -86,3 +86,7 @@ Every slider still saves and refreshes on movement, with an additional final ref
 | Statistics period | Not exposed | Not exposed | Snapshot statistics and history window |
 
 Settings are persisted in WidgetConfigStore (BASIC reads the same JSON in RemoteGlucose). BASIC explicitly clears its render cache/throttle; CLOCK_WEATHER/RANGE serialize updates with a final rerender when requests coalesce; CHART observes the settings revision and reloads history as needed. Missing/stale readings retain source status and suppress fresh-only details/arrows. This is a source audit, not a claim of device validation. Launcher delivery, touch behavior and rendering still require phone verification; no build or test suite was run.
+
+### Native header restored after comparison with 1.2.5-ok
+
+ClockWeatherWidgetViews no longer rasterizes the clock, date, glucose and details. All family selections use their existing XML TextClock/TextView layouts, following the native IBM/system approach in 1.2.5-ok. The two-row placement, source status, selected weights, direct SP size controls and font choices remain. Weather and trend keep their existing bitmap layer. This also applies to the chart header. Native TextClock handles time updates; minute bitmap refresh is disabled. Launcher acceptance of bundled XML font resources must be confirmed on the device; the selection does not guarantee a custom font on every launcher. No build or device test was performed for this restoration.

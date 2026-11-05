@@ -6,7 +6,7 @@ import tk.glucodata.R
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** Shared clock/glucose layout; bundled fonts are rasterized locally for the launcher. */
+/** Native clock/glucose layout; font families use XML resources as in 1.2.5-ok. */
 object ClockWeatherWidgetViews {
     fun create(
         context: Context,
@@ -22,14 +22,6 @@ object ClockWeatherWidgetViews {
     ): RemoteViews {
         tk.glucodata.Log.i("WidgetSettingsTrace", "header main=${config.glucoseScale} detail=${config.detailScale} weather=${config.weatherScale} bitmap=${WidgetClockRefresh.usesBitmapClock(context)} width=$w height=$h pxPerDp=$pxPerDp")
         val renderer = WidgetRenderer(context)
-        if (WidgetClockRefresh.usesBitmapClock(context)) {
-            val bitmap = renderer.renderClockHeader(config, snapshot, w, h, pxPerDp,
-                weather, includeBackground, valueText, reserveTrendArrowSpace)
-            return RemoteViews(context.packageName, R.layout.home_widget).apply {
-                setImageViewBitmap(R.id.home_widget_image, bitmap)
-                setContentDescription(R.id.home_widget_image, renderer.describe(snapshot))
-            }
-        }
         val views = RemoteViews(context.packageName,
             when (config.fontFamily) {
                 WidgetFontFamily.HARMONYOS -> R.layout.home_widget_clock_weather_harmonyos

@@ -18,8 +18,8 @@ object WidgetClockRefresh {
     private val mutableRevision = MutableStateFlow(0L)
     val revision = mutableRevision.asStateFlow()
 
-    fun usesBitmapClock(context: Context): Boolean =
-        FontCatalog.widgetFamily(context, FontCatalog.Family.SYSTEM) != FontCatalog.Family.SYSTEM
+    // TextClock now ticks in the launcher for every font choice.
+    fun usesBitmapClock(context: Context): Boolean = false
 
     @Synchronized
     fun install(context: Context) {
