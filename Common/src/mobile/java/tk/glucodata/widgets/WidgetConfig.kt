@@ -131,7 +131,7 @@ data class WidgetConfig(
                     weatherScale = json.optInt("weatherScale", fallback.weatherScale).coerceIn(70, 200),
                     weatherIconScale = json.optInt("weatherIconScale", fallback.weatherIconScale).coerceIn(70, 220),
                     temperatureScale = json.optInt("temperatureScale", fallback.temperatureScale).coerceIn(70, 200),
-                    weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 40),
+                    weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 80),
                     fontFamily = enum(json.optString("fontFamily"), fallback.fontFamily),
                     mainFontFamily = enum(json.optString("mainFontFamily"), enum(json.optString("fontFamily"), fallback.mainFontFamily)),
                     detailFontFamily = enum(json.optString("detailFontFamily"), enum(json.optString("fontFamily"), fallback.detailFontFamily)),
@@ -262,6 +262,32 @@ object WidgetConfigStore {
         }
         // BASIC bypasses its reading-update throttle; the other providers queue
         // an explicit render. None of these waits for a reading or clock tick.
+        tk.glucodata.GlucoseWidget.refreshSettings()
+        tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
+        WidgetUpdater.requestUpdateAll(context)
+    }
+
+    /** Only settings actually exposed and rendered by the target are eligible. */
+    fun supportsSetting(kind: WidgetSettingsKind, key: String): Boolean = when (key) {
+        "glucoseScale", "detailScale", "primaryFontWeight", "background", "opacity",
+        "cornerRadiusDp", "showArrow", "showTime" -> true
+        "rangeColors", "showDelta", "showUnit" -> kind != WidgetSettingsKind.BASIC
+        "showDate", "showWeather", "weatherScale", "weatherIconScale", "temperatureScale",
+        "weatherShiftDp", "showWeatherIcon", "showTemperature" -> kind.hasWeather
+        "graphHours", "showTargetBand" -> kind.hasGraph
+        "statsPeriod" -> kind.hasStats
+        else -> false
+    }
+
+    fun applyToOthers(context: Context, source: WidgetSettingsKind, config: WidgetConfig, key: String) {
+        if (!supportsSetting(source, key)) return
+        val sourceJson = config.toJson()
+        WidgetSettingsKind.entries.filter { it != source && supportsSetting(it, key) }.forEach { target ->
+            val existing = load(context, target)
+            val json = existing.toJson().put(key, sourceJson.get(key))
+            if (key == "primaryFontWeight") json.put("secondaryFontWeight", config.primaryFontWeight)
+            save(context, target, WidgetConfig.fromJson(json.toString(), existing))
+        }
         tk.glucodata.GlucoseWidget.refreshSettings()
         tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
         WidgetUpdater.requestUpdateAll(context)

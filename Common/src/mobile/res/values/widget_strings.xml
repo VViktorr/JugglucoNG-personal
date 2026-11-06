@@ -51,4 +51,6 @@
     <string name="widget_clock_detail_size_value">Date and glucose details size: %1$d%%</string>
     <string name="widget_sensor_finished">Sensor finished</string>
     <string name="widget_graph_hours">Chart range</string>
+    <string name="widget_apply_to_others">Apply to other widgets</string>
+    <string name="widget_applied_to_others">Setting applied to compatible widgets</string>
 </resources>

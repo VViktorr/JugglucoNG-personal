@@ -51,4 +51,6 @@
     <string name="widget_clock_detail_size_value">Data i opis pod glukozą — wielkość: %1$d%%</string>
     <string name="widget_sensor_finished">Sensor zakończony</string>
     <string name="widget_graph_hours">Zakres wykresu</string>
+    <string name="widget_apply_to_others">Zastosuj do pozostałych widżetów</string>
+    <string name="widget_applied_to_others">Zastosowano ustawienie w zgodnych widżetach</string>
 </resources>

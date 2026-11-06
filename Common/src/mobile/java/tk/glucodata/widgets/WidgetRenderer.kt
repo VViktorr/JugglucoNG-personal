@@ -395,7 +395,7 @@ class WidgetRenderer(private val context: Context) {
         fun componentScale(component: Int): Int =
             component.coerceIn(50, 260)
 
-        val weatherCenterX = (w * .44f - c.weatherShiftDp * pxPerDp).coerceIn(w * .27f, w * .54f)
+        val weatherCenterX = w * .44f - c.weatherShiftDp * pxPerDp
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -424,7 +424,8 @@ class WidgetRenderer(private val context: Context) {
             val tempW = tempPaint?.measureText(temperature) ?: 0f
             val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
             val groupWidth = iconW + spacing + tempW
-            val center = weatherCenterX
+            val center = weatherCenterX.coerceIn(
+                max(w * .18f, groupWidth / 2f + 12f * pxPerDp).coerceAtMost(w * .54f), w * .54f)
             val start = center - groupWidth / 2f
             iconPaint?.let {
                 canvas.drawText(symbol, start + iconW / 2f,
