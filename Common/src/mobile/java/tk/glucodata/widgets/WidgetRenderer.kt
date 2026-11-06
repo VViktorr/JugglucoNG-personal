@@ -79,21 +79,23 @@ class WidgetRenderer(private val context: Context) {
                  size: Float, primary: Boolean, end: Boolean, tint: Int = color) {
             if (value.isBlank() || right <= left || bottom <= top) return
             val p = paint(size, tint, config, primary)
-            // Include glyph overhangs and full font extents (accents/descenders),
-            // leaving a pixel of breathing room even at reduced bitmap density.
+            // Only the visible glyphs occupy this bitmap row. Font-wide top/
+            // bottom can include unrelated scripts and must not cap digit sizes.
             val bounds = Rect()
             fun extents(): Pair<Float, Float> {
                 p.getTextBounds(value, 0, value.length, bounds)
-                val fm = p.fontMetrics
-                return min(fm.top, bounds.top.toFloat()) to max(fm.bottom, bounds.bottom.toFloat())
+                return if (bounds.height() > 0) bounds.top.toFloat() to bounds.bottom.toFloat()
+                    else p.fontMetrics.ascent to p.fontMetrics.descent
             }
             val availableW = (right - left - 2f).coerceAtLeast(1f)
             val availableH = (bottom - top - 2f).coerceAtLeast(1f)
-            repeat(2) {
-                val (a, b) = extents()
-                val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
-                p.textSize *= min(1f, min(availableW / max(1f, span), availableH / max(1f, b - a)))
-            }
+            val initial = extents()
+            p.textSize *= min(1f, availableH / (initial.second - initial.first).coerceAtLeast(1f))
+            extents()
+            val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
+            // Keep the selected text height when a wider clock/value reaches
+            // its horizontal slot; fit width independently instead of undoing zoom.
+            p.textScaleX = min(1f, availableW / span.coerceAtLeast(1f))
             val (a, b) = extents()
             p.textAlign = Paint.Align.LEFT
             val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
@@ -352,6 +354,20 @@ class WidgetRenderer(private val context: Context) {
         )
     }
 
+    private fun weatherPaint(text: String, maxW: Float, maxH: Float, color: Int,
+                             scale: Int, config: WidgetConfig): Paint {
+        val p = paint(maxH * .82f * scale / 100f, color, config, false)
+        val bounds = Rect()
+        p.getTextBounds(text, 0, text.length, bounds)
+        val height = if (bounds.height() > 0) bounds.height().toFloat()
+            else p.fontMetrics.descent - p.fontMetrics.ascent
+        p.textSize *= min(1f, maxH / height.coerceAtLeast(1f))
+        p.getTextBounds(text, 0, text.length, bounds)
+        val span = max(p.measureText(text), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
+        p.textScaleX = min(1f, maxW / span.coerceAtLeast(1f))
+        return p
+    }
+
     private fun visibleBaseline(text: String, paint: Paint, centerY: Float): Float {
         val bounds = Rect()
         paint.getTextBounds(text, 0, text.length, bounds)
@@ -379,7 +395,7 @@ class WidgetRenderer(private val context: Context) {
         fun componentScale(component: Int): Int =
             component.coerceIn(50, 260)
 
-        val shiftFraction = c.weatherShiftDp.coerceIn(0, 40) / 40f
+        val weatherCenterX = (w * .44f - c.weatherShiftDp * pxPerDp).coerceIn(w * .27f, w * .54f)
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -401,16 +417,14 @@ class WidgetRenderer(private val context: Context) {
 
             val temperature = "${weather.temperatureC}°"
             val iconPaint = if (c.showWeatherIcon)
-                fitText(symbol, iconMaxW, h * .40f, foreground, iconScale, c, false, referenceScale = 100) else null
+                weatherPaint(symbol, iconMaxW, h * .46f, foreground, iconScale, c) else null
             val tempPaint = if (c.showTemperature)
-                fitText(temperature, tempMaxW, h * .40f, foreground, tempScale, c, false, referenceScale = 100) else null
+                weatherPaint(temperature, tempMaxW, h * .46f, foreground, tempScale, c) else null
             val iconW = iconPaint?.measureText(symbol) ?: 0f
             val tempW = tempPaint?.measureText(temperature) ?: 0f
             val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
             val groupWidth = iconW + spacing + tempW
-            val leftCenter = w * .32f + groupWidth / 2f
-            val rightCenter = w * .66f - groupWidth / 2f
-            val center = rightCenter - (rightCenter - leftCenter) * shiftFraction
+            val center = weatherCenterX
             val start = center - groupWidth / 2f
             iconPaint?.let {
                 canvas.drawText(symbol, start + iconW / 2f,
