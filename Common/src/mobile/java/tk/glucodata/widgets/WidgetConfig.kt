@@ -279,18 +279,24 @@ object WidgetConfigStore {
         else -> false
     }
 
-    fun applyToOthers(context: Context, source: WidgetSettingsKind, config: WidgetConfig, key: String) {
-        if (!supportsSetting(source, key)) return
+    fun applyToOthers(context: Context, source: WidgetSettingsKind, config: WidgetConfig, key: String): Boolean {
+        if (!supportsSetting(source, key)) return false
         val sourceJson = config.toJson()
+        val editor = prefs(context).edit()
         WidgetSettingsKind.entries.filter { it != source && supportsSetting(it, key) }.forEach { target ->
             val existing = load(context, target)
             val json = existing.toJson().put(key, sourceJson.get(key))
             if (key == "primaryFontWeight") json.put("secondaryFontWeight", config.primaryFontWeight)
-            save(context, target, WidgetConfig.fromJson(json.toString(), existing))
+            val copied = WidgetConfig.fromJson(json.toString(), existing)
+            editor.putString(target.name, copied.toJson().toString())
+            tk.glucodata.Log.i("WidgetSettingsTrace", "copy source=$source target=$target key=$key value=${sourceJson.get(key)}")
         }
+        if (!editor.commit()) return false
+        synchronized(mutableRevision) { mutableRevision.value += 1L }
         tk.glucodata.GlucoseWidget.refreshSettings()
         tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
         WidgetUpdater.requestUpdateAll(context)
+        return true
     }
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {

@@ -53,4 +53,6 @@
     <string name="widget_graph_hours">Chart range</string>
     <string name="widget_apply_to_others">Apply to other widgets</string>
     <string name="widget_applied_to_others">Setting applied to compatible widgets</string>
+<string name="widget_apply_failed">Could not save settings. Try again.</string>
+<string name="widget_apply_named_to_others">Apply to other widgets: %1$s</string>
 </resources>

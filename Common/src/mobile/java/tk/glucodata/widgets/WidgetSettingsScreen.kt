@@ -230,7 +230,6 @@ private fun WidgetDetailSettings(
         Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
         Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
-        ApplyOtherWidgets(kind, config, "primaryFontWeight")
         Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
@@ -240,9 +239,9 @@ private fun WidgetDetailSettings(
                     label = { Text(weight.toString()) })
             }
         }
+        ApplyOtherWidgets(kind, config, "primaryFontWeight")
 
 
-        ApplyOtherWidgets(kind, config, "detailScale")
         Text(if (kind.hasWeather) stringResource(R.string.widget_clock_detail_size_value, config.detailScale) else stringResource(R.string.widget_detail_size_value, config.detailScale))
         WidgetSlider(
             onValueChangeFinished = onSettingsFinished,
@@ -250,8 +249,8 @@ private fun WidgetDetailSettings(
             onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
+        ApplyOtherWidgets(kind, config, "detailScale")
 
-        ApplyOtherWidgets(kind, config, "glucoseScale")
         Text(if (kind.hasWeather) stringResource(R.string.widget_clock_glucose_size_value, config.glucoseScale) else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
         WidgetSlider(
             onValueChangeFinished = onSettingsFinished,
@@ -259,8 +258,8 @@ private fun WidgetDetailSettings(
             onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
+        ApplyOtherWidgets(kind, config, "glucoseScale")
 
-        ApplyOtherWidgets(kind, config, "cornerRadiusDp")
         Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
         WidgetSlider(
             onValueChangeFinished = onSettingsFinished,
@@ -269,17 +268,17 @@ private fun WidgetDetailSettings(
             valueRange = 0f..24f,
             steps = 23
         )
+        ApplyOtherWidgets(kind, config, "cornerRadiusDp")
 
-        ApplyOtherWidgets(kind, config, "background")
         Text(stringResource(R.string.widget_background), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             BackgroundChip(WidgetBackground.SURFACE, R.string.widget_bg_surface, config, onChange)
             BackgroundChip(WidgetBackground.RANGE, R.string.widget_bg_range, config, onChange)
             BackgroundChip(WidgetBackground.TRANSPARENT, R.string.widget_bg_none, config, onChange)
         }
+        ApplyOtherWidgets(kind, config, "background")
 
         if (config.background != WidgetBackground.TRANSPARENT) {
-            ApplyOtherWidgets(kind, config, "opacity")
             Text(stringResource(R.string.widget_opacity_value, config.opacity))
             WidgetSlider(
                 onValueChangeFinished = onSettingsFinished,
@@ -287,36 +286,37 @@ private fun WidgetDetailSettings(
                 onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
                 valueRange = 20f..100f
             )
+            ApplyOtherWidgets(kind, config, "opacity")
         }
 
         HorizontalDivider()
         Text(stringResource(R.string.widget_section_visibility), style = MaterialTheme.typography.titleMedium)
-        ApplyOtherWidgets(kind, config, "showArrow")
         WidgetSwitch(stringResource(R.string.widget_show_arrow), config.showArrow) {
             onChange(config.copy(showArrow = it))
         }
+        ApplyOtherWidgets(kind, config, "showArrow")
 
         if (kind != WidgetSettingsKind.BASIC) {
-            ApplyOtherWidgets(kind, config, "rangeColors")
             WidgetSwitch(stringResource(R.string.widget_range_colors), config.rangeColors) {
                 onChange(config.copy(rangeColors = it))
             }
+            ApplyOtherWidgets(kind, config, "rangeColors")
         }
 
-        ApplyOtherWidgets(kind, config, "showTime")
         WidgetSwitch(stringResource(R.string.widget_show_time), config.showTime) {
             onChange(config.copy(showTime = it))
         }
+        ApplyOtherWidgets(kind, config, "showTime")
 
         if (kind != WidgetSettingsKind.BASIC) {
-            ApplyOtherWidgets(kind, config, "showDelta")
             WidgetSwitch(stringResource(R.string.widget_show_delta), config.showDelta) {
                 onChange(config.copy(showDelta = it))
             }
-            ApplyOtherWidgets(kind, config, "showUnit")
+            ApplyOtherWidgets(kind, config, "showDelta")
             WidgetSwitch(stringResource(R.string.widget_show_unit), config.showUnit) {
                 onChange(config.copy(showUnit = it))
             }
+            ApplyOtherWidgets(kind, config, "showUnit")
 
 
         }
@@ -325,16 +325,15 @@ private fun WidgetDetailSettings(
             HorizontalDivider()
             Text(stringResource(R.string.widget_section_components), style = MaterialTheme.typography.titleMedium)
 
-            ApplyOtherWidgets(kind, config, "showDate")
             WidgetSwitch(stringResource(R.string.widget_show_date), config.showDate) {
                 onChange(config.copy(showDate = it))
             }
-            ApplyOtherWidgets(kind, config, "showWeather")
+            ApplyOtherWidgets(kind, config, "showDate")
             WidgetSwitch(stringResource(R.string.widget_show_weather), config.showWeather) {
                 onChange(config.copy(showWeather = it))
             }
+            ApplyOtherWidgets(kind, config, "showWeather")
             if (config.showWeather) {
-                ApplyOtherWidgets(kind, config, "weatherScale")
                 Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
                 WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
@@ -342,8 +341,8 @@ private fun WidgetDetailSettings(
                     onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..200f
                 )
+                ApplyOtherWidgets(kind, config, "weatherScale")
 
-                ApplyOtherWidgets(kind, config, "weatherIconScale")
                 Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
                 WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
@@ -351,8 +350,8 @@ private fun WidgetDetailSettings(
                     onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..220f
                 )
+                ApplyOtherWidgets(kind, config, "weatherIconScale")
 
-                ApplyOtherWidgets(kind, config, "temperatureScale")
                 Text(stringResource(R.string.widget_temperature_size_value, config.temperatureScale))
                 WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
@@ -360,8 +359,8 @@ private fun WidgetDetailSettings(
                     onValueChange = { onChange(config.copy(temperatureScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..200f
                 )
+                ApplyOtherWidgets(kind, config, "temperatureScale")
 
-                ApplyOtherWidgets(kind, config, "weatherShiftDp")
                 Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
                 WidgetSlider(
                     onValueChangeFinished = onSettingsFinished,
@@ -369,15 +368,16 @@ private fun WidgetDetailSettings(
                     onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },
                     valueRange = 0f..80f
                 )
+                ApplyOtherWidgets(kind, config, "weatherShiftDp")
 
-                ApplyOtherWidgets(kind, config, "showWeatherIcon")
                 WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
                     onChange(config.copy(showWeatherIcon = it))
                 }
-                ApplyOtherWidgets(kind, config, "showTemperature")
+                ApplyOtherWidgets(kind, config, "showWeatherIcon")
                 WidgetSwitch(stringResource(R.string.widget_show_temperature), config.showTemperature) {
                     onChange(config.copy(showTemperature = it))
                 }
+                ApplyOtherWidgets(kind, config, "showTemperature")
                 if (!hasLocationPermission) {
                     TextButton(shapes = appButtonShapes(), onClick = onLocationPermission) {
                         Text(stringResource(R.string.widget_weather_permission))
@@ -403,10 +403,10 @@ private fun WidgetDetailSettings(
                     )
                 }
             }
-            ApplyOtherWidgets(kind, config, "showTargetBand")
             WidgetSwitch(stringResource(R.string.widget_target_band), config.showTargetBand) {
                 onChange(config.copy(showTargetBand = it))
             }
+            ApplyOtherWidgets(kind, config, "showTargetBand")
         }
 
         if (kind.hasStats) {
@@ -434,10 +434,34 @@ private fun ApplyOtherWidgets(kind: WidgetSettingsKind, config: WidgetConfig, ke
     val context = LocalContext.current
     if (WidgetSettingsKind.entries.none { it != kind && WidgetConfigStore.supportsSetting(it, key) }) return
     TextButton(shapes = appButtonShapes(), onClick = {
-        WidgetConfigStore.applyToOthers(context, kind, config, key)
-        android.widget.Toast.makeText(context, R.string.widget_applied_to_others, android.widget.Toast.LENGTH_SHORT).show()
+        val saved = WidgetConfigStore.applyToOthers(context, kind, config, key)
+        android.widget.Toast.makeText(context,
+            if (saved) R.string.widget_applied_to_others else R.string.widget_apply_failed,
+            android.widget.Toast.LENGTH_SHORT).show()
     }) {
-        Text(stringResource(R.string.widget_apply_to_others))
+        val label = when (key) {
+            "glucoseScale" -> stringResource(R.string.widget_glucose_size_value, config.glucoseScale)
+            "detailScale" -> stringResource(R.string.widget_detail_size_value, config.detailScale)
+            "primaryFontWeight" -> stringResource(R.string.widget_font_weight)
+            "cornerRadiusDp" -> stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp)
+            "opacity" -> stringResource(R.string.widget_opacity_value, config.opacity)
+            "weatherShiftDp" -> stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp)
+            "weatherScale" -> stringResource(R.string.widget_weather_size_value, config.weatherScale)
+            "weatherIconScale" -> stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale)
+            "temperatureScale" -> stringResource(R.string.widget_temperature_size_value, config.temperatureScale)
+            "background" -> stringResource(R.string.widget_background)
+            "showArrow" -> stringResource(R.string.widget_show_arrow)
+            "rangeColors" -> stringResource(R.string.widget_range_colors)
+            "showTime" -> stringResource(R.string.widget_show_time)
+            "showDelta" -> stringResource(R.string.widget_show_delta)
+            "showUnit" -> stringResource(R.string.widget_show_unit)
+            "showDate" -> stringResource(R.string.widget_show_date)
+            "showWeather" -> stringResource(R.string.widget_show_weather)
+            "showWeatherIcon" -> stringResource(R.string.widget_show_weather_icon)
+            "showTemperature" -> stringResource(R.string.widget_show_temperature)
+            else -> stringResource(R.string.widget_section_appearance)
+        }
+        Text(stringResource(R.string.widget_apply_named_to_others, label))
     }
 }
 
