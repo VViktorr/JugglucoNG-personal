@@ -279,17 +279,22 @@ object WidgetConfigStore {
         else -> false
     }
 
-    fun applyToOthers(context: Context, source: WidgetSettingsKind, config: WidgetConfig, key: String): Boolean {
-        if (!supportsSetting(source, key)) return false
+    /** Copy every setting shared by the source and each target in one write. */
+    fun applyToOthers(context: Context, source: WidgetSettingsKind, config: WidgetConfig): Boolean {
         val sourceJson = config.toJson()
         val editor = prefs(context).edit()
-        WidgetSettingsKind.entries.filter { it != source && supportsSetting(it, key) }.forEach { target ->
+        WidgetSettingsKind.entries.filter { it != source }.forEach { target ->
             val existing = load(context, target)
-            val json = existing.toJson().put(key, sourceJson.get(key))
-            if (key == "primaryFontWeight") json.put("secondaryFontWeight", config.primaryFontWeight)
+            val json = existing.toJson()
+            sourceJson.keys().forEach { key ->
+                if (supportsSetting(source, key) && supportsSetting(target, key)) {
+                    json.put(key, sourceJson.get(key))
+                    if (key == "primaryFontWeight") json.put("secondaryFontWeight", config.primaryFontWeight)
+                    tk.glucodata.Log.i("WidgetSettingsTrace", "copy source=$source target=$target key=$key value=${sourceJson.get(key)}")
+                }
+            }
             val copied = WidgetConfig.fromJson(json.toString(), existing)
             editor.putString(target.name, copied.toJson().toString())
-            tk.glucodata.Log.i("WidgetSettingsTrace", "copy source=$source target=$target key=$key value=${sourceJson.get(key)}")
         }
         if (!editor.commit()) return false
         synchronized(mutableRevision) { mutableRevision.value += 1L }
