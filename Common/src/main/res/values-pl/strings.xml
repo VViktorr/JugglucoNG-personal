@@ -3460,4 +3460,7 @@
     <string name="delete_confirm">Usuń</string>
     <string name="alert_profile_label">Profil alarmu</string>
     <string name="alert_delivery_method_label">Sposób powiadamiania</string>
+    <string name="alert_signal_restored">Przywrócono sygnał</string>
+    <string name="signal_restored_channel_description">Powiadomienia o wznowieniu odczytów po utracie sygnału z sensora</string>
+    <string name="signal_restored_explanation">Powiadom raz, gdy po upływie czasu utraty sygnału pojawią się nowe odczyty. Działa również przy wyłączonym alarmie utraty sygnału.</string>
 </resources>
