@@ -139,6 +139,13 @@ data class VendorCalibrationInfo(
 )
 
 
+internal inline fun isLegacySensorReceiving(
+    isPaused: Boolean,
+    localGattConnected: Boolean?,
+    nativeStatus: String,
+    streamingEnabled: () -> Boolean,
+): Boolean = !isPaused && (localGattConnected ?: (nativeStatus.isNotEmpty() || streamingEnabled()))
+
 class SensorViewModel : ViewModel() {
     private companion object {
         private val sibionicsFreshRestartSeq = java.util.concurrent.atomic.AtomicLong(1L)
@@ -601,11 +608,11 @@ class SensorViewModel : ViewModel() {
                         // When paused (stop=true), the sensor is NOT actively receiving regardless
                         // of what the native streamingIsEnabled flag says (it lags).
                         val isPaused = SensorBluetooth.isSensorPaused(gatt)
-                        val isActivelyReceiving = !isPaused && if (gatt is Libre2GattCallback) {
-                            gatt.hasLocallyConnectedGatt()
-                        } else {
-                            nativeStatus.isNotEmpty() || gatt.streamingEnabled()
-                        }
+                        val isActivelyReceiving = isLegacySensorReceiving(
+                            isPaused = isPaused,
+                            localGattConnected = (gatt as? Libre2GattCallback)?.hasLocallyConnectedGatt(),
+                            nativeStatus = nativeStatus,
+                        ) { gatt.streamingEnabled() }
 
                         // constatstatusstr records the LAST connection event
                         // ("Status=N", "Loss of signal", ...) and is never cleared
