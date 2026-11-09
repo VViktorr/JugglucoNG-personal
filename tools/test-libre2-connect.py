@@ -95,7 +95,8 @@ class SuperGattCallback {
     static class Build { static class VERSION { static int SDK_INT=37; } static class VERSION_CODES { static int M=23; } }
     static class R { static class string { static int turn_on_nearby_devices_permission=0; } }
     static class Log {
-        static void i(String a,String b){} static void d(String a,String b){} static void e(String a,String b){}
+        static final List<String> lines=new ArrayList<>();
+        static void i(String a,String b){lines.add(b);} static void d(String a,String b){} static void e(String a,String b){}
         static void stack(String a,String b,Throwable t){throw new AssertionError(b,t);}
     }
     static class BluetoothGatt {
@@ -280,16 +281,35 @@ java += r'''
         check(cb.mActiveBluetoothDevice.calls==2,
                 "recent glucose suppressed the idle reconnect after handoff");
 
+        // Repeated failures before discovery must not fabricate login or packet progress.
+        cb=fresh();
+        for(int attempt=0;attempt<24;attempt++){
+            old=cb.mBluetoothGatt;Applic.scheduler.advance(30_000);
+            cb.onConnectionStateChange(old,147,0);Applic.scheduler.advance(0);
+            check(old.closed==1,"pre-discovery timeout retained the old GATT");
+            old=cb.mBluetoothGatt;Applic.scheduler.advance(26_000);
+            cb.onConnectionStateChange(old,0,2);Applic.scheduler.advance(3_000);
+            cb.onConnectionStateChange(old,19,0);Applic.scheduler.advance(0);
+            check(old.closed==1,"short connected link retained the old GATT");
+        }
+        check(cb.mActiveBluetoothDevice.calls==49&&cb.logins==0&&cb.frames==0,
+                "pre-discovery retry sequence fabricated login or packet progress");
+
         // A duplicate callback must leave service discovery and the active login alone.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
         cb.onServicesDiscovered(current,0);
         cb.conphase=2; // The simulated authentication handler has advanced to phase 2.
         int loginCount=cb.logins;
+        Log.lines.clear();
         Applic.scheduler.advance(1_000);
         cb.onConnectionStateChange(current,0,2);
         cb.onServicesDiscovered(current,0);
         check(current.discoveries==1,"duplicate CONNECTED restarted service discovery");
         check(cb.logins==loginCount&&cb.conphase==2,"duplicate discovery restarted authentication");
+        check(Log.lines.stream().anyMatch(line->line.contains("stage=duplicate-connected"))
+                &&Log.lines.stream().anyMatch(line->line.contains("stage=duplicate-service-discovery")
+                        &&line.contains(" phase=2 ")),
+                "ignored duplicate callbacks disappeared from diagnostics");
         Applic.scheduler.advance(149_000);
         check(current.disconnected==1,"duplicate CONNECTED extended the handshake deadline");
 
