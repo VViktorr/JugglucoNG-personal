@@ -270,15 +270,34 @@ java += r'''
         check(current.closed==1&&cb.mActiveBluetoothDevice.calls==2,
                 "recent glucose suppressed recovery of a never-connected GATT");
 
+        // Ownership can restart a closed callback even when its previous reading is fresh.
+        cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        alarmNow=cb.connectTime+90_000L;
+        cb.charcha[0]=alarmNow-6_000L;
+        cb.setPause(true);cb.close();cb.setPause(false);
+        check(!cb.hasLocallyConnectedGatt(),"closed handoff retained a local connection");
+        cb.reconnect(alarmNow);Applic.scheduler.advance(0);
+        check(cb.mActiveBluetoothDevice.calls==2,
+                "recent glucose suppressed the idle reconnect after handoff");
+
         // A duplicate callback must leave service discovery and the active login alone.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
         cb.onServicesDiscovered(current,0);
         cb.conphase=2; // The simulated authentication handler has advanced to phase 2.
         int loginCount=cb.logins;
+        Applic.scheduler.advance(1_000);
         cb.onConnectionStateChange(current,0,2);
         cb.onServicesDiscovered(current,0);
         check(current.discoveries==1,"duplicate CONNECTED restarted service discovery");
         check(cb.logins==loginCount&&cb.conphase==2,"duplicate discovery restarted authentication");
+        Applic.scheduler.advance(149_000);
+        check(current.disconnected==1,"duplicate CONNECTED extended the handshake deadline");
+
+        // Ignore duplicate success only. Discovery failure still triggers recovery.
+        cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        cb.onServicesDiscovered(current,0);cb.conphase=2;
+        cb.onServicesDiscovered(current,133);
+        check(current.disconnected==1,"active login hid a service discovery failure");
 
         // A CONNECTED link that stops streaming is retired through the same fresh-GATT path.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);cb.onServicesDiscovered(current,0);
