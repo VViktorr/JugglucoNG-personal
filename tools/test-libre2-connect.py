@@ -38,6 +38,7 @@ base_methods = '\n'.join(method(base, signature) for signature in [
     'public synchronized void setPause(', 'public void onConnectionStateChange(',
     'public void close()', 'public long resetdataptr(', 'protected boolean useAutoConnect(',
     'protected void onConnectionAttemptTimeout(',
+    'public final boolean hasLocallyConnectedGatt(',
 ])
 libre_methods = '\n'.join(method(libre, signature) for signature in [
     'protected boolean useAutoConnect(', 'protected long connectionAttemptTimeoutMillis(',
@@ -238,6 +239,34 @@ java += r'''
         check(current.discoveries==1&&cb.logins==1&&cb.frames==1,"healthy streaming did not resume");
         for(int minute=0;minute<6;minute++){Applic.scheduler.advance(60_000);cb.onCharacteristicChanged(current,new BluetoothGattCharacteristic());}
         check(cb.mBluetoothGatt==current&&current.disconnected==0,"healthy connection expired");
+
+        // A queued loss alarm can run just after a fresh reading.
+        cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        long alarmNow=cb.connectTime+90_000L;
+        cb.charcha[0]=alarmNow-6_000L;
+        cb.reconnect(alarmNow);
+        check(cb.mBluetoothGatt==current&&current.disconnected==0,
+                "queued loss alarm disconnected a healthy stream");
+        check(!"Loss of signal".equals(cb.constatstatusstr),"healthy stream recorded false signal loss");
+
+        // A GATT that never connected cannot use a reading from the previous link.
+        cb=fresh();current=cb.mBluetoothGatt;
+        alarmNow=cb.connectTime+90_000L;
+        cb.charcha[0]=alarmNow-6_000L;
+        cb.reconnect(alarmNow);
+        Applic.scheduler.advance(2_000);
+        check(current.closed==1&&cb.mActiveBluetoothDevice.calls==2,
+                "recent glucose suppressed recovery of a never-connected GATT");
+
+        // A duplicate callback must leave service discovery and the active login alone.
+        cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        cb.onServicesDiscovered(current,0);
+        cb.conphase=2; // The simulated authentication handler has advanced to phase 2.
+        int loginCount=cb.logins;
+        cb.onConnectionStateChange(current,0,2);
+        cb.onServicesDiscovered(current,0);
+        check(current.discoveries==1,"duplicate CONNECTED restarted service discovery");
+        check(cb.logins==loginCount&&cb.conphase==2,"duplicate discovery restarted authentication");
 
         // A CONNECTED link that stops streaming is retired through the same fresh-GATT path.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);cb.onServicesDiscovered(current,0);
