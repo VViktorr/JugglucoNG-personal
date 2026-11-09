@@ -932,7 +932,8 @@ internal fun ToggleRow(
     title: String,
     subtitle: String?,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
@@ -940,6 +941,7 @@ internal fun ToggleRow(
             .heightIn(min = if (subtitle.isNullOrBlank()) 64.dp else 88.dp)
             .toggleable(
                 value = checked,
+                enabled = enabled,
                 role = Role.Switch,
                 onValueChange = onCheckedChange
             )
@@ -963,6 +965,7 @@ internal fun ToggleRow(
         }
         StyledSwitch(
             checked = checked,
+            enabled = enabled,
             onCheckedChange = null
         )
     }
