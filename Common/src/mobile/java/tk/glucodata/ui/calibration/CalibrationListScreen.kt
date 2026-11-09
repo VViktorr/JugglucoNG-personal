@@ -434,14 +434,7 @@ fun CalibrationListScreen(
                                 )
                                 
                                 if (result == SnackbarResult.ActionPerformed) {
-                                    CalibrationManager.addCalibration(
-                                        timestamp = backup.timestamp,
-                                        sensorValue = backup.sensorValue,
-                                        sensorValueRaw = backup.sensorValueRaw,
-                                        userValue = backup.userValue,
-                                        sensorId = backup.sensorId,
-                                        isRawMode = backup.isRawMode
-                                    )
+                                    CalibrationManager.restoreCalibration(backup)
                                 }
                             }
                         },
@@ -542,16 +535,7 @@ fun CalibrationListScreen(
                                     )
                                     
                                     if (result == SnackbarResult.ActionPerformed) {
-                                        toDelete.forEach { cal ->
-                                            CalibrationManager.addCalibration(
-                                                timestamp = cal.timestamp,
-                                                sensorValue = cal.sensorValue,
-                                                sensorValueRaw = cal.sensorValueRaw,
-                                                userValue = cal.userValue,
-                                                sensorId = cal.sensorId,
-                                                isRawMode = cal.isRawMode
-                                            )
-                                        }
+                                        CalibrationManager.restoreAll(toDelete)
                                     }
                                     
                                     isSelectionMode = false
@@ -1399,8 +1383,7 @@ private fun CalibrationItemContent(
                         )
                     }
 
-                    // Derived points come back on the next sync, so say where they
-                    // came from rather than let a deleted one look like a bug.
+                    // A derived point follows its journal entry, so say where it came from.
                     if (cal.journalEntryId != null) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
