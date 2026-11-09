@@ -339,6 +339,23 @@ fun ExpressiveSettingsScreen(
         }
     )
 
+    // Restricted mode: the tab opens to the switch to full mode and a few safe settings.
+    val restrictedState by tk.glucodata.RestrictedMode.state.collectAsStateWithLifecycle()
+    // Back to restricted with a full-mode dialog still open (the app came back after the
+    // grace): close it. Theme and language stay, as they are open while restricted too.
+    LaunchedEffect(restrictedState.locked) {
+        if (!restrictedState.locked) return@LaunchedEffect
+        showUnitDialog = false
+        showClearHistoryDialog = false
+        showClearDataDialog = false
+        showFactoryResetDialog = false
+        showExportDialog = false
+        showScheduledBackupDialog = false
+        showSealGraceDialog = false
+        pendingSettingsImportUri = null
+        pendingExportPackageImportUri = null
+    }
+
     fun openSearchResult(entry: SettingsSearchEntry) {
         focusManager.clearFocus()
         when (val target = entry.target) {
@@ -420,6 +437,30 @@ fun ExpressiveSettingsScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
+        }
+
+        if (restrictedState.locked) {
+            item(key = "restricted_full_mode") {
+                tk.glucodata.ui.restricted.RestrictedFullModeCard()
+            }
+            item(key = "restricted_allowed_label") {
+                SectionLabel(stringResource(R.string.restricted_section_available))
+            }
+            item(key = "restricted_allowed_group") {
+                tk.glucodata.ui.restricted.RestrictedAllowedSettings(
+                    config = restrictedState.config,
+                    themeIcon = if (themeMode == ThemeMode.LIGHT) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    themeLabel = themeLabel,
+                    languageLabel = currentLangName,
+                    alertsEnabled = alertsMasterEnabled,
+                    floatingAllowed = floatingOverlayAllowed,
+                    lockScreenEnabled = aodServiceEnabled,
+                    onTheme = { showThemeDialog = true },
+                    onLanguage = { showLanguageDialog = true },
+                    onOpen = { route -> navController.navigate(route) },
+                )
+            }
+            return@LazyColumn
         }
 
         item(key = "search") {
@@ -927,6 +968,21 @@ fun ExpressiveSettingsScreen(
                     iconTint = generalColor,
                     position = CardPosition.SINGLE,
                     onOpen = { navController.navigate("settings/app-updates") }
+                )
+            }
+            item(key = "restricted_mode_title") {
+                val restrictedMode by tk.glucodata.RestrictedMode.state.collectAsStateWithLifecycle()
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.restricted_mode_title),
+                    subtitle = stringResource(R.string.restricted_mode_desc),
+                    checked = restrictedMode.config.enabled,
+                    onCheckedChange = { on ->
+                        tk.glucodata.RestrictedMode.update(context) { it.copy(enabled = on) }
+                    },
+                    onClick = { navController.navigate("settings/restricted-mode") },
+                    icon = Icons.Default.ChildCare,
+                    iconTint = advancedColor,
+                    position = CardPosition.SINGLE
                 )
             }
             item(key = "restart_app") {
