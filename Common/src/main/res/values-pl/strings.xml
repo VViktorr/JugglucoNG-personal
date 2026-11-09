@@ -3466,4 +3466,14 @@
     <string name="alert_signal_restored">Przywrócono sygnał</string>
     <string name="signal_restored_channel_description">Powiadomienia o wznowieniu odczytów po utracie sygnału z sensora</string>
     <string name="signal_restored_explanation">Powiadom raz, gdy po upływie czasu utraty sygnału pojawią się nowe odczyty. Działa również przy wyłączonym alarmie utraty sygnału.</string>
+    <string name="voice_readings">Odczyty głosowe</string>
+    <string name="voice_turn_off">Wyłącz głos</string>
+    <string name="voice_turn_on">Włącz głos</string>
+    <string name="voice_every_reading">Każdy odczyt</string>
+    <string name="voice_every_minutes">Co %1$d min</string>
+    <string name="voice_resumes_at">Od %1$s</string>
+    <string name="voice_quick_dashboard">Pokaż na pulpicie</string>
+    <string name="voice_quick_dashboard_desc">Przełącznik u góry wykresu</string>
+    <string name="voice_quick_notification">Pokaż w powiadomieniu</string>
+    <string name="voice_quick_notification_desc">Przycisk głosu w powiadomieniu o glukozie</string>
 </resources>

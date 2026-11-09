@@ -1120,6 +1120,7 @@ fun DashboardScreen(
             }
             val dashboardListTopPadding = 16.dp
             val dashboardItemSpacing = 12.dp
+            val voiceReadingsStatus = rememberVoiceReadingsStatus()
             val readingsTopSpacing = 0.dp
             val collapsedChartHorizontalPadding = contentHorizontalPadding
             val defaultVisibleReadingRows = when (adaptiveMetrics.layoutDensity) {
@@ -1754,6 +1755,9 @@ fun DashboardScreen(
                             key(Unit) {
                                 FontScaleCap {
                                     DashboardChartSection(
+                                        headerAccessory = voiceReadingsStatus?.let { voice ->
+                                            { compact -> VoiceReadingsChartPill(voice, compact) }
+                                        },
                                         modifier = Modifier.fillMaxSize(),
                                         glucoseHistory = glucoseHistory,
                                         primarySensorId = sensorName,
@@ -2005,6 +2009,9 @@ fun DashboardScreen(
                             key(Unit) {
                                 FontScaleCap {
                                     DashboardChartSection(
+                                        headerAccessory = voiceReadingsStatus?.let { voice ->
+                                            { compact -> VoiceReadingsChartPill(voice, compact) }
+                                        },
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .padding(bottom = 0.dp),

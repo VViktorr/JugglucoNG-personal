@@ -3339,4 +3339,14 @@ OK дарснаар энэ утсан дээр холболт үүсч, өөр A
     <string name="tts_trend_decreasing">буурч байна</string>
     <string name="tts_trend_rising_quickly">хурдан өсөж байна</string>
     <string name="tts_trend_falling_quickly">хурдан буурч байна</string>
+    <string name="voice_readings">Дуут уншилт</string>
+    <string name="voice_turn_off">Дууг унтраах</string>
+    <string name="voice_turn_on">Дууг асаах</string>
+    <string name="voice_every_reading">Уншилт бүр</string>
+    <string name="voice_every_minutes">%1$d мин тутам</string>
+    <string name="voice_resumes_at">%1$s-с</string>
+    <string name="voice_quick_dashboard">Самбарт харуулах</string>
+    <string name="voice_quick_dashboard_desc">Графикийн дээд талын товч</string>
+    <string name="voice_quick_notification">Мэдэгдэлд харуулах</string>
+    <string name="voice_quick_notification_desc">Глюкозын мэдэгдэл дээрх дууны товч</string>
 </resources>

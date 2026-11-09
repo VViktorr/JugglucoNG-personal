@@ -3632,4 +3632,14 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="lumiflex_status_sign_in_failed">Sign-in failed: %1$s</string>
     <string name="lumiflex_signed_in_as">Signed in as %1$s</string>
     <string name="lumiflex_session_note">Signing in here signs the official Lumiflex app out, and vice versa: one session per account.</string>
+    <string name="voice_readings">Voice readings</string>
+    <string name="voice_turn_off">Turn off voice</string>
+    <string name="voice_turn_on">Turn on voice</string>
+    <string name="voice_every_reading">Every reading</string>
+    <string name="voice_every_minutes">Every %1$d min</string>
+    <string name="voice_resumes_at">From %1$s</string>
+    <string name="voice_quick_dashboard">Show on dashboard</string>
+    <string name="voice_quick_dashboard_desc">One-tap switch at the top of the chart</string>
+    <string name="voice_quick_notification">Show in notification</string>
+    <string name="voice_quick_notification_desc">Voice button on the glucose notification</string>
 </resources>

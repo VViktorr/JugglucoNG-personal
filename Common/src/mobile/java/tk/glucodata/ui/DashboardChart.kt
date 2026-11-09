@@ -106,6 +106,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -145,6 +146,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.layout.positionOnScreen
@@ -818,7 +820,12 @@ fun DashboardChartSection(
      * The host's side margin. With the backdrop showing, the chart has no visible edge of
      * its own, so its top-end date label lines up with the host's cards instead.
      */
-    backdropContentInset: androidx.compose.ui.unit.Dp = 16.dp
+    backdropContentInset: androidx.compose.ui.unit.Dp = 16.dp,
+    /**
+     * A control on the plot's header line, after the IOB pill (the voice readings switch).
+     * Told to be compact when the IOB pill shares the line.
+     */
+    headerAccessory: (@Composable (compact: Boolean) -> Unit)? = null
 ) {
     val chartContent: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(bottom = 0.dp)) {
@@ -873,7 +880,8 @@ fun DashboardChartSection(
                     resetToLatestOnResume = resetToLatestOnResume,
                     onViewportSnapshotChanged = onViewportSnapshotChanged,
                     backdropBleed = backdropBleed,
-                    backdropContentInset = backdropContentInset
+                    backdropContentInset = backdropContentInset,
+                    headerAccessory = headerAccessory
                 )
                 }
         }
@@ -976,7 +984,8 @@ fun InteractiveGlucoseChart(
     onVisibleRangeChanged: ((startMs: Long, endMs: Long) -> Unit)? = null,
     /** See [DashboardChartSection]'s parameters of the same names. */
     backdropBleed: androidx.compose.ui.unit.Dp = 0.dp,
-    backdropContentInset: androidx.compose.ui.unit.Dp = 16.dp
+    backdropContentInset: androidx.compose.ui.unit.Dp = 16.dp,
+    headerAccessory: (@Composable (compact: Boolean) -> Unit)? = null
 ) {
     // --- THEME & PAINTS ---
     val isDark = tk.glucodata.ui.isAppInDarkTheme()
@@ -4603,8 +4612,13 @@ fun InteractiveGlucoseChart(
             }
 
             val dateTextBaselinePx = chartHeaderTextBaseline(headerDate, backdropAlpha)
+            var headerDateWidthPx by remember { mutableIntStateOf(0) }
+            val headerDateEndInset = androidx.compose.ui.unit.lerp(16.dp, backdropContentInset, backdropAlpha)
 
-            if (activeInsulinSummary != null || activeCarbsGrams != null || stateDoseHint != null) {
+            val activeInsulinPillShown =
+                activeInsulinSummary != null || activeCarbsGrams != null || stateDoseHint != null
+            var activeInsulinPillWidthPx by remember { mutableIntStateOf(0) }
+            if (activeInsulinPillShown) {
                 val summary = activeInsulinSummary
                 val unitsLabel = { units: Float ->
                     if (units % 1f < 0.05f) {
@@ -4698,6 +4712,7 @@ fun InteractiveGlucoseChart(
                         .padding(end = 2.dp)
                         .chartHeaderBaseline(dateTextBaselinePx.roundToInt())
                         .widthIn(max = activeInsulinMaxWidth)
+                        .onSizeChanged { activeInsulinPillWidthPx = it.width }
                         .zIndex(1.6f)
                         .clip(activeInsulinShape)
                         .clickable(enabled = summary != null || activeCarbsGrams != null) { isActiveInsulinExpanded = !isActiveInsulinExpanded },
@@ -4819,6 +4834,36 @@ fun InteractiveGlucoseChart(
                             }
                         }
                     }
+                }
+            }
+
+            // Header-line control (voice readings): after the IOB pill, on the date chip's
+            // line and height, so it overlays the plot instead of pushing it down.
+            headerAccessory?.let { accessory ->
+                val headerDensity = LocalDensity.current
+                val afterPill = if (activeInsulinPillShown && activeInsulinPillWidthPx > 0) {
+                    with(headerDensity) { activeInsulinPillWidthPx.toDp() } + 8.dp
+                } else {
+                    0.dp
+                }
+                val beforeDate = if (showHeaderDate) {
+                    with(headerDensity) { headerDateWidthPx.toDp() } + headerDateEndInset + 8.dp
+                } else {
+                    0.dp
+                }
+                // Sharing the line, it shrinks to its glyph; it steps aside only when even
+                // that would touch the date (a past day with an IOB pill on a narrow screen).
+                val compact = activeInsulinPillShown || showHeaderDate
+                if (maxWidth - 12.dp - afterPill - beforeDate >= 40.dp) Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(
+                            start = 12.dp + afterPill,
+                            top = androidx.compose.ui.unit.lerp(16.dp, 0.dp, backdropAlpha)
+                        )
+                        .zIndex(1.6f)
+                ) {
+                    accessory(compact)
                 }
             }
 
@@ -5301,12 +5346,13 @@ fun InteractiveGlucoseChart(
                     .align(Alignment.TopEnd)
                     .padding(
                         top = androidx.compose.ui.unit.lerp(16.dp, 0.dp, backdropAlpha),
-                        end = androidx.compose.ui.unit.lerp(16.dp, backdropContentInset, backdropAlpha)
+                        end = headerDateEndInset
                     )
             ) {
                 Box(
                     modifier = Modifier
                         .height(32.dp)
+                        .onSizeChanged { headerDateWidthPx = it.width }
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .padding(horizontal = 8.dp),

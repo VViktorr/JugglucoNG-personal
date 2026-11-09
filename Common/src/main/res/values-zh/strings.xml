@@ -3247,4 +3247,14 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="tts_trend_decreasing">下降</string>
     <string name="tts_trend_rising_quickly">快速上升</string>
     <string name="tts_trend_falling_quickly">快速下降</string>
+    <string name="voice_readings">语音播报</string>
+    <string name="voice_turn_off">关闭语音</string>
+    <string name="voice_turn_on">开启语音</string>
+    <string name="voice_every_reading">每次读数</string>
+    <string name="voice_every_minutes">每 %1$d 分钟</string>
+    <string name="voice_resumes_at">%1$s 起</string>
+    <string name="voice_quick_dashboard">在主页显示</string>
+    <string name="voice_quick_dashboard_desc">图表顶部的一键开关</string>
+    <string name="voice_quick_notification">在通知中显示</string>
+    <string name="voice_quick_notification_desc">血糖通知上的语音按钮</string>
 </resources>

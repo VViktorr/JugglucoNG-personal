@@ -3240,4 +3240,14 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="tts_trend_decreasing">a descer</string>
     <string name="tts_trend_rising_quickly">a subir rapidamente</string>
     <string name="tts_trend_falling_quickly">a descer rapidamente</string>
+    <string name="voice_readings">Leituras por voz</string>
+    <string name="voice_turn_off">Desligar voz</string>
+    <string name="voice_turn_on">Ligar voz</string>
+    <string name="voice_every_reading">Cada leitura</string>
+    <string name="voice_every_minutes">A cada %1$d min</string>
+    <string name="voice_resumes_at">A partir das %1$s</string>
+    <string name="voice_quick_dashboard">Mostrar no painel</string>
+    <string name="voice_quick_dashboard_desc">Interruptor no topo do gráfico</string>
+    <string name="voice_quick_notification">Mostrar na notificação</string>
+    <string name="voice_quick_notification_desc">Botão de voz na notificação de glicose</string>
 </resources>

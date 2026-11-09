@@ -3307,4 +3307,14 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
     <string name="tts_trend_decreasing">csökken</string>
     <string name="tts_trend_rising_quickly">gyorsan emelkedik</string>
     <string name="tts_trend_falling_quickly">gyorsan csökken</string>
+    <string name="voice_readings">Hangos értékek</string>
+    <string name="voice_turn_off">Hang kikapcsolása</string>
+    <string name="voice_turn_on">Hang bekapcsolása</string>
+    <string name="voice_every_reading">Minden mérés</string>
+    <string name="voice_every_minutes">%1$d percenként</string>
+    <string name="voice_resumes_at">%1$s-tól</string>
+    <string name="voice_quick_dashboard">Megjelenítés a kezdőlapon</string>
+    <string name="voice_quick_dashboard_desc">Kapcsoló a grafikon tetején</string>
+    <string name="voice_quick_notification">Megjelenítés az értesítésben</string>
+    <string name="voice_quick_notification_desc">Hang gomb a glükóz értesítésben</string>
 </resources>

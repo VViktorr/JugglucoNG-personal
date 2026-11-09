@@ -3245,4 +3245,14 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="tts_trend_decreasing">en baisse</string>
     <string name="tts_trend_rising_quickly">en hausse rapide</string>
     <string name="tts_trend_falling_quickly">en baisse rapide</string>
+    <string name="voice_readings">Lecture vocale</string>
+    <string name="voice_turn_off">Couper la voix</string>
+    <string name="voice_turn_on">Activer la voix</string>
+    <string name="voice_every_reading">Chaque mesure</string>
+    <string name="voice_every_minutes">Toutes les %1$d min</string>
+    <string name="voice_resumes_at">À partir de %1$s</string>
+    <string name="voice_quick_dashboard">Afficher sur le tableau de bord</string>
+    <string name="voice_quick_dashboard_desc">Bouton en haut du graphique</string>
+    <string name="voice_quick_notification">Afficher dans la notification</string>
+    <string name="voice_quick_notification_desc">Bouton voix dans la notification de glycémie</string>
 </resources>

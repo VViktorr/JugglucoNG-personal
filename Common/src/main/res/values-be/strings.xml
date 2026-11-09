@@ -3322,4 +3322,14 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="tts_trend_decreasing">зніжаецца</string>
     <string name="tts_trend_rising_quickly">хутка павышаецца</string>
     <string name="tts_trend_falling_quickly">хутка зніжаецца</string>
+    <string name="voice_readings">Агучванне паказанняў</string>
+    <string name="voice_turn_off">Выключыць голас</string>
+    <string name="voice_turn_on">Уключыць голас</string>
+    <string name="voice_every_reading">Кожнае паказанне</string>
+    <string name="voice_every_minutes">Кожныя %1$d хв</string>
+    <string name="voice_resumes_at">З %1$s</string>
+    <string name="voice_quick_dashboard">Паказваць на панэлі</string>
+    <string name="voice_quick_dashboard_desc">Перамыкач уверсе графіка</string>
+    <string name="voice_quick_notification">Паказваць у апавяшчэнні</string>
+    <string name="voice_quick_notification_desc">Кнопка голасу ў апавяшчэнні з глюкозай</string>
 </resources>

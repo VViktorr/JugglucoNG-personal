@@ -3238,4 +3238,14 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="tts_trend_decreasing">sjunkande</string>
     <string name="tts_trend_rising_quickly">snabbt stigande</string>
     <string name="tts_trend_falling_quickly">snabbt sjunkande</string>
+    <string name="voice_readings">Upplästa värden</string>
+    <string name="voice_turn_off">Stäng av rösten</string>
+    <string name="voice_turn_on">Slå på rösten</string>
+    <string name="voice_every_reading">Varje värde</string>
+    <string name="voice_every_minutes">Var %1$d:e min</string>
+    <string name="voice_resumes_at">Från %1$s</string>
+    <string name="voice_quick_dashboard">Visa på översikten</string>
+    <string name="voice_quick_dashboard_desc">Brytare överst i diagrammet</string>
+    <string name="voice_quick_notification">Visa i aviseringen</string>
+    <string name="voice_quick_notification_desc">Röstknapp i glukosaviseringen</string>
 </resources>
