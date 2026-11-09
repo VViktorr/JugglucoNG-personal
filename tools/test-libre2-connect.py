@@ -249,6 +249,18 @@ java += r'''
                 "queued loss alarm disconnected a healthy stream");
         check(!"Loss of signal".equals(cb.constatstatusstr),"healthy stream recorded false signal loss");
 
+        // Valid frames without a glucose value also count as link progress.
+        cb.charcha[0]=0;cb.charcha[1]=alarmNow-6_000L;
+        cb.reconnect(alarmNow);
+        check(cb.mBluetoothGatt==current&&current.disconnected==0,
+                "queued loss alarm disconnected a sensor still reporting frames");
+
+        // A real disconnect still retires the transport immediately after fresh glucose.
+        cb.charcha[0]=System.currentTimeMillis()-10_000L;
+        cb.onConnectionStateChange(current,8,0);Applic.scheduler.advance(0);
+        check(current.closed==1&&cb.mActiveBluetoothDevice.calls==2&&cb.mBluetoothGatt!=current,
+                "recent glucose suppressed recovery after a real link loss");
+
         // A GATT that never connected cannot use a reading from the previous link.
         cb=fresh();current=cb.mBluetoothGatt;
         alarmNow=cb.connectTime+90_000L;
