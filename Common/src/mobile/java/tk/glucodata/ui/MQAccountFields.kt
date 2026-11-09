@@ -43,7 +43,6 @@ fun MQAccountFields(
     title: String? = null,
     supportingText: String? = null,
 ) {
-    var showPassword by rememberSaveable { mutableStateOf(false) }
 
     Column(
         modifier = modifier,
@@ -77,32 +76,9 @@ fun MQAccountFields(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
+        tk.glucodata.ui.components.AccountPasswordField(
             value = password,
             onValueChange = onPasswordChange,
-            label = { Text(stringResource(R.string.password)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = if (showPassword) {
-                VisualTransformation.None
-            } else {
-                PasswordVisualTransformation()
-            },
-            trailingIcon = {
-                IconButtonTooltip(if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)) {
-                    IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
-                        Icon(
-                            imageVector = if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = if (showPassword) {
-                                stringResource(R.string.hide_password)
-                            } else {
-                                stringResource(R.string.show_password)
-                            },
-                        )
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = apiBaseUrl,

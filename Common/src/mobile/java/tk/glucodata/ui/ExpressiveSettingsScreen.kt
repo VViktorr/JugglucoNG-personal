@@ -147,7 +147,9 @@ fun ExpressiveSettingsScreen(
         runCatching { DexcomShareSettings.isSetUp(context) }.getOrDefault(false) ||
             hasActiveDexcomSensor()
     }
-    val showLumiflex = remember(context, sensorStatusRevision) {
+    val isRussianLanguage = LocalConfiguration.current.locales[0]?.language == "ru"
+    val showLumiflex = remember(context, sensorStatusRevision, isRussianLanguage) {
+        isRussianLanguage ||
         runCatching { LumiflexCloudSettings.isSetUp(context) }.getOrDefault(false) ||
             hasActiveAiDexSensor()
     }
