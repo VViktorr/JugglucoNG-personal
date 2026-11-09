@@ -42,8 +42,7 @@ import org.json.JSONObject;
 public class GlucoseWidget extends AppWidgetProvider {
     private static final String ACTION_GLUCOSE_UPDATE = "tk.glucodata.action.GLUCOSE_UPDATE";
     private static final Object widgetLock = new Object();
-    private static final long MIN_UPDATE_INTERVAL_MS = 1500L;
-    private static long lastUpdateElapsedRealtime = 0L;
+    private static final WidgetUpdateThrottle updateThrottle = new WidgetUpdateThrottle(1500L);
     static RemoteGlucose remote = null;
     static int width=0;
     static int height=0;
@@ -98,7 +97,7 @@ public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidge
 public void onReceive(Context context, Intent intent) {
    super.onReceive(context, intent);
    if (intent != null && ACTION_GLUCOSE_UPDATE.equals(intent.getAction())) {
-      update();
+      update(intent.getBooleanExtra(GlucoseUpdateBroadcaster.EXTRA_REDRAW_NOW, false));
    }
 }
 
@@ -224,24 +223,22 @@ public static void oldvalue(long time) {
        remote = null;
        width = 0;
        height = 0;
-       lastUpdateElapsedRealtime = 0L;
     }
-    update();
+    update(true);
     }
 
  public static void update() {
+    update(false);
+    }
+ private static void update(boolean force) {
     if (Applic.isWearable) {
       // The watch has no home-screen widget. This class is compiled into both
       // apps so main/ can call it; there is nothing to update here.
       return;
     }
     try {
-      final long now = SystemClock.elapsedRealtime();
-      synchronized (widgetLock) {
-         if ((now - lastUpdateElapsedRealtime) < MIN_UPDATE_INTERVAL_MS) {
-            return;
-         }
-         lastUpdateElapsedRealtime = now;
+      if (!updateThrottle.tryAcquire(SystemClock.elapsedRealtime(), force)) {
+         return;
       }
       final var cl= GlucoseWidget.class;
       final var manage= AppWidgetManager.getInstance(Applic.app);

@@ -424,6 +424,7 @@ fun SensorCard(
     var showReconnectDialog by remember { mutableStateOf(false) }
     var showWipeDialog by remember { mutableStateOf(false) }
     var wipeDataChecked by remember { mutableStateOf(false) }
+    var rePairChecked by remember { mutableStateOf(false) }
     var removeHistoryChecked by remember { mutableStateOf(false) }
     // Ottai: Disconnect keeps the credentials and the account binding unless this is chosen.
     var forgetOttaiChecked by remember { mutableStateOf(false) }
@@ -763,6 +764,7 @@ fun SensorCard(
             onDismissRequest = {
                 showReconnectDialog = false
                 wipeDataChecked = false
+                rePairChecked = false
             },
             title = { Text(stringResource(R.string.reconnect_sensor_title)) },
             text = {
@@ -776,13 +778,27 @@ fun SensorCard(
                         )
                         Text(stringResource(R.string.wipe_data))
                     }
+                    if (sensor.isIcan) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = rePairChecked,
+                                onCheckedChange = { rePairChecked = it }
+                            )
+                            Text(stringResource(R.string.ican_reset_bluetooth_binding))
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.reconnectSensor(sensor.serial, wipeDataChecked)
+                    if (sensor.isIcan && rePairChecked) {
+                        viewModel.rePairSensor(sensor.serial)
+                    } else {
+                        viewModel.reconnectSensor(sensor.serial, wipeDataChecked)
+                    }
                     showReconnectDialog = false
                     wipeDataChecked = false
+                    rePairChecked = false
                 },
                     shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.reconnect)) }
@@ -791,6 +807,7 @@ fun SensorCard(
                 TextButton(onClick = {
                     showReconnectDialog = false
                     wipeDataChecked = false
+                    rePairChecked = false
                 },
                     shapes = appButtonShapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }

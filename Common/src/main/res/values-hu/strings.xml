@@ -642,6 +642,7 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
     <string name="reconnect_sensor_title">Szenzor újracsatlakoztatása?</string>
     <string name="reconnect_sensor_desc">Ez alaphelyzetbe állítja a kapcsolatot, és megpróbál újracsatlakozni.</string>
     <string name="reconnect">Újracsatlakozás</string>
+    <string name="ican_reset_bluetooth_binding">Bluetooth-eszköz hozzárendelésének visszaállítása (az adatok megmaradnak)</string>
     <string name="forget_sensor_title">Szenzor elfelejtése?</string>
     <string name="forget_sensor_desc">Ez eltávolítja a szenzort a listából. Újabb szkenneléskor ismét megjelenhet.</string>
     <string name="reset_sensor_title">Szenzor alaphelyzetbe állítása?</string>
@@ -875,6 +876,8 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
     <string name="alert_amount">Mennyiségi riasztás</string>
     <string name="import_history">Előzmények importálása</string>
     <string name="import_history_desc">Glükózadatok importálása JugglucoNG-exportból vagy CSV-fájlból</string>
+    <string name="continue_without_sensor">Folytatás szenzor nélkül</string>
+    <string name="continue_without_sensor_desc">Inzulin, étel és ujjbegyes mérések rögzítése a naplóban</string>
     <string name="get_started_desc">A kezdéshez adja hozzá a szenzorát</string>
     <string name="select_sensor">Szenzortípus kiválasztása</string>
     <string name="or_divider">"  vagy  "</string>
