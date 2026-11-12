@@ -2493,6 +2493,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="ottai_state_partial_body">La formule de glycémie manque. Récupérez-les ou importez-les à nouveau.</string>
     <string name="ottai_v3_needs_nearby">Choisissez ce capteur dans la liste des capteurs trouvés : ses identifiants sont vérifiés en Bluetooth.</string>
     <string name="ottai_fetch_failed">Impossible de récupérer les identifiants de ce capteur.</string>
+    <string name="ottai_server_unreachable">Impossible de joindre le serveur Ottai. Réessayez.</string>
     <string name="ottai_connect_failed">Impossible de démarrer la connexion. Réessayez.</string>
     <string name="ottai_offline_hint">Vous pouvez aussi importer un fichier d\'identifiants sous Capteurs enregistrés.</string>
     <string name="ottai_already_binding_hint">Votre compte a encore un autre capteur lié. Déliez-le sous Capteurs enregistrés, puis réessayez.</string>
