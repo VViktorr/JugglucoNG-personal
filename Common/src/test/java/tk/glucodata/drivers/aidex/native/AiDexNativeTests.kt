@@ -867,6 +867,7 @@ class AdvertisementTests {
         assertTrue(AiDexOpcodes.isAiDexDevice("AiDEX X-22222689WH"))
         assertTrue(AiDexOpcodes.isAiDexDevice("Smart-22222BZTJ3"))
         assertTrue(AiDexOpcodes.isAiDexDevice("IndiaX-22222E7T6K"))
+        assertTrue(AiDexOpcodes.isAiDexDevice("VitaTok-22222DA48D"))
     }
 
     @Test
