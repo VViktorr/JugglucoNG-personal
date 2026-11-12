@@ -1079,6 +1079,7 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
     <string name="ottai_state_partial_body">Hiányzik a glükózképlet. Kérje le vagy importálja őket újra.</string>
     <string name="ottai_v3_needs_nearby">Válassza ki ezt a szenzort a talált szenzorok listájából: a hitelesítő adatait Bluetooth-on ellenőrizzük.</string>
     <string name="ottai_fetch_failed">Nem sikerült lekérni a szenzor hitelesítő adatait.</string>
+    <string name="ottai_server_unreachable">Nem érhető el az Ottai szerver. Próbálja újra.</string>
     <string name="ottai_connect_failed">Nem sikerült elindítani a kapcsolatot. Próbálja újra.</string>
     <string name="ottai_offline_hint">Hitelesítőadat-fájlt a Mentett szenzorok alatt is importálhat.</string>
     <string name="ottai_already_binding_hint">A fiókjához még egy másik szenzor van kötve. Oldja fel a kötését a Mentett szenzorok alatt, majd próbálja újra.</string>
