@@ -3265,6 +3265,8 @@ class AiDexBleManager(
 
         // A saved key needs no provisioning material; just clear any prior pairing error.
         pairingKeyProblemStatus = null
+        // Restore the advertised protocol serial before saved-key exchange; its IV is serial-specific.
+        maybeUseAdvertisedProtocolSerial()
         clearInvalidSetupTracking(resetRecoveryCounter = false, reason = "start-saved-key-exchange")
         setPhase(Phase.KEY_EXCHANGE)
         keyExchange.reset()
