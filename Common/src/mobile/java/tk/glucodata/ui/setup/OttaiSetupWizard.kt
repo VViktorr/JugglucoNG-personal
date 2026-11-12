@@ -1214,6 +1214,7 @@ fun OttaiSetupWizard(
         val id = OttaiConstants.canonicalSensorId(address)
         if (OttaiConstants.looksLikeMac(id)) {
             cloudId = id
+            OttaiRegistry.saveDraftRecord(context, id, address, OttaiConstants.DEFAULT_DISPLAY_NAME)
             selectedDeviceVersion = ""
             showStatus("")
             val hasLocal = OttaiRegistry.loadMaterials(context, id).authKeys != null
