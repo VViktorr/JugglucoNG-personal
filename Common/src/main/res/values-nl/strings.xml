@@ -2530,6 +2530,7 @@ Als je op OK drukt, wordt er een verbinding gemaakt op deze telefoon en wordt er
     <string name="ottai_state_partial_body">De glucoseformule ontbreekt. Haal ze opnieuw op of importeer ze.</string>
     <string name="ottai_v3_needs_nearby">Kies deze sensor in de lijst met gevonden sensoren: de inloggegevens worden via Bluetooth gecontroleerd.</string>
     <string name="ottai_fetch_failed">Kon de inloggegevens van deze sensor niet ophalen.</string>
+    <string name="ottai_server_unreachable">Kan de Ottai-server niet bereiken. Probeer het opnieuw.</string>
     <string name="ottai_connect_failed">Kon de verbinding niet starten. Probeer het opnieuw.</string>
     <string name="ottai_offline_hint">Je kunt ook een bestand met inloggegevens importeren onder Opgeslagen sensoren.</string>
     <string name="ottai_already_binding_hint">Je account heeft nog een andere sensor gekoppeld. Ontkoppel die onder Opgeslagen sensoren en probeer het opnieuw.</string>
