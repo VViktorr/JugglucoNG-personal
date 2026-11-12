@@ -2556,6 +2556,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="ottai_state_partial_body">Немає формули розрахунку глюкози. Завантажте або імпортуйте їх знову.</string>
     <string name="ottai_v3_needs_nearby">Виберіть цей датчик у списку знайдених: його ключі перевіряються через Bluetooth.</string>
     <string name="ottai_fetch_failed">Не вдалося отримати ключі цього датчика.</string>
+    <string name="ottai_server_unreachable">Не вдалося зв\'язатися із сервером Ottai. Спробуйте ще раз.</string>
     <string name="ottai_connect_failed">Не вдалося почати підключення. Спробуйте ще раз.</string>
     <string name="ottai_offline_hint">Також можна імпортувати файл із ключами в розділі «Збережені датчики».</string>
     <string name="ottai_already_binding_hint">До облікового запису досі прив\'язано інший датчик. Відв\'яжіть його в розділі «Збережені датчики» й спробуйте ще раз.</string>
