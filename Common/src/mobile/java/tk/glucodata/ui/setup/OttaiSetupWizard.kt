@@ -290,6 +290,28 @@ internal fun ottaiConnectFailureMessage(context: Context, sensorId: String): Str
     else R.string.ottai_connect_failed,
 )
 
+/** Prefer an observed address over stored credentials and the address encoded in the sensor ID. */
+internal fun ottaiSetupBleAddress(vararg addresses: String?): String? =
+    addresses.firstNotNullOfOrNull { OttaiConstants.normalizeBleAddress(it, allowPlain = false) }
+
+internal fun ottaiSensorIdBleAddress(sensorId: String?): String? {
+    val canonical = OttaiConstants.canonicalSensorId(sensorId)
+    if (!OttaiConstants.looksLikeMac(canonical)) return null
+    return OttaiConstants.normalizeBleAddress(OttaiConstants.macWithColons(canonical))
+}
+
+internal fun ottaiSetupBleAddressOrder(selected: String?, draft: String?, managed: String?, sensorId: String?): String? =
+    ottaiSetupBleAddress(selected, draft, managed, ottaiSensorIdBleAddress(sensorId))
+
+private fun ottaiResolvedSetupBleAddress(context: Context, sensorId: String, selected: String?): String? {
+    val canonical = OttaiConstants.canonicalSensorId(sensorId)
+    if (canonical.isEmpty()) return ottaiSetupBleAddress(selected)
+    return ottaiSetupBleAddressOrder(selected,
+        OttaiRegistry.findDraftRecord(context, canonical)?.address,
+        OttaiRegistry.findRecord(context, canonical)?.address,
+        canonical)
+}
+
 private fun connectOttaiSensor(
     context: Context,
     mac: String,
@@ -299,13 +321,8 @@ private fun connectOttaiSensor(
 ): Boolean {
     val canonical = OttaiConstants.canonicalSensorId(mac).ifEmpty { return false }
     if (OttaiFirmwareSession.hasPendingSetup(context, canonical)) return false
-    val ble = OttaiConstants.normalizeBleAddress(
-        bleAddress, allowPlain = false,
-    ) ?: OttaiConstants.normalizeBleAddress(
-        OttaiRegistry.findDraftRecord(context, canonical)?.address, allowPlain = false,
-    ) ?: OttaiConstants.normalizeBleAddress(
-        OttaiRegistry.findRecord(context, canonical)?.address, allowPlain = false,
-    ) ?: OttaiConstants.macWithColons(canonical)
+    val ble = ottaiResolvedSetupBleAddress(context, canonical, bleAddress)
+        ?: OttaiConstants.macWithColons(canonical)
     if (!ottaiSetupPublishesManagedSensor(route)) return false
     return when (route) {
         OttaiSetupConnectRoute.STORED_MATERIALS -> {
