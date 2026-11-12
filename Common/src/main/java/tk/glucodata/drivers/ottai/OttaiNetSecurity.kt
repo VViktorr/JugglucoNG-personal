@@ -38,6 +38,11 @@ internal class OttaiNetSecurity(
     private val randomBytes: (Int) -> ByteArray = { size -> ByteArray(size).also { SecureRandom().nextBytes(it) } },
     private val pause: (Long) -> Unit = { delayMs ->
         try { Thread.sleep(delayMs) } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw OttaiOtaCloudException("cancelled")
+        }
+    },
+) {
     internal data class Reply(val status: Int, val json: JSONObject?)
     private class Secret(val id: String, val expires: Long, val aes: ByteArray, val signing: ByteArray) {
         var sequence = 0L
