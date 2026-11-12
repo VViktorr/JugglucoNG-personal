@@ -376,6 +376,12 @@ class MedtrumTestNatives {
         /** The native calls that matter to ordering: the first touch of a mirror write, and the finish. */
         val events: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
 
+        /** Native shortened name -> owning full sensor identity, for alias collision checks. */
+        val fullNames: MutableMap<String, String> = java.util.concurrent.ConcurrentHashMap()
+
+        @JvmStatic @Implementation
+        fun resolveFullSensorName(sensorId: String?): String? = sensorId?.let { fullNames[it] }
+
         @JvmStatic @Implementation
         fun __staticInitializer__() {}
 
