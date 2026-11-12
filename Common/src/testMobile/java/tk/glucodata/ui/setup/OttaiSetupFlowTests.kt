@@ -89,6 +89,23 @@ class OttaiSetupFlowTests {
     }
 
     @Test
+    fun `transport failures read as an unreachable server, business refusals do not`() {
+        listOf(
+            OttaiCloudClient.CloudFailure("ota_exchange_http=200_biz=Error", "Error", 200),
+            OttaiCloudClient.CloudFailure("ota_exchange_crypto"),
+            OttaiCloudClient.CloudFailure("ota_response_cipher"),
+            OttaiCloudClient.CloudFailure("ota_request_response_json_http=502", httpStatus = 502),
+            OttaiCloudClient.CloudFailure("network: timeout"),
+            OttaiCloudClient.CloudFailure("http=503 biz=", httpStatus = 503),
+        ).forEach { assertEquals(it.text, true, it.isServerUnreachable) }
+        listOf(
+            OttaiCloudClient.CloudFailure("http=200 biz=AppDevice_AlreadyUsed", "AppDevice_AlreadyUsed", 200),
+            OttaiCloudClient.CloudFailure("ota_request_http=200_biz=Device_Auth_Error", "Device_Auth_Error", 200),
+            OttaiCloudClient.CloudFailure("http=404 biz=", httpStatus = 404),
+        ).forEach { assertEquals(it.text, false, it.isServerUnreachable) }
+    }
+
+    @Test
     fun `missing materials without a signed V3 route remain blocked`() {
         listOf(
             ottaiSetupConnectRoute(false, true, false),
