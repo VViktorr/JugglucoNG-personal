@@ -97,6 +97,10 @@ object OttaiCloudClient {
 
         /** The backend refused this bind with its OTA code; check the actual BLE revision. */
         val isOtaUpgradeRequired: Boolean get() = code.equals(BIZ_OTA_UPGRADE_REQUIRED, ignoreCase = true)
+        /** Transport failure, gateway failure, or malformed secure response: retry may help. */
+        val isServerUnreachable: Boolean get() = httpStatus >= 500 ||
+            text.startsWith("network:") || text.startsWith("ota_exchange") ||
+            text.startsWith("ota_response_cipher") || text.startsWith("ota_request_response_json")
     }
 
     /** Failure belongs to this unbind attempt even if another cloud request finishes meanwhile. */
