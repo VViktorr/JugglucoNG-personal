@@ -1207,6 +1207,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="ottai_state_partial_body">The glucose formula is missing. Fetch or import them again.</string>
     <string name="ottai_v3_needs_nearby">Pick this sensor from the list of found sensors: its credentials are checked over Bluetooth.</string>
     <string name="ottai_fetch_failed">Couldn\'t get this sensor\'s credentials.</string>
+    <string name="ottai_server_unreachable">Couldn\'t reach the Ottai server. Try again.</string>
     <string name="ottai_connect_failed">Couldn\'t start the connection. Try again.</string>
     <string name="ottai_offline_hint">You can also import a credentials file under Saved sensors.</string>
     <string name="ottai_already_binding_hint">Your account still has another sensor bound. Unbind it under Saved sensors, then try again.</string>
