@@ -102,6 +102,16 @@ internal object OttaiOtaProtocol {
         return !a.composite && !b.composite && compareVersions(a, b) == 0 && a.build == b.build
     }
 
+    /**
+     * Cloud spelling of a composite revision, without the BLE variant suffix.
+     * Returns null when there is no variant to remove.
+     */
+    fun withoutVariant(value: String): String? {
+        val raw = version(value) ?: return null
+        if (compositePattern.matchEntire(raw) == null || ',' !in raw) return null
+        return raw.substringBefore(',').takeIf { it.isNotEmpty() }
+    }
+
     /** A bare package V-profile can read back inside a full E(...),variant revision. */
     fun matchesTarget(readback: String, target: String): Boolean {
         if (sameVersion(readback, target)) return true
