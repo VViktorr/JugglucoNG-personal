@@ -268,13 +268,12 @@ private fun ottaiMaterialFailureMessage(
     if (effective?.isTokenInvalid == true) return context.getString(R.string.ottai_session_invalid)
     // Not a fetch problem either: the offline routes cannot produce keys the backend withholds.
     if (effective?.isOtaUpgradeRequired == true) return context.getString(R.string.ottai_ota_upgrade_required)
-    val headline = if (effective?.code.equals(OttaiCloudClient.BIZ_ALREADY_BINDING, ignoreCase = true)) {
-        context.getString(R.string.ottai_already_binding_hint)
-    } else {
-        context.getString(R.string.ottai_fetch_failed)
+    if (effective?.isServerUnreachable == true) return context.getString(R.string.ottai_server_unreachable)
+    if (effective?.code.equals(OttaiCloudClient.BIZ_ALREADY_BINDING, ignoreCase = true)) {
+        return context.getString(R.string.ottai_already_binding_hint)
     }
     val detail = effective?.text.orEmpty().takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
-    return headline + detail + "\n" + context.getString(R.string.ottai_offline_hint)
+    return context.getString(R.string.ottai_fetch_failed) + detail
 }
 
 /**
