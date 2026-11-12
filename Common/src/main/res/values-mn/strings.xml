@@ -2594,6 +2594,7 @@ OK дарснаар энэ утсан дээр холболт үүсч, өөр A
     <string name="ottai_state_partial_body">Глюкозын томъёо дутуу байна. Дахин татах эсвэл импортлоно уу.</string>
     <string name="ottai_v3_needs_nearby">Энэ мэдрэгчийг олдсон мэдрэгчдийн жагсаалтаас сонгоно уу: түлхүүрийг нь Bluetooth-ээр шалгадаг.</string>
     <string name="ottai_fetch_failed">Энэ мэдрэгчийн түлхүүрийг авч чадсангүй.</string>
+    <string name="ottai_server_unreachable">Ottai серверт холбогдож чадсангүй. Дахин оролдоно уу.</string>
     <string name="ottai_connect_failed">Холболтыг эхлүүлж чадсангүй. Дахин оролдоно уу.</string>
     <string name="ottai_offline_hint">Мөн «Хадгалсан мэдрэгчүүд» хэсэгт түлхүүрийн файл импортлох боломжтой.</string>
     <string name="ottai_already_binding_hint">Таны бүртгэлд өөр мэдрэгч холбогдсон хэвээр байна. «Хадгалсан мэдрэгчүүд» хэсэгт салгаад дахин оролдоно уу.</string>
