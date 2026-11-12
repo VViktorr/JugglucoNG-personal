@@ -2487,6 +2487,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="ottai_state_partial_body">Glukosformeln saknas. Hämta eller importera dem igen.</string>
     <string name="ottai_v3_needs_nearby">Välj sensorn i listan över hittade sensorer: dess inloggningsuppgifter verifieras över Bluetooth.</string>
     <string name="ottai_fetch_failed">Kunde inte hämta sensorns inloggningsuppgifter.</string>
+    <string name="ottai_server_unreachable">Det gick inte att nå Ottai-servern. Försök igen.</string>
     <string name="ottai_connect_failed">Kunde inte starta anslutningen. Försök igen.</string>
     <string name="ottai_offline_hint">Du kan också importera en fil med inloggningsuppgifter under Sparade sensorer.</string>
     <string name="ottai_already_binding_hint">Ditt konto har fortfarande en annan sensor kopplad. Koppla från den under Sparade sensorer och försök igen.</string>
