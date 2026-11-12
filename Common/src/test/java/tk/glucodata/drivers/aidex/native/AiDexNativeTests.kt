@@ -293,6 +293,27 @@ class SerialCryptoTests {
     }
 
     @Test
+    fun testVitaTokSerialUsesBareSerialChallengeAndIvForNewAndStoredSensors() {
+        val name = "VitaTok-22222DA48D"
+        val canonical = requireNotNull(AiDexSerialIdentity.canonicalFromAdvertisement(name))
+        val recovered = requireNotNull(AiDexSerialIdentity.advertisedProtocolSerialForMacFallback(
+            storedSensorId = "X-8C73DADDACFB",
+            address = "8C:73:DA:DD:AC:FB",
+            advertisedName = name,
+        ))
+        val expectedChallenge = SerialCrypto.deriveSecret("22222DA48D")
+        val expectedIv = SerialCrypto.deriveIv("22222DA48D")
+        val macChallenge = AiDexKeyExchange("X-8C73DADDACFB").getChallenge()
+        for (serial in listOf(name, canonical, recovered)) {
+            val exchange = AiDexKeyExchange(serial)
+            assertEquals("22222DA48D", exchange.bareSerial)
+            assertArrayEquals(expectedChallenge, exchange.getChallenge())
+            assertArrayEquals(expectedIv, exchange.snIv)
+            assertFalse(macChallenge.contentEquals(exchange.getChallenge()))
+        }
+    }
+
+    @Test
     fun testDeriveSecretAndIV_Length() {
         val secret = SerialCrypto.deriveSecret("22222689WH")
         val iv = SerialCrypto.deriveIv("22222689WH")
