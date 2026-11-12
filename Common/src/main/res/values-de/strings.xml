@@ -2597,6 +2597,7 @@ Durch Drücken von „OK“ wird eine Verbindung auf diesem Telefon hergestellt 
     <string name="ottai_state_partial_body">Die Glukoseformel fehlt. Ruf sie erneut ab oder importiere sie.</string>
     <string name="ottai_v3_needs_nearby">Wähle diesen Sensor in der Liste der gefundenen Sensoren: Seine Zugangsdaten werden per Bluetooth geprüft.</string>
     <string name="ottai_fetch_failed">Die Zugangsdaten dieses Sensors konnten nicht abgerufen werden.</string>
+    <string name="ottai_server_unreachable">Ottai-Server nicht erreichbar. Bitte erneut versuchen.</string>
     <string name="ottai_connect_failed">Die Verbindung konnte nicht gestartet werden. Versuche es erneut.</string>
     <string name="ottai_offline_hint">Du kannst auch unter „Gespeicherte Sensoren“ eine Zugangsdaten-Datei importieren.</string>
     <string name="ottai_already_binding_hint">Dein Konto hat noch einen anderen Sensor gebunden. Löse ihn unter „Gespeicherte Sensoren“ und versuche es dann erneut.</string>
