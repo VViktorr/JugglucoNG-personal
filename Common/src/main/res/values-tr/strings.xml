@@ -2515,6 +2515,7 @@ Tamam\'a basmak bağlantı için QR kod görüntüleyecektir. QR kodu diğer tel
     <string name="ottai_state_partial_body">Glikoz formülü eksik. Yeniden alın veya içe aktarın.</string>
     <string name="ottai_v3_needs_nearby">Bu sensörü bulunan sensörler listesinden seçin: kimlik bilgileri Bluetooth üzerinden doğrulanır.</string>
     <string name="ottai_fetch_failed">Bu sensörün kimlik bilgileri alınamadı.</string>
+    <string name="ottai_server_unreachable">Ottai sunucusuna ulaşılamadı. Tekrar deneyin.</string>
     <string name="ottai_connect_failed">Bağlantı başlatılamadı. Tekrar deneyin.</string>
     <string name="ottai_offline_hint">Kayıtlı sensörler altında bir kimlik bilgisi dosyası da içe aktarabilirsiniz.</string>
     <string name="ottai_already_binding_hint">Hesabınıza hâlâ başka bir sensör bağlı. Kayıtlı sensörler altında bağını kaldırın, sonra tekrar deneyin.</string>
