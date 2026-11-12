@@ -395,8 +395,15 @@ internal class OttaiFirmwareSession private constructor(
 
     override fun prepareImage(version: String, done: (Result<OttaiFirmwareImage?>) -> Unit) {
         work({
-            val offer = otaCloud.value.judgeOta(sensorId, version)
+            var offer = otaCloud.value.judgeOta(sensorId, version)
             log("offer required=${offer.required} allowed=${offer.allowed} image=${offer.downloadUrl != null}")
+            val cloudSpelling = OttaiOtaProtocol.withoutVariant(version)
+            if (!offer.required && !offer.allowed && cloudSpelling != null) {
+                // A second read-only availability check uses the cloud's variant-less form.
+                // Installation is still separately gated by the actual BLE version.
+                offer = otaCloud.value.judgeOta(sensorId, cloudSpelling)
+                log("offer variantless required=${offer.required} allowed=${offer.allowed} image=${offer.downloadUrl != null}")
+            }
             if (!offer.required && !offer.allowed) null
             else {
                 val url = offer.downloadUrl ?: throw IllegalArgumentException("download_missing")
