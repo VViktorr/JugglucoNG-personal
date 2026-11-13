@@ -52,6 +52,7 @@ inline int getpagesize(void) {
 #include "config.h"
 
 #include "inout.hpp"
+#include "wearhistoryorigin.hpp"
 
 #include "net/backup.hpp"
 #include "net/passhost.hpp"
@@ -246,6 +247,7 @@ public:
     return NfcRawHistory(sensordir + "/nfc-raw-history.dat").append(rows);
   }
 
+  WearHistoryOrigin wearHistoryOrigin;
   struct updatestate {
     uint32_t scanstart;
     uint32_t histstart;
