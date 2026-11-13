@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  APK_VERSION: 1.2.8.${{ github.run_number }}
+  APK_VERSION: 1.4.0.${{ github.run_number }}
 
 permissions:
   contents: read
@@ -80,6 +80,40 @@ jobs:
               'abis': ['arm64-v8a', 'armeabi-v7a'], 'variant': 'mobileRelease',
               'signing': 'repository fallback key', 'sha256': digest
           }, indent=2) + '\n')
+      - name: Generate phone update manifest
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          assets = Path('build/personal-apk')
+          version = os.environ['APK_VERSION']
+          apk = assets / f'JugglucoNG-{version}-phone.apk'
+          aapt2 = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0/aapt2'
+          badging = subprocess.check_output([str(aapt2), 'dump', 'badging', str(apk)], text=True)
+          package = re.search(r"^package: name='([^']+)' versionCode='([0-9]+)' versionName='([^']+)'", badging, re.M)
+          sdk = re.search(r"^sdkVersion:'([0-9]+)'", badging, re.M)
+          if not package or not sdk or package[1] != 'tk.glucodata.ng' or package[3] != version:
+              raise SystemExit('Unexpected phone APK package metadata')
+          with apk.open('rb') as source:
+              digest = hashlib.file_digest(source, 'sha256').hexdigest()
+          manifest = {
+              'schema': 1,
+              'versionName': version,
+              'versionCode': int(package[2]),
+              'minSdk': int(sdk[1]),
+              'artifacts': [{
+                  'applicationId': package[1],
+                  'file': apk.name,
+                  'size': apk.stat().st_size,
+                  'sha256': digest,
+              }],
+          }
+          (assets / 'update-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: JugglucoNG-main5-phone-arm-${{ github.sha }}
@@ -185,11 +219,12 @@ jobs:
           set -euo pipefail
           mkdir -p build/release/assets
           cp build/release/phone/*.apk build/release/wear/*.apk build/release/assets/
+          cp build/release/phone/update-manifest.json build/release/assets/
           cp build/release/phone/build-info.json build/release/assets/phone-build-info.json
           cp build/release/wear/build-info.json build/release/assets/wear-build-info.json
           cat build/release/phone/SHA256SUMS.txt build/release/wear/SHA256SUMS.txt > build/release/assets/SHA256SUMS.txt
           (cd build/release/assets && sha256sum --check SHA256SUMS.txt)
-          previous=$(git describe --tags --match 'main5-build-*' --match 'main5-v1.2.8.*' --abbrev=0 HEAD^ 2>/dev/null || true)
+          previous=$(git describe --tags --match 'main5-build-*' --match 'main5-v*' --abbrev=0 HEAD^ 2>/dev/null || true)
           if [ -z "$previous" ]; then
             previous=3ceeab9d09a66552b9e691a6c0f70d552e732a3e
           fi

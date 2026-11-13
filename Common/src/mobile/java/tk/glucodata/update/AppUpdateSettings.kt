@@ -21,7 +21,7 @@ object AppUpdateSettings {
     private const val KEY_SOURCE = "update_source"
     private const val KEY_LAST_CHECK_AT = "last_check_at"
     private const val KEY_LAST_ERROR = "last_error"
-    private const val KEY_CACHED_UPDATE = "cached_update"
+    private const val KEY_CACHED_UPDATE = "cached_update_personal"
     private const val KEY_DISMISSED = "dismissed_update"
     private const val KEY_DISMISSED_AT = "dismissed_update_at"
 
@@ -67,7 +67,10 @@ object AppUpdateSettings {
     /** The https URL releases are read from. Defaults to this build's own project. */
     fun updateSource(context: Context): String {
         val stored = prefs(context).getString(KEY_SOURCE, null)
-        return stored?.takeIf { UpdateSource.isValid(it) } ?: defaultUpdateSource
+        if (stored == null) return defaultUpdateSource
+        val resolved = UpdateSource.resolve(stored)
+        val previousDefault = UpdateSource.resolve("https://github.com/ctqvva/JugglucoNG")
+        return stored.takeIf { resolved != null && resolved != previousDefault } ?: defaultUpdateSource
     }
 
     val defaultUpdateSource: String get() = "https://github.com/${BuildConfig.UPDATE_REPO}"

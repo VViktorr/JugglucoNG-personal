@@ -30,7 +30,7 @@ Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap 
 - **Phone notifications and overlays:** configurable glucose presentation through Live Update and MetricStyle where supported, plus refinements to the floating glucose and always-on display.
 - **Wear OS:** choose a standard icon, glucose value, trend arrow, or value and arrow together. The choice can be synced from **Sensors and devices → Watch → Wear OS → Configuration → Actions**. Fresh installs default to the glucose value. The watch requests notification permission when its window is ready and prioritizes refreshing the notification panel.
 - **Reports and journal:** expanded clinical PDF reports with AGP percentiles, calendar ranges, meal profiles and injection annotations, plus Health Connect activity import for the journal.
-- **APK distribution:** numbered `1.2.8.N` releases bundle separate phone and Wear OS APKs. Each APK includes both ARM32 and ARM64.
+- **APK distribution:** numbered `1.4.0.N` releases bundle separate phone and Wear OS APKs. Each APK includes both ARM32 and ARM64.
 
 ## Builds
 

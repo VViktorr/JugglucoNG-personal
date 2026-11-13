@@ -31,11 +31,11 @@ ext {
     // Bump the app version here only. Wear releases use appVersionCode + 1000000
     // so Play accepts both APKs in one release (distinct versionCodes per form
     // factor). Scheme originates on the wearos branch — keep the two in step.
-    appVersionCode = 1028 + (providers.gradleProperty('personalBuildNumber').orElse('0').get().toInteger())
+    appVersionCode = 1400 + (providers.gradleProperty('personalBuildNumber').orElse('0').get().toInteger())
     // Base version, without the flavour/build-type suffix chain that gets appended
     // to versionName. Used for the APK filename so it stays readable.
     appVersionName = providers.gradleProperty('personalBuildNumber')
-        .map { "1.2.8.${it}" }.orElse('1.2.8-Alpha').get()
+        .map { "1.4.0.${it}" }.orElse('1.4.0').get()
 
     ndkver       = '29.0.14206865'
     CMAKEVERSION = '4.1.2'
@@ -119,10 +119,10 @@ android {
         // be compared against a release tag. The in-app updater needs the bare number.
         buildConfigField 'String', 'BASE_VERSION_NAME', "\"$appVersionName\""
         // GitHub repo the in-app updater reads releases from. Forks change it here.
-        buildConfigField 'String', 'UPDATE_REPO', '"ctqvva/JugglucoNG"'
+        buildConfigField 'String', 'UPDATE_REPO', '"VViktorr/JugglucoNG-personal"'
         // Backup for the above, tried only when GitHub itself cannot be reached. A SourceForge
         // project files URL; empty disables the fallback. Forks change or clear it here.
-        buildConfigField 'String', 'UPDATE_BACKUP_SOURCE', '"https://sourceforge.net/projects/jugglucong/files/"'
+        buildConfigField 'String', 'UPDATE_BACKUP_SOURCE', '""'
 
         buildConfigField 'String', 'BUILD_TIME', 'new java.text.SimpleDateFormat("HH:mm:ss dd-MMM-yyyy").format(new java.util.Date(' + System.currentTimeMillis() + 'L))'
         buildConfigField 'int', 'isRelease', '0'
