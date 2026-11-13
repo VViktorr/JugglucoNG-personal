@@ -128,10 +128,11 @@ jobs:
           summary = subprocess.check_output(
               [str(apkanalyzer), 'apk', 'summary', str(apk)], text=True,
           ).strip()
-          expected = f"tk.glucodata.ng {os.environ['APK_VERSION_CODE']} {version}"
-          if summary != expected:
+          fields = summary.split()
+          expected = ['tk.glucodata.ng', os.environ['APK_VERSION_CODE'], version]
+          if fields != expected:
               raise SystemExit(f'Expected phone APK metadata {expected!r}, got {summary!r}')
-          application_id, version_code, _ = summary.split()
+          application_id, version_code, _ = fields
           min_sdk = int(subprocess.check_output(
               [str(apkanalyzer), 'manifest', 'min-sdk', str(apk)], text=True,
           ).strip())
