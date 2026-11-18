@@ -376,7 +376,7 @@ internal object SettingsSearchIndex {
             route("settings/sensor-connection"), terms = listOf("Turbo"), anchor = SettingsSearchAnchors.TURBO),
         SettingsSearchEntry(R.string.settings_autoconnect_title, CONNECTION, Icons.Default.Autorenew, N,
             route("settings/sensor-connection"), terms = listOf("AutoConnect"), anchor = SettingsSearchAnchors.AUTOCONNECT),
-        SettingsSearchEntry(R.string.libre2_kotlin_driver_title, CONNECTION, Icons.Default.Science, N,
+        SettingsSearchEntry(R.string.libre2_kotlin_driver_title, CONNECTION, Icons.Default.Bluetooth, N,
             route("settings/sensor-connection"), keywords = listOf(R.string.libre2_kotlin_driver_desc),
             terms = listOf("Libre 2", "Gen2", "Kotlin"), anchor = SettingsSearchAnchors.LIBRE2_KOTLIN_DRIVER),
         SettingsSearchEntry(R.string.freeze_displayed_values, PROCESSING, Icons.Default.Lock, N,
