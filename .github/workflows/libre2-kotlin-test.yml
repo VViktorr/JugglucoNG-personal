@@ -1,0 +1,37 @@
+name: Libre 2 Kotlin test APK
+on:
+  push:
+    branches: [feature/libre2-kotlin-optional]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phone:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: scripts/dist/install-sdk.sh
+      - uses: gradle/actions/setup-gradle@v6
+      - run: scripts/restore-build-inputs.sh
+      - name: Assemble test APK
+        run: ./gradlew :Common:assembleMobileDebug -PjugglucoAbi=arm64-v8a,armeabi-v7a --no-daemon --no-configuration-cache --max-workers=2 --stacktrace
+      - name: Verify test APK
+        run: |
+          mapfile -t apks < <(find Common/build/outputs/apk/mobile/debug -name '*.apk')
+          test "${#apks[@]}" -eq 1
+          mkdir -p build/libre2-test
+          cp "${apks[0]}" build/libre2-test/JugglucoNG-Libre2-Kotlin-test.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify build/libre2-test/JugglucoNG-Libre2-Kotlin-test.apk
+      - uses: actions/upload-artifact@v7
+        with:
+          name: JugglucoNG-Libre2-Kotlin-test
+          path: build/libre2-test/JugglucoNG-Libre2-Kotlin-test.apk
+          if-no-files-found: error
