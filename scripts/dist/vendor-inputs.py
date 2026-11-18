@@ -2,6 +2,7 @@
 """Regenerate vendor metadata, audit baseline availability, or pin a published APK."""
 import argparse
 import json
+import re
 import shutil
 from pathlib import Path
 import sys
@@ -10,7 +11,7 @@ import urllib.request
 import zipfile
 import dist
 
-REPO = 'ctqvva/JugglucoNG'
+REPO = 'VViktorr/JugglucoNG-personal'
 
 
 def write_inventory(data):
@@ -76,9 +77,11 @@ def audit_and_restore(apk=None):
 
 
 def rebaseline(tag):
-    if tag != dist.version()[0]:
-        raise ValueError('Baseline tag must equal current appVersionName; run after publishing that release')
-    url = f'https://github.com/{REPO}/releases/download/{tag}/JugglucoNG-{tag}.apk'
+    match = re.fullmatch(r'main5-v(\d+(?:\.\d+){2,}(?:-[A-Za-z0-9.-]+)?)', tag)
+    if not match:
+        raise ValueError('Use a published main5-v<version> tag from the personal fork')
+    filename = f'JugglucoNG-{match[1]}-phone.apk'
+    url = f'https://github.com/{REPO}/releases/download/{tag}/{filename}'
     request = urllib.request.Request(f'https://api.github.com/repos/{REPO}/releases/tags/{tag}',
                                      headers={'User-Agent': 'JugglucoNG-build'})
     with urllib.request.urlopen(request, timeout=60) as response:
@@ -87,14 +90,19 @@ def rebaseline(tag):
         raise ValueError('Baseline must be a published release with its canonical phone APK')
     data = dist.inventory()
     with tempfile.TemporaryDirectory(prefix='juggluco-baseline-') as tmp:
-        apk = Path(tmp) / f'JugglucoNG-{tag}.apk'
+        apk = Path(tmp) / filename
         with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'JugglucoNG-build'}), timeout=120) as src, apk.open('wb') as out:
             shutil.copyfileobj(src, out)
-        # Includes production certificate, version/package, both ABIs, all desired
-        # hashes and absence of removed inputs. An unrelated APK cannot become baseline.
-        if set(dist.abis()) != set(dist.ARM_ABIS):
-            raise ValueError('Rebaseline requires both ARM ABIs (unset jugglucoAbi)')
-        dist.verify_apk(apk, 'mobile', 'release')
+        # This APK supplies library bytes only. Validate the inventory for both
+        # ABIs independently of the build's version and signing configuration.
+        with zipfile.ZipFile(apk) as archive:
+            unavailable = dist.unavailable_inputs(data, archive)
+            if unavailable:
+                raise ValueError('Baseline is missing matching libraries: ' + ', '.join(unavailable))
+            entries = set(archive.namelist())
+            for path in data.get('removedFiles', []):
+                if dist.input_entry(path) in entries:
+                    raise ValueError(f'Removed vendor input still packaged: {path}')
         data['source'] = {'url': url, 'sha256': dist.digest(apk.read_bytes())}
     data.pop('bootstrapRequired', None)
     write_inventory(data)
@@ -103,7 +111,7 @@ def rebaseline(tag):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--baseline', help='Published release tag to pin after the first local release')
+    parser.add_argument('--baseline', help='Published main5-v<version> tag in the personal fork')
     parser.add_argument('--apk', type=Path, help='Existing pinned APK for offline inventory regeneration/audit')
     parser.add_argument('--ci', action='store_true', help='Audit bootstrap state; restore when the baseline supplies all inputs')
     args = parser.parse_args()
