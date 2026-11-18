@@ -3565,4 +3565,7 @@ Marka la cadaadiyo OK waxay dhalin doontaa xidhiidh teleefankan oo waxa ay soo b
     <string name="food_reorder">Dib u kala hagaaji cuntada</string>
     <string name="food_move_up">Kor u dhaqaaji</string>
     <string name="food_move_down">Hoos u dhaqaaji</string>
+    <string name="libre2_kotlin_driver_title">Darawalka Kotlin ee Libre 2</string>
+    <string name="libre2_kotlin_driver_desc">Tijaabo. Wuxuu akhriyaa dareemayaasha Libre 1 iyo 2 iyadoon la isticmaalin maktabadda shirkadda</string>
+    <string name="libre2_kotlin_driver_restart">Dib u bilow app-ka, kadibna iskaan garee dareemaha si loo dabaqo</string>
 </resources>

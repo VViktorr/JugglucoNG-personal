@@ -3423,4 +3423,7 @@ Als je op OK drukt, wordt er een verbinding gemaakt op deze telefoon en wordt er
     <string name="food_reorder">Voeding herschikken</string>
     <string name="food_move_up">Omhoog verplaatsen</string>
     <string name="food_move_down">Omlaag verplaatsen</string>
+    <string name="libre2_kotlin_driver_title">Kotlin-driver voor Libre 2</string>
+    <string name="libre2_kotlin_driver_desc">Experimenteel. Leest Libre 1- en 2-sensoren zonder de bibliotheek van de fabrikant</string>
+    <string name="libre2_kotlin_driver_restart">Start de app opnieuw en scan de sensor om dit toe te passen</string>
 </resources>

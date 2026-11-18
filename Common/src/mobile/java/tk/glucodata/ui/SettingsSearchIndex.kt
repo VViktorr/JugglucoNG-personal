@@ -98,6 +98,7 @@ internal object SettingsSearchAnchors {
     const val HANDOVER = "connection/handover"
     const val TURBO = "connection/turbo"
     const val AUTOCONNECT = "connection/autoconnect"
+    const val LIBRE2_KOTLIN_DRIVER = "connection/libre2-kotlin-driver"
 }
 
 /** Icon-tile role, matching the group colour the row wears on the Settings tab. */
@@ -375,6 +376,9 @@ internal object SettingsSearchIndex {
             route("settings/sensor-connection"), terms = listOf("Turbo"), anchor = SettingsSearchAnchors.TURBO),
         SettingsSearchEntry(R.string.settings_autoconnect_title, CONNECTION, Icons.Default.Autorenew, N,
             route("settings/sensor-connection"), terms = listOf("AutoConnect"), anchor = SettingsSearchAnchors.AUTOCONNECT),
+        SettingsSearchEntry(R.string.libre2_kotlin_driver_title, CONNECTION, Icons.Default.Science, N,
+            route("settings/sensor-connection"), keywords = listOf(R.string.libre2_kotlin_driver_desc),
+            terms = listOf("Libre 2", "Gen2", "Kotlin"), anchor = SettingsSearchAnchors.LIBRE2_KOTLIN_DRIVER),
         SettingsSearchEntry(R.string.freeze_displayed_values, PROCESSING, Icons.Default.Lock, N,
             action(SettingsSearchAction.KEEP_DISPLAYED_VALUES)),
         SettingsSearchEntry(R.string.restricted_mode_title, ADVANCED, Icons.Default.ChildCare, N,

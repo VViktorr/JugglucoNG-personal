@@ -128,6 +128,8 @@ if(true) {
    final String nativedir=con.getApplicationInfo().nativeLibraryDir;
    Natives.setlocale(locstr);
    ret=Natives.setfilesdir(filespath, country,nativedir);
+   // Before any Libre scan or stream: pick the open backend or the vendor library.
+   tk.glucodata.drivers.libre2.Libre2ManagedDriver.applyStoredSetting(con);
    // Settings are live now, so the native logging switch is authoritative — mirror it into
    // Log.doLog so guarded call sites stop building strings when tracing is off.
    Log.refreshDoLog();

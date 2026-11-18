@@ -3408,4 +3408,7 @@ Tamam\'a basmak bağlantı için QR kod görüntüleyecektir. QR kodu diğer tel
     <string name="food_reorder">Yiyecekleri yeniden sırala</string>
     <string name="food_move_up">Yukarı taşı</string>
     <string name="food_move_down">Aşağı taşı</string>
+    <string name="libre2_kotlin_driver_title">Kotlin Libre 2 sürücüsü</string>
+    <string name="libre2_kotlin_driver_desc">Deneysel. Libre 1 ve 2 sensörlerini üretici kitaplığı olmadan okur</string>
+    <string name="libre2_kotlin_driver_restart">Uygulamak için uygulamayı yeniden başlatın ve sensörü okutun</string>
 </resources>

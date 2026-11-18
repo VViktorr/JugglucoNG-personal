@@ -153,6 +153,7 @@ struct libre2stream:streamdata {
 	int startsincebase;
 	jbyte person=0;
 	scanstate *state;
+	bool foreignstate=false; // saved state belongs to the other Libre 2 backend
 	#ifndef NORAWSTREAM
 	int blueuit;
 	#endif

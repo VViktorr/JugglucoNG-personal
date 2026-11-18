@@ -3793,4 +3793,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="food_reorder">Reorder food</string>
     <string name="food_move_up">Move up</string>
     <string name="food_move_down">Move down</string>
+    <string name="libre2_kotlin_driver_title">Kotlin Libre 2 driver</string>
+    <string name="libre2_kotlin_driver_desc">Experimental. Reads Libre 1 and 2 sensors without the vendor library</string>
+    <string name="libre2_kotlin_driver_restart">Restart the app, then scan the sensor to apply</string>
 </resources>

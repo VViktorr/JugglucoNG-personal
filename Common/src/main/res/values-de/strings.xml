@@ -3493,4 +3493,7 @@ Durch Drücken von „OK“ wird eine Verbindung auf diesem Telefon hergestellt 
     <string name="food_reorder">Lebensmittel umordnen</string>
     <string name="food_move_up">Nach oben</string>
     <string name="food_move_down">Nach unten</string>
+    <string name="libre2_kotlin_driver_title">Kotlin-Treiber für Libre 2</string>
+    <string name="libre2_kotlin_driver_desc">Experimentell. Liest Libre-1- und Libre-2-Sensoren ohne die Herstellerbibliothek</string>
+    <string name="libre2_kotlin_driver_restart">App neu starten und Sensor scannen, um die Änderung anzuwenden</string>
 </resources>

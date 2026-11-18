@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import tk.glucodata.AlgNfcV;
+import tk.glucodata.drivers.libre2.Libre2ManagedDriver;
 
 import static java.util.Arrays.copyOfRange;
 import static tk.glucodata.AlgNfcV.goodnfc;
@@ -83,6 +84,10 @@ static  int v1check(int i, int i2, byte[] bArr) {
 
 //	byte[] uid = tag.getId();
 static byte[] getuspatch(NfcV nfc, byte[] uid, int start, int len) {
+	if(Libre2ManagedDriver.isEnabled()) {
+		// No vendor library is in use, so there is nothing to fall back to.
+		return Libre2ManagedDriver.gen2ReadFram(nfc, uid, start, len);
+		}
  	if(!abbottinit()) {
 		Log.e(LOG_ID,"abbottinit failed");
 		return null;
@@ -313,7 +318,7 @@ static boolean activate(final Tag tag) {
 		byte[] uid=tag.getId();
 		final NfcV nfc = NfcV.get(tag);
        nfc.connect();
-		boolean res=inactivate(nfc, uid);
+		boolean res=Libre2ManagedDriver.isEnabled()?Libre2ManagedDriver.gen2Activate(nfc, uid):inactivate(nfc, uid);
 		nfc.close();
 		return res;
 		}
@@ -370,7 +375,7 @@ static boolean gen2enablestreaming(final Tag tag) {
 		byte[] uid=tag.getId();
 		final NfcV nfc = NfcV.get(tag);
        nfc.connect();
-		boolean res=gen2enablestreaming(nfc, uid);
+		boolean res=Libre2ManagedDriver.isEnabled()?Libre2ManagedDriver.gen2EnableStreaming(nfc, uid):gen2enablestreaming(nfc, uid);
 		nfc.close();
 		return res;
 		}

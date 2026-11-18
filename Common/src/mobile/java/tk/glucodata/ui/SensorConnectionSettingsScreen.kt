@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -32,6 +33,7 @@ import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.RevealSettingsSearchAnchor
 import tk.glucodata.ui.components.SectionLabel
 import tk.glucodata.ui.components.SettingsItem
+import tk.glucodata.drivers.libre2.Libre2ManagedDriver
 import tk.glucodata.ui.components.SettingsSwitchItem
 
 /**
@@ -47,6 +49,7 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
     var showHandoverActionDialog by remember { mutableStateOf(false) }
     var highPriority by remember { mutableStateOf(SensorConnectionSettings.highPriority) }
     var autoConnect by remember { mutableStateOf(SensorConnectionSettings.autoConnect) }
+    var libre2Kotlin by remember { mutableStateOf(Libre2ManagedDriver.isStored(context)) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -61,7 +64,8 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
         // With large text the Bluetooth group can start below the built rows.
         RevealSettingsSearchAnchor(
             listState,
-            setOf(SettingsSearchAnchors.HANDOVER, SettingsSearchAnchors.TURBO, SettingsSearchAnchors.AUTOCONNECT)
+            setOf(SettingsSearchAnchors.HANDOVER, SettingsSearchAnchors.TURBO, SettingsSearchAnchors.AUTOCONNECT,
+                SettingsSearchAnchors.LIBRE2_KOTLIN_DRIVER)
         )
         LazyColumn(
             state = listState,
@@ -128,9 +132,22 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
                         checked = autoConnect,
                         icon = Icons.Default.Autorenew,
                         iconTint = bluetoothColor,
-                        position = CardPosition.BOTTOM,
+                        position = CardPosition.MIDDLE,
                         searchAnchor = SettingsSearchAnchors.AUTOCONNECT,
                         onCheckedChange = { SensorConnectionSettings.autoConnect = it; autoConnect = it }
+                    )
+                    SettingsSwitchItem(
+                        title = stringResource(R.string.libre2_kotlin_driver_title),
+                        subtitle = stringResource(
+                            if (libre2Kotlin != Libre2ManagedDriver.isEnabled()) R.string.libre2_kotlin_driver_restart
+                            else R.string.libre2_kotlin_driver_desc
+                        ),
+                        checked = libre2Kotlin,
+                        icon = Icons.Default.Science,
+                        iconTint = bluetoothColor,
+                        position = CardPosition.BOTTOM,
+                        searchAnchor = SettingsSearchAnchors.LIBRE2_KOTLIN_DRIVER,
+                        onCheckedChange = { Libre2ManagedDriver.setStored(context, it); libre2Kotlin = it }
                     )
                 }
             }

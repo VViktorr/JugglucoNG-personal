@@ -301,6 +301,29 @@ else {
 #endif
 jint parsertype=1095774808;
 
+#include "libre2_imp/backend.hpp"
+#include <atomic>
+// Set by the Kotlin Libre 2 driver switch. While true, Libre 1/2 scans and
+// streams are processed by libre2_imp and no vendor library is loaded or called.
+static std::atomic<bool> libre2independent{false};
+bool libre2Independent() { return libre2independent.load(std::memory_order_relaxed); }
+
+// The two backends must never be handed each other's algorithm state. An empty
+// file in the sensor directory records that the saved state was written by the
+// open backend.
+static std::string libre2statemarker(const char *sensordir) { return std::string(sensordir)+"/libre2imp.backend"; }
+bool libre2StateIsIndependent(const char *sensordir) { return access(libre2statemarker(sensordir).c_str(),F_OK)==0; }
+void libre2MarkStateOwner(const char *sensordir) {
+    const auto name=libre2statemarker(sensordir);
+    if(!libre2Independent()) {
+        unlink(name.c_str());
+        return;
+        }
+    if(access(name.c_str(),F_OK)==0) return;
+    const int fd=open(name.c_str(),O_CREAT|O_WRONLY,0600);
+    if(fd>=0) close(fd);
+    }
+
 extern string  encodeStatusCode(jlong j);
 /*
 static string getstatus(JNIEnv *env, jobject thiz, string_view serial,time_t start,time_t lastread,time_t nu,bool endedearly) {
@@ -393,6 +416,10 @@ Abbott::Abbott(JNIEnv *env,string_view basedir,jbyteArray juid, const data_t *in
     }
 extern jclasser AlarmC, NonActiona, GluRange, attconf;
 AlgorithmResults *callAbbottAlg(data_t *uid,int startsincebase,scanstate *oldstate,scandata *data,scanstate *newstate,outobj *starttime,outobj *endtime,jobject person,int warmup,int wear) {
+    if(libre2Independent()) {
+        const unsigned known_start=startsincebase>0?unsigned(startsincebase):0;
+        return libre2_imp::scan(uid,data->info,data->data,oldstate,newstate,unsigned(data->gettime()-basesecs),starttime,endtime,warmup,known_start);
+        }
     LOGSTRING("start callAbbottAlg/3\n");
     const time_t nutime=data->gettime();
     const int lastsincebase=nutime-basesecs;
@@ -522,7 +549,8 @@ Abbott::scanresult_t Abbott::callAbbottAlg(scandata *data) {
 //    const int timelast=nutime-startDate; LOGGER("timelast=%d endsensorsecs=%d\n",timelast,endsensorsecs);
 const    int timeleft=hist->officialendtime()-nutime;
 LOGGER("timeleft=%d\n",timeleft); 
-    if(timeleft<(60*60)&&timeleft>-daysecs) {
+    // The end-of-wear restart below is a vendor-library workaround; the open backend does not need it.
+    if(!libre2Independent()&&timeleft<(60*60)&&timeleft>-daysecs) {
 //    if(timelast>=endsensorsecs&&timelast<days15) 
         if(!state->datpos(FAKE)) {
             LOGSTRING("new Fake\n");
@@ -570,7 +598,8 @@ extern int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlu
 //            lastscan=&last.back();
 
             newstate->makelink();
-            state->removefile();
+            if(state) state->removefile();
+            libre2MarkStateOwner(sensordir.data());
             delete state;
             state=newstate;
             return {res,&last.back()};
@@ -583,6 +612,21 @@ extern int saveScanTrend(const nfcdata *nfcptr,time_t nutime,int nuid, SensorGlu
     return {res,nullptr};
     }
 Abbott::scanresult_t Abbott::ProcessOne(scandata *data) {
+    // Independent backend: a known sensor rebuilds a missing or foreign state
+    // from NFC and the saved start time. A first scan initializes below.
+    if(libre2Independent()) {
+        if(state&&!state->good()) {
+            delete state;
+            state=nullptr;
+            }
+        if(hist&&hist->getstarttime()>basesecs)return callAbbottAlg(data);
+        }
+    else if(state&&libre2StateIsIndependent(sensordir.data())) {
+        // Saved by the open backend: the vendor algorithm starts over from the sensor.
+        LOGAR("state belongs to the open backend, initializing again");
+        delete state;
+        state=nullptr;
+        }
     if(!state||!state->good()) {
         delete state;
         state=initnewsensor( data) ;
@@ -590,7 +634,10 @@ Abbott::scanresult_t Abbott::ProcessOne(scandata *data) {
             return {nullptr,nullptr};
             
         else 
+            {
+            libre2MarkStateOwner(sensordir.data());
             return { Initialized,nullptr}; 
+            }
         }
     return callAbbottAlg(data);
     }
@@ -656,7 +703,7 @@ extern bool streamHistory() ;
 
 
     const int timeleft=hist->officialendtime()-data->gettime();
-    const bool oldsensor=timeleft<=(60*60);
+    const bool oldsensor=!libre2Independent()&&timeleft<=(60*60);
     LOGGER("timeleft=%d oldsensor=%d\n",timeleft,oldsensor); 
     if(oldsensor&&timeleft>-daysecs) {
         startminbase+=daysecs;
@@ -1159,7 +1206,18 @@ extern bool askswrongfiles;
     }
 
 int *initptr=nullptr;
+static void uselibre2imp() {
+    getProductFamily=libre2_imp::family;getPatchTimeValues=libre2_imp::times;
+    getActivationCommand=libre2_imp::activation_command;getActivationPayload=libre2_imp::activation_payload;
+    getEnableStreamingPayload=libre2_imp::enable_payload;getStreamingUnlockPayload=libre2_imp::unlock_payload;
+    activationComplete=libre2_imp::activate_state;
+    }
 int  abbottinit(bool doch) {
+    if(libre2Independent()) {
+        uselibre2imp();
+        rootcheck=false;
+        return 0;
+        }
 
 
 #ifndef CARRY_LIBS
@@ -1174,12 +1232,25 @@ return init;
 }
 int  abbottreinit() {
    int res; 
+    if(libre2Independent()) return abbottinit(false);
     if(!initptr) 
         res= abbottinit(false);
     else
         res=(*initptr=doabbottinit(false));
     LOGGER("abbottreinit()=%d\n",res);
     return res;
+    }
+
+// Chooses who processes Libre 1/2 for this process: the open libre2_imp backend
+// or the vendor library. Only the first call counts; it is made at start-up,
+// before any scan or stream, so the function pointers never change while
+// another thread may be calling through them.
+extern "C" JNIEXPORT void JNICALL fromjava(setLibre2Independent)(JNIEnv *env, jclass cl, jboolean on) {
+    static std::atomic<bool> chosen{false};
+    if(chosen.exchange(true)) return;
+    LOGGER("setLibre2Independent(%d)\n",on);
+    libre2independent=on;
+    if(on) uselibre2imp();
     }
 
 timevalues     patchtimevalues(const data_t *info) {
@@ -1242,6 +1313,7 @@ extern "C" JNIEXPORT jbyteArray  JNICALL fromjava(activationpayload)(JNIEnv *env
         }
 
 bool streamHistory() {
+    if(libre2Independent()) return true;
     return processStream2_10;
     }
 
@@ -1273,6 +1345,14 @@ const data_t *info,
 #endif
 scanstate *state,
 scanstate *newstate,uint32_t startsincebase,uint32_t nutime,int warmup,int wear) {
+    if(libre2Independent())
+        return libre2_imp::stream(ident,
+#ifdef HASP1
+            info,
+#else
+            nullptr,
+#endif
+            bluedata,state,newstate,unsigned(nutime-basesecs),startsincebase);
     jint nusincebase=nutime-basesecs;
     algobj alarm{&AlarmC},nonAction{&NonActiona};
     algobj range{&GluRange}, attenconf{&attconf};
@@ -1355,6 +1435,33 @@ const data_t *ident=getident();
 const data_t *info=getinfo();
 #endif
 
+if(libre2Independent()) {
+    // An NFC scan may have rebuilt the saved state since this stream loaded its copy.
+    if(!state||!state->good()||!libre2_imp::usable_state(state,info)) {
+        scanstate *fresh=locknew<scanstate>(hist->mutex,hist->getsensordir());
+        if(!fresh||!fresh->good()||!libre2_imp::usable_state(fresh,info)) {
+            delete fresh;
+            return nullptr;
+            }
+        delete state;
+        state=fresh;
+        }
+    }
+else if(libre2StateIsIndependent(hist->getsensordir().data())) {
+    // The vendor algorithm waits for an NFC scan to initialize its own state.
+    foreignstate=true;
+    return nullptr;
+    }
+else if(foreignstate) {
+    scanstate *fresh=locknew<scanstate>(hist->mutex,hist->getsensordir());
+    if(!fresh||!fresh->good()) {
+        delete fresh;
+        return nullptr;
+        }
+    delete state;
+    state=fresh;
+    foreignstate=false;
+    }
 if(hist->getinfo()->wearduration<(7*24*60)) {
      auto [warmup,wear]= patchtimevalues(info) ;
    hist->getinfo()->warmup=warmup;
@@ -1501,6 +1608,11 @@ extern "C" JNIEXPORT void  JNICALL fromjava(bluetoothback)(JNIEnv *envin, jclass
 //extern "C" JNIEXPORT jbyteArray  JNICALL fromjava(hasBluetooth)(JNIEnv *envin, jclass cl,jbyteArray sensorident,jbyteArray patchinfo,jlong tim) {
 extern "C" JNIEXPORT jboolean  JNICALL fromjava(hasBluetooth)(JNIEnv *envin, jclass cl,jbyteArray sensorident,jbyteArray patchinfo) {
     abbottinit();
+    if(libre2Independent()) {
+        if(!patchinfo||envin->GetArrayLength(patchinfo)!=6)return JNI_FALSE;
+        auto info=fromjbyteArray(envin,patchinfo);const bool capable=libre2_imp::bluetooth_supported(info);
+        data_t::deleteex(info);return capable;
+        }
     const jint timeminbase= time(NULL)-basesecs;
     LOGAR("start getStreamingPayload");
     debugclone();

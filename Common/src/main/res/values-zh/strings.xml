@@ -3386,4 +3386,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="food_reorder">调整食物顺序</string>
     <string name="food_move_up">上移</string>
     <string name="food_move_down">下移</string>
+    <string name="libre2_kotlin_driver_title">Kotlin Libre 2 驱动</string>
+    <string name="libre2_kotlin_driver_desc">实验性功能。无需厂商库即可读取 Libre 1 和 2 传感器</string>
+    <string name="libre2_kotlin_driver_restart">重启应用并扫描传感器后生效</string>
 </resources>

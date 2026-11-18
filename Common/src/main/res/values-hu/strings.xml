@@ -3449,4 +3449,7 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
     <string name="food_reorder">Ételek átrendezése</string>
     <string name="food_move_up">Mozgatás fel</string>
     <string name="food_move_down">Mozgatás le</string>
+    <string name="libre2_kotlin_driver_title">Kotlin Libre 2 illesztő</string>
+    <string name="libre2_kotlin_driver_desc">Kísérleti. A gyártói könyvtár nélkül olvassa a Libre 1 és 2 szenzorokat</string>
+    <string name="libre2_kotlin_driver_restart">Az alkalmazáshoz indítsa újra az appot, majd olvassa be a szenzort</string>
 </resources>

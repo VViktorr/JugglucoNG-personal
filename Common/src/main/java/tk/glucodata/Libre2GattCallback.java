@@ -52,6 +52,8 @@ import static java.util.Objects.nonNull;
 import static tk.glucodata.Applic.app;
 import static tk.glucodata.Applic.isWearable;
 //import static tk.glucodata.DexGattCallback.setalarm;
+import tk.glucodata.drivers.libre2.Libre2Gen2BleLogin;
+import tk.glucodata.drivers.libre2.Libre2ManagedDriver;
 import static tk.glucodata.Gen2.errorP1;
 import static tk.glucodata.Gen2.v1check;
 import static tk.glucodata.Log.doLog;
@@ -473,6 +475,7 @@ private boolean connected=false;
 				setConStatus(status);
 				constatchange[1] = tim;
 				if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+					closeManagedGen2();
 					logLinkEnd("status=" + status);
 					// Keep the existing Libre 2 notification/authentication recovery policy.
 					if (status == 19 && justenablednotification) {
@@ -744,7 +747,8 @@ private	void oldonCharacteristicChanged(byte[] value) {
 						pack2 = false;
 						System.arraycopy(value, 0, packet, 38, 8);
 						final long timmsec = System.currentTimeMillis();
-						final var newpacket= sensorgen==2?V2(773, tovalue, packet, null):packet;
+						final var gen2Login = managedGen2;
+						final var newpacket= sensorgen!=2?packet:(gen2Login!=null?gen2Login.decryptFrame(packet):V2(773, tovalue, packet, null));
 						if(newpacket!=null) {
 							long res = processTooth(dataptr, newpacket);
 							libre2Diag("parser-result", "result=" + res + " duplicate=" + (res == 1L));
@@ -775,6 +779,15 @@ private	void oldonCharacteristicChanged(byte[] value) {
 	}
 
 	int contactint = 0;
+	// Kotlin Gen2 login of the current link; null while the vendor library handles it.
+	private Libre2Gen2BleLogin managedGen2;
+
+	private void closeManagedGen2() {
+		final var login = managedGen2;
+		managedGen2 = null;
+		if (login != null)
+			login.close();
+	}
 
 	private int authlastv1v2(int i, byte[] bArr, byte[] bArr2, byte[] bArr3,int numb) {
 		int P1res = V1(28960, numb, bArr, null);
@@ -798,6 +811,22 @@ private	void oldonCharacteristicChanged(byte[] value) {
 		if(i > 0) {
 			V1(37400, i, null, null);
 			contactint = 0;
+			}
+		closeManagedGen2();
+		if(Libre2ManagedDriver.isEnabled()) {
+			final var login = Libre2ManagedDriver.gen2BleLogin();
+			final byte[] answer = login.answerChallenge(Natives.getsensorident(dataptr), getstreamingAuthenticationData(dataptr), bArr);
+			if(answer != null) {
+				managedGen2 = login;
+				return answer;
+				}
+			handshake = "Kotlin: " + login.getFailure();
+			wrotepass[1] = System.currentTimeMillis();
+			Log.e(LOG_ID, SerialNumber + " " + handshake);
+			var gatt = mBluetoothGatt;
+			if (gatt != null)
+				requestDisconnect(gatt, 0L);
+			return null;
 			}
 		byte[] Ew = Natives.getsensorident(dataptr); //uid sensorident
 		if(Ew == null) {
@@ -943,9 +972,53 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 	return enableNotification(mBluetoothGatt, bluetoothGattCharacteristic);
 	} */
 
+	private void startRawDataNotifications() {
+            mBLELoginHandler = forCurrentGatt(() -> {
+                if (!asknotification(CompositeRawDatacharacteristic)) {
+                    Log.e(LOG_ID, SerialNumber+" phase3 retry=" + BLELoginposted + " enableNotification failed");
+                    handshake = "Enable CompositeRawDatacharacteristic failed";
+                    wrotepass[1] = System.currentTimeMillis();
+                    if (BLELoginposted < 5) {
+                        ++BLELoginposted;
+                        Applic.app.getHandler().postDelayed(mBLELoginHandler, 100);
+                        return;
+                    }
+                    conphase = 0;
+                    var gatt = mBluetoothGatt;
+                    if (gatt != null)
+                        requestDisconnect(gatt, 0L);
+                    return;
+                }
+                BLELoginposted = 0;
+                mBLELoginHandler = null;
+                wrotepass[0] = System.currentTimeMillis();
+            });
+            mBLELoginHandler.run();
+	}
+
 	public final void phase3(byte[] value) {
 		libre2Diag("authentication-phase3", "length=" + value.length);
 		int i;
+		final var gen2Login = managedGen2;
+		if (gen2Login != null) {
+			final var reply = gen2Login.onReplyPart(value);
+			if (reply == Libre2Gen2BleLogin.Reply.NEED_MORE)
+				return;
+			if (reply == Libre2Gen2BleLogin.Reply.REJECTED) {
+				handshake = "Kotlin: " + gen2Login.getFailure();
+				wrotepass[1] = System.currentTimeMillis();
+				Log.e(LOG_ID, SerialNumber + " " + handshake);
+				closeManagedGen2();
+				var gatt = mBluetoothGatt;
+				if (gatt != null)
+					requestDisconnect(gatt, 0L);
+				return;
+			}
+			{if(doLog) {Log.i(LOG_ID, "Kotlin Gen2 session");};};
+			conphase = 4;
+			startRawDataNotifications();
+			return;
+		}
 		if (value.length == 7) {
 			System.arraycopy(value, 0, buf25, 0, value.length);
 		}
@@ -971,27 +1044,7 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 			{if(doLog) {Log.i(LOG_ID, "Gen2 session created");};};
 			conphase = 4;
 
-            mBLELoginHandler = forCurrentGatt(() -> {
-                if (!asknotification(CompositeRawDatacharacteristic)) {
-                    Log.e(LOG_ID, SerialNumber+" phase3 retry=" + BLELoginposted + " enableNotification failed");
-                    handshake = "Enable CompositeRawDatacharacteristic failed";
-                    wrotepass[1] = System.currentTimeMillis();
-                    if (BLELoginposted < 5) {
-                        ++BLELoginposted;
-                        Applic.app.getHandler().postDelayed(mBLELoginHandler, 100);
-                        return;
-                    }
-                    conphase = 0;
-                    var gatt = mBluetoothGatt;
-                    if (gatt != null)
-                        requestDisconnect(gatt, 0L);
-                    return;
-                }
-                BLELoginposted = 0;
-                mBLELoginHandler = null;
-                wrotepass[0] = System.currentTimeMillis();
-            });
-            mBLELoginHandler.run();
+			startRawDataNotifications();
 
 		} else {
 			handshake= "phase3 wrong length";

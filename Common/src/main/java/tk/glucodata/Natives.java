@@ -153,6 +153,8 @@ public class Natives {
         // public static native void backupstream(long dataptr);
 
         public static native byte[] sensorUnlockKey(long dataptr);
+        /** True: Libre 1/2 are processed by the open backend and no vendor library is called. */
+        public static native void setLibre2Independent(boolean on);
 
         public static native void resetbluetooth(long dataptr);
         // public static native void saveState(long dataptr);

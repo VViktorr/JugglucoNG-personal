@@ -3670,4 +3670,7 @@
     <string name="food_reorder">Zmień kolejność produktów</string>
     <string name="food_move_up">Przenieś w górę</string>
     <string name="food_move_down">Przenieś w dół</string>
+    <string name="libre2_kotlin_driver_title">Sterownik Kotlin Libre 2</string>
+    <string name="libre2_kotlin_driver_desc">Eksperymentalny. Odczytuje sensory Libre 1 i 2 bez biblioteki producenta</string>
+    <string name="libre2_kotlin_driver_restart">Uruchom aplikację ponownie i zeskanuj sensor, aby zastosować</string>
 </resources>

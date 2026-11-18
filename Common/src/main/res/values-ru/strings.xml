@@ -3507,4 +3507,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="food_reorder">Изменить порядок</string>
     <string name="food_move_up">Переместить выше</string>
     <string name="food_move_down">Переместить ниже</string>
+    <string name="libre2_kotlin_driver_title">Kotlin-драйвер Libre 2</string>
+    <string name="libre2_kotlin_driver_desc">Экспериментально. Читает сенсоры Libre 1 и 2 без библиотеки производителя</string>
+    <string name="libre2_kotlin_driver_restart">Перезапустите приложение и отсканируйте сенсор, чтобы применить</string>
 </resources>

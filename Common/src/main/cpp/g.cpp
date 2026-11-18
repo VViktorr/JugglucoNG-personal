@@ -2540,6 +2540,8 @@ void wakewithcurrent() {
   }
 #endif
 }
+bool libre2Independent();
+void libre2MarkStateOwner(const char *sensordir);
 extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
     JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray bluetoothdata) {
   //    setbuffer(mystatus);
@@ -2575,6 +2577,8 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
     sdata->setstate(newstate);
     if (nu > savetime) {
       savestate(sdata);
+      if (libre2Independent())
+        libre2MarkStateOwner(sdata->hist->getsensordir().data());
       savetime = nu + waittime;
     }
     decltype(auto) gluc = algres->currentglucose();
@@ -2930,6 +2934,8 @@ abbottcall(P2)(env,obj,i1,i2,ar1,ar2);
     }*/
 
 int abbottreinit();
+bool libre2Independent();
+void libre2MarkStateOwner(const char *sensordir);
 bool resetwrong();
 bool setgen2() {
   debugclone();
@@ -3008,6 +3014,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL fromjava(V2)(JNIEnv *env, jobject obj,
 extern "C" JNIEXPORT jint JNICALL fromjava(V1)(JNIEnv *env, jclass obj, jint i,
                                                jint i2, jbyteArray bArr,
                                                jbyteArray bArr2) {
+  if (libre2Independent())
+    return -1; // Gen2 authentication is done in Kotlin
   setgen2();
   jint res = abbottcall(P1)(env, obj, i, i2, bArr, bArr2, getjtoken(env));
   LOGGER("V1(%i,%i,%p,%p)=%i\n", i, i2, bArr, bArr2, res);
@@ -3018,6 +3026,8 @@ extern "C" JNIEXPORT jbyteArray JNICALL fromjava(V2)(JNIEnv *env, jclass obj,
                                                      jint i1, jint i2,
                                                      jbyteArray jar1,
                                                      jbyteArray jar2) {
+  if (libre2Independent())
+    return nullptr;
   setgen2();
   jbyteArray jres =
       abbottcall(P2)(env, obj, i1, i2, jar1, jar2, getjtoken(env));
