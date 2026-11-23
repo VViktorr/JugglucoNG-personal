@@ -87,6 +87,9 @@ public class Libre2GattCallback extends SuperGattCallback {
 	private int linkPackets;
 	// One escalation per no-packet episode. Reconnects do not postpone this deadline.
 	private boolean softRecoveryTried, hardRecoveryUsed, recoveryInProgress;
+	private static final int FAILED_ATTEMPTS_BEFORE_RECOVERY = 3;
+	private long packetGapStartedAt = -1L;
+	private int failedAttemptsWithoutPacket;
 	private long diagAttempt, nativeStreamGeneration = 1L;
 	private long lastClosedAt = -1L, recoveryDueAt;
 	private long connectRequestedAt = -1L, servicesAt = -1L, passWrittenAt = -1L, descriptorAt = -1L;
@@ -134,10 +137,15 @@ public class Libre2GattCallback extends SuperGattCallback {
 	}
 
 	private synchronized void hardRecoverGatt() {
+		hardRecoverGatt("soft-recovery-no-complete-packet");
+	}
+
+	private void hardRecoverGatt(String reason) {
 		if (isWearable || !canRecoverLocally() || hardRecoveryUsed || recoveryInProgress) return;
 		hardRecoveryUsed = true;
 		recoveryInProgress = true;
-		libre2Diag("hard-recovery", "reason=soft-recovery-no-complete-packet");
+		escalationDeadline.cancel();
+		libre2Diag("hard-recovery", "reason=" + reason);
 		cancelDisconnectDeadline();
 		resetConnectionState();
 		justenablednotification = failedbefore = false;
@@ -192,6 +200,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 		recoveryDeadline.cancel();
 		recoveryInProgress = false;
 		softRecoveryTried = false;
+		packetGapStartedAt = -1L;
+		failedAttemptsWithoutPacket = 0;
 		// hardRecoveryUsed resets only on a complete packet, never on reconnect/pause.
 		releaseRecoveryWakeLock();
 	}
@@ -199,6 +209,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 
 	private void streamPacketReceived() {
 		lastPacketAt = SystemClock.elapsedRealtime();
+		packetGapStartedAt = lastPacketAt;
+		failedAttemptsWithoutPacket = 0;
 		++linkPackets;
 		softRecoveryTried = hardRecoveryUsed = false;
 		escalationDeadline.cancel();
@@ -270,6 +282,18 @@ public class Libre2GattCallback extends SuperGattCallback {
 		libre2Diag("gatt-retired", "reconnectDelayMs=" + delay);
 		// Retire the reference before close(), so late callbacks cannot affect its replacement.
 		closeGattTransport();
+		if (!isWearable && !hardRecoveryUsed && canRecoverLocally()
+				&& linkPackets == 0 && packetGapStartedAt >= 0L) {
+			++failedAttemptsWithoutPacket;
+			final long gapMillis = lastClosedAt - packetGapStartedAt;
+			libre2Diag("attempt-without-packet", "failedAttempts=" + failedAttemptsWithoutPacket
+					+ " gapMs=" + gapMillis);
+			if (failedAttemptsWithoutPacket >= FAILED_ATTEMPTS_BEFORE_RECOVERY
+					&& gapMillis >= STREAM_SILENCE_MILLIS) {
+				hardRecoverGatt("repeated-attempts-without-packet");
+				return;
+			}
+		}
 		connectDevice(delay);
 	}
 
@@ -312,6 +336,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 		resetConnectionState();
 		++diagAttempt;
 		connectRequestedAt = SystemClock.elapsedRealtime();
+		if (packetGapStartedAt < 0L) packetGapStartedAt = connectRequestedAt;
+		linkPackets = 0;
 		servicesAt = passWrittenAt = descriptorAt = -1L;
 		if (mActiveBluetoothDevice != null) {
 			try { LogPrivacy.registerAddress(SerialNumber, mActiveBluetoothDevice.getAddress()); }
