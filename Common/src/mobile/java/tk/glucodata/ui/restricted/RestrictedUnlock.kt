@@ -59,10 +59,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.navigation.NavController
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -243,7 +244,7 @@ internal fun RestrictedPinSetupScreen(navController: NavController) {
     var error by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
     val mismatch = stringResource(R.string.restricted_pin_mismatch)
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -256,7 +257,7 @@ internal fun RestrictedPinSetupScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
