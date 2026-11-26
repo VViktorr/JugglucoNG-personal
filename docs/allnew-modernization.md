@@ -8,7 +8,7 @@ Punkt wyjścia to `main5` w commicie `277c5303eec6a0f1610a6ed63cf2c741cab2ad26`.
 | --- | --- | --- |
 | Gradle Wrapper | 9.8.0 | 9.9.2, przypięta suma SHA-256 dystrybucji |
 | Android Gradle Plugin | 9.3.2 | 9.5.1 |
-| Kotlin i wtyczka Compose Compiler | 2.4.10 | 2.4.21, jawny wybór Kotlin dla wbudowanego trybu AGP |
+| Kotlin i wtyczka Compose Compiler | 2.4.10 zadeklarowane dla Compose Compiler | 2.4.21, jawny wybór Kotlin dla wbudowanego trybu AGP |
 | KSP | 2.3.11 | 2.3.14 |
 | JDK w CI | 21 | 21 |
 | Poziom języka Java i bytecode Java/Kotlin | 17 | 17 |
@@ -55,6 +55,6 @@ Weryfikacja wersji korzystała z metadanych Google Maven, Maven Central, katalog
 ## Weryfikacja i braki
 
 - Lokalnie przeszły testy formatu plików dla stron 4/16 KB, symulacja odzyskiwania Libre 2, 98 testów dystrybucji, kontrola stylu Compose i 8 testów skryptu stylu. Gradle 9.9.2 wykonał zadanie `help`.
-- CMake 4.1.2 i NDK r30 zbudowały telefoniczne `libg.so` dla arm64-v8a, armeabi-v7a, x86 i x86_64. Zbudowano też `libg.so` Wear OS dla arm64-v8a. Segmenty `LOAD` wszystkich pięciu plików mają wyrównanie 16 KB. `apksigner` sprawdził podpis v2 telefonu z przypiętego wydania bazowego.
-- [GitHub Actions dla allnew](https://github.com/VViktorr/JugglucoNG-personal/actions?query=branch%3Aallnew) przechowuje wyniki JVM i kompilacji per ABI. Kontrolny APK z CI nie jest podpisanym wydaniem dystrybucyjnym.
+- CMake 4.1.2 i NDK r30 zbudowały telefoniczne `libg.so` dla arm64-v8a, armeabi-v7a, x86 i x86_64. Wariant Wear OS zbudowano dla tych samych czterech ABI. Segmenty `LOAD` wszystkich ośmiu plików mają wyrównanie 16 KB. `apksigner` sprawdził podpis v2 telefonu z przypiętego wydania bazowego.
+- [GitHub Actions dla allnew](https://github.com/VViktorr/JugglucoNG-personal/actions?query=branch%3Aallnew) przechowuje wyniki JVM i kompilacji per ABI. Pierwszy przebieg wykrył zmianę kontraktu `BluetoothLeScanner.startScan` w SDK 37.2, poprawioną w `7adbb0c1`. Kolejny wykrył usunięcie `callThroughByDefault` z Robolectric, obsłużone w `9742140d`. Kontrolny APK z CI nie jest podpisanym wydaniem dystrybucyjnym.
 - Testy urządzeniowe pozostają do wykonania. Dotyczy to Androida 17, parowania i aktywacji NFC, aktywnego sensora, alarmów, widżetów, powiadomień, AOD, synchronizacji z Wear i Clone, importu/eksportu i aktualizacji istniejącej instalacji. Pomiar baterii, RAM, pracy przy wygaszonym ekranie, częstotliwości odświeżeń, logów i rozmiaru APK wymaga artefaktów oraz urządzeń. Testy hosta i kompilacja nie potwierdzają działania tych funkcji na sensorze ani zegarku.
