@@ -103,7 +103,7 @@ jobs:
           ./gradlew \
             :Common:testMobileDebugUnitTest \
             :Common:testWearDebugUnitTest \
-            --stacktrace
+            --continue --stacktrace
 
       # T0.3 (plan §2.3): the hard gate is the JUnit tests in Common/src/test/java/tk/glucodata/
       # arch/ArchitectureGateTests.kt, already run above as part of the unit suites. This step is
