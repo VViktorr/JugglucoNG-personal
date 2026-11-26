@@ -88,6 +88,7 @@ import tk.glucodata.R
 import tk.glucodata.SensorIdentity
 import tk.glucodata.data.journal.JournalEntry
 import tk.glucodata.data.journal.JournalEntryType
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.LocalNavigationTapCatcher
 import tk.glucodata.ui.components.NavigationTapCatcher
@@ -529,7 +530,7 @@ private fun JournalSettingsHistoryRoute(
     navController: androidx.navigation.NavController,
     onTriggerCalibration: (CalibrationSheetState) -> Unit
 ) {
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
