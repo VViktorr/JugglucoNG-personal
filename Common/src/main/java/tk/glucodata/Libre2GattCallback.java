@@ -85,6 +85,17 @@ public class Libre2GattCallback extends SuperGattCallback {
 			}, this::streamSilent);
 	private long linkConnectedAt = -1L, lastPacketAt = -1L;
 	private int linkPackets;
+	private static final long RELINK_DELAY_MILLIS = 5_000L;
+	private boolean linkWasUp;
+	private long relinkNotBefore;
+
+	@Override
+	protected void onClosingGattTransport() {
+		if (linkWasUp) {
+			relinkNotBefore = SystemClock.elapsedRealtime() + RELINK_DELAY_MILLIS;
+			linkWasUp = false;
+		}
+	}
 	// One escalation per no-packet episode. Reconnects do not postpone this deadline.
 	private boolean softRecoveryTried, hardRecoveryUsed, recoveryInProgress;
 	private static final int FAILED_ATTEMPTS_BEFORE_RECOVERY = 3;
@@ -343,6 +354,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 			try { LogPrivacy.registerAddress(SerialNumber, mActiveBluetoothDevice.getAddress()); }
 			catch (SecurityException ignored) { }
 		}
+		delayMillis = Math.max(delayMillis, relinkNotBefore - SystemClock.elapsedRealtime());
 		libre2Diag("connect-request", "delayMs=" + delayMillis);
 		return super.connectDevice(delayMillis);
 	}
@@ -483,6 +495,7 @@ private boolean connected=false;
 			}
 			if (newState == BluetoothProfile.STATE_CONNECTED && status == GATT_SUCCESS) {
 				connected = true;
+				linkWasUp = true;
 				linkConnectedAt = SystemClock.elapsedRealtime();
 				lastPacketAt = -1L;
 				linkPackets = 0;
