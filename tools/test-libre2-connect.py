@@ -54,7 +54,8 @@ libre_methods = '\n'.join(method(libre, signature) for signature in [
     'private void streamPacketReceived(', 'private synchronized void streamSilent(',
     'private void logLinkEnd(',
     'private String bluetoothAdapterState(', 'private boolean canRecoverLocally(', 'private void libre2Diag(',
-    'private synchronized void hardRecoverGatt(', 'private synchronized void resumeRecovery(',
+    'private synchronized void hardRecoverGatt(', 'private void hardRecoverGatt(String reason)',
+    'private synchronized void resumeRecovery(',
     'private void releaseRecoveryWakeLock(', 'private void cancelRecovery(',
     'public synchronized long resetdataptr(',
 ])
@@ -214,7 +215,7 @@ java += r'''
     }
     static void ignoredCallbacks(Libre2GattCallback cb,BluetoothGatt retired){
         BluetoothGatt current=cb.mBluetoothGatt;int calls=cb.mActiveBluetoothDevice.calls;
-        String status=cb.constatstatusstr;long lost=cb.constatchange[1];
+        String status=cb.constatstatusstr;long lost=cb.constatchange[1];int resets=Natives.resets;
         cb.onConnectionStateChange(retired,0,2);cb.onConnectionStateChange(retired,19,0);
         cb.onServicesDiscovered(retired,0);cb.onDescriptorWrite(retired,null,133);
         cb.onCharacteristicWrite(retired,null,0);cb.onCharacteristicChanged(retired,null);
@@ -222,7 +223,7 @@ java += r'''
         check(cb.mBluetoothGatt==current&&cb.mActiveBluetoothDevice.calls==calls,"retired callback disturbed replacement");
         check(cb.frames==0&&cb.logins==0&&cb.readrssi==9999,"retired payload callback acted");
         check(Objects.equals(status,cb.constatstatusstr)&&lost==cb.constatchange[1],"retired callback changed status");
-        check(Natives.resets==0,"retired status 19 reset authentication");
+        check(Natives.resets==resets,"retired status 19 reset authentication");
     }
     public static void main(String[] args){
         // The reported trace: repeated ~30s failures, then a healthy streaming connection.
@@ -232,6 +233,12 @@ java += r'''
             cb.onConnectionStateChange(old,status,0);
             check(old.closed==1&&cb.mBluetoothGatt==null,"disconnect did not retire old GATT");
             Applic.scheduler.advance(0);ignoredCallbacks(cb,old);
+            if (Natives.resets>0) {
+                check(status==19&&Natives.resets==1&&cb.recoveryInProgress,"hard recovery did not wait for the no-packet deadline");
+                check(Log.lines.stream().anyMatch(line->line.contains("reason=repeated-attempts-without-packet")),"wrong recovery cause");
+                Applic.scheduler.advance(5_999);check(cb.mBluetoothGatt==null,"hard recovery resumed too early");
+                Applic.scheduler.advance(1);
+            }
         }
         check(cb.mActiveBluetoothDevice.calls==6,"failed attempts did not each get a fresh transport");
         check(cb.mActiveBluetoothDevice.modes.stream().noneMatch(Boolean::booleanValue),"reconnect used autoConnect");
@@ -287,12 +294,14 @@ java += r'''
             old=cb.mBluetoothGatt;Applic.scheduler.advance(30_000);
             cb.onConnectionStateChange(old,147,0);Applic.scheduler.advance(0);
             check(old.closed==1,"pre-discovery timeout retained the old GATT");
+            if(cb.recoveryInProgress)Applic.scheduler.advance(6_000);
             old=cb.mBluetoothGatt;Applic.scheduler.advance(26_000);
             cb.onConnectionStateChange(old,0,2);Applic.scheduler.advance(3_000);
             cb.onConnectionStateChange(old,19,0);Applic.scheduler.advance(0);
             check(old.closed==1,"short connected link retained the old GATT");
+            if(cb.recoveryInProgress)Applic.scheduler.advance(6_000);
         }
-        check(cb.mActiveBluetoothDevice.calls==49&&cb.logins==0&&cb.frames==0,
+        check(cb.mActiveBluetoothDevice.calls==49&&cb.logins==0&&cb.frames==0&&Natives.resets==1,
                 "pre-discovery retry sequence fabricated login or packet progress");
 
         // A duplicate callback must leave service discovery and the active login alone.
@@ -337,11 +346,11 @@ java += r'''
         Applic.scheduler.advance(150_000);check(current.disconnected==1,"stalled handshake not recovered");
         Applic.scheduler.advance(2_000);check(current.closed==1&&cb.mActiveBluetoothDevice.calls==2,"stalled handshake got no fresh GATT");
 
-        // Failed soft recovery escalates at an absolute deadline, even across connection failures.
+        // A stalled soft-recovery connection cannot move the original escalation deadline.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
         Applic.scheduler.advance(150_000);Applic.scheduler.advance(2_000);
-        for(int n=0;n<4;n++){cb.onConnectionStateChange(cb.mBluetoothGatt,133,0);Applic.scheduler.advance(30_000);}
-        Applic.scheduler.advance(27_999);check(Natives.resets==0,"hard recovery early");
+        cb.onConnectionStateChange(cb.mBluetoothGatt,0,2);
+        Applic.scheduler.advance(147_999);check(Natives.resets==0,"hard recovery early");
         old=cb.mBluetoothGatt;Applic.scheduler.advance(1);
         check(Natives.resets==1&&cb.recoveryInProgress&&old.closed==1,"failed soft recovery not escalated");
         int calls=cb.mActiveBluetoothDevice.calls;
