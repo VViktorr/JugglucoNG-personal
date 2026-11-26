@@ -1630,7 +1630,7 @@ fun DashboardScreen(
                                 sensorHoursRemaining = sensorHoursRemaining,
                                 sensorEndTimeMs = sensorEndTimeMs,
                                 stackBars = dashboardBarsStacked,
-                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
+                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else null,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast
@@ -1653,6 +1653,7 @@ fun DashboardScreen(
                                 quietWindowUntilMs = quietWindowUntilMs,
                                 onQuietWindowClick = onNavigateToQuietWindow,
                                 onAddSensorClick = onNavigateToSensors,
+                                onSensorCardClick = onNavigateToSensors,
                                 onHeroClick = {
                                     val autoVal = latestPoint?.value ?: tk.glucodata.GlucoseValueParser.parseFirstOrZero(currentGlucose)
                                     val rawVal = latestPoint?.rawValue ?: autoVal
@@ -1955,7 +1956,7 @@ fun DashboardScreen(
                                 sensorHoursRemaining = sensorHoursRemaining,
                                 sensorEndTimeMs = sensorEndTimeMs,
                                 stackBars = dashboardBarsStacked,
-                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
+                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else null,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast
@@ -1978,6 +1979,7 @@ fun DashboardScreen(
                                 quietWindowUntilMs = quietWindowUntilMs,
                                 onQuietWindowClick = onNavigateToQuietWindow,
                                 onAddSensorClick = onNavigateToSensors,
+                                onSensorCardClick = onNavigateToSensors,
                                 onHeroClick = {
                                     val autoVal = latestPoint?.value ?: tk.glucodata.GlucoseValueParser.parseFirstOrZero(currentGlucose)
                                     val rawVal = latestPoint?.rawValue ?: autoVal

@@ -3,6 +3,8 @@ package tk.glucodata.ui
 
 import tk.glucodata.ui.util.appButtonShapes
 
+import androidx.compose.foundation.layout.PaddingValues
+import kotlin.math.roundToInt
 import android.view.HapticFeedbackConstants
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.animateColorAsState
@@ -218,7 +220,7 @@ fun DashboardCombinedHeader(
     sensorHoursRemaining: Long = 999L,
     sensorEndTimeMs: Long = 0L,
     stackBars: Boolean = false,
-    glucoseWidthPercent: Int = 70,
+    glucoseWidthPercent: Int? = null,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -238,6 +240,7 @@ fun DashboardCombinedHeader(
     onPeerReadingClick: (String) -> Unit = {},
     onHeroClick: () -> Unit = {},
     onAddSensorClick: () -> Unit = {},
+    onSensorCardClick: () -> Unit = {},
     // The alarm quiet window: 0 = none, and then nothing is drawn. A running one
     // shows as a chip with its end time; tapping it opens the quiet-window screen.
     quietWindowUntilMs: Long = 0L,
@@ -503,429 +506,11 @@ fun DashboardCombinedHeader(
         label = "HeroRangeContainerColor"
     )
 
-    val heroCardContent: @Composable () -> Unit = {
-            var heroContentWidthPx by remember { mutableStateOf(0) }
-            val density = LocalDensity.current
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onSizeChanged { heroContentWidthPx = it.width }
-            ) {
-                val heroWidthDp = with(density) { heroContentWidthPx.toDp() }
-                val heroWidthClass = if (adaptiveMetrics.isCompact && !isLandscape) {
-                    // A low-density / large-font phone reports abundant dp width even though
-                    // the physical canvas is still a phone. Width alone would select the
-                    // largest display type and make the header dominate the viewport.
-                    AdaptiveContentWidthClass.Compact
-                } else if (heroContentWidthPx > 0) {
-                    adaptiveContentWidthClass(
-                        width = heroWidthDp,
-                        compactMax = 180.dp,
-                        mediumMax = 260.dp
-                    )
-                } else {
-                    AdaptiveContentWidthClass.Medium
-                }
-                val resolvedStartPadding = when {
-                    isLandscape -> 20.dp
-                    heroWidthClass == AdaptiveContentWidthClass.Compact -> 16.dp
-                    heroWidthClass == AdaptiveContentWidthClass.Medium -> 20.dp
-                    else -> 28.dp
-                }
-                val resolvedEndPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 12.dp else 16.dp
-                val isMultiHero = secondaryPeer != null || remainingPeers.isNotEmpty()
-                val singleValue = !hasSecondary && !hasTertiary
-                val heroMultiSensorScale = if (secondaryPeer == null && isMultiHero) 0.74f else 1f
-                val singleVerticalPadding = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 12.dp
-                val resolvedVerticalPadding = if (isMultiHero) 4.dp else singleVerticalPadding
-                val unscaledPrimaryStyle = (
-                    if (heroWidthClass == AdaptiveContentWidthClass.Compact) MaterialTheme.typography.displayMedium
-                    else MaterialTheme.typography.displayLargeExpressive
-                ).copy(fontFeatureSettings = "tnum")
-                val heroTextMeasurer = rememberTextMeasurer()
-                val heroContentMinHeight = 80.dp
-                val availableValueHeight = if (isMultiHero) 36.dp else 80.dp - singleVerticalPadding * 2
-                val valueHeight = with(density) {
-                    heroTextMeasurer.measure("0,0", style = unscaledPrimaryStyle, maxLines = 1)
-                        .size.height.toDp()
-                }
-                val fullPrimaryStyle = unscaledPrimaryStyle.scaleForHero(
-                    (availableValueHeight / valueHeight).coerceAtMost(1f)
-                )
-                val resolvedTrendIconSize = (when (heroWidthClass) {
-                    AdaptiveContentWidthClass.Compact -> 30.dp
-                    AdaptiveContentWidthClass.Medium -> 38.dp
-                    AdaptiveContentWidthClass.Expanded -> 42.dp
-                } * heroMultiSensorScale)
-                val resolvedClusterGap = if (heroWidthClass == AdaptiveContentWidthClass.Compact) 8.dp else 12.dp
-                val primaryValueStyle = fullPrimaryStyle.scaleForHero(heroMultiSensorScale)
-                val singleDeltaFits = singleValue && heroDeltaText?.let { delta ->
-                    val primaryWidth = heroTextMeasurer.measure(primaryText, style = primaryValueStyle, maxLines = 1).size.width
-                    val deltaWidth = heroTextMeasurer.measure(delta, style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"), maxLines = 1).size.width
-                    val chromeWidth = with(density) {
-                        (resolvedStartPadding + resolvedEndPadding + resolvedClusterGap + resolvedTrendIconSize + 16.dp).roundToPx()
-                    }
-                    heroContentWidthPx > 0 && primaryWidth + deltaWidth + chromeWidth <= heroContentWidthPx
-                } == true
-                val secondaryInlineStyle = when (heroWidthClass) {
-                    AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.headlineSmall
-                    AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.headlineMedium
-                    AdaptiveContentWidthClass.Expanded -> MaterialTheme.typography.headlineLarge
-                }.copy(fontFeatureSettings = "tnum").scaleForHero(heroMultiSensorScale)
-                val slashStyle = when (heroWidthClass) {
-                    AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.headlineSmall
-                    AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.headlineMedium
-                    AdaptiveContentWidthClass.Expanded -> MaterialTheme.typography.headlineLarge
-                }.copy(fontFeatureSettings = "tnum").scaleForHero(heroMultiSensorScale)
-                val secondaryThreeValueStyle = (
-                    when (heroWidthClass) {
-                        AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.titleLarge.copy(
-                            letterSpacing = 0.18.sp,
-                            lineHeight = 24.sp
-                        )
-                        AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.headlineMedium.copy(
-                            letterSpacing = 0.10.sp,
-                            lineHeight = 34.sp
-                        )
-                        AdaptiveContentWidthClass.Expanded -> MaterialTheme.typography.headlineLarge.copy(
-                            letterSpacing = 0.06.sp,
-                            lineHeight = 40.sp
-                        )
-                    }
-                ).copy(fontFeatureSettings = "tnum").scaleForHero(heroMultiSensorScale)
-                val tertiaryThreeValueStyle = (
-                    when (heroWidthClass) {
-                        AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.titleSmall.copy(
-                            letterSpacing = 0.22.sp,
-                            lineHeight = 18.sp
-                        )
-                        AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.titleMedium.copy(
-                            letterSpacing = 0.16.sp,
-                            lineHeight = 24.sp
-                        )
-                        AdaptiveContentWidthClass.Expanded -> MaterialTheme.typography.titleLarge.copy(
-                            letterSpacing = 0.10.sp,
-                            lineHeight = 30.sp
-                        )
-                    }
-                ).copy(fontFeatureSettings = "tnum").scaleForHero(heroMultiSensorScale)
-                // Only the single-value layout places delta beside the value.
-                // Two and three values keep it beneath the trend arrow.
-                val deltaByArrow = !singleDeltaFits
-                val statusTitleStyle = when (heroWidthClass) {
-                    AdaptiveContentWidthClass.Compact -> MaterialTheme.typography.titleMedium
-                    AdaptiveContentWidthClass.Medium -> MaterialTheme.typography.titleLarge
-                    AdaptiveContentWidthClass.Expanded -> MaterialTheme.typography.headlineSmall
-                }.copy(fontFeatureSettings = "tnum")
-
-                if (statusCopy?.isNoSensor == true) {
-                    // Beside the button only while the title still fits in its two lines: a long
-                    // translation at a large font size would otherwise be cut off mid-word.
-                    val addSensorLabel = stringResource(R.string.add_sensor)
-                    val buttonLabelStyle = MaterialTheme.typography.labelLarge
-                    val titleBesideButtonFits = !isLandscape && with(density) {
-                        val buttonWidth = heroTextMeasurer.measure(addSensorLabel, style = buttonLabelStyle, maxLines = 1)
-                            .size.width + ButtonDefaults.ContentPadding.calculateStartPadding(LayoutDirection.Ltr).roundToPx() * 2
-                        val chromeWidth = (resolvedStartPadding + resolvedEndPadding + 12.dp).roundToPx()
-                        val titleWidth = heroContentWidthPx - buttonWidth - chromeWidth
-                        heroContentWidthPx == 0 || (titleWidth > 0 && !heroTextMeasurer.measure(
-                            statusCopy.title,
-                            style = statusTitleStyle,
-                            maxLines = 2,
-                            constraints = Constraints(maxWidth = titleWidth)
-                        ).hasVisualOverflow)
-                    }
-                    NoSensorHeroContent(
-                        title = statusCopy.title,
-                        titleStyle = statusTitleStyle,
-                        contentColor = glucoseContentColor,
-                        stacked = !titleBesideButtonFits,
-                        onAddSensorClick = onAddSensorClick,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                start = resolvedStartPadding,
-                                end = resolvedEndPadding,
-                                top = resolvedVerticalPadding,
-                                bottom = resolvedVerticalPadding
-                            )
-                    )
-                } else if (statusCopy != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                start = resolvedStartPadding,
-                                end = resolvedEndPadding,
-                                top = resolvedVerticalPadding,
-                                bottom = resolvedVerticalPadding
-                            ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = statusCopy.title,
-                            style = statusTitleStyle,
-                            color = glucoseContentColor,
-                            softWrap = true,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Start
-                        )
-
-                        Spacer(modifier = Modifier.width(resolvedClusterGap))
-
-                        DataStatusPulse(
-                            color = glucoseContentColor,
-                            subdued = statusCopy.isStale
-                        )
-                    }
-                } else if (secondaryPeer != null) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .height(heroContentMinHeight)
-                            .padding(
-                                start = resolvedStartPadding,
-                                end = resolvedEndPadding,
-                                top = resolvedVerticalPadding,
-                                bottom = resolvedVerticalPadding
-                            ),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        DashboardHeroSensorPair(
-                            primarySensorId = sensorName,
-                            uncertaintyEnabled = uncertaintyEnabled,
-                            contentHeight = heroContentMinHeight - resolvedVerticalPadding * 2,
-                            primaryText = primaryText,
-                            primaryStyle = primaryValueStyle,
-                            primarySecondaryText = listOfNotNull(secondaryText, tertiaryText).joinToString(" · ").ifEmpty { null },
-                            primarySecondaryStyle = secondaryInlineStyle,
-                            primaryColor = heroValueColor,
-                            primaryRangeText = currentRangeText,
-                            primaryTrend = arrowTrend,
-                            primaryArrowColor = heroArrowColor,
-                            primaryDeltaText = heroDeltaText,
-                            peer = secondaryPeer,
-                            peerStyle = secondaryInlineStyle,
-                            selectedSensorIds = activeSensors,
-                            contentColor = glucoseContentColor,
-                            onPeerClick = onPeerReadingClick
-                        )
-                        if (remainingPeers.isNotEmpty()) {
-                            DashboardHeroPeerStrip(
-                                peerReadings = remainingPeers,
-                                selectedSensorIds = activeSensors,
-                                contentColor = glucoseContentColor,
-                                onPeerClick = onPeerReadingClick,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-                } else if (isLandscape) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                start = resolvedStartPadding,
-                                end = resolvedEndPadding,
-                                top = resolvedVerticalPadding,
-                                bottom = resolvedVerticalPadding
-                            ),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                horizontalAlignment = Alignment.Start
-                            ) {
-                                if (singleValue || hasThreeValues) {
-                                    DashboardHeroPrimaryText(
-                                        value = primaryText,
-                                        style = primaryValueStyle,
-                                        color = heroValueColor,
-                                        deltaText = heroDeltaText.takeIf { singleDeltaFits },
-                                        deltaColor = glucoseContentColor
-                                    )
-                                } else {
-                                    DashboardHeroValueCluster(
-                                        primaryText = primaryText,
-                                        secondaryText = secondaryText,
-                                        tertiaryText = tertiaryText,
-                                        primaryStyle = primaryValueStyle,
-                                        secondaryInlineStyle = secondaryInlineStyle,
-                                        separatorStyle = slashStyle,
-                                        secondaryStackStyle = secondaryThreeValueStyle,
-                                        tertiaryStackStyle = tertiaryThreeValueStyle,
-                                        contentColor = glucoseContentColor,
-                                        primaryColor = heroValueColor
-                                    )
-                                }
-                                // Only when the estimator actually reports a
-                                // range, and deliberately quiet: low contrast,
-                                // label type, no label word. The number above
-                                // stays the thing you read.
-                                currentRangeText?.let { range ->
-                                    Text(
-                                        text = range,
-                                        style = MaterialTheme.typography.labelMedium
-                                            .copy(fontFeatureSettings = "tnum"),
-                                        color = heroValueColor.copy(alpha = 0.55f),
-                                        maxLines = 1,
-                                        softWrap = false,
-                                    )
-                                }
-                            }
-
-                            HeroTrendWithDelta(
-                                trendResult = arrowTrend,
-                                arrowColor = heroArrowColor,
-                                deltaText = heroDeltaText.takeIf { deltaByArrow },
-                                contentColor = glucoseContentColor,
-                                iconSize = resolvedTrendIconSize
-                            )
-                        }
-
-                        if (hasThreeValues) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = secondaryText ?: "",
-                                    style = secondaryThreeValueStyle,
-                                    color = glucoseContentColor.copy(alpha = 0.90f),
-                                    softWrap = false,
-                                    maxLines = 1
-                                )
-                                Text(
-                                    text = "·",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
-                                    color = glucoseContentColor.copy(alpha = 0.40f),
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
-                                Text(
-                                    text = tertiaryText ?: "",
-                                    style = tertiaryThreeValueStyle,
-                                    color = glucoseContentColor.copy(alpha = 0.66f),
-                                    softWrap = false,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-
-                        if (remainingPeers.isNotEmpty()) {
-                            DashboardHeroPeerStrip(
-                                peerReadings = remainingPeers,
-                                selectedSensorIds = activeSensors,
-                                contentColor = glucoseContentColor,
-                                onPeerClick = onPeerReadingClick,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .heightIn(min = heroContentMinHeight)
-                            .padding(
-                                start = resolvedStartPadding,
-                                end = resolvedEndPadding,
-                                top = resolvedVerticalPadding,
-                                bottom = resolvedVerticalPadding
-                            ),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            DashboardHeroValueCluster(
-                                modifier = Modifier.weight(1f),
-                                primaryText = primaryText,
-                                secondaryText = secondaryText,
-                                tertiaryText = tertiaryText,
-                                primaryStyle = primaryValueStyle,
-                                secondaryInlineStyle = secondaryInlineStyle,
-                                separatorStyle = slashStyle,
-                                secondaryStackStyle = secondaryThreeValueStyle,
-                                tertiaryStackStyle = tertiaryThreeValueStyle,
-                                contentColor = glucoseContentColor,
-                                primaryColor = heroValueColor,
-                                deltaText = heroDeltaText.takeIf { singleDeltaFits }
-                            )
-
-                            Spacer(modifier = Modifier.width(resolvedClusterGap))
-
-                            HeroTrendWithDelta(
-                                trendResult = arrowTrend,
-                                arrowColor = heroArrowColor,
-                                deltaText = heroDeltaText.takeIf { deltaByArrow },
-                                contentColor = glucoseContentColor,
-                                iconSize = resolvedTrendIconSize
-                            )
-                        }
-
-                        if (remainingPeers.isNotEmpty()) {
-                            DashboardHeroPeerStrip(
-                                peerReadings = remainingPeers,
-                                selectedSensorIds = activeSensors,
-                                contentColor = glucoseContentColor,
-                                onPeerClick = onPeerReadingClick,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-    }
-
-    val heroCard: @Composable (Modifier) -> Unit = { modifier ->
-        // Alone in the row, the card takes the sensor card's outer corners too.
-        val heroAlone = statusCopy?.isNoSensor == true
-        val heroShape = RoundedCornerShape(
-            topStart = heroTopStart,
-            topEnd = if (heroAlone) sensorTopEnd else heroTopEnd,
-            bottomEnd = if (heroAlone) sensorBottomEnd else heroBottomEnd,
-            bottomStart = heroBottomStart
-        )
-        val heroColors = CardDefaults.cardColors(
-            containerColor = glucoseContainerColor,
-            contentColor = glucoseContentColor
-        )
-        // A stale/waiting message can need more than two lines on narrow cards
-        // or with larger system text. Let that card grow with the full message.
-        val stabilizedModifier = if (statusCopy == null) modifier.height(80.dp)
-            else modifier.heightIn(min = 80.dp)
-        if (statusCopy == null) {
-            Card(
-                onClick = onHeroClick,
-                modifier = stabilizedModifier,
-                colors = heroColors,
-                shape = heroShape
-            ) {
-                heroCardContent()
-            }
-        } else {
-            Card(
-                modifier = stabilizedModifier,
-                colors = heroColors,
-                shape = heroShape
-            ) {
-                heroCardContent()
-            }
-        }
-    }
-
     val sensorCard: @Composable (Modifier) -> Unit = { modifier ->
         var sensorContentWidthPx by remember { mutableStateOf(0) }
         val sensorDensity = LocalDensity.current
         Card(
+            onClick = onSensorCardClick,
             modifier = modifier.height(80.dp),
              colors = CardDefaults.cardColors(
                 containerColor = sensorContainerColor,
@@ -1146,34 +731,622 @@ fun DashboardCombinedHeader(
         }
     }
 
+    val heroReading = HeroReading(
+        primaryText = primaryText,
+        secondaryText = secondaryText,
+        tertiaryText = tertiaryText,
+        deltaText = heroDeltaText,
+        rangeText = currentRangeText,
+        trend = arrowTrend,
+        valueColor = heroValueColor,
+        arrowColor = heroArrowColor,
+        contentColor = glucoseContentColor
+    )
+    val heroPeers = HeroPeers(
+        mainSensorId = sensorName,
+        paired = secondaryPeer,
+        others = remainingPeers,
+        selectedSensorIds = activeSensors,
+        uncertaintyEnabled = uncertaintyEnabled,
+        onPeerClick = onPeerReadingClick
+    )
+
+    // With no sensor there is no sensor card, so nothing can name or count down a removed
+    // one, and the reading card takes the sensor card's outer corners too.
     val showSensorCard = statusCopy?.isNoSensor != true
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        if (stackBars) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (showSensorCard) sensorCard(Modifier.fillMaxWidth())
-                heroCard(Modifier.fillMaxWidth())
+    val heroShape = RoundedCornerShape(
+        topStart = heroTopStart,
+        topEnd = if (showSensorCard) heroTopEnd else sensorTopEnd,
+        bottomEnd = if (showSensorCard) heroBottomEnd else sensorBottomEnd,
+        bottomStart = heroBottomStart
+    )
+    // The header knows its width before it composes: every size-dependent choice below is
+    // made for the width the cards really get, in the same pass, not a frame later.
+    var sensorPanelCrowded by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(HeroSensorGap)) {
+        androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val rowWidthPx = constraints.maxWidth
+            val stacked = stackBars
+            val heroShareWidthPx = if (stacked || !showSensorCard) {
+                rowWidthPx
+            } else if (glucoseWidthPercent != null) {
+                val available = (rowWidthPx - with(LocalDensity.current) { HeroSensorGap.roundToPx() }).coerceAtLeast(0)
+                (available * (glucoseWidthPercent.coerceIn(40, 70) / 100f)).roundToInt()
+            } else {
+                heroSensorBaseSplit(rowWidthPx - with(LocalDensity.current) { HeroSensorGap.roundToPx() }).first
             }
-        } else {
-            val glucoseWeight = glucoseWidthPercent.coerceIn(40, 70) / 100f
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                heroCard(Modifier.weight(if (showSensorCard) glucoseWeight else 1f))
-                if (showSensorCard) sensorCard(Modifier.weight(1f - glucoseWeight))
+            val heroLayout = resolveHeroLayout(
+                widthPx = heroShareWidthPx,
+                isCompactWindow = adaptiveMetrics.isCompact,
+                isLandscape = isLandscape,
+                reading = heroReading,
+                peers = heroPeers,
+                hasStatus = statusCopy != null,
+                sensorPanelCrowded = glucoseWidthPercent == null && !stacked && sensorPanelCrowded
+            )
+
+            val heroCard: @Composable (Modifier) -> Unit = { modifier ->
+                DashboardHeroCard(
+                    layout = heroLayout,
+                    reading = heroReading,
+                    peers = heroPeers,
+                    statusCopy = statusCopy,
+                    isLandscape = isLandscape,
+                    widthPx = heroShareWidthPx,
+                    containerColor = glucoseContainerColor,
+                    shape = heroShape,
+                    onClick = onHeroClick,
+                    onAddSensorClick = onAddSensorClick,
+                    modifier = modifier
+                )
+            }
+
+            if (stacked) {
+                Column(verticalArrangement = Arrangement.spacedBy(HeroSensorGap)) {
+                    if (showSensorCard) sensorCard(Modifier.fillMaxWidth())
+                    heroCard(Modifier.fillMaxWidth())
+                }
+            } else if (glucoseWidthPercent != null) {
+                val share = glucoseWidthPercent.coerceIn(40, 70) / 100f
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(HeroSensorGap)) {
+                    heroCard(Modifier.weight(if (showSensorCard) share else 1f))
+                    if (showSensorCard) sensorCard(Modifier.weight(1f - share))
+                }
+            } else {
+                HeroSensorSplit(heroLayout.contentNeedPx, heroLayout.roomyContentNeedPx,
+                    onPanelCrowded = { sensorPanelCrowded = it }) {
+                    heroCard(Modifier)
+                    if (showSensorCard) sensorCard(Modifier)
+                }
             }
         }
-        // Keep the quiet-window action accessible without consuming the compact
-        // sensor card's 80dp budget for name, lifecycle, expiry and signal quality.
         if (quietWindowUntilMs > 0L) {
             QuietWindowHeaderChip(untilMs = quietWindowUntilMs, onClick = onQuietWindowClick)
         }
+    }
+}
+
+/** What the reading card says, resolved once by the header. */
+private class HeroReading(
+    val primaryText: String,
+    val secondaryText: String?,
+    val tertiaryText: String?,
+    val deltaText: String?,
+    val rangeText: String?,
+    val trend: TrendEngine.TrendResult,
+    val valueColor: Color,
+    val arrowColor: Color,
+    val contentColor: Color
+) {
+    val hasThreeValues: Boolean get() = secondaryText != null && tertiaryText != null
+    val isSingleValue: Boolean get() = secondaryText == null && tertiaryText == null
+}
+
+/** The other selected sensors' readings shown inside the reading card. */
+private class HeroPeers(
+    val mainSensorId: String,
+    /** The peer drawn beside the main reading at nearly its size. */
+    val paired: PeerCurrentReading?,
+    /** The rest, as a strip of chips under the reading. */
+    val others: List<PeerCurrentReading>,
+    val selectedSensorIds: List<String>,
+    val uncertaintyEnabled: Boolean,
+    val onPeerClick: (String) -> Unit
+) {
+    val any: Boolean get() = paired != null || others.isNotEmpty()
+}
+
+/**
+ * Every size the reading card's content uses, chosen for one card width: paddings, type
+ * styles, the arrow, where the delta goes — and [contentNeedPx], what all of it adds up to.
+ */
+private class HeroLayout(
+    val startPadding: Dp,
+    val endPadding: Dp,
+    val verticalPadding: Dp,
+    /** The single-reading card height, which every other arrangement is pinned to. */
+    val contentMinHeight: Dp,
+    val trendIconSize: Dp,
+    val clusterGap: Dp,
+    val primaryStyle: TextStyle,
+    val secondaryInlineStyle: TextStyle,
+    val secondaryStackStyle: TextStyle,
+    val tertiaryStackStyle: TextStyle,
+    val statusTitleStyle: TextStyle,
+    /**
+     * A lone value with room beside it carries the delta there; otherwise, or when the
+     * sensor panel needs that room, the delta sits under the arrow.
+     */
+    val deltaBesideValue: Boolean,
+    /**
+     * The card width its content takes at full size, or null when the card has no width
+     * to spare: a status line that wraps, peers that scale to fill, a value already
+     * shrunk to fit. See [sensorPanelWidth].
+     */
+    val contentNeedPx: Int?,
+    /** [contentNeedPx] with the delta beside the value, when the card would put it there. */
+    val roomyContentNeedPx: Int?
+) {
+    val contentPadding: PaddingValues
+        get() = PaddingValues(start = startPadding, top = verticalPadding, end = endPadding, bottom = verticalPadding)
+}
+
+@Composable
+private fun resolveHeroLayout(
+    widthPx: Int,
+    isCompactWindow: Boolean,
+    isLandscape: Boolean,
+    reading: HeroReading,
+    peers: HeroPeers,
+    hasStatus: Boolean,
+    sensorPanelCrowded: Boolean
+): HeroLayout {
+    val density = LocalDensity.current
+    val typography = MaterialTheme.typography
+    val textMeasurer = rememberTextMeasurer()
+    val widthClass = if (isCompactWindow && !isLandscape) {
+        // A low-density / large-font phone reports abundant dp width even though
+        // the physical canvas is still a phone. Width alone would select the
+        // largest display type and make the header dominate the viewport.
+        AdaptiveContentWidthClass.Compact
+    } else {
+        adaptiveContentWidthClass(
+            width = with(density) { widthPx.toDp() },
+            compactMax = 180.dp,
+            mediumMax = 260.dp
+        )
+    }
+    val compact = widthClass == AdaptiveContentWidthClass.Compact
+    val startPadding = when {
+        isLandscape -> 20.dp
+        compact -> 16.dp
+        widthClass == AdaptiveContentWidthClass.Medium -> 20.dp
+        else -> 28.dp
+    }
+    val endPadding = if (compact) 12.dp else 16.dp
+    // Peers without a paired one shrink the main reading to leave the chip strip its row.
+    val peerScale = if (peers.paired == null && peers.any) 0.74f else 1f
+    // Single-sensor padding defines the card height. With peers the inner padding is
+    // smaller, so the scaled value + chip cluster fills the SAME pinned height.
+    val singleVerticalPadding = if (compact) 8.dp else 12.dp
+    val verticalPadding = if (peers.any) 4.dp else singleVerticalPadding
+    val fullPrimaryStyle = (if (compact) typography.displayMedium else typography.displayLargeExpressive)
+        .copy(fontFeatureSettings = "tnum")
+    // Pinned to the MEASURED height of the full style (incl. font padding) + padding, not
+    // the lineHeight estimate, which understated it and made the peer layout smaller.
+    val contentMinHeight = remember(fullPrimaryStyle, density, singleVerticalPadding) {
+        with(density) {
+            textMeasurer.measure("0,0", style = fullPrimaryStyle, maxLines = 1).size.height.toDp()
+        } + singleVerticalPadding * 2
+    }
+    val trendIconSize = when (widthClass) {
+        AdaptiveContentWidthClass.Compact -> 30.dp
+        AdaptiveContentWidthClass.Medium -> 38.dp
+        AdaptiveContentWidthClass.Expanded -> 42.dp
+    } * peerScale
+    val clusterGap = if (compact) 8.dp else 12.dp
+    val primaryStyle = fullPrimaryStyle.scaleForHero(peerScale)
+    val secondaryInlineStyle = when (widthClass) {
+        AdaptiveContentWidthClass.Compact -> typography.headlineSmall
+        AdaptiveContentWidthClass.Medium -> typography.headlineMedium
+        AdaptiveContentWidthClass.Expanded -> typography.headlineLarge
+    }.copy(fontFeatureSettings = "tnum").scaleForHero(peerScale)
+    val secondaryStackStyle = when (widthClass) {
+        AdaptiveContentWidthClass.Compact -> typography.titleLarge.copy(letterSpacing = 0.18.sp, lineHeight = 24.sp)
+        AdaptiveContentWidthClass.Medium -> typography.headlineMedium.copy(letterSpacing = 0.10.sp, lineHeight = 34.sp)
+        AdaptiveContentWidthClass.Expanded -> typography.headlineLarge.copy(letterSpacing = 0.06.sp, lineHeight = 40.sp)
+    }.copy(fontFeatureSettings = "tnum").scaleForHero(peerScale)
+    val tertiaryStackStyle = when (widthClass) {
+        AdaptiveContentWidthClass.Compact -> typography.titleSmall.copy(letterSpacing = 0.22.sp, lineHeight = 18.sp)
+        AdaptiveContentWidthClass.Medium -> typography.titleMedium.copy(letterSpacing = 0.16.sp, lineHeight = 24.sp)
+        AdaptiveContentWidthClass.Expanded -> typography.titleLarge.copy(letterSpacing = 0.10.sp, lineHeight = 30.sp)
+    }.copy(fontFeatureSettings = "tnum").scaleForHero(peerScale)
+    val statusTitleStyle = when (widthClass) {
+        AdaptiveContentWidthClass.Compact -> typography.titleMedium
+        AdaptiveContentWidthClass.Medium -> typography.titleLarge
+        AdaptiveContentWidthClass.Expanded -> typography.headlineSmall
+    }.copy(fontFeatureSettings = "tnum")
+
+    val besideValueDeltaStyle = typography.bodyLarge.copy(fontFeatureSettings = "tnum")
+    val underArrowDeltaStyle = typography.bodySmall.copy(fontFeatureSettings = "tnum")
+    // Only the single-value layout places the delta beside the value, and only when the
+    // whole line fits. Two and three values keep it beneath the trend arrow.
+    val deltaFitsBesideValue = reading.isSingleValue && reading.deltaText?.let { delta ->
+        val primaryWidth = textMeasurer.measure(reading.primaryText, style = primaryStyle, maxLines = 1).size.width
+        val deltaWidth = textMeasurer.measure(delta, style = besideValueDeltaStyle, maxLines = 1).size.width
+        val chromeWidth = with(density) {
+            (startPadding + endPadding + clusterGap + trendIconSize + HeroDeltaBesideValueGap).roundToPx()
+        }
+        primaryWidth + deltaWidth + chromeWidth <= widthPx
+    } == true
+
+    val pairDotGap = HeroSeparatorDot.gap(secondaryInlineStyle)
+    val pairDotDiameter = HeroSeparatorDot.diameter(secondaryInlineStyle)
+    val stackDotGap = HeroSeparatorDot.gap(secondaryStackStyle)
+    val stackDotDiameter = HeroSeparatorDot.diameter(secondaryStackStyle)
+    val givesWidth = !hasStatus && !isLandscape && !peers.any
+    fun contentNeedPx(deltaBeside: Boolean): Int? = with(density) {
+        val delta = reading.deltaText.takeUnless { it.isNullOrEmpty() }
+        val clusterWidth = heroValueClusterWidthPx(
+            textMeasurer = textMeasurer,
+            density = density,
+            primaryText = reading.primaryText,
+            secondaryText = reading.secondaryText,
+            tertiaryText = reading.tertiaryText,
+            primaryStyle = primaryStyle,
+            secondaryInlineStyle = secondaryInlineStyle,
+            secondaryStackStyle = secondaryStackStyle,
+            tertiaryStackStyle = tertiaryStackStyle,
+            pairDotGap = pairDotGap,
+            pairDotDiameter = pairDotDiameter,
+            stackDotGap = stackDotGap,
+            stackDotDiameter = stackDotDiameter,
+            deltaText = delta.takeIf { deltaBeside },
+            pairDeltaStyle = underArrowDeltaStyle,
+            loneDeltaStyle = besideValueDeltaStyle
+        )
+        val underArrowDeltaWidth = if (delta != null && !deltaBeside) {
+            textMeasurer.measure(delta, style = underArrowDeltaStyle, maxLines = 1).size.width
+        } else {
+            0
+        }
+        // One dp over the sum: the pieces round to whole pixels one by one.
+        val need = startPadding.roundToPx() + clusterWidth + clusterGap.roundToPx() +
+            maxOf(trendIconSize.roundToPx(), underArrowDeltaWidth) + endPadding.roundToPx() + 1.dp.roundToPx()
+        need.takeIf { it <= widthPx }
+    }
+    val deltaBesideValue = deltaFitsBesideValue && !(givesWidth && sensorPanelCrowded)
+
+    return HeroLayout(
+        startPadding = startPadding,
+        endPadding = endPadding,
+        verticalPadding = verticalPadding,
+        contentMinHeight = contentMinHeight,
+        trendIconSize = trendIconSize,
+        clusterGap = clusterGap,
+        primaryStyle = primaryStyle,
+        secondaryInlineStyle = secondaryInlineStyle,
+        secondaryStackStyle = secondaryStackStyle,
+        tertiaryStackStyle = tertiaryStackStyle,
+        statusTitleStyle = statusTitleStyle,
+        deltaBesideValue = deltaBesideValue,
+        contentNeedPx = if (givesWidth) contentNeedPx(deltaBesideValue) else null,
+        roomyContentNeedPx = if (givesWidth && deltaFitsBesideValue) contentNeedPx(deltaBeside = true) else null
+    )
+}
+
+/** Space between a lone value and the delta beside it. */
+private val HeroDeltaBesideValueGap = 16.dp
+
+/** The reading card: the value with its arrow, or the state there is no value for. */
+@Composable
+private fun DashboardHeroCard(
+    layout: HeroLayout,
+    reading: HeroReading,
+    peers: HeroPeers,
+    statusCopy: DashboardDataStatusText?,
+    isLandscape: Boolean,
+    widthPx: Int,
+    containerColor: Color,
+    shape: androidx.compose.ui.graphics.Shape,
+    onClick: () -> Unit,
+    onAddSensorClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = reading.contentColor)
+    val contentModifier = Modifier.fillMaxSize()
+    when {
+        // A state is not a reading: nothing to calibrate, so the card is not a button.
+        statusCopy != null -> Card(
+            modifier = modifier.heightIn(min = 96.dp),
+            colors = colors,
+            shape = shape
+        ) {
+            if (statusCopy.isNoSensor) {
+                HeroNoSensorContent(statusCopy.title, layout, reading.contentColor, isLandscape, widthPx, onAddSensorClick, contentModifier)
+            } else {
+                HeroStatusContent(statusCopy, layout, reading.contentColor, contentModifier)
+            }
+        }
+
+        else -> Card(onClick = onClick, modifier = modifier, colors = colors, shape = shape) {
+            when {
+                peers.paired != null -> HeroPairedContent(layout, reading, peers, peers.paired, contentModifier)
+                isLandscape -> HeroStackedReadingContent(layout, reading, peers, contentModifier)
+                else -> HeroReadingContent(layout, reading, peers, contentModifier)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroNoSensorContent(
+    title: String,
+    layout: HeroLayout,
+    contentColor: Color,
+    isLandscape: Boolean,
+    widthPx: Int,
+    onAddSensorClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val density = LocalDensity.current
+    val textMeasurer = rememberTextMeasurer()
+    // Beside the button only while the title still fits in its two lines: a long
+    // translation at a large font size would otherwise be cut off mid-word.
+    val addSensorLabel = stringResource(R.string.add_sensor)
+    val buttonLabelStyle = MaterialTheme.typography.labelLarge
+    val titleBesideButtonFits = !isLandscape && with(density) {
+        val buttonWidth = textMeasurer.measure(addSensorLabel, style = buttonLabelStyle, maxLines = 1)
+            .size.width + ButtonDefaults.ContentPadding.calculateStartPadding(LayoutDirection.Ltr).roundToPx() * 2
+        val chromeWidth = (layout.startPadding + layout.endPadding + 12.dp).roundToPx()
+        val titleWidth = widthPx - buttonWidth - chromeWidth
+        titleWidth > 0 && !textMeasurer.measure(
+            title,
+            style = layout.statusTitleStyle,
+            maxLines = 2,
+            constraints = Constraints(maxWidth = titleWidth)
+        ).hasVisualOverflow
+    }
+    NoSensorHeroContent(
+        title = title,
+        titleStyle = layout.statusTitleStyle,
+        contentColor = contentColor,
+        stacked = !titleBesideButtonFits,
+        onAddSensorClick = onAddSensorClick,
+        modifier = modifier.padding(layout.contentPadding)
+    )
+}
+
+/** Stale or awaiting data: the state in words, and a pulse to say the app is still listening. */
+@Composable
+private fun HeroStatusContent(
+    statusCopy: DashboardDataStatusText,
+    layout: HeroLayout,
+    contentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(layout.contentPadding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = statusCopy.title,
+            style = layout.statusTitleStyle,
+            color = contentColor,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Start
+        )
+
+        Spacer(modifier = Modifier.width(layout.clusterGap))
+
+        DataStatusPulse(
+            color = contentColor,
+            subdued = statusCopy.isStale
+        )
+    }
+}
+
+/** Two sensors side by side, fitted into the single-reading card height. */
+@Composable
+private fun HeroPairedContent(
+    layout: HeroLayout,
+    reading: HeroReading,
+    peers: HeroPeers,
+    paired: PeerCurrentReading,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .height(layout.contentMinHeight)
+            .padding(layout.contentPadding),
+        verticalArrangement = Arrangement.Center
+    ) {
+        DashboardHeroSensorPair(
+            primarySensorId = peers.mainSensorId,
+            uncertaintyEnabled = peers.uncertaintyEnabled,
+            contentHeight = layout.contentMinHeight - layout.verticalPadding * 2,
+            primaryText = reading.primaryText,
+            primaryStyle = layout.primaryStyle,
+            primarySecondaryText = listOfNotNull(reading.secondaryText, reading.tertiaryText).joinToString(" · ").ifEmpty { null },
+            primarySecondaryStyle = layout.secondaryInlineStyle,
+            primaryColor = reading.valueColor,
+            primaryRangeText = reading.rangeText,
+            primaryTrend = reading.trend,
+            primaryArrowColor = reading.arrowColor,
+            primaryDeltaText = reading.deltaText,
+            peer = paired,
+            peerStyle = layout.secondaryInlineStyle,
+            selectedSensorIds = peers.selectedSensorIds,
+            contentColor = reading.contentColor,
+            onPeerClick = peers.onPeerClick
+        )
+        HeroOtherPeers(peers, reading.contentColor)
+    }
+}
+
+/** The reading in the narrow side pane: values on the first line, supporting ones below. */
+@Composable
+private fun HeroStackedReadingContent(
+    layout: HeroLayout,
+    reading: HeroReading,
+    peers: HeroPeers,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(layout.contentPadding),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start
+            ) {
+                if (reading.isSingleValue || reading.hasThreeValues) {
+                    DashboardHeroPrimaryText(
+                        value = reading.primaryText,
+                        style = layout.primaryStyle,
+                        color = reading.valueColor,
+                        deltaText = reading.deltaText.takeIf { layout.deltaBesideValue },
+                        deltaColor = reading.contentColor
+                    )
+                } else {
+                    HeroValueCluster(layout, reading, deltaText = null)
+                }
+                // Only when the estimator actually reports a range, and deliberately
+                // quiet: low contrast, label type, no label word. The number above
+                // stays the thing you read.
+                reading.rangeText?.let { range ->
+                    Text(
+                        text = range,
+                        style = MaterialTheme.typography.labelMedium
+                            .copy(fontFeatureSettings = "tnum"),
+                        color = reading.valueColor.copy(alpha = 0.55f),
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+            }
+
+            HeroTrendWithDelta(
+                trendResult = reading.trend,
+                arrowColor = reading.arrowColor,
+                deltaText = reading.deltaText.takeUnless { layout.deltaBesideValue },
+                contentColor = reading.contentColor,
+                iconSize = layout.trendIconSize
+            )
+        }
+
+        if (reading.hasThreeValues) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = reading.secondaryText ?: "",
+                    style = layout.secondaryStackStyle,
+                    color = reading.contentColor.copy(alpha = 0.90f),
+                    softWrap = false,
+                    maxLines = 1
+                )
+                Text(
+                    text = "·",
+                    style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"),
+                    color = reading.contentColor.copy(alpha = 0.40f),
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                Text(
+                    text = reading.tertiaryText ?: "",
+                    style = layout.tertiaryStackStyle,
+                    color = reading.contentColor.copy(alpha = 0.66f),
+                    softWrap = false,
+                    maxLines = 1
+                )
+            }
+        }
+
+        HeroOtherPeers(peers, reading.contentColor)
+    }
+}
+
+/** The reading beside the sensor panel: the value cluster, then the arrow. */
+@Composable
+private fun HeroReadingContent(
+    layout: HeroLayout,
+    reading: HeroReading,
+    peers: HeroPeers,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .heightIn(min = layout.contentMinHeight)
+            .padding(layout.contentPadding),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HeroValueCluster(
+                layout = layout,
+                reading = reading,
+                deltaText = reading.deltaText.takeIf { layout.deltaBesideValue },
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.width(layout.clusterGap))
+
+            HeroTrendWithDelta(
+                trendResult = reading.trend,
+                arrowColor = reading.arrowColor,
+                deltaText = reading.deltaText.takeUnless { layout.deltaBesideValue },
+                contentColor = reading.contentColor,
+                iconSize = layout.trendIconSize
+            )
+        }
+
+        HeroOtherPeers(peers, reading.contentColor)
+    }
+}
+
+@Composable
+private fun HeroValueCluster(
+    layout: HeroLayout,
+    reading: HeroReading,
+    deltaText: String?,
+    modifier: Modifier = Modifier
+) {
+    DashboardHeroValueCluster(
+        modifier = modifier,
+        primaryText = reading.primaryText,
+        secondaryText = reading.secondaryText,
+        tertiaryText = reading.tertiaryText,
+        primaryStyle = layout.primaryStyle,
+        secondaryInlineStyle = layout.secondaryInlineStyle,
+        secondaryStackStyle = layout.secondaryStackStyle,
+        tertiaryStackStyle = layout.tertiaryStackStyle,
+        contentColor = reading.contentColor,
+        primaryColor = reading.valueColor,
+        deltaText = deltaText
+    )
+}
+
+@Composable
+private fun HeroOtherPeers(peers: HeroPeers, contentColor: Color) {
+    if (peers.others.isNotEmpty()) {
+        DashboardHeroPeerStrip(
+            peerReadings = peers.others,
+            selectedSensorIds = peers.selectedSensorIds,
+            contentColor = contentColor,
+            onPeerClick = peers.onPeerClick,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
@@ -1504,6 +1677,53 @@ private fun fitHeroScale(availableWidthPx: Int, requiredWidthPx: Int, minScale: 
     return (availableWidthPx.toFloat() / requiredWidthPx.toFloat()).coerceIn(minScale, 1f)
 }
 
+/**
+ * The width the hero's values take on one line at full size: the lone value with the delta
+ * beside it, the value and its supporting one, or the value and the stacked pair. The
+ * cluster scales to fit against this, and the header counts the card's spare width from it.
+ */
+private fun heroValueClusterWidthPx(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    density: androidx.compose.ui.unit.Density,
+    primaryText: String,
+    secondaryText: String?,
+    tertiaryText: String?,
+    primaryStyle: TextStyle,
+    secondaryInlineStyle: TextStyle,
+    secondaryStackStyle: TextStyle,
+    tertiaryStackStyle: TextStyle,
+    pairDotGap: Dp,
+    pairDotDiameter: Dp,
+    stackDotGap: Dp,
+    stackDotDiameter: Dp,
+    deltaText: String?,
+    pairDeltaStyle: TextStyle,
+    loneDeltaStyle: TextStyle
+): Int = with(density) {
+    fun width(text: String, style: TextStyle) = textMeasurer.measure(text, style = style, maxLines = 1).size.width
+    val primaryWidth = width(primaryText, primaryStyle)
+    val pairText = secondaryText ?: tertiaryText
+    val hasDelta = !deltaText.isNullOrEmpty()
+    when {
+        secondaryText != null && tertiaryText != null ->
+            primaryWidth + (stackDotGap + stackDotDiameter + stackDotGap).roundToPx() +
+                maxOf(width(secondaryText, secondaryStackStyle), width(tertiaryText, tertiaryStackStyle))
+
+        pairText != null -> {
+            // The dot gaps are independent of the delta inset; the two lines share
+            // width, not spacing.
+            val supportWidth = (pairDotDiameter + pairDotGap).roundToPx() + width(pairText, secondaryInlineStyle)
+            primaryWidth + maxOf(
+                supportWidth + pairDotGap.roundToPx(),
+                if (hasDelta) width(deltaText.orEmpty(), pairDeltaStyle) + 16.dp.roundToPx() else 0
+            )
+        }
+
+        hasDelta -> primaryWidth + HeroDeltaBesideValueGap.roundToPx() + width(deltaText.orEmpty(), loneDeltaStyle)
+        else -> primaryWidth
+    }
+}
+
 @Composable
 private fun DashboardHeroValueCluster(
     primaryText: String,
@@ -1511,7 +1731,6 @@ private fun DashboardHeroValueCluster(
     tertiaryText: String?,
     primaryStyle: TextStyle,
     secondaryInlineStyle: TextStyle,
-    separatorStyle: TextStyle,
     secondaryStackStyle: TextStyle,
     tertiaryStackStyle: TextStyle,
     contentColor: Color,
@@ -1528,72 +1747,54 @@ private fun DashboardHeroValueCluster(
     } else {
         contentColor.copy(alpha = 0.60f)
     }
-    val dotBaseStyle = separatorStyle.scaleForHero(1.12f)
+    val pairDotGap = HeroSeparatorDot.gap(secondaryInlineStyle)
+    val stackDotGap = HeroSeparatorDot.gap(secondaryStackStyle)
+    val pairDotDiameter = HeroSeparatorDot.diameter(secondaryInlineStyle)
+    val stackDotDiameter = HeroSeparatorDot.diameter(secondaryStackStyle)
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val pairDeltaStyle = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+    val loneDeltaStyle = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum")
     var availableWidthPx by remember { mutableStateOf(0) }
 
     Box(
         modifier = modifier.onSizeChanged { availableWidthPx = it.width },
         contentAlignment = Alignment.CenterStart
     ) {
-        val primaryWidthPx = textMeasurer.measure(
-            text = primaryText,
-            style = primaryStyle,
-            maxLines = 1
-        ).size.width
-        val dotWidthPx = textMeasurer.measure(
-            text = "·",
-            style = dotBaseStyle,
-            maxLines = 1
-        ).size.width
-        val inlinePairWidthPx = if (!hasThreeValues && pairText != null) {
-            // Preserve the original 8dp main-to-dot gap independently of
-            // the delta inset; the two lines share width, not spacing.
-            val supportWidth = dotWidthPx + with(density) { 4.dp.roundToPx() } +
-                textMeasurer.measure(pairText, style = secondaryInlineStyle, maxLines = 1).size.width
-            val deltaWidth = if (!deltaText.isNullOrEmpty()) {
-                textMeasurer.measure(
-                    deltaText,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
-                    maxLines = 1
-                ).size.width
-            } else 0
-            primaryWidthPx + maxOf(
-                supportWidth + with(density) { 8.dp.roundToPx() },
-                if (deltaWidth > 0) deltaWidth + with(density) { 16.dp.roundToPx() } else 0
-            )
-        } else {
-            0
-        }
-        val inlineStackWidthPx = if (hasThreeValues) {
-            val secondaryWidth = textMeasurer.measure(
-                text = secondaryText.orEmpty(),
-                style = secondaryStackStyle,
-                maxLines = 1
-            ).size.width
-            val tertiaryWidth = textMeasurer.measure(
-                text = tertiaryText.orEmpty(),
-                style = tertiaryStackStyle,
-                maxLines = 1
-            ).size.width
-            primaryWidthPx +
-                with(density) { 8.dp.roundToPx() } +
-                dotWidthPx +
-                with(density) { 4.dp.roundToPx() } +
-                maxOf(secondaryWidth, tertiaryWidth)
-        } else {
-            0
-        }
-        val pairScale = fitHeroScale(availableWidthPx, inlinePairWidthPx)
-        val stackScale = fitHeroScale(availableWidthPx, inlineStackWidthPx)
         val layoutMode = when {
-            hasThreeValues && inlineStackWidthPx <= availableWidthPx -> DashboardHeroValueLayoutMode.InlineStack
             hasThreeValues -> DashboardHeroValueLayoutMode.InlineStack
-            pairText != null && inlinePairWidthPx <= availableWidthPx -> DashboardHeroValueLayoutMode.InlinePair
             pairText != null -> DashboardHeroValueLayoutMode.InlinePair
             else -> DashboardHeroValueLayoutMode.PrimaryOnly
         }
+        // Two and three values shrink together to stay on the line; a lone value never
+        // shrinks, its delta moves under the arrow instead.
+        val fitScale = if (layoutMode == DashboardHeroValueLayoutMode.PrimaryOnly) {
+            1f
+        } else {
+            fitHeroScale(
+                availableWidthPx,
+                heroValueClusterWidthPx(
+                    textMeasurer = textMeasurer,
+                    density = density,
+                    primaryText = primaryText,
+                    secondaryText = secondaryText,
+                    tertiaryText = tertiaryText,
+                    primaryStyle = primaryStyle,
+                    secondaryInlineStyle = secondaryInlineStyle,
+                    secondaryStackStyle = secondaryStackStyle,
+                    tertiaryStackStyle = tertiaryStackStyle,
+                    pairDotGap = pairDotGap,
+                    pairDotDiameter = pairDotDiameter,
+                    stackDotGap = stackDotGap,
+                    stackDotDiameter = stackDotDiameter,
+                    deltaText = deltaText,
+                    pairDeltaStyle = pairDeltaStyle,
+                    loneDeltaStyle = loneDeltaStyle
+                )
+            )
+        }
+        val pairScale = fitScale
+        val stackScale = fitScale
 
         when (layoutMode) {
             DashboardHeroValueLayoutMode.PrimaryOnly -> {
@@ -1608,28 +1809,25 @@ private fun DashboardHeroValueCluster(
 
             DashboardHeroValueLayoutMode.InlinePair -> {
                 val scaledPrimaryStyle = primaryStyle.scaleForHero(pairScale)
-                val scaledDotStyle = dotBaseStyle.scaleForHero(pairScale)
                 val scaledPairStyle = secondaryInlineStyle.scaleForHero(pairScale)
                 DashboardHeroPairText(
                     primary = primaryText,
                     secondary = pairText.orEmpty(),
                     primaryStyle = scaledPrimaryStyle,
                     secondaryStyle = scaledPairStyle,
-                    dotStyle = scaledDotStyle,
                     primaryColor = primaryColor,
                     secondaryColor = inlinePairColor,
                     contentColor = contentColor,
                     deltaText = deltaText,
                     deltaStyle = MaterialTheme.typography.bodySmall.scaleForHero(pairScale),
-                    beforeDot = 8.dp * pairScale,
-                    afterDot = 4.dp * pairScale,
+                    beforeDot = pairDotGap * pairScale,
+                    afterDot = pairDotGap * pairScale,
                     beforeDelta = 16.dp * pairScale
                 )
             }
 
             DashboardHeroValueLayoutMode.InlineStack -> {
                 val scaledPrimaryStyle = primaryStyle.scaleForHero(stackScale)
-                val scaledDotStyle = dotBaseStyle.scaleForHero(stackScale)
                 val scaledSecondaryStyle = secondaryStackStyle.scaleForHero(stackScale)
                 val scaledTertiaryStyle = tertiaryStackStyle.scaleForHero(stackScale)
                 Row(
@@ -1642,17 +1840,11 @@ private fun DashboardHeroValueCluster(
                         color = primaryColor
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp * stackScale))
+                    Spacer(modifier = Modifier.width(stackDotGap * stackScale))
 
-                    Text(
-                        text = "·",
-                        style = scaledDotStyle,
-                        color = contentColor.copy(alpha = 0.72f),
-                        softWrap = false,
-                        maxLines = 1
-                    )
+                    HeroSeparatorDot.Dot(stackDotDiameter * stackScale, contentColor.copy(alpha = 0.72f))
 
-                    Spacer(modifier = Modifier.width(4.dp * stackScale))
+                    Spacer(modifier = Modifier.width(stackDotGap * stackScale))
 
                     Column(
                         modifier = Modifier.weight(1f, fill = false),
