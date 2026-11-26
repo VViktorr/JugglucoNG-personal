@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 19301)
+Total output lines: 2254
+
 /*      This file is part of Juggluco, an Android app to receive and display */
 /*      glucose values from Freestyle Libre 2 and 3 sensors. */
 /*                                                                                   */
@@ -225,19 +228,19 @@ public:
   }
   static bool create(string_view inbasedir) {
     pathconcat file{inbasedir, "sensors.dat"};
-    const int pagesize = SensorGlucoseData::blocksize;
+    constexpr int startsize = SensorGlucoseData::blocksize;
     {
       struct stat st;
       if (!stat(file, &st) && ((st.st_mode & S_IFMT) == S_IFREG) &&
-          st.st_size >= pagesize)
+          st.st_size >= startsize)
         return true;
     }
 
     mkdir(inbasedir.data(), 0700);
     //   constexpr int cap=2;
 
-    const int cap = pagesize / sizeof(struct sensor);
-    LOGGER("map(%s,%d) getpagesize=%d\n", file.data(), cap, pagesize);
+    const int cap = startsize / sizeof(struct sensor);
+    LOGGER("map(%s,%d)\n", file.data(), cap);
     MapType map(file, cap);
     auto dat = reinterpret_cast<infoblock *>(map.data());
     if (!dat)
@@ -969,173 +972,7 @@ public:
       SensorGlucoseData *sens = getSensorData(sensindex);
       sendKAuth(sens);
       setstreaming(sens);
-      sensgegs->finished = 0;
-      auto *info = sens->getinfo();
-      info->lastscantime = now;
-      if (!info->pollcount)
-        info->starttime = now; // Not needed
-      void resensordata(int sensorindex);
-      resensordata(sensindex);
-      return {sensindex, sens};
-    }
-    const pathconcat sensordir(inbasedir, name);
-    SensorGlucoseData::mkdatabaseSI(sensordir, gegsSI, now, hasnum);
-    const int ind = addsensor(static_cast<std::string_view>(name));
-    sensor *sen = getsensor(ind);
-    sen->initialized = true;
-    sen->halfdays = maxdaysSI * 2;
-    return {ind, getSensorData(ind)};
-  }
-#endif
-#ifdef LIBRE3
-  SensorGlucoseData *makelibre3sensor(std::string_view shortname,
-                                      uint32_t starttime, const uint32_t pin,
-                                      const char *deviceaddress,
-                                      const uint32_t now) {
-    int sensindex = makelibre3sensorindex(shortname, starttime, pin,
-                                          deviceaddress, now, 60, 14 * 24 * 60);
-    if (sensindex < 0)
-      return nullptr;
-    return getSensorData(sensindex);
-  }
-#endif
-  const sensor *findsensor(const std::string_view wanted) const {
-    const sensor *end = sensorlist() + last() + 1;
-    const sensor *sens =
-        find_if(sensorlist(), end, [wanted](const sensor &sens) -> bool {
-          return sens.fullname() == wanted;
-        });
-    if (end == sens)
-      return nullptr;
-    return sens;
-  }
-
-  const sensor *findsensor(const char *name) const {
-    if (!name)
-      return nullptr;
-    return findsensor(std::string_view(name));
-  }
-
-  const sensor *findsensorshort(const std::string_view wanted) const {
-    const sensor *end = sensorlist() + last() + 1;
-    const sensor *sens =
-        find_if(sensorlist(), end, [wanted](const sensor &sens) -> bool {
-          if (sens.fullname() == wanted) {
-            return true;
-          }
-          if (wanted.rfind("X-", 0) == 0) {
-            return false;
-          }
-          return sens.shortsensorname_view() == wanted;
-        });
-    if (end == sens)
-      return nullptr;
-    return sens;
-  }
-
-  const sensor *findsensorshort(const char *name) const {
-    if (!name)
-      return nullptr;
-    return findsensorshort(std::string_view(name));
-  }
-
-  sensor *findsensorm(const char *name) {
-    const sensor *sens = findsensor(name);
-    return const_cast<sensor *>(sens);
-  }
-
-  sensor *findsensorm(const std::string_view name) {
-    const sensor *sens = findsensor(name);
-    return const_cast<sensor *>(sens);
-  }
-
-  vector<int> sensorindices(const std::string_view wanted) const {
-    vector<int> out;
-    if (wanted.empty())
-      return out;
-    const bool fullNameOnly = wanted.rfind("X-", 0) == 0;
-    for (int index = 0; index <= last(); ++index) {
-      const sensor &sens = sensorlist()[index];
-      if (sens.fullname() == wanted ||
-          (!fullNameOnly && sens.shortsensorname_view() == wanted)) {
-        out.push_back(index);
-      }
-    }
-    return out;
-  }
-
-  int sensorindex(const char *name) const {
-    const sensor *sens = findsensor(name);
-    if (!sens)
-      return -1;
-    return sens - sensorlist();
-  }
-
-  int sensorindex(const std::string_view name) const {
-    const sensor *sens = findsensor(name);
-    if (!sens)
-      return -1;
-    return sens - sensorlist();
-  }
-
-  int sensorindexshort(const char *name) const {
-    const sensor *sens = findsensorshort(name);
-    if (!sens)
-      return -1;
-    return sens - sensorlist();
-  }
-
-  int sensorindexshort(const std::string_view name) const {
-    const sensor *sens = findsensorshort(name);
-    if (!sens)
-      return -1;
-    return sens - sensorlist();
-  }
-
-  SensorGlucoseData *getSensorData(const char *name) {
-    if (int ind = sensorindex(name); ind >= 0)
-      return getSensorData(ind);
-    return nullptr;
-  }
-
-  SensorGlucoseData *gethistshort(const char *name) {
-    if (int ind = sensorindexshort(name); ind >= 0)
-      return getSensorData(ind);
-    return nullptr;
-  }
-
-  void setCurrentSensor(const char *name) {
-    if (!name || !*name) {
-      infoblockptr()->current = -1;
-      return;
-    }
-    if (int ind = sensorindex(name); ind >= 0) {
-      infoblockptr()->current = ind;
-    } else {
-      if (int ind = sensorindexshort(name); ind >= 0) {
-        infoblockptr()->current = ind;
-      }
-    }
-  }
-
-  //   static constexpr const uint32_t sensorageseconds = 15 * 24 * 60 * 60u;
-  static constexpr const uint32_t maxageseconds = 24 * 24 * 60 * 60u;
-  template <typename F>
-  void sensorsInPeriod(vector<int> &out, uint32_t starttime, uint32_t endtime,
-                       F dont) {
-    const uint32_t nu = time(nullptr);
-    constexpr const int maxage = maxSIhours * 60 * 60;
-    const uint32_t oldsecs = maxage >= starttime ? 0 : starttime - maxage;
-    int endindex = getendindex();
-    if (endindex >= 0) {
-      for (int prev, i = endindex; i != LISTEND; i = prev) {
-        auto &sensor = sensorlist()[i];
-        if (sensor.next == 0 && sensor.prev == 0)
-          setindices();
-        prev = sensor.prev;
-        const uint32_t startsensor = sensor.starttime;
-        if (startsensor >= endtime) {
-          LOGGER("%d: sensorsInPeriod startsensor (%u) >= endtime (%u) \n", i,
+      sensgegs…1301 tokens truncated…time (%u) \n", i,
                  startsensor, endtime);
           continue;
         }
