@@ -39,7 +39,6 @@ ext {
 
     ndkver       = '30.0.16248370'
     CMAKEVERSION = '4.1.2'
-    CPPSTD       = '-std=gnu++26'
     COMPILE_SDK = 37
     COMPILE_SDK_MINOR = 2
     BUILD_TOOLS = '37.0.0'
@@ -205,7 +204,7 @@ android {
             jniDebuggable = false
             debuggable = false
             externalNativeBuild.cmake {
-                cppFlags "$CPPSTD", "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1"
+                cppFlags "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1"
                 cFlags "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1"
             }
         }
@@ -224,7 +223,7 @@ android {
             buildConfigField 'int', 'isRelease', '1'
             buildConfigField 'int', 'isReleaseID', '1'
             externalNativeBuild.cmake {
-                cppFlags "$CPPSTD", "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\" "
+                cppFlags "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\" "
                 cFlags "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\" "
             }
         }
@@ -243,7 +242,7 @@ android {
             buildConfigField 'int', 'isRelease', '1'
             buildConfigField 'int', 'isReleaseID', '1'
             externalNativeBuild.cmake {
-                cppFlags "$CPPSTD", "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\" "
+                cppFlags "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\" "
                 cFlags "-DRELEASEID=1", "-DRELEASE=1", "-DNORAWSTREAM=1", "-DRELEASEDIR=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\" "
             }
         }
@@ -262,7 +261,7 @@ android {
 
             signingConfig = signingConfigs.alg
             externalNativeBuild.cmake {
-                cppFlags "$CPPSTD", "-DDEBUG=1", "-DSCANLOG=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\"", "-DNDK_DEBUG=1", "-UNDEBUG"
+                cppFlags "-DDEBUG=1", "-DSCANLOG=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\"", "-DNDK_DEBUG=1", "-UNDEBUG"
                 cFlags "-DDEBUG=1", "-DSCANLOG=1", "-DAPPSUFFIX=\"quotes($applicationIdSuffix)\"", "-DNDK_DEBUG=1", "-UNDEBUG"
             }
         }
