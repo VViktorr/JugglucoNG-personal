@@ -33,11 +33,11 @@ Punkt wyjścia to `main5` w commicie `277c5303eec6a0f1610a6ed63cf2c741cab2ad26`.
 | Google Play Services Base / Wearable | 18.10.1 / 20.0.1 | 18.11.1 / 20.0.1 |
 | Guava Android | 33.7.1-android | 33.8.0-android |
 | zstd-jni w APK i testach | 1.5.7-12 | 1.6.0-1 |
-| Robolectric | 4.14 | 4.18.1 |
+| Robolectric | 4.14 | 4.16.1, ostatnia wersja z `callThroughByDefault` |
 | AndroidX Test Core | 1.6.1 | 1.7.0 |
 | SQLite JDBC w testach | 3.41.2.2 | 3.54.1.0 |
 
-AndroidX AppCompat, coroutines, RecyclerView, Startup, Health Connect, Material Components, Garmin, ZXing, ML Kit, Play Services Wearable, biblioteki Wear Tiles i ProtoLayout, JUnit oraz JSON pozostają na wersjach bazowych. Artefakty Watch Face pozostają w dotychczasowym spójnym zestawie 1.2.1. Nowsze wersje poszczególnych artefaktów obsługi komplikacji wymagają osobnej migracji zegarka. Gradle rozwiązuje także zależności przechodnie. Raport wersji dotyczy deklaracji bezpośrednich i nie zastępuje sprawdzenia grafu rozwiązanego dla obu wariantów.
+AndroidX AppCompat, coroutines, RecyclerView, Startup, Health Connect, Material Components, Garmin, ZXing, ML Kit, Play Services Wearable, biblioteki Wear Tiles i ProtoLayout, JUnit oraz JSON pozostają na wersjach bazowych. Artefakty Watch Face pozostają w dotychczasowym spójnym zestawie 1.2.1. Nowsze wersje poszczególnych artefaktów obsługi komplikacji wymagają osobnej migracji zegarka. Robolectric 4.17 usunął parametr `callThroughByDefault`, z którego korzystają testy BLE i JNI. Wersja 4.16.1 zachowuje odcięcie wywołań do rzeczywistych implementacji w tych testach. Gradle rozwiązuje także zależności przechodnie. Raport wersji dotyczy deklaracji bezpośrednich i nie zastępuje sprawdzenia grafu rozwiązanego dla obu wariantów.
 
 Weryfikacja wersji korzystała z metadanych Google Maven, Maven Central, katalogu pakietów Android SDK i dokumentacji Gradle, Kotlin oraz Android Developers.
 

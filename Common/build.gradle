@@ -550,7 +550,9 @@ dependencies {
     // Room migration tests (plan task H3): a real SQLite under Robolectric, and
     // MigrationTestHelper to run the production Migration objects against the
     // exported schemas in Common/schemas.
-    testImplementation 'org.robolectric:robolectric:4.18.1'
+    // Several BLE and JNI shadows suppress calls into the real implementation.
+    // Robolectric 4.17 removed callThroughByDefault from @Implements.
+    testImplementation 'org.robolectric:robolectric:4.16.1'
     testImplementation 'androidx.test:core:1.7.0'
     testMobileImplementation composeBom
     testMobileImplementation 'androidx.compose.ui:ui-test-junit4'
