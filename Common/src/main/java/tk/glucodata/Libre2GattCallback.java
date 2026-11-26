@@ -460,8 +460,11 @@ static void showCharacter(String label, BluetoothGattCharacteristic characterist
             return;
          }
 
-		if (sensorgen == 2 && conphase == 1) {
-			writeBLELogin();
+		if (sensorgen == 2) {
+			if (conphase == 1)
+				writeBLELogin();
+			else
+				runPendingBleStep();
 		}
 	}
 private boolean connected=false;
@@ -648,8 +651,10 @@ private   boolean failedbefore=false;
 		passWrittenAt = SystemClock.elapsedRealtime();
 		libre2Diag("onCharacteristicWrite", "status=" + status);
 		{if(doLog) {Log.d(LOG_ID, LogPrivacy.sensorAlias(SerialNumber) + " onCharacteristicWrite, status:" + status + " UUID:" + bluetoothGattCharacteristic.getUuid().toString());};};
-		if (sensorgen == 2)
+		if (sensorgen == 2) {
+			runPendingBleStep();
 			return;
+		}
 		try {
 			var sensorbluetooth=SensorBluetooth.blueone;
 			if(sensorbluetooth==null) {
@@ -992,15 +997,30 @@ private int BLELoginposted=0;
 private Runnable		mBLELoginHandler=null;
 private long bleLoginGeneration;
 
-// A Handler retry may already be dispatched when removeCallbacks() runs.
+// A Handler retry may already be dispatched when removeCallbacks() runs. It runs only while it
+// is still the pending step: a step that succeeded meanwhile (runPendingBleStep) cleared it.
 private Runnable forCurrentGatt(Runnable task) {
     final BluetoothGatt gatt = mBluetoothGatt;
     final long generation = ++bleLoginGeneration;
-    return () -> {
+    final Runnable[] self = new Runnable[1];
+    self[0] = () -> {
         synchronized (this) {
-            if (generation == bleLoginGeneration && acceptGattCallback(gatt)) task.run();
+            if (generation == bleLoginGeneration && mBLELoginHandler == self[0]
+                    && acceptGattCallback(gatt)) task.run();
         }
     };
+    return self[0];
+}
+
+// Android runs one GATT operation at a time. The sensor can answer before Android confirms our
+// previous write; the next login step is then refused as busy and waits for its 100 ms retry,
+// long enough for the sensor to drop the link. Send it as soon as the confirmation arrives.
+private void runPendingBleStep() {
+    final Runnable pending = mBLELoginHandler;
+    if (pending == null || BLELoginposted == 0)
+        return;
+    Applic.app.getHandler().removeCallbacks(pending);
+    pending.run();
 }
 
 private void endBLEHandler() {
