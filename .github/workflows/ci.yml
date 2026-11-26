@@ -4,7 +4,7 @@
 #
 # Deliberately NOT here: lint (lintMobileDebug reports ~2358 issues, ~530 of them
 # errors, so gating on it needs a committed baseline first), instrumentation
-# tests (no androidTest source set exists), and all-ABI builds.
+# tests (no androidTest source set exists). The allnew branch compiles every supported ABI.
 #
 # The APKs this produces are a compile check, not a build. Common/src/main/jniLibs
 # is gitignored, so a clean checkout has none of the prebuilt vendor .so files --
@@ -15,9 +15,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, allnew]
   push:
-    branches: [main]
+    branches: [main, allnew]
   workflow_dispatch:
 
 permissions:
@@ -40,6 +40,8 @@ jobs:
           submodules: recursive
       - name: Test distribution security and request validation
         run: python3 -m unittest discover -s scripts/dist/tests -v
+      - name: Test sensor storage with 4 KB and 16 KB page sizes
+        run: python3 tools/test-native-page-size.py
       - name: Test Clone with only TURN routes and one rejected relay
         run: python3 tools/test-clone-turn.py --streams
       - name: Test TURN TLS verification, stream framing and cancellation
@@ -89,6 +91,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      - name: Install Android compile platform and build tools
+        env:
+          ANDROID_SDK_ONLY: '1'
+        run: scripts/dist/install-sdk.sh
+
       - name: Run both flavours' debug unit suites
         run: |
           ./gradlew \
@@ -120,8 +127,12 @@ jobs:
           if-no-files-found: ignore
 
   compile:
-    name: Compile phone + wear + release
+    name: Compile phone and Wear OS (${{ matrix.abi }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: ${{ fromJSON((github.ref == 'refs/heads/allnew' || github.base_ref == 'allnew') && '["arm64-v8a","armeabi-v7a","x86","x86_64"]' || '["arm64-v8a"]') }}
     timeout-minutes: 120
     steps:
       # libjuice is a submodule and CMakeLists.txt does add_subdirectory(libjuice),
@@ -135,24 +146,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      # The runner image carries neither NDK 29 nor CMake 4.1. Installing them
-      # here rather than leaving it to AGP's auto-download keeps a missing SDK
-      # package from surfacing as an unrelated CMake configure error. Versions
-      # are read from Common/build.gradle so this cannot drift from the build.
-      - name: Install NDK and CMake
+      - name: Install Android SDK, NDK and CMake
         run: scripts/dist/install-sdk.sh
 
       - uses: gradle/actions/setup-gradle@v6
 
-      # arm64-only: a PR needs to know the code compiles and links, not that it
-      # does so four times over. All-ABI coverage belongs in nightly -- do not
-      # read a green run here as proof that armeabi-v7a/x86/x86_64 still build.
-      #
-      # assembleMobileRelease and assembleWearRelease are here for R8: minifyEnabled
-      # and shrinkResources are on for release, and a missing keep rule only ever
-      # fails there. T5.1 (plan §2.2) moved phone-only classes into src/main for
-      # the first time, so they now go through R8 on the watch side too -- until
-      # this step existed, nobody built a minified watch APK at all.
       - name: Assemble phone debug, wear debug, phone release and wear release
         run: |
           ./gradlew \
@@ -160,7 +158,7 @@ jobs:
             :Common:assembleWearDebug \
             :Common:assembleMobileRelease \
             :Common:assembleWearRelease \
-            -PjugglucoAbi=arm64-v8a \
+            -PjugglucoAbi=${{ matrix.abi }} \
             --stacktrace
 
       # H1 of the Room track: the schema export is committed. KSP regenerates it

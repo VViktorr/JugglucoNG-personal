@@ -31,8 +31,12 @@ def digest(data):
 
 def version():
     source = (ROOT / 'Common/build.gradle').read_text()
-    name = re.search(r"^\s*appVersionName\s*=\s*'([^']+)'", source, re.M)[1]
-    code = int(re.search(r'^\s*appVersionCode\s*=\s*(\d+)', source, re.M)[1])
+    name_match = re.search(r"^\s*appVersionName\s*=\s*(?:providers\.gradleProperty\('personalVersion'\)\.orElse\()?\s*'([^']+)'", source, re.M)
+    code_match = re.search(r"^\s*appVersionCode\s*=\s*(?:providers\.gradleProperty\('personalVersionCode'\)[^\n]*\n\s*\.orElse\()?\s*(\d+)", source, re.M)
+    if not name_match or not code_match:
+        raise ValueError('Could not read the default app version from Common/build.gradle')
+    name = name_match[1]
+    code = int(code_match[1])
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?', name):
         raise ValueError('Invalid appVersionName')
     return name, code

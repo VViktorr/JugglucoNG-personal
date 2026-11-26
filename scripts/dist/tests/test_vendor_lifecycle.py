@@ -51,11 +51,13 @@ class Lifecycle(unittest.TestCase):
             for name, content in payload.items():
                 z.writestr(dist.input_entry(name), content)
 
-    def published_rebaseline(self, apk, verify=None, draft=False):
-        data = {'draft': draft, 'published_at': None if draft else '2026-10-04T00:00:00Z', 'assets': [{'browser_download_url': 'https://github.com/ctqvva/JugglucoNG/releases/download/1.2.3-Alpha/JugglucoNG-1.2.3-Alpha.apk'}]}
+    def published_rebaseline(self, apk, draft=False):
+        tag = 'main5-v1.2.3'
+        url = f'https://github.com/{vendor.REPO}/releases/download/{tag}/JugglucoNG-1.2.3-phone.apk'
+        data = {'draft': draft, 'published_at': '2026-10-04T00:00:00Z', 'assets': [{'browser_download_url': url}]}
         responses = [BytesIO(json.dumps(data).encode()), BytesIO(apk.read_bytes())]
-        with patch.object(vendor.urllib.request, 'urlopen', side_effect=responses), patch.object(dist, 'verify_apk', side_effect=verify):
-            vendor.rebaseline('1.2.3-Alpha')
+        with patch.object(vendor.urllib.request, 'urlopen', side_effect=responses):
+            vendor.rebaseline(tag)
 
     def test_unchanged_regeneration_is_byte_identical(self):
         before = self.inventory_path.read_bytes()
@@ -80,10 +82,7 @@ class Lifecycle(unittest.TestCase):
         vendor.audit_and_restore(self.old_apk)  # Pending-state CI is honest, no partial restore.
         new_apk = self.root / 'new.apk'
         self.make_apk(new_apk, changed)
-        def verify(apk, flavor, build):
-            with zipfile.ZipFile(apk) as z:
-                self.assertEqual(dist.unavailable_inputs(dist.inventory(), z), [])
-        self.published_rebaseline(new_apk, verify)
+        self.published_rebaseline(new_apk)
         self.assertNotIn('bootstrapRequired', dist.inventory())
         self.assertEqual(dist.inventory()['source']['sha256'], dist.digest(new_apk.read_bytes()))
         for name in changed:
@@ -124,14 +123,16 @@ class Lifecycle(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Bootstrap state disagrees'):
             vendor.audit_and_restore(self.old_apk)
 
-    def test_rebaseline_rejects_draft_wrong_tag_and_wrong_certificate(self):
+    def test_rebaseline_rejects_draft_wrong_tag_and_wrong_bytes(self):
         before = self.inventory_path.read_bytes()
         with self.assertRaisesRegex(ValueError, 'published release'):
             self.published_rebaseline(self.old_apk, draft=True)
-        with self.assertRaisesRegex(ValueError, 'current appVersionName'):
-            vendor.rebaseline('1.2.2-Alpha')
-        with self.assertRaisesRegex(ValueError, 'certificate mismatch'):
-            self.published_rebaseline(self.old_apk, verify=ValueError('certificate mismatch'))
+        with self.assertRaisesRegex(ValueError, 'main5-v<version>'):
+            vendor.rebaseline('1.2.3-Alpha')
+        mismatched_apk = self.root / 'mismatched.apk'
+        self.make_apk(mismatched_apk, {})
+        with self.assertRaisesRegex(ValueError, 'missing matching libraries'):
+            self.published_rebaseline(mismatched_apk)
         self.assertEqual(before, self.inventory_path.read_bytes())
 
     def test_empty_or_generated_input_regeneration_is_not_allowed(self):
