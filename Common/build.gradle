@@ -38,7 +38,7 @@ ext {
     appVersionName = providers.gradleProperty('personalVersion').orElse('1.4.0').get()
 
     ndkver       = '30.0.16248370'
-    CMAKEVERSION = '4.1.2'
+    CMAKEVERSION = '4.5.1'
     COMPILE_SDK = 37
     COMPILE_SDK_MINOR = 2
     BUILD_TOOLS = '37.0.0'

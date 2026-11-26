@@ -8,15 +8,15 @@ Punkt wyjścia to `main5` w commicie `277c5303eec6a0f1610a6ed63cf2c741cab2ad26`.
 | --- | --- | --- |
 | Gradle Wrapper | 9.8.0 | 9.9.2, przypięta suma SHA-256 dystrybucji |
 | Android Gradle Plugin | 9.3.2 | 9.5.1 |
-| Kotlin i wtyczka Compose Compiler | 2.4.10 zadeklarowane dla Compose Compiler | 2.4.21, jawny wybór Kotlin dla wbudowanego trybu AGP |
+| Kotlin i wtyczka Compose Compiler | 2.4.10 zadeklarowane dla Compose Compiler | 2.5.0-RC2, jawny wybór Kotlin dla wbudowanego trybu AGP |
 | KSP | 2.3.11 | 2.3.14 |
-| JDK w CI | 21 | 21 |
+| JDK w CI | 21 | 27 (Temurin) |
 | Poziom języka Java i bytecode Java/Kotlin | 17 | 17 |
 | Android compile SDK | 37.1 | 37.2 |
 | Android target SDK telefonu i zegarka | 36 / 35 | 36 / 35 |
 | Android Build Tools | 37.0.0 | 37.0.0 |
 | Android NDK | 29.0.14206865 | 30.0.16248370, Clang 21 |
-| CMake z SDK Managera | 4.1.2 | 4.1.2 |
+| CMake | 4.1.2 z SDK Managera | 4.5.1 z wydania Kitware |
 | Standard C++ Android | Gradle deklarował GNU C++26, CMake nadpisywał go na GNU C++23 | GNU C++26 ustawiany w CMake |
 | Compose BOM | 2026.10.01 z kanału alpha | 2026.11.01 stable |
 | Material 3 | 1.5.0 przypięte ręcznie | 1.5.0 z BOM |
@@ -51,6 +51,8 @@ Weryfikacja wersji korzystała z metadanych Google Maven, Maven Central, katalog
 ## Budowanie i dystrybucja
 
 `scripts/dist/install-sdk.sh` pobiera compile SDK i Build Tools z tych samych ustawień co projekt, niezależnie od target SDK. CI uruchamia testy JVM telefonu i Wear OS oraz kompilacje debug i release na ARM64, ARMv7, x86 i x86_64. Dystrybucyjne APK nadal mają domyślnie dwa ABI ARM. Natywne pliki dostawców pochodzą z przypiętego `main5-v1.4.0` w osobistym repozytorium. Źródłowy submoduł libjuice 1.6.2 pozostaje na commicie `4625a1b` w forku `ctqvva/libjuice`. Głowa forka nie zawiera tego commita, a zmiana wskaźnika usunęłaby poprawkę obsługi tablicy poll. Kod LibAscon 1.1.1 i biblioteki kryptograficzne dobierane przez istniejący loader nie zostały zmienione. Workflow osobistych APK wyszukuje `apksigner` w faktycznie zainstalowanych stabilnych Build Tools. Zachowano podpisywanie, numerację telefonu i zegarka, repozytorium aktualizacji i warunek publikacji dla `main5`.
+
+Lokalne budowanie z CMake 4.5.1 wymaga wersji Kitware i Ninja w `PATH`. Android Studio może też dostać ścieżkę katalogu instalacji CMake przez `cmake.dir` w `local.properties`. Installer dla GitHub Actions pobiera archiwum Kitware dla Linux x86-64 i sprawdza jego SHA-256.
 
 ## Weryfikacja i braki
 

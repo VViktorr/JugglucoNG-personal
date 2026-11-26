@@ -2116,10 +2116,10 @@ class ICanHealthBleManager(
         val pending = correctCodePendingChunk
         // Publish the outcome on this exact dispatch before releasing the GATT queue.
         // The F2 indication may reach the handler before this callback does.
-        if (write?.charUuid == characteristic.uuid) write.completionStatus = status
+        if (write != null && write.charUuid == characteristic.uuid) write.completionStatus = status
         finishGattOp()
         if (status != BluetoothGatt.GATT_SUCCESS && pending != null &&
-            write?.charUuid == ICanHealthConstants.CGM_SPECIFIC_OPS && write.data.contentEquals(pending)) {
+            write != null && write.charUuid == ICanHealthConstants.CGM_SPECIFIC_OPS && write.data.contentEquals(pending)) {
             handler.post { if (gatt === mBluetoothGatt && correctCodePendingChunk === pending) resetCorrectCodeState() }
             return
         }
