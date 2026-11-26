@@ -206,6 +206,7 @@ java += r'''
 '''
 java += libre_methods
 java += r'''
+    void closeManagedGen2(){}
     static Libre2GattCallback fresh(){
         Applic.scheduler=new Scheduler();CloneSensorRegistry.clone=false;SensorOwnershipRuntime.blocked=false;
         Natives.resets=0;WearSensorClaim.releases=0;

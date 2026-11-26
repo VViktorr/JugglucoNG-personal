@@ -1553,15 +1553,23 @@ extern "C" JNIEXPORT void JNICALL   fromjava(enabledStreaming)(JNIEnv *envin, jc
         sendstreaming(hist);
         }
     }
-extern "C" JNIEXPORT void JNICALL   fromjava(USenabledStreaming)(JNIEnv *envin, jclass cl,jbyteArray sensorident,jbyteArray jauth,jbyteArray address) {
+// Saves the Gen2 BLE address and provisioning record. The family, and with it the serial, comes
+// from the patch info as in the scan, so the record lands on the scanned sensor.
+extern "C" JNIEXPORT jboolean JNICALL   fromjava(USenabledStreaming)(JNIEnv *envin, jclass cl,jbyteArray sensorident,jbyteArray patchinfo,jbyteArray jauth,jbyteArray address) {
     const char uslog[]="USenabledStreaming";
     setthreadname(uslog );
     LOGGERN(uslog,sizeof(uslog)-1);
-    const int fam=3;
+    if(!sensorident||envin->GetArrayLength(sensorident)!=8||!patchinfo||envin->GetArrayLength(patchinfo)!=6)
+        return JNI_FALSE;
+    const int fam=abbottcall(getProductFamily)(envin, cl, parsertype, patchinfo, getjtoken(envin));
+    if(!fam)
+        return JNI_FALSE;
     const data_t *uid=fromjbyteArray(envin,sensorident);
     destruct _dest([uid] {data_t::deleteex(uid);});
     string serial=getserial(fam,reinterpret_cast<const unsigned char *>(uid->data()));
     if(SensorGlucoseData *hist=sensors->getSensorData(serial.data())) {
+        if(!hist->hasbluetooth())
+            hist->getinfo()->bluestart=0;
         hist->setbluetoothOn( 1); 
         setDeviceAddressB(envin,hist,address);
         hist->setsensorgen();
@@ -1574,7 +1582,10 @@ extern "C" JNIEXPORT void JNICALL   fromjava(USenabledStreaming)(JNIEnv *envin, 
             }
         setbluetoothon=false;
         sendstreaming(hist);
+        return JNI_TRUE;
         }
+    LOGGER("USenabledStreaming: no sensor %s\n",serial.data());
+    return JNI_FALSE;
     }
 scanstate * testinitsensor( scandata *data,data_t *uid,scanstate *newstateptr) {
     scanstate inp,newstate(4);

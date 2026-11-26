@@ -718,7 +718,7 @@ public class Natives {
 
         public static native int getLibreVersion(long dataptr);
 
-        public static native void USenabledStreaming(byte[] sensorident, byte[] jauth, byte[] address);
+        public static native boolean USenabledStreaming(byte[] sensorident, byte[] patchinfo, byte[] jauth, byte[] address);
 
         public static native void closedynlib();
 
