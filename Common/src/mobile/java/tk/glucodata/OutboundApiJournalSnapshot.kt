@@ -85,6 +85,7 @@ object OutboundApiJournalSnapshot : JournalSnapshotBridge {
 
     private fun scheduleJournalChanged(wakeCloneSender: Boolean) {
         broadcastIobCache = null
+        JournalSnapshotAccess.noteJournalChanged()
         synchronized(journalChangedLock) {
             pendingCloneWake = pendingCloneWake || wakeCloneSender
             journalRefreshRequested = true

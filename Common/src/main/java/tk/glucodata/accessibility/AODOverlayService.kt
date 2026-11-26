@@ -244,6 +244,9 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         serviceScope.launch {
             UiRefreshBus.revision.collect { requestEventRefresh() }
         }
+        serviceScope.launch {
+            tk.glucodata.JournalSnapshotAccess.forecastJournalReady.collect { requestEventRefresh() }
+        }
         
         isScreenOn = resolveScreenOn()
         isLocked = resolveDeviceLocked()
