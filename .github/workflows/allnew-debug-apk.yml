@@ -1,0 +1,47 @@
+name: allnew debug APKs
+on:
+  push:
+    branches: [allnew]
+    paths:
+      - .github/workflows/allnew-debug-apk.yml
+permissions:
+  contents: read
+jobs:
+  apk:
+    name: Debug APK (${{ matrix.variant }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: mobile
+            task: assembleMobileDebug
+          - variant: wear
+            task: assembleWearDebug
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
+        with:
+          distribution: temurin
+          java-version: '27'
+      - run: scripts/dist/install-sdk.sh
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
+      - run: scripts/restore-build-inputs.sh
+      - run: ./gradlew :Common:${{ matrix.task }} -PjugglucoAbi=arm64-v8a,armeabi-v7a --max-workers=1 --stacktrace
+      - name: Verify debug APK
+        shell: bash
+        run: |
+          shopt -s nullglob
+          apks=(Common/build/outputs/apk/${{ matrix.variant }}/debug/*.apk)
+          test "${#apks[@]}" -eq 1
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify "${apks[0]}"
+          "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging "${apks[0]}" | grep "^package: name='tk.glucodata.ng.debug'"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: JugglucoNG-allnew-${{ matrix.variant }}-debug
+          path: Common/build/outputs/apk/${{ matrix.variant }}/debug/*.apk
+          if-no-files-found: error
