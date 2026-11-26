@@ -14,6 +14,7 @@ import tk.glucodata.BleErrorHistory
 import tk.glucodata.Libre2GattCallback
 import tk.glucodata.MultiSensorSelection
 import tk.glucodata.NativeSensorTermination
+import tk.glucodata.persistedBleErrorStillRelevant
 import tk.glucodata.SensorBluetooth
 import tk.glucodata.SensorIdentity
 import tk.glucodata.SensorHandoffUiState
@@ -661,7 +662,8 @@ class SensorViewModel : ViewModel() {
                         val liveError = when {
                             isGattFailure ||
                                 (bleStatusOutdated && bleStatus.isNotEmpty() &&
-                                    !bleStatus.startsWith("Status=")) -> BleErrorEvent(
+                                    !bleStatus.startsWith("Status=") &&
+                                    bleStatus != "Loss of signal") -> BleErrorEvent(
                                 sensorId = sensorSerial,
                                 status = bleStatus,
                                 atMs = SensorBluetooth.connectionStatusChangedAt(gatt),
@@ -670,10 +672,15 @@ class SensorViewModel : ViewModel() {
                         }
                         // A newly constructed callback has no memory of the previous process.
                         // Once readings are flowing again, restore its latest retained failure so
-                        // the one-hour card window survives an app or APK restart.
+                        // the one-hour card window survives an app or APK restart. A loss warning
+                        // older than the current reading is not restored: it would look current.
+                        val lastReadingMs = SensorBluetooth.lastReadingTime(gatt)
                         val displayedError = liveError
                             ?: persistedBleErrors.firstOrNull {
-                                SensorIdentity.matches(it.sensorId, sensorSerial)
+                                SensorIdentity.matches(it.sensorId, sensorSerial) &&
+                                    persistedBleErrorStillRelevant(
+                                        it.status, it.atMs, lastReadingMs, isActivelyReceiving,
+                                    )
                             }.takeIf { isActivelyReceiving }
                         val sensorIndex = Natives.getSensorIndexFromDataPtr(gatt.dataptr)
                         val currentViewMode = nativeViewMode
