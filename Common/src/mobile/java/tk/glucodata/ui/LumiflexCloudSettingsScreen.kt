@@ -1,21 +1,10 @@
 package tk.glucodata.ui
 
-import tk.glucodata.ui.util.appButtonShapes
-
-import tk.glucodata.ui.util.appIconButtonShapes
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,6 +24,7 @@ import tk.glucodata.share.lumiflex.LumiflexCloudClient
 import tk.glucodata.share.lumiflex.LumiflexCloudSettings
 import tk.glucodata.ui.components.*
 import tk.glucodata.ui.util.ConnectedButtonGroup
+import tk.glucodata.ui.symbols.Symbols
 
 @Composable
 fun LumiflexCloudSettingsScreen(navController: NavController) {
@@ -82,37 +72,37 @@ internal fun LumiflexCloudSettingsContent(
             title = { Text(stringResource(R.string.lumiflex_cloud_title)) },
             text = { Text(stringResource(R.string.lumiflex_session_note)) },
             confirmButton = {
-                TextButton(onClick = { showHelp = false }, shapes = appButtonShapes()) {
+                TextButton(onClick = { showHelp = false }, shapes = ButtonDefaults.shapes()) {
                     Text(stringResource(android.R.string.ok))
                 }
             })
     }
-    Scaffold(contentWindowInsets = WindowInsets(0.dp), topBar = {
+    AppScaffold(contentWindowInsets = WindowInsets(0.dp), topBar = {
         AppTopBar(stringResource(R.string.lumiflex_cloud_title), onBack, actions = {
             IconButtonTooltip(stringResource(R.string.lumiflex_help)) {
-                IconButton(onClick = { showHelp = true }, shapes = appIconButtonShapes()) {
-                    Icon(Icons.Default.Info, stringResource(R.string.lumiflex_help))
+                IconButton(onClick = { showHelp = true }, shapes = IconButtonDefaults.shapes()) {
+                    Icon(Symbols.InfoFilled, stringResource(R.string.lumiflex_help))
                 }
             }
         })
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 16.dp, bottom = 32.dp),
+        Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState().scrollsUnderTopBar()).padding(horizontal = 16.dp).padding(top = 16.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)) {
             MasterSwitchCard(
                 title = stringResource(R.string.lumiflex_cloud_title),
                 subtitle = stringResource(if (state.followMode) R.string.lumiflex_follow_subtitle else R.string.lumiflex_cloud_subtitle),
                 checked = state.enabled, onCheckedChange = onEnabled,
-                icon = if (state.followMode) Icons.Default.CloudDownload else Icons.Default.CloudUpload,
+                icon = if (state.followMode) Symbols.CloudDownloadFilled else Symbols.CloudUploadFilled,
                 enabled = signedIn && !setup && !state.busy,
             )
             if (signedIn) {
                 AdaptiveTrailingRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp), trailingContent = {
-                    OutlinedButton(onClick = onSignOut, shapes = appButtonShapes()) {
+                    OutlinedButton(onClick = onSignOut, shapes = ButtonDefaults.shapes()) {
                         Text(stringResource(R.string.lumiflex_sign_out))
                     }
                 }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconTile(icon = Icons.Default.AccountCircle, tint = MaterialTheme.colorScheme.primary)
+                        IconTile(icon = Symbols.AccountCircleFilled, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(lumiflexAccountLabel(state.session.account), style = MaterialTheme.typography.titleMedium)
@@ -141,7 +131,7 @@ internal fun LumiflexCloudSettingsContent(
                         LumiflexPhoneField(state.phone, onPhone, !state.busy)
                         Button(onClick = onRequestCode,
                             enabled = !state.busy && state.resendSeconds == 0 && LumiflexCloudClient.registrationPhone(state.phone) != null,
-                            shapes = appButtonShapes(), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                            shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                             if (state.sendingCode) {
                                 CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                                 Spacer(Modifier.width(8.dp))
@@ -156,11 +146,11 @@ internal fun LumiflexCloudSettingsContent(
                                 modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !state.busy,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                             Button(onClick = onVerifyCode, enabled = !state.busy && state.code.isNotBlank(),
-                                shapes = appButtonShapes(), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                                shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                                 Text(stringResource(if (state.busy) R.string.lumiflex_working else R.string.lumiflex_verify_phone))
                             }
                         }
-                        TextButton(onClick = { onRegistration(false) }, enabled = !state.busy, shapes = appButtonShapes(),
+                        TextButton(onClick = { onRegistration(false) }, enabled = !state.busy, shapes = ButtonDefaults.shapes(),
                             modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.lumiflex_back_to_sign_in)) }
                     }
                 }
@@ -189,7 +179,7 @@ internal fun LumiflexCloudSettingsContent(
                             Button(onClick = if (setup) onSetPassword else onSignIn,
                                 enabled = !state.busy && state.password.isNotBlank() &&
                                     (setup || if (emailLogin) state.account.isNotBlank() else LumiflexCloudClient.registrationPhone(state.account) != null),
-                                shapes = appButtonShapes(), modifier = Modifier.heightIn(min = 56.dp)) {
+                                shapes = ButtonDefaults.shapes(), modifier = Modifier.heightIn(min = 56.dp)) {
                                 if (state.busy) {
                                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                                     Spacer(Modifier.width(8.dp))
@@ -197,7 +187,7 @@ internal fun LumiflexCloudSettingsContent(
                                 Text(stringResource(if (state.busy) R.string.lumiflex_working else if (setup) R.string.lumiflex_set_password else R.string.lumiflex_sign_in))
                             }
                             if (!signedIn) OutlinedButton(onClick = { onRegistration(true) }, enabled = !state.busy,
-                                shapes = appButtonShapes(), modifier = Modifier.heightIn(min = 56.dp)) {
+                                shapes = ButtonDefaults.shapes(), modifier = Modifier.heightIn(min = 56.dp)) {
                                 Text(stringResource(R.string.lumiflex_create_account))
                             }
                         }
@@ -250,7 +240,7 @@ internal fun LumiflexCloudSettingsContent(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
                     Column(Modifier.padding(16.dp)) {
                         Row {
-                            IconTile(icon = Icons.Default.Sync, tint = MaterialTheme.colorScheme.primary)
+                            IconTile(icon = Symbols.SyncFilled, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(syncTitle, style = MaterialTheme.typography.titleMediumEmphasized)
@@ -270,7 +260,7 @@ internal fun LumiflexCloudSettingsContent(
                         Spacer(Modifier.height(16.dp))
                         AdaptiveButtonRow(Modifier.fillMaxWidth()) {
                             FilledTonalButton(onClick = onSync, enabled = state.enabled && usable && !working,
-                                shapes = appButtonShapes(), modifier = Modifier.heightIn(min = 56.dp)) {
+                                shapes = ButtonDefaults.shapes(), modifier = Modifier.heightIn(min = 56.dp)) {
                                 if (working) {
                                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                                     Spacer(Modifier.width(8.dp))
@@ -279,7 +269,7 @@ internal fun LumiflexCloudSettingsContent(
                             }
                             if (!state.followMode && state.sync.boundSensors.isEmpty()) {
                                 OutlinedButton(onClick = onBind, enabled = state.enabled && usable && !working,
-                                    shapes = appButtonShapes(), modifier = Modifier.heightIn(min = 56.dp)) {
+                                    shapes = ButtonDefaults.shapes(), modifier = Modifier.heightIn(min = 56.dp)) {
                                     Text(stringResource(R.string.lumiflex_bind_sensor))
                                 }
                             }
@@ -287,7 +277,7 @@ internal fun LumiflexCloudSettingsContent(
                     }
                 }
                 if (!state.followMode) SettingsItem(title = stringResource(R.string.lumiflex_manage_followers),
-                    icon = Icons.Default.Group, onClick = onFollowers)
+                    icon = Symbols.GroupFilled, onClick = onFollowers)
             }
         }
     }

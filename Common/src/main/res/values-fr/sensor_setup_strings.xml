@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Capteur introuvable à proximité</string>
+    <string name="status_auth_failed">Échec de l\'authentification</string>
+    <string name="status_sensor_not_responding">Le capteur ne répond pas</string>
+    <string name="ottai_global_sign_in_again">Reconnectez-vous à Ottai Global pour configurer un capteur ou vérifier son micrologiciel. Vos capteurs enregistrés et votre historique seront conservés.</string>
+    <string name="ottai_ota_check_failed">Échec de la vérification du micrologiciel.</string>
+    <string name="ottai_ota_disconnect_first">Déconnectez le capteur pour vérifier son micrologiciel.</string>
+</resources>

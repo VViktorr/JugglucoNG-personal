@@ -2,8 +2,6 @@
 
 package tk.glucodata.ui
 
-import tk.glucodata.ui.util.appButtonShapes
-
 import tk.glucodata.ui.components.AdaptiveButtonRow
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.Arrangement
@@ -20,8 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,7 +26,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,9 +50,12 @@ import tk.glucodata.drivers.mq.MQBootstrapFailure
 import tk.glucodata.drivers.mq.MQCloudClient
 import tk.glucodata.drivers.mq.MQIncomingFriendRequest
 import tk.glucodata.drivers.mq.MQRegistry
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
+import tk.glucodata.ui.symbols.Symbols
 
 @Composable
 fun MQFollowerSettingsScreen(navController: NavController) {
@@ -242,7 +240,7 @@ fun MQFollowerSettingsContent(onBack: () -> Unit) {
         if (signedIn) refreshIncomingRequests()
     }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -255,7 +253,7 @@ fun MQFollowerSettingsContent(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -272,7 +270,7 @@ fun MQFollowerSettingsContent(onBack: () -> Unit) {
                         runAction(followerLabel) { setFollowerEnabled(enabled) }
                     }
                 },
-                icon = Icons.Default.Cloud,
+                icon = Symbols.CloudFilled,
             )
 
             OutlinedTextField(
@@ -310,7 +308,7 @@ fun MQFollowerSettingsContent(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = signedIn && !isBusy,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(refreshLabel)
@@ -482,13 +480,13 @@ private fun IncomingRequestCard(
                 OutlinedButton(
                     onClick = onReject,
                     enabled = enabled,
-                    shapes = appButtonShapes(),
+                    shapes = ButtonDefaults.shapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) { Text(stringResource(R.string.mq_friend_request_reject_action)) }
                 FilledTonalButton(
                     onClick = onApprove,
                     enabled = enabled,
-                    shapes = appButtonShapes(),
+                    shapes = ButtonDefaults.shapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) { Text(stringResource(R.string.mq_friend_request_approve_action)) }
             }

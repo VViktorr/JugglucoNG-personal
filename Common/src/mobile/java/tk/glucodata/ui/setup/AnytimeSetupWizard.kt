@@ -10,8 +10,8 @@
 
 package tk.glucodata.ui.setup
 
-import tk.glucodata.ui.util.appButtonShapes
-
+import tk.glucodata.ui.components.SensorWizardHero
+import tk.glucodata.ui.components.rememberSensorHeroCompact
 import tk.glucodata.ui.components.AdaptiveButtonRow
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ButtonDefaults
@@ -20,6 +20,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,12 +35,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -51,7 +49,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,14 +71,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.Log
 import tk.glucodata.R
+import tk.glucodata.ui.components.SensorType
 import tk.glucodata.drivers.anytime.AnytimeAlgorithm
 import tk.glucodata.drivers.anytime.AnytimeConstants
 import tk.glucodata.drivers.anytime.AnytimeRegistry
 import tk.glucodata.ui.util.BleDeviceScanner
 import tk.glucodata.ui.util.rememberBleScanner
+import tk.glucodata.ui.symbols.Symbols
 
 private enum class AnytimeSetupStep { SCAN, CONNECTING, SUCCESS }
 
@@ -143,12 +144,17 @@ fun AnytimeSetupWizard(
         }
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.anytime_setup_title),
                 onNavigateBack = onDismiss,
                 navigationContentDescription = stringResource(R.string.cancel),
+                below = {
+                    AnimatedVisibility(visible = currentStep == AnytimeSetupStep.SCAN) {
+                        LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                },
             )
         }
     ) { padding ->
@@ -226,6 +232,7 @@ fun AnytimeSetupWizard(
                 ) {
                     SensorSetupConnectingScreen(
                         ui = ui,
+                        sensor = SensorType.ANYTIME,
                         sensorLabel = selectedLabel.ifBlank { null }
                     )
                 }
@@ -235,6 +242,7 @@ fun AnytimeSetupWizard(
                 ) {
                     SensorSetupSuccessScreen(
                         ui = ui,
+                        sensor = SensorType.ANYTIME,
                         sensorLabel = selectedLabel.ifBlank { null }
                     )
                 }
@@ -360,118 +368,122 @@ private fun AnytimeScanStep(
         onDispose { scanner.stopScan() }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = ui.horizontalPadding,
-                end = ui.horizontalPadding,
-                top = ui.spacerMedium,
-                bottom = ui.spacerLarge,
-            ),
-            verticalArrangement = Arrangement.spacedBy(ui.spacerMedium),
-        ) {
-            item {
-                tk.glucodata.ui.CgmReadinessSetupBanner(onOpenReadiness = onNavigateToReadiness)
+    LazyColumn(
+        state = rememberLazyListState().scrollsUnderTopBar(),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = ui.horizontalPadding,
+            end = ui.horizontalPadding,
+            top = ui.spacerMedium,
+            bottom = ui.spacerLarge,
+        ),
+        verticalArrangement = Arrangement.spacedBy(ui.spacerMedium),
+    ) {
+        item {
+            tk.glucodata.ui.CgmReadinessSetupBanner(onOpenReadiness = onNavigateToReadiness)
+        }
+        item {
+            SensorWizardHero(
+                SensorType.ANYTIME,
+                modifier = Modifier.padding(horizontal = ui.horizontalPadding),
+                compact = rememberSensorHeroCompact(sharesScreen = true),
+            )
+            Spacer(Modifier.height(ui.spacerSmall))
+            ScanFilterHeader(
+                title = stringResource(R.string.anytime_searching_sensors),
+                showAllDevices = showAllDevices,
+                onToggleFilter = { showAllDevices = !showAllDevices },
+            )
+        }
+        items(devices.filter { showAllDevices || it.isLikelyAnytime }) { device ->
+            val title = device.displayName.ifBlank { stringResource(R.string.unknown) }
+            val supporting = when {
+                device.familyEntry.family != AnytimeConstants.Family.UNKNOWN ->
+                    "${device.familyEntry.family.displayName} · ${device.address}"
+                device.isLikelyAnytime ->
+                    stringResource(R.string.anytime_detected_label, device.address)
+                else -> stringResource(R.string.anytime_selectable_unrecognized, device.address)
             }
-            item {
-                ScanFilterHeader(
-                    title = stringResource(R.string.anytime_searching_sensors),
-                    showAllDevices = showAllDevices,
-                    onToggleFilter = { showAllDevices = !showAllDevices },
+            ListItem(
+                headlineContent = { Text(title) },
+                supportingContent = { Text(supporting) },
+                leadingContent = { Icon(Symbols.BluetoothFilled, null) },
+                modifier = Modifier.clickable { onDeviceSelected(device) }
+            )
+            HorizontalDivider()
+        }
+        item {
+            AnytimeCt5CredentialsCard(onImported = onCredentialsImported)
+        }
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                 )
-            }
-            items(devices.filter { showAllDevices || it.isLikelyAnytime }) { device ->
-                val title = device.displayName.ifBlank { stringResource(R.string.unknown) }
-                val supporting = when {
-                    device.familyEntry.family != AnytimeConstants.Family.UNKNOWN ->
-                        "${device.familyEntry.family.displayName} · ${device.address}"
-                    device.isLikelyAnytime ->
-                        stringResource(R.string.anytime_detected_label, device.address)
-                    else -> stringResource(R.string.anytime_selectable_unrecognized, device.address)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Spacer(Modifier.height(12.dp))
+                    InlineQrScannerCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp),
+                        onScanResult = { raw ->
+                            onQrCodeChanged(raw)
+                            true
+                        },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (qrCodeContent.isNotBlank()) {
+                        val qrStatus = qrValidation.error ?: qrValidation.summary
+                        Text(
+                            text = "${stringResource(R.string.scan_sensor_qr)}: $qrCodeContent",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        if (!qrStatus.isNullOrBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = qrStatus,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (qrValidation.error == null) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                },
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    OutlinedButton(
+                        onClick = onShowManualQrEntry,
+                        modifier = Modifier.fillMaxWidth(),
+                        shapes = ButtonDefaults.shapes(),
+                        contentPadding = ButtonDefaults.ContentPadding
+                    ) {
+                        Text(stringResource(R.string.enter_code_manually))
+                    }
                 }
-                ListItem(
-                    headlineContent = { Text(title) },
-                    supportingContent = { Text(supporting) },
-                    leadingContent = { Icon(Icons.Default.Bluetooth, null) },
-                    modifier = Modifier.clickable { onDeviceSelected(device) }
-                )
-                HorizontalDivider()
             }
-            item {
-                AnytimeCt5CredentialsCard(onImported = onCredentialsImported)
-            }
+        }
+
+        if (!scanPermissionGranted || !bluetoothEnabled || scanError != null) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Spacer(Modifier.height(12.dp))
-                        InlineQrScannerCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(220.dp),
-                            onScanResult = { raw ->
-                                onQrCodeChanged(raw)
-                                true
-                            },
+                        Text(
+                            text = stringResource(R.string.anytime_no_sensors_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
                         )
-                        Spacer(Modifier.height(8.dp))
-                        if (qrCodeContent.isNotBlank()) {
-                            val qrStatus = qrValidation.error ?: qrValidation.summary
-                            Text(
-                                text = "${stringResource(R.string.scan_sensor_qr)}: $qrCodeContent",
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            if (!qrStatus.isNullOrBlank()) {
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = qrStatus,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (qrValidation.error == null) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.error
-                                    },
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            }
-                            Spacer(Modifier.height(8.dp))
-                        }
-                        OutlinedButton(
-                            onClick = onShowManualQrEntry,
-                            modifier = Modifier.fillMaxWidth(),
-                            shapes = appButtonShapes(),
-                            contentPadding = ButtonDefaults.ContentPadding
-                        ) {
-                            Text(stringResource(R.string.enter_code_manually))
-                        }
-                    }
-                }
-            }
-
-            if (!scanPermissionGranted || !bluetoothEnabled || scanError != null) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = stringResource(R.string.anytime_no_sensors_hint),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                            )
-                        }
                     }
                 }
             }
@@ -571,10 +583,10 @@ private fun AnytimeCt5CredentialsCard(
                             exportLauncher.launch("anytime_ct5_${exportRecord?.sensorId.orEmpty()}.json")
                         },
                         modifier = Modifier.heightIn(min = 48.dp),
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
-                        Icon(Icons.Default.FileUpload, contentDescription = null)
+                        Icon(Symbols.FileUploadFilled, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.export))
                     }
@@ -583,10 +595,10 @@ private fun AnytimeCt5CredentialsCard(
                             importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                         },
                         modifier = Modifier.heightIn(min = 48.dp),
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
-                        Icon(Icons.Default.FileDownload, contentDescription = null)
+                        Icon(Symbols.FileDownloadFilled, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.ottai_credentials_replace))
                     }
@@ -597,10 +609,10 @@ private fun AnytimeCt5CredentialsCard(
                         importLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
                     },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shapes = appButtonShapes(),
+                    shapes = ButtonDefaults.shapes(),
                     contentPadding = ButtonDefaults.ContentPadding,
                 ) {
-                    Icon(Icons.Default.FileDownload, contentDescription = null)
+                    Icon(Symbols.FileDownloadFilled, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.ottai_credentials_import))
                 }
@@ -637,12 +649,12 @@ private fun AnytimeManualQrEntryDialog(
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(normalizeAnytimeQrCode(text)) }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
+            Button(onClick = { onConfirm(normalizeAnytimeQrCode(text)) }, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                 Text(stringResource(R.string.ok))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

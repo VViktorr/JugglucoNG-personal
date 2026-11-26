@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">A szenzor nem található a közelben</string>
+    <string name="status_auth_failed">Sikertelen hitelesítés</string>
+    <string name="status_sensor_not_responding">A szenzor nem válaszol</string>
+    <string name="ottai_global_sign_in_again">A szenzor beállításához vagy a firmware ellenőrzéséhez jelentkezzen be újra az Ottai Global-fiókjába. A mentett szenzorok és az előzmények megmaradnak.</string>
+    <string name="ottai_ota_check_failed">A firmware ellenőrzése sikertelen.</string>
+    <string name="ottai_ota_disconnect_first">A firmware ellenőrzéséhez válassza le a szenzort.</string>
+</resources>

@@ -185,6 +185,9 @@ public class SensorBluetooth {
             if (deviceName == null || deviceName.trim().isEmpty()) {
                 deviceName = device.getName();
             }
+            if (deviceName != null && deviceName.trim().isEmpty()) {
+                deviceName = null;
+            }
             {
                 if (doLog) {
                     Log.i(LOG_ID, "deviceName=" + deviceName);
@@ -199,6 +202,10 @@ public class SensorBluetooth {
                         Log.i(LOG_ID, "LIBRE2_SCAN serial=" + cb.SerialNumber + " address=" + address
                                 + " name=" + deviceName + " accepted=true reason=remembered-address");
                     }
+                    if (deviceName != null && (cb.mDeviceName == null || cb.mDeviceName.trim().isEmpty())) {
+                        cb.mDeviceName = deviceName;
+                        SensorDisplayName.pushIfChanged();
+                    }
                     return cb;
                 }
             }
@@ -206,7 +213,11 @@ public class SensorBluetooth {
             if (deviceName != null) {
                 for (var cb : gattcallbacks) {
                     if (cb.matchDeviceName(deviceName, address)) {
+                        boolean nameChanged = !deviceName.equals(cb.mDeviceName);
                         cb.mDeviceName = deviceName;
+                        if (nameChanged) {
+                            SensorDisplayName.pushIfChanged();
+                        }
                         return cb;
                     }
                     {
@@ -288,22 +299,8 @@ public class SensorBluetooth {
                     ;
                 }
 
-                boolean ret = true;
                 cb.setDevice(device);
-                for (SuperGattCallback one : gattcallbacks) {
-                    if (one.mActiveBluetoothDevice == null) {
-                        {
-                            if (doLog) {
-                                Log.i(LOG_ID, one.SerialNumber + " not found");
-                            }
-                            ;
-                        }
-                        ;
-
-                        ret = false;
-                        break;
-                    }
-                }
+                final boolean ret = everyScanTargetFound(gattcallbacks);
                 if (ret)
                     SensorBluetooth.this.stopScan(false);
                 if (newdev) {
@@ -464,6 +461,7 @@ public class SensorBluetooth {
                         Log.d(LOG_ID, "SCAN: preparing filters for " + gattcallbacks.size() + " devices");
                     }
                     for (var cb : gattcallbacks) {
+                        if (!cb.usesBluetoothDiscovery()) continue;
                         final var service = cb.getService();
                         if (service == null) {
                             if (doLog) {
@@ -586,6 +584,33 @@ public class SensorBluetooth {
         SensorBluetooth.this.stopScan(true);
     };
 
+    /** Whether the roster holds anything the shared scan can find. */
+    static boolean hasScanTargets(Iterable<SuperGattCallback> callbacks) {
+        for (SuperGattCallback cb : callbacks) {
+            if (cb.usesBluetoothDiscovery())
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Whether every callback the shared scan looks for has its device. Network followers share
+     * the roster but never get one; counting them kept every scan running to its timeout, and a
+     * timeout schedules the next scan, so a mixed roster scanned forever.
+     */
+    static boolean everyScanTargetFound(Iterable<SuperGattCallback> callbacks) {
+        for (SuperGattCallback one : callbacks) {
+            if (one.usesBluetoothDiscovery() && one.mActiveBluetoothDevice == null) {
+                if (doLog) {
+                    Log.i(LOG_ID, one.SerialNumber + " not found");
+                }
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     static boolean bluetoothIsEnabled() {
         if (mBluetoothAdapter != null) {
             return mBluetoothAdapter.isEnabled();
@@ -636,7 +661,7 @@ public class SensorBluetooth {
                     Log.i(LOG_ID, "scanRunnable ENTRY");
                 }
                 scantime = System.currentTimeMillis();
-                if (bluetoothIsEnabled() && gattcallbacks.size() != 0) {
+                if (bluetoothIsEnabled() && hasScanTargets(gattcallbacks)) {
                     if (!scanner.init()) {
                         Log.w(LOG_ID, "Scanner init failed, retrying in 2s...");
                         if (scanOnUI) {

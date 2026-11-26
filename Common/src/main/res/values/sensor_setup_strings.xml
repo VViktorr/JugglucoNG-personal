@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensor not found nearby</string>
+    <string name="status_auth_failed">Authentication failed</string>
+    <string name="status_sensor_not_responding">Sensor not responding</string>
+    <string name="ottai_global_sign_in_again">Sign in to Ottai Global again to set up a sensor or check its firmware. Your saved sensors and history are kept.</string>
+    <string name="ottai_ota_check_failed">Firmware check failed.</string>
+    <string name="ottai_ota_disconnect_first">Disconnect the sensor to check firmware.</string>
+</resources>

@@ -6,8 +6,8 @@
 
 package tk.glucodata.ui.setup
 
-import tk.glucodata.ui.util.appButtonShapes
-
+import tk.glucodata.ui.components.SensorWizardHero
+import tk.glucodata.ui.components.rememberSensorHeroCompact
 import androidx.compose.material3.ButtonDefaults
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -23,12 +23,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,9 +48,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.Log
 import tk.glucodata.R
+import tk.glucodata.ui.components.SensorType
 import tk.glucodata.drivers.icanhealth.ICanHealthConstants
 import tk.glucodata.drivers.icanhealth.ICanHealthRegistry
 
@@ -176,7 +180,7 @@ fun ICanHealthSetupWizard(
         )
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.icanhealth_sensor),
@@ -205,6 +209,7 @@ fun ICanHealthSetupWizard(
                 ) {
                     SensorSetupConnectingScreen(
                         ui = ui,
+                        sensor = SensorType.ICANHEALTH,
                         sensorLabel = selectedSensorLabel.ifBlank { null }
                     )
                 }
@@ -215,6 +220,7 @@ fun ICanHealthSetupWizard(
                 ) {
                     SensorSetupSuccessScreen(
                         ui = ui,
+                        sensor = SensorType.ICANHEALTH,
                         sensorLabel = selectedSensorLabel.ifBlank { null }
                     )
                 }
@@ -231,9 +237,12 @@ private fun ICanHealthOnboardingStep(
     onLaunchFullscreenScan: () -> Unit,
     onShowManualEntry: () -> Unit,
 ) {
+    // Lets go of the page while a finger is on the camera, so pinch-to-zoom and focus reach it.
+    var scannerTouched by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState().scrollsUnderTopBar(), enabled = !scannerTouched)
             .padding(horizontal = ui.horizontalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
@@ -243,16 +252,25 @@ private fun ICanHealthOnboardingStep(
         tk.glucodata.ui.CgmReadinessSetupBanner(onOpenReadiness = onNavigateToReadiness)
         Spacer(Modifier.height(ui.spacerMedium))
 
+        SensorWizardHero(
+            SensorType.ICANHEALTH,
+            title = stringResource(R.string.scan_sensor_qr),
+            compact = rememberSensorHeroCompact(sharesScreen = true),
+        )
+
+        Spacer(Modifier.height(ui.spacerMedium))
+
         InlineQrScannerCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (ui.compact) 320.dp else 380.dp),
+                .height(if (ui.compact) 240.dp else 280.dp),
             onScanResult = { raw ->
                 onInlineScanResult(raw)
                 true
             },
             onManualFallback = onLaunchFullscreenScan,
-            manualFallbackLabel = stringResource(R.string.scan_qr_button)
+            manualFallbackLabel = stringResource(R.string.scan_qr_button),
+            onTouchInteractionChanged = { scannerTouched = it },
         )
 
         Spacer(Modifier.height(ui.spacerMedium))
@@ -262,7 +280,7 @@ private fun ICanHealthOnboardingStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = ui.buttonHeight),
-            shapes = appButtonShapes(),
+            shapes = ButtonDefaults.shapes(),
             contentPadding = ButtonDefaults.ContentPadding
         ) {
             Text(stringResource(R.string.enter_code_manually))
@@ -308,14 +326,14 @@ private fun ICanHealthManualEntryDialog(
             TextButton(
                 onClick = { onConfirm(normalized) },
                 enabled = isValid,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

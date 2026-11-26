@@ -1,7 +1,6 @@
 package tk.glucodata.ui.setup
 
 import androidx.compose.material3.ButtonDefaults
-import tk.glucodata.ui.util.appButtonShapes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -20,13 +19,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -69,6 +61,8 @@ import tk.glucodata.ui.components.SectionLabel
 import tk.glucodata.ui.components.SettingsItem
 import tk.glucodata.ui.components.AdaptiveButtonRow
 import androidx.compose.ui.platform.testTag
+import tk.glucodata.ui.symbols.Symbols
+import tk.glucodata.ui.components.scrollsUnderTopBar
 
 internal enum class AiDexAccountLoginMethod(val labelRes: Int) {
     SMS(R.string.ottai_login_sms),
@@ -206,7 +200,7 @@ internal fun AiDexKeyManagementScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                 .padding(horizontal = ui.horizontalPadding, vertical = ui.spacerMedium),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -217,7 +211,7 @@ internal fun AiDexKeyManagementScreen(
             SettingsItem(
                 title = stringResource(R.string.ottai_saved_sensors_title),
                 subtitle = ottaiSavedSensorsSummary(savedCount),
-                icon = Icons.Default.Key,
+                icon = Symbols.KeyFilled,
                 onClick = if (busy) null else ({ fullModeGuard { onOpenSavedSensors() } }),
             )
             if (searching) {
@@ -242,10 +236,10 @@ internal fun AiDexKeyManagementScreen(
                                 ListItem(
                                     headlineContent = { Text(sensor.serial) },
                                     supportingContent = { Text(sensor.name.ifBlank { sensor.address }) },
-                                    leadingContent = { Icon(Icons.Default.Bluetooth, contentDescription = null) },
+                                    leadingContent = { Icon(Symbols.BluetoothFilled, contentDescription = null) },
                                     trailingContent = {
                                         if (normalizedSerial == sensor.serial) {
-                                            Icon(Icons.Default.CheckCircle, contentDescription = null)
+                                            Icon(Symbols.CheckCircleFilled, contentDescription = null)
                                         }
                                     },
                                     modifier = Modifier.selectable(
@@ -324,10 +318,10 @@ internal fun AiDexKeyManagementScreen(
                                 } },
                                 enabled = !busy,
                                 modifier = Modifier.heightIn(min = 48.dp),
-                                shapes = appButtonShapes(),
+                                shapes = ButtonDefaults.shapes(),
                                 contentPadding = ButtonDefaults.ContentPadding,
                             ) {
-                                Icon(Icons.Default.FileUpload, contentDescription = null)
+                                Icon(Symbols.FileUploadFilled, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.export))
                             }
@@ -335,10 +329,10 @@ internal fun AiDexKeyManagementScreen(
                                 onClick = { importLauncher.launch(arrayOf("application/json", "text/*", "*/*")) },
                                 enabled = !busy,
                                 modifier = Modifier.heightIn(min = 48.dp),
-                                shapes = appButtonShapes(),
+                                shapes = ButtonDefaults.shapes(),
                                 contentPadding = ButtonDefaults.ContentPadding,
                             ) {
-                                Icon(Icons.Default.FileDownload, contentDescription = null)
+                                Icon(Symbols.FileDownloadFilled, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.ottai_credentials_replace))
                             }
@@ -348,10 +342,10 @@ internal fun AiDexKeyManagementScreen(
                             onClick = { importLauncher.launch(arrayOf("application/json", "text/*", "*/*")) },
                             enabled = !busy,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            shapes = appButtonShapes(),
+                            shapes = ButtonDefaults.shapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) {
-                            Icon(Icons.Default.FileDownload, contentDescription = null)
+                            Icon(Symbols.FileDownloadFilled, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.ottai_credentials_import))
                         }
@@ -400,13 +394,13 @@ internal fun AiDexKeyManagementScreen(
                             },
                             enabled = !busy && (useBloodControl || signedIn) && normalizedSerial != null,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            shapes = appButtonShapes(),
+                            shapes = ButtonDefaults.shapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) {
                             if (busy) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                Icon(Symbols.CloudDownloadFilled, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(if (useBloodControl) "Запросить ключ" else stringResource(R.string.aidex_key_fetch_action))
                             }
@@ -423,7 +417,7 @@ internal fun AiDexKeyManagementScreen(
                         Button(onClick = { onConnect(connectSensor) },
                             enabled = !busy && connectionAllowedFor == connectSensor.serial,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                            shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.ContentPadding) {
                             Text(stringResource(R.string.ottai_connect_saved))
                         }
                     }
@@ -462,7 +456,7 @@ internal fun AiDexKeyManagementScreen(
                                 },
                                 enabled = !busy,
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                                shapes = appButtonShapes(),
+                                shapes = ButtonDefaults.shapes(),
                                 contentPadding = ButtonDefaults.ContentPadding,
                             ) {
                                 Text(stringResource(R.string.mq_account_sign_out_action))
@@ -517,7 +511,7 @@ internal fun AiDexKeyManagementScreen(
                                     },
                                     enabled = !busy && normalizedPhone != null,
                                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                                    shapes = appButtonShapes(),
+                                    shapes = ButtonDefaults.shapes(),
                                     contentPadding = ButtonDefaults.ContentPadding,
                                 ) {
                                     Text(stringResource(R.string.ottai_send_code))
@@ -581,7 +575,7 @@ internal fun AiDexKeyManagementScreen(
                                     (if (loginMethod == AiDexAccountLoginMethod.SMS) code.isNotBlank()
                                     else password.isNotBlank()),
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                                shapes = appButtonShapes(),
+                                shapes = ButtonDefaults.shapes(),
                                 contentPadding = ButtonDefaults.ContentPadding,
                             ) {
                                 Text(stringResource(R.string.ottai_login_button))

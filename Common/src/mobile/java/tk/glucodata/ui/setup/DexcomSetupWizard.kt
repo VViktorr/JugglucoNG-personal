@@ -1,7 +1,7 @@
 package tk.glucodata.ui.setup
 
-import tk.glucodata.ui.util.appButtonShapes
-
+import tk.glucodata.ui.components.SensorWizardHero
+import tk.glucodata.ui.components.rememberSensorHeroCompact
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,7 +17,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import tk.glucodata.DexcomManualPairing
 import tk.glucodata.R
+import tk.glucodata.ui.components.SensorType
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 
 /** Dexcom setup through either the applicator data matrix or its printed pairing code. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,7 +66,7 @@ fun DexcomSetupWizard(
         )
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.dexcom_setup_title),
@@ -72,12 +75,15 @@ fun DexcomSetupWizard(
             )
         }
     ) { padding ->
+        // Lets go of the page while a finger is on the camera, so pinch-to-zoom and focus reach it.
+        var scannerTouched by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(ui.horizontalPadding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar(), enabled = !scannerTouched)
+                .padding(horizontal = ui.horizontalPadding)
+                .padding(top = ui.spacerMedium, bottom = ui.horizontalPadding)
                 .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
@@ -85,10 +91,18 @@ fun DexcomSetupWizard(
             tk.glucodata.ui.CgmReadinessSetupBanner(onOpenReadiness = onNavigateToReadiness)
             Spacer(modifier = Modifier.height(ui.spacerMedium))
 
+            SensorWizardHero(
+                SensorType.DEXCOM,
+                title = stringResource(R.string.dexcom_scan_instruction),
+                compact = rememberSensorHeroCompact(sharesScreen = true),
+            )
+
+            Spacer(modifier = Modifier.height(ui.spacerMedium))
+
             InlineQrScannerCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (ui.compact) 320.dp else 380.dp),
+                    .height(if (ui.compact) 240.dp else 280.dp),
                 onScanResult = { raw ->
                     if (!handledScan) {
                         handledScan = true
@@ -97,7 +111,8 @@ fun DexcomSetupWizard(
                     true
                 },
                 onManualFallback = launchFullscreenScan,
-                manualFallbackLabel = stringResource(R.string.scan_dexcom)
+                manualFallbackLabel = stringResource(R.string.scan_dexcom),
+                onTouchInteractionChanged = { scannerTouched = it },
             )
 
             Spacer(modifier = Modifier.height(ui.spacerSmall))
@@ -107,20 +122,11 @@ fun DexcomSetupWizard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.enter_code_manually))
             }
-
-            Spacer(modifier = Modifier.height(ui.spacerSmall))
-
-            Text(
-                text = stringResource(R.string.dexcom_scan_instruction),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -186,14 +192,14 @@ private fun DexcomManualPairingDialog(
             Button(
                 onClick = { onConfirm(pairingCode, wearDays) },
                 enabled = isValid,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }

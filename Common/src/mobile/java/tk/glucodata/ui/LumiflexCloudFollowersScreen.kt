@@ -1,19 +1,11 @@
 package tk.glucodata.ui
 
-import tk.glucodata.ui.util.appButtonShapes
-
-import tk.glucodata.ui.util.appIconButtonShapes
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,6 +24,7 @@ import tk.glucodata.R
 import tk.glucodata.share.lumiflex.FollowerInfo
 import tk.glucodata.ui.components.*
 import tk.glucodata.ui.util.ConnectedButtonGroup
+import tk.glucodata.ui.symbols.Symbols
 
 @Composable
 fun LumiflexCloudFollowersScreen(navController: NavController) {
@@ -78,16 +71,16 @@ internal fun LumiflexCloudFollowersContent(
         }
     }
     BackHandler(enabled = state.busy || state.editorDirty, onBack = back)
-    Scaffold(contentWindowInsets = WindowInsets(0.dp), snackbarHost = { SnackbarHost(snackbar) }, topBar = {
+    AppScaffold(contentWindowInsets = WindowInsets(0.dp), snackbarHost = { SnackbarHost(snackbar) }, topBar = {
         AppTopBar(stringResource(R.string.lumiflex_followers_title), back, actions = {
             IconButtonTooltip(stringResource(R.string.refresh)) {
-                IconButton(onClick = actions.refresh, enabled = !state.blocked, shapes = appIconButtonShapes()) {
-                    Icon(Icons.Default.Refresh, stringResource(R.string.refresh))
+                IconButton(onClick = actions.refresh, enabled = !state.blocked, shapes = IconButtonDefaults.shapes()) {
+                    Icon(Symbols.RefreshFilled, stringResource(R.string.refresh))
                 }
             }
         })
     }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).imePadding().testTag("followers-list"),
+        LazyColumn(state = rememberLazyListState().scrollsUnderTopBar(), modifier = Modifier.fillMaxSize().padding(padding).imePadding().testTag("followers-list"),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 100.dp)) {
             item(key = "invite") {
                 SectionLabel(stringResource(R.string.lumiflex_invite_title), topPadding = 0.dp)
@@ -104,7 +97,7 @@ internal fun LumiflexCloudFollowersContent(
                     style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(16.dp))
                 FilledTonalButton(onClick = actions.refresh, enabled = !state.blocked,
-                    shapes = appButtonShapes(), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                    shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                     Text(stringResource(R.string.clone_history_try_again))
                 }
                 Spacer(Modifier.height(24.dp))
@@ -124,7 +117,7 @@ internal fun LumiflexCloudFollowersContent(
                 ExpandableEditorCard(
                     title = row.readerAlias.ifBlank { lumiflexAccountLabel(row.readerUserName) },
                     subtitle = row.readerUserName.takeIf { row.readerAlias.isNotBlank() }?.let(::lumiflexAccountLabel),
-                    leadingContent = { IconTile(Icons.Default.Person, MaterialTheme.colorScheme.tertiary) },
+                    leadingContent = { IconTile(Symbols.PersonFilled, MaterialTheme.colorScheme.tertiary) },
                     expanded = draft != null, onToggleExpanded = { select(if (draft == null) row else null) },
                     onDelete = { removeId = row.userAuthorizationId }, deleteLabel = stringResource(R.string.lumiflex_remove),
                     enabled = !state.blocked, deleting = state.removalId == row.userAuthorizationId,
@@ -142,12 +135,12 @@ internal fun LumiflexCloudFollowersContent(
             text = { Text(stringResource(R.string.lumiflex_remove_follower_confirm,
                 row.readerAlias.ifBlank { lumiflexAccountLabel(row.readerUserName) })) },
             confirmButton = {
-                TextButton(onClick = { removeId = null; actions.remove(row.userAuthorizationId) }, shapes = appButtonShapes(),
+                TextButton(onClick = { removeId = null; actions.remove(row.userAuthorizationId) }, shapes = ButtonDefaults.shapes(),
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Text(stringResource(R.string.lumiflex_remove))
                 }
             }, dismissButton = {
-                TextButton(onClick = { removeId = null }, shapes = appButtonShapes()) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { removeId = null }, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.cancel)) }
             })
     }
     if (discard) AlertDialog(onDismissRequest = { discard = false }, modifier = Modifier.testTag("follower-discard-confirm"),
@@ -158,9 +151,9 @@ internal fun LumiflexCloudFollowersContent(
                 discard = false
                 if (leaving) onBack()
                 else state.followers.find { it.userAuthorizationId == pendingId }?.let(actions.edit) ?: actions.dismissEditor()
-            }, shapes = appButtonShapes()) { Text(stringResource(R.string.app_updates_action_discard)) }
+            }, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.app_updates_action_discard)) }
         }, dismissButton = {
-            TextButton(onClick = { discard = false }, shapes = appButtonShapes()) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = { discard = false }, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.cancel)) }
         })
 }
 
@@ -181,10 +174,10 @@ internal fun LumiflexInviteForm(state: LumiflexFollowersUiState, actions: Lumifl
         OutlinedTextField(state.alias, actions.alias, modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.lumiflex_nickname_optional)) }, singleLine = true, enabled = !state.busy)
         FollowerError(state.inviteError)
-        Button(onClick = actions.invite, enabled = state.canInvite, shapes = appButtonShapes(),
+        Button(onClick = actions.invite, enabled = state.canInvite, shapes = ButtonDefaults.shapes(),
             modifier = Modifier.fillMaxWidth()) {
             if (state.operation == FollowerOperation.INVITE) FollowerButtonProgress(true)
-            else { Icon(Icons.Default.PersonAdd, null); Spacer(Modifier.width(8.dp)) }
+            else { Icon(Symbols.PersonAddFilled, null); Spacer(Modifier.width(8.dp)) }
             Text(stringResource(R.string.lumiflex_send_invite))
         }
     }
@@ -219,10 +212,10 @@ internal fun ColumnScope.LumiflexFollowerEditor(
             { actions.editChanged(row.copy(hideState = if (it) 1 else 0)) }, enabled = !state.blocked)
     }
     FollowerError(state.editorError)
-    Button(onClick = actions.save, enabled = !state.blocked && state.editorDirty, shapes = appButtonShapes(),
+    Button(onClick = actions.save, enabled = !state.blocked && state.editorDirty, shapes = ButtonDefaults.shapes(),
         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), contentPadding = ButtonDefaults.ContentPadding) {
         if (state.operation == FollowerOperation.SAVE) FollowerButtonProgress(true)
-        else { Icon(Icons.Default.Save, null); Spacer(Modifier.width(8.dp)) }
+        else { Icon(Symbols.SaveFilled, null); Spacer(Modifier.width(8.dp)) }
         Text(stringResource(R.string.save))
     }
 }

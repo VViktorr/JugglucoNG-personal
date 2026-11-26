@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Датчык побач не знойдзены</string>
+    <string name="status_auth_failed">Памылка аўтэнтыфікацыі</string>
+    <string name="status_sensor_not_responding">Датчык не адказвае</string>
+    <string name="ottai_global_sign_in_again">Увайдзіце ў Ottai Global паўторна, каб наладзіць датчык або праверыць яго прашыўку. Захаваныя датчыкі і гісторыя застануцца на тэлефоне.</string>
+    <string name="ottai_ota_check_failed">Не ўдалося праверыць прашыўку.</string>
+    <string name="ottai_ota_disconnect_first">Адключыце датчык, каб праверыць прашыўку.</string>
+</resources>

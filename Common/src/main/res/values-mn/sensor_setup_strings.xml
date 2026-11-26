@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Ойролцоо мэдрэгч олдсонгүй</string>
+    <string name="status_auth_failed">Баталгаажуулалт амжилтгүй</string>
+    <string name="status_sensor_not_responding">Мэдрэгч хариу өгөхгүй байна</string>
+    <string name="ottai_global_sign_in_again">Мэдрэгч тохируулах эсвэл программыг нь шалгахын тулд Ottai Global-д дахин нэвтэрнэ үү. Хадгалсан мэдрэгч болон түүх хэвээр үлдэнэ.</string>
+    <string name="ottai_ota_check_failed">Мэдрэгчийн программыг шалгаж чадсангүй.</string>
+    <string name="ottai_ota_disconnect_first">Программыг шалгахын тулд мэдрэгчийг салгана уу.</string>
+</resources>

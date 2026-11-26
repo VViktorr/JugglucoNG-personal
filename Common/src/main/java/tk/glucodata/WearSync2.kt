@@ -98,6 +98,7 @@ object WearSync2 {
                 buf.put(serialBytes.size.toByte())
                 buf.put(serialBytes)
                 MessageSender.sendSyncMessage(WearMessagePath.SYNC2_REMOVE, buf.array())
+                SensorDisplayName.pushIfChanged()
                 if (doLog) Log.i(LOG_ID, "pushed removal of $serial")
             }.onFailure { Log.stack(LOG_ID, "pushRemoval", it) }
         }
@@ -277,6 +278,7 @@ object WearSync2 {
         val serials = serveSerials()
         if (serials.isEmpty()) return
         serials.forEach { serial -> serveSensorSince(serial, fromSec) }
+        if (!Applic.isWearable) SensorDisplayName.pushIfChanged()
     }
 
     private fun serveSensorSince(serial: String, fromSec: Long) {

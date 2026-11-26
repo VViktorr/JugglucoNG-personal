@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensor nicht in der Nähe gefunden</string>
+    <string name="status_auth_failed">Authentifizierung fehlgeschlagen</string>
+    <string name="status_sensor_not_responding">Sensor antwortet nicht</string>
+    <string name="ottai_global_sign_in_again">Melde dich erneut bei Ottai Global an, um einen Sensor einzurichten oder seine Firmware zu prüfen. Gespeicherte Sensoren und der Verlauf bleiben erhalten.</string>
+    <string name="ottai_ota_check_failed">Firmwareprüfung fehlgeschlagen.</string>
+    <string name="ottai_ota_disconnect_first">Trenne den Sensor, um die Firmware zu prüfen.</string>
+</resources>

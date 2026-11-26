@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensor-ka lagama helin agagaarka</string>
+    <string name="status_auth_failed">Xaqiijintu way fashilantay</string>
+    <string name="status_sensor_not_responding">Sensor-ku ma jawaabayo</string>
+    <string name="ottai_global_sign_in_again">Mar kale gal Ottai Global si aad u dejiso dareeme ama u hubiso barnaamijkiisa gudaha. Dareemayaasha kaydsan iyo taariikhdooda waa la hayn doonaa.</string>
+    <string name="ottai_ota_check_failed">Hubinta barnaamijka gudaha way fashilantay.</string>
+    <string name="ottai_ota_disconnect_first">Ka gooy dareemaha si aad u hubiso barnaamijkiisa gudaha.</string>
+</resources>

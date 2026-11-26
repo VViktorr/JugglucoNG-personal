@@ -1,7 +1,7 @@
 package tk.glucodata.ui.setup
 
-import tk.glucodata.ui.util.appButtonShapes
-
+import tk.glucodata.ui.components.SensorWizardHero
+import tk.glucodata.ui.components.rememberSensorHeroCompact
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
@@ -19,10 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
@@ -42,17 +38,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import tk.glucodata.Log
 import tk.glucodata.R
+import tk.glucodata.ui.components.SensorType
 import tk.glucodata.SensorBluetooth
 import tk.glucodata.drivers.aidex.AiDexSetupKeyGate
 import tk.glucodata.drivers.aidex.AiDexPairingMaterialFile
 import tk.glucodata.drivers.aidex.AiDexProvisioningStore
 import tk.glucodata.drivers.aidex.AiDexSerialIdentity
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.SettingsItem
 import tk.glucodata.ui.util.BleDeviceScanner
 import tk.glucodata.ui.util.rememberBleScanner
 import java.util.UUID
+import tk.glucodata.ui.symbols.Symbols
 
 enum class AiDexSetupStep {
     SCAN,
@@ -151,7 +151,7 @@ fun AiDexSetupWizard(
         }
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(if (currentStep == AiDexSetupStep.SAVED_SENSORS)
@@ -212,6 +212,7 @@ fun AiDexSetupWizard(
                 ) {
                     SensorSetupConnectingScreen(
                         ui = ui,
+                        sensor = SensorType.AIDEX,
                         sensorLabel = selectedDeviceName.ifBlank { null }
                     )
                 }
@@ -221,6 +222,7 @@ fun AiDexSetupWizard(
                 ) {
                     SensorSetupSuccessScreen(
                         ui = ui,
+                        sensor = SensorType.AIDEX,
                         sensorLabel = selectedDeviceName.ifBlank { null }
                     )
                 }
@@ -371,6 +373,12 @@ internal fun AiDexScanStep(
                     onOpenReadiness = onNavigateToReadiness
                 )
                 Spacer(Modifier.height(ui.spacerMedium))
+                SensorWizardHero(
+                    SensorType.AIDEX,
+                    modifier = Modifier.padding(horizontal = ui.horizontalPadding),
+                    compact = rememberSensorHeroCompact(sharesScreen = true),
+                )
+                Spacer(Modifier.height(ui.spacerSmall))
                 ScanFilterHeader(
                     title = stringResource(R.string.aidex_searching_sensors),
                     showAllDevices = showAllDevices,
@@ -418,7 +426,7 @@ internal fun AiDexScanStep(
                                     }
                                 },
                                 modifier = Modifier.heightIn(min = ui.buttonHeight),
-                                shapes = appButtonShapes(),
+                                shapes = ButtonDefaults.shapes(),
                                 contentPadding = ButtonDefaults.ContentPadding
                             ) {
                                 Text(stringResource(buttonRes))
@@ -431,7 +439,7 @@ internal fun AiDexScanStep(
                 SettingsItem(
                     title = stringResource(R.string.aidex_key_management_title),
                     subtitle = stringResource(R.string.aidex_key_management_entry_desc),
-                    icon = Icons.Default.Key,
+                    icon = Symbols.KeyFilled,
                     iconTint = MaterialTheme.colorScheme.primary,
                     position = CardPosition.SINGLE,
                     onClick = onManageKeys,
@@ -469,7 +477,7 @@ internal fun AiDexScanStep(
                             }
                         )
                     },
-                    leadingContent = { Icon(Icons.Default.Bluetooth, null) },
+                    leadingContent = { Icon(Symbols.BluetoothFilled, null) },
                     modifier = Modifier.clickable(enabled = canSelect) {
                         onDeviceSelected(
                             device.selectionName,
@@ -543,7 +551,7 @@ internal fun PinnedOrScrollingList(
                 measuredFooter()
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+            LazyColumn(modifier = Modifier.fillMaxSize(), state = listState.scrollsUnderTopBar()) {
                 item { measuredHeader() }
                 listContent()
                 item { measuredFooter() }

@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensor niet in de buurt gevonden</string>
+    <string name="status_auth_failed">Authenticatie mislukt</string>
+    <string name="status_sensor_not_responding">Sensor reageert niet</string>
+    <string name="ottai_global_sign_in_again">Meld je opnieuw aan bij Ottai Global om een sensor in te stellen of de firmware te controleren. Je opgeslagen sensoren en geschiedenis blijven behouden.</string>
+    <string name="ottai_ota_check_failed">Firmwarecontrole mislukt.</string>
+    <string name="ottai_ota_disconnect_first">Verbreek de sensorverbinding om de firmware te controleren.</string>
+</resources>

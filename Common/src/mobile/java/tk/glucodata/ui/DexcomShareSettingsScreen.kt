@@ -1,9 +1,5 @@
 package tk.glucodata.ui
 
-import tk.glucodata.ui.util.appIconButtonShapes
-
-import tk.glucodata.ui.util.appButtonShapes
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,10 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,7 +26,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 
 
 
@@ -67,11 +58,14 @@ import tk.glucodata.R
 import tk.glucodata.share.DexcomShareRegion
 import tk.glucodata.share.DexcomShareSettings
 import tk.glucodata.share.DexcomShareUploader
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.IconButtonTooltip
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
 import tk.glucodata.ui.util.ConnectedButtonGroup
+import tk.glucodata.ui.symbols.Symbols
 
 /**
  * Dexcom Share is an unofficial, credential-carrying output, so the account, the password, the
@@ -140,7 +134,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
     val credentialsRequiredText = stringResource(R.string.dexcom_share_credentials_required)
     val testOkText = stringResource(R.string.dexcom_share_test_ok)
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -153,7 +147,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -167,7 +161,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                     save()
                     testMessage = null
                 },
-                icon = Icons.Default.CloudUpload
+                icon = Symbols.CloudUploadFilled
             )
 
             DexcomShareStatusCard(status)
@@ -195,11 +189,11 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                     PasswordVisualTransformation()
                 },
                 trailingIcon = {
-                    val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val image = if (showPassword) Symbols.VisibilityFilled else Symbols.VisibilityOffFilled
                     IconButtonTooltip(
                         if (showPassword) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
                     ) {
-                        IconButton(onClick = { showPassword = !showPassword }, shapes = appIconButtonShapes()) {
+                        IconButton(onClick = { showPassword = !showPassword }, shapes = IconButtonDefaults.shapes()) {
                             Icon(
                                 imageVector = image,
                                 contentDescription = if (showPassword) {
@@ -265,7 +259,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
                 enabled = hasCredentials && !testing,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 if (testing) {
@@ -300,7 +294,7 @@ fun DexcomShareSettingsScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(stringResource(R.string.save))

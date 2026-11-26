@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensore non trovato nelle vicinanze</string>
+    <string name="status_auth_failed">Autenticazione non riuscita</string>
+    <string name="status_sensor_not_responding">Il sensore non risponde</string>
+    <string name="ottai_global_sign_in_again">Accedi di nuovo a Ottai Global per configurare un sensore o controllarne il firmware. I sensori salvati e la cronologia saranno conservati.</string>
+    <string name="ottai_ota_check_failed">Impossibile controllare il firmware.</string>
+    <string name="ottai_ota_disconnect_first">Disconnetti il sensore per controllare il firmware.</string>
+</resources>

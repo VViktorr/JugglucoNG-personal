@@ -10,6 +10,8 @@ internal object AiDexSetupKeyGate {
 
     fun requiresKeys(context: Context, serial: String, advertisedName: String): Boolean {
         val bare = AiDexPairingMaterialFile.normalizeSerial(serial) ?: return false
+        // The old cache included serial-prefix guesses that incorrectly marked X-series
+        // sensors as requiring keys. Only trust observations recorded by this version.
         val prefs = context.applicationContext.getSharedPreferences("aidex_setup_key_requirements_v2", Context.MODE_PRIVATE)
         // Some F-series batches have G/H serials. Retain the observed product label even
         // when a later selection has only the stored serial and no advertisement name.

@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">附近未找到传感器</string>
+    <string name="status_auth_failed">认证失败</string>
+    <string name="status_sensor_not_responding">传感器无响应</string>
+    <string name="ottai_global_sign_in_again">请重新登录 Ottai Global，以设置传感器或检查其固件。已保存的传感器和历史记录会保留。</string>
+    <string name="ottai_ota_check_failed">固件检查失败。</string>
+    <string name="ottai_ota_disconnect_first">请断开传感器连接以检查固件。</string>
+</resources>

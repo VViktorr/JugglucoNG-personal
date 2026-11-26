@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Датчик не найден поблизости</string>
+    <string name="status_auth_failed">Ошибка аутентификации</string>
+    <string name="status_sensor_not_responding">Датчик не отвечает</string>
+    <string name="ottai_global_sign_in_again">Войдите в Ottai Global снова, чтобы настроить датчик или проверить прошивку. Сохранённые датчики и история останутся на телефоне.</string>
+    <string name="ottai_ota_check_failed">Не удалось проверить прошивку.</string>
+    <string name="ottai_ota_disconnect_first">Отключите датчик, чтобы проверить прошивку.</string>
+</resources>

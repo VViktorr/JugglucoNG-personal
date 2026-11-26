@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensör yakında bulunamadı</string>
+    <string name="status_auth_failed">Kimlik doğrulama başarısız</string>
+    <string name="status_sensor_not_responding">Sensör yanıt vermiyor</string>
+    <string name="ottai_global_sign_in_again">Bir sensör kurmak veya ürün yazılımını kontrol etmek için Ottai Global hesabınıza yeniden giriş yapın. Kayıtlı sensörleriniz ve geçmişiniz korunur.</string>
+    <string name="ottai_ota_check_failed">Ürün yazılımı kontrolü başarısız oldu.</string>
+    <string name="ottai_ota_disconnect_first">Ürün yazılımını kontrol etmek için sensörün bağlantısını kesin.</string>
+</resources>

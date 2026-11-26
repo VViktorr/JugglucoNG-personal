@@ -2,8 +2,6 @@
 
 package tk.glucodata.ui
 
-import tk.glucodata.ui.util.appButtonShapes
-
 import tk.glucodata.ui.components.AdaptiveButtonRow
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.animation.AnimatedVisibility
@@ -24,12 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.PeopleAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -68,11 +59,14 @@ import tk.glucodata.drivers.mq.MQAuthCredentials
 import tk.glucodata.drivers.mq.MQCloudClient
 import tk.glucodata.drivers.mq.MQRegistry
 import tk.glucodata.drivers.mq.MQVerifyCodeAction
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
 import tk.glucodata.ui.components.SettingsItem
+import tk.glucodata.ui.symbols.Symbols
 
 @Composable
 fun MQAccountSettingsScreen(navController: NavController) {
@@ -149,7 +143,7 @@ fun MQAccountSettingsContent(
         onDispose { persistAccountState() }
     }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -162,7 +156,7 @@ fun MQAccountSettingsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -217,7 +211,7 @@ fun MQAccountSettingsContent(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hasCredentials && !isBusy,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding,
             ) {
                 Text(signInLabel)
@@ -255,7 +249,7 @@ fun MQAccountSettingsContent(
                             }
                         },
                         enabled = hasAuthToken && !isBusy,
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(checkSessionLabel) }
 
@@ -281,7 +275,7 @@ fun MQAccountSettingsContent(
                             }
                         },
                         enabled = (hasAuthToken || hasCredentials) && !isBusy,
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(signOutLabel) }
                 }
@@ -301,7 +295,7 @@ fun MQAccountSettingsContent(
                     cloudSyncEnabled = enabled
                     MQRegistry.saveCloudSyncEnabled(context, enabled)
                 },
-                icon = Icons.Default.Cloud,
+                icon = Symbols.CloudFilled,
             )
 
             // ---- Followers (link to follower screen) ----
@@ -319,7 +313,7 @@ fun MQAccountSettingsContent(
             SettingsItem(
                 title = stringResource(R.string.mq_follower_settings_title),
                 subtitle = followerSubtitle,
-                icon = Icons.Default.PeopleAlt,
+                icon = Symbols.PeopleAltFilled,
                 iconTint = MaterialTheme.colorScheme.primary,
                 position = CardPosition.SINGLE,
                 onClick = onNavigateToFollower,
@@ -368,7 +362,7 @@ fun MQAccountSettingsContent(
                                 }
                             },
                             enabled = phone.isNotBlank() && !isBusy,
-                            shapes = appButtonShapes(),
+                            shapes = ButtonDefaults.shapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(requestLoginCodeLabel) }
 
@@ -388,7 +382,7 @@ fun MQAccountSettingsContent(
                                 }
                             },
                             enabled = phone.isNotBlank() && !isBusy,
-                            shapes = appButtonShapes(),
+                            shapes = ButtonDefaults.shapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(requestSignupCodeLabel) }
                     }
@@ -410,7 +404,7 @@ fun MQAccountSettingsContent(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = phone.isNotBlank() && !isBusy,
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(requestResetCodeLabel) }
 
@@ -435,7 +429,7 @@ fun MQAccountSettingsContent(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = phone.isNotBlank() && hasVerificationCode && !isBusy,
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) { Text(signInWithCodeLabel) }
 
@@ -463,7 +457,7 @@ fun MQAccountSettingsContent(
                                 }
                             },
                             enabled = phone.isNotBlank() && hasVerificationCode && password.isNotBlank() && !isBusy,
-                            shapes = appButtonShapes(),
+                            shapes = ButtonDefaults.shapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(createAccountLabel) }
 
@@ -484,7 +478,7 @@ fun MQAccountSettingsContent(
                                 }
                             },
                             enabled = phone.isNotBlank() && hasVerificationCode && password.isNotBlank() && !isBusy,
-                            shapes = appButtonShapes(),
+                            shapes = ButtonDefaults.shapes(),
                             contentPadding = ButtonDefaults.ContentPadding,
                         ) { Text(resetPasswordLabel) }
                     }
@@ -507,19 +501,19 @@ private fun AccountStatusCard(
 ) {
     val visuals = when {
         hasAuthToken -> StatusVisuals(
-            icon = Icons.Filled.CheckCircle,
+            icon = Symbols.CheckCircleFilled,
             summaryRes = R.string.mq_account_status_signed_in,
             container = MaterialTheme.colorScheme.primaryContainer,
             content = MaterialTheme.colorScheme.onPrimaryContainer,
         )
         hasCredentials -> StatusVisuals(
-            icon = Icons.Filled.Cloud,
+            icon = Symbols.CloudFilled,
             summaryRes = R.string.mq_account_status_saved,
             container = MaterialTheme.colorScheme.secondaryContainer,
             content = MaterialTheme.colorScheme.onSecondaryContainer,
         )
         else -> StatusVisuals(
-            icon = Icons.Filled.ErrorOutline,
+            icon = Symbols.Error,
             summaryRes = R.string.mq_account_status_missing,
             container = MaterialTheme.colorScheme.surfaceContainerHigh,
             content = MaterialTheme.colorScheme.onSurface,
@@ -645,7 +639,7 @@ private fun CollapsibleCard(
                 }
                 Box(modifier = Modifier.rotate(rotation)) {
                     Icon(
-                        imageVector = Icons.Filled.ExpandMore,
+                        imageVector = Symbols.ExpandMoreFilled,
                         contentDescription = if (expanded) {
                             stringResource(R.string.mq_sms_hide_action)
                         } else {

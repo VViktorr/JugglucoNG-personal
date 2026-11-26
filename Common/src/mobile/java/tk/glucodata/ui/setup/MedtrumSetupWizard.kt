@@ -4,8 +4,8 @@
 
 package tk.glucodata.ui.setup
 
-import tk.glucodata.ui.util.appButtonShapes
-
+import tk.glucodata.ui.components.SensorWizardHero
+import tk.glucodata.ui.components.rememberSensorHeroCompact
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,13 +20,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,7 +49,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import tk.glucodata.Log
 import tk.glucodata.R
+import tk.glucodata.ui.components.SensorType
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.drivers.medtrum.MedtrumPersistence
 import tk.glucodata.drivers.medtrum.MedtrumRegistry
 
@@ -178,7 +182,7 @@ fun MedtrumSetupWizard(
         }
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.medtrum_sensor),
@@ -196,6 +200,7 @@ fun MedtrumSetupWizard(
                 MedtrumSetupStep.ENTRY -> Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                         .padding(horizontal = ui.horizontalPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top,
@@ -204,13 +209,12 @@ fun MedtrumSetupWizard(
 
                     tk.glucodata.ui.CgmReadinessSetupBanner(onOpenReadiness = onNavigateToReadiness)
 
-                    Spacer(Modifier.height(ui.spacerLarge))
+                    Spacer(Modifier.height(ui.spacerMedium))
 
-                    Text(
-                        text = stringResource(R.string.medtrum_sensor_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
+                    SensorWizardHero(
+                        SensorType.MEDTRUM,
+                        title = stringResource(R.string.medtrum_sensor_desc),
+                        compact = rememberSensorHeroCompact(sharesScreen = false),
                     )
 
                     Spacer(Modifier.height(ui.spacerMedium))
@@ -248,7 +252,7 @@ fun MedtrumSetupWizard(
                     OutlinedButton(
                         onClick = { serialNumber?.let { requestPermissionsAndAttach(it) } },
                         enabled = isValid,
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = ui.buttonHeight),
@@ -261,14 +265,14 @@ fun MedtrumSetupWizard(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    SensorSetupConnectingScreen(ui = ui, sensorLabel = attachedSerial.ifBlank { null })
+                    SensorSetupConnectingScreen(ui = ui, sensor = SensorType.MEDTRUM, sensorLabel = attachedSerial.ifBlank { null })
                 }
 
                 MedtrumSetupStep.SUCCESS -> Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    SensorSetupSuccessScreen(ui = ui, sensorLabel = attachedSerial.ifBlank { null })
+                    SensorSetupSuccessScreen(ui = ui, sensor = SensorType.MEDTRUM, sensorLabel = attachedSerial.ifBlank { null })
                 }
 
                 MedtrumSetupStep.SAVED -> Column(
@@ -281,6 +285,7 @@ fun MedtrumSetupWizard(
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         SensorSetupConnectingScreen(
                             ui = ui,
+                            sensor = SensorType.MEDTRUM,
                             sensorLabel = attachedSerial.ifBlank { null },
                             title = stringResource(R.string.medtrum_setup_saved_title),
                             supportingText = stringResource(R.string.medtrum_setup_searching),
@@ -288,7 +293,7 @@ fun MedtrumSetupWizard(
                     }
                     OutlinedButton(
                         onClick = onComplete,
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = ui.buttonHeight),

@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Sensorn hittades inte i närheten</string>
+    <string name="status_auth_failed">Autentiseringen misslyckades</string>
+    <string name="status_sensor_not_responding">Sensorn svarar inte</string>
+    <string name="ottai_global_sign_in_again">Logga in på Ottai Global igen för att konfigurera en sensor eller kontrollera dess firmware. Sparade sensorer och historik behålls.</string>
+    <string name="ottai_ota_check_failed">Firmwarekontrollen misslyckades.</string>
+    <string name="ottai_ota_disconnect_first">Koppla från sensorn för att kontrollera firmware.</string>
+</resources>

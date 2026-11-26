@@ -66,11 +66,14 @@ import static tk.glucodata.util.sleep;
 public class DexGattCallback extends SuperGattCallback {
 private static final long DEXCOM_WARMUP_MSEC = 30L * 60L * 1000L;
 private static final long DEXCOM_WARMUP_RETRY_SLACK_MSEC = 15_000L;
+private static final long DEXCOM_RESULT_WARMUP = 1L;
+private static final long DEXCOM_RESULT_DISPLAY_ONLY = 2L;
 private static final long DEXCOM_CONNECT_ATTEMPT_TIMEOUT_MS = 45_000L;
 private static final long DEXCOM_RECONNECT_QUIET_MS = 5_000L;
 private static final String DEX_CONNECT_PREFS = "dex_connect";
 private static final String DIRECT_CONNECT_UNREACHABLE_PREFIX = "direct_unreachable_";
 private volatile boolean directConnectUnreachable;
+private volatile String persistedDeviceName;
 private BluetoothGatt connectedAttempt;
 private boolean known=false;
 private int authSlot;
@@ -89,7 +92,7 @@ private int authSlot;
             mActiveDeviceAddress = Natives.getDeviceAddress(dataptr, false);
         directConnectUnreachable = Applic.app.getSharedPreferences(DEX_CONNECT_PREFS, Context.MODE_PRIVATE)
                 .getBoolean(DIRECT_CONNECT_UNREACHABLE_PREFIX + SerialNumber, false);
-//        ownDeviceName=Natives.dexGetDeviceName(dataptr);
+        persistedDeviceName = dataptr != 0L ? Natives.dexGetDeviceName(dataptr) : null;
         {if(doLog) {Log.d(LOG_ID, SerialNumber + " DexGattCallback(..)");};};
         showtime=6*60*1000L;
     }
@@ -98,6 +101,30 @@ private int authSlot;
     @Override
     public boolean connectsPerReading() {
         return true;
+    }
+
+    @Override
+    public String mygetDeviceName() {
+        final var liveName = mDeviceName;
+        if (liveName != null && !liveName.trim().isEmpty())
+            return liveName;
+        final var device = mActiveBluetoothDevice;
+        if (device != null) {
+            try {
+                var name = device.getName();
+                if (name != null && !name.trim().isEmpty())
+                    return name;
+            } catch (SecurityException ignored) {
+                // Fall through to the persisted name when BLUETOOTH_CONNECT is missing.
+            }
+        }
+        final var saved = persistedDeviceName;
+        if (saved != null && !saved.trim().isEmpty())
+            return saved;
+        final var address = mActiveDeviceAddress;
+        if (address != null)
+            return address;
+        return "?";
     }
 
     static private byte[] lencode(int which, int code) {
@@ -589,9 +616,11 @@ private void askcertificate(int pha) {
 private void saveDeviceName() {
          final var aname=mDeviceName;
          {if(doLog) {Log.i(LOG_ID,"deviceName ="+aname);};};
-         if(aname!=null) {
+         if(aname!=null && !aname.trim().isEmpty()) {
              Natives.dexSaveDeviceName(dataptr,aname);
+             persistedDeviceName = aname;
              this.known=true;
+             SensorDisplayName.pushIfChanged();
              }
          }
 static boolean    createBond(BluetoothDevice device) {
@@ -834,37 +863,50 @@ private long datatime=0L;
 private long sampletime=0L;
 private boolean lastDataInvalidDuringWarmup=false;
 private long lastWarmupRetryAt=0L;
-private boolean isWarmupReading(long readingTimeMsec, long res) {
-        if (res != 0L) {
+/**
+ * Warm-up length of this sensor: 62 minutes for a 15-day G7, and 30 minutes for
+ * a 10-day one (the value every 10-day record has carried). The native record
+ * stores it per sensor, so the retry follows that window instead of one
+ * constant; when native reports 0 the 30-minute fallback applies.
+ */
+private long warmupMsec() {
+    final int minutes = dataptr == 0L ? 0 : Natives.getSensorWarmupMinutes(dataptr);
+    return minutes > 0 ? minutes * 60_000L : DEXCOM_WARMUP_MSEC;
+}
+private boolean isWarmupReading(long readingTimeMsec, boolean warmingUp) {
+        if (!warmingUp) {
             return false;
         }
         final long refreshedStart = Natives.getSensorStartmsec(dataptr);
         if (refreshedStart > 0L) {
             sensorstartmsec = refreshedStart;
         }
-        return sensorstartmsec > 0L && readingTimeMsec > 0L && (readingTimeMsec - sensorstartmsec) < DEXCOM_WARMUP_MSEC;
+        return sensorstartmsec > 0L && readingTimeMsec > 0L && (readingTimeMsec - sensorstartmsec) < warmupMsec();
     }
 private    void getdata(byte[] value) {
         final long timmsec = System.currentTimeMillis();
         switch (value[0]) {
             case 0x4E: {
                 justdata=true;
-                long[] timeres={timmsec,0L};
+                long[] timeres={timmsec,0L,0L};
                 final boolean savename=Natives.dexcomProcessData(dataptr, value, timeres);
                 final long res= timeres[1];
                 final long newtime= timeres[0];
+                final long status = timeres[2];
                 if(doLog) {
                     final int glumgL = (int) (res & 0xFFFFFFFFL);
                     Log.i(LOG_ID, "dexcomProcessData newtime="+newtime+" res="+res+" "+glumgL/18+" mg/dL "+(glumgL/180.0)+ " mmol/L");                  
                     }
-                lastDataInvalidDuringWarmup = isWarmupReading(newtime, res);
+                lastDataInvalidDuringWarmup = isWarmupReading(newtime, status == DEXCOM_RESULT_WARMUP);
                 if (lastDataInvalidDuringWarmup) {
-                    lastWarmupRetryAt = sensorstartmsec + DEXCOM_WARMUP_MSEC + DEXCOM_WARMUP_RETRY_SLACK_MSEC;
+                    lastWarmupRetryAt = sensorstartmsec + warmupMsec() + DEXCOM_WARMUP_RETRY_SLACK_MSEC;
                     if(doLog) {
                         Log.i(LOG_ID, "Dexcom reading is still in warmup window; next retry at=" + lastWarmupRetryAt);
                     }
                 }
-                handleGlucoseResult(res, newtime);
+                if (status != DEXCOM_RESULT_DISPLAY_ONLY) {
+                    handleGlucoseResult(res, newtime);
+                }
                 Applic.scheduler.schedule(()->{
                   if(connected) askbackfill();}, 10, TimeUnit.MILLISECONDS);
                 datatime=timmsec;

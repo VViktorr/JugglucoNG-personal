@@ -1,0 +1,8 @@
+<resources>
+    <string name="status_sensor_not_found">Nie znaleziono czujnika w pobliżu</string>
+    <string name="status_auth_failed">Uwierzytelnianie nie powiodło się</string>
+    <string name="status_sensor_not_responding">Czujnik nie odpowiada</string>
+    <string name="ottai_global_sign_in_again">Zaloguj się ponownie do Ottai Global, aby skonfigurować czujnik lub sprawdzić jego oprogramowanie. Zapisane czujniki i historia zostaną zachowane.</string>
+    <string name="ottai_ota_check_failed">Sprawdzenie oprogramowania czujnika nie powiodło się.</string>
+    <string name="ottai_ota_disconnect_first">Odłącz czujnik, aby sprawdzić jego oprogramowanie.</string>
+</resources>

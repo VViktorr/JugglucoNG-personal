@@ -1,7 +1,7 @@
 package tk.glucodata.ui.setup
 
-import tk.glucodata.ui.util.appButtonShapes
-
+import tk.glucodata.ui.components.SensorWizardHero
+import tk.glucodata.ui.components.rememberSensorHeroCompact
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.animateColorAsState
@@ -10,21 +10,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.BluetoothSearching
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,13 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tk.glucodata.R
+import tk.glucodata.ui.components.SensorType
 import tk.glucodata.Natives
 import tk.glucodata.ui.util.BleDeviceScanner
 
@@ -56,6 +52,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tk.glucodata.drivers.sibionics.SibionicsConstants
 import tk.glucodata.drivers.sibionics.SibionicsRegistry
+import tk.glucodata.ui.symbols.Symbols
 
 enum class SibionicsType(val displayNameRes: Int, val subtype: Int, val setupVisible: Boolean = true) {
     EU(R.string.eusibionics, 0),
@@ -240,14 +237,14 @@ fun ManualSensorEntryDialog(
             TextButton(
                 onClick = { onConfirm(batch + serial) },
                 enabled = batchValid && serialValid,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }
@@ -294,14 +291,14 @@ fun ManualTransmitterEntryDialog(
             TextButton(
                 onClick = { onConfirm(code) },
                 enabled = isValid,
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                 Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(stringResource(R.string.cancel))
             }
         }
@@ -427,7 +424,6 @@ fun SibionicsSetupWizard(
     var currentStep by remember { mutableStateOf(SibionicsSetupStep.SELECT_TYPE) }
     var selectedType by remember { mutableStateOf(SibionicsType.EU) }
     var sensorName by remember { mutableStateOf("") }
-    var scannerTouchActive by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val handleDismiss: () -> Unit = onDismiss
     val handleBack: () -> Unit = {
@@ -440,17 +436,12 @@ fun SibionicsSetupWizard(
 
     BackHandler(onBack = handleBack)
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val scaffoldModifier = if (scannerTouchActive) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
-
-    Scaffold(
-        modifier = scaffoldModifier,
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.sibionics_setup_title),
                 onNavigateBack = handleBack,
                 navigationContentDescription = stringResource(R.string.cancel),
-                scrollBehavior = scrollBehavior,
             )
         }
     ) { padding ->
@@ -480,9 +471,6 @@ fun SibionicsSetupWizard(
                     onNext = {
                         currentStep = SibionicsSetupStep.SCAN_SENSOR
                     },
-                    onBack = {
-                        onDismiss()
-                    }
                 )
 
                 SibionicsSetupStep.SCAN_SENSOR -> ScanSensorStep(
@@ -525,9 +513,6 @@ fun SibionicsSetupWizard(
                             kotlinx.coroutines.delay(1500)
                             onComplete()
                         }
-                    },
-                    onScannerTouchInteractionChanged = { active ->
-                        scannerTouchActive = active
                     }
                 )
 
@@ -545,8 +530,7 @@ fun ScanSensorStep(
     compact: Boolean,
     selectedType: SibionicsType,
     onManagedEntry: (String, BleDeviceScanner.SibionicsBleDevice?) -> Unit,
-    onBleDeviceEntry: (BleDeviceScanner.SibionicsBleDevice) -> Unit,
-    onScannerTouchInteractionChanged: (Boolean) -> Unit
+    onBleDeviceEntry: (BleDeviceScanner.SibionicsBleDevice) -> Unit
 ) {
     val contentPadding = if (compact) 12.dp else 16.dp
     val sectionGap = if (compact) 8.dp else 12.dp
@@ -596,10 +580,6 @@ fun ScanSensorStep(
             }
         }
     )
-
-    DisposableEffect(Unit) {
-        onDispose { onScannerTouchInteractionChanged(false) }
-    }
 
     LaunchedEffect(bleProbeScanning, selectedType) {
         if (bleProbeScanning) {
@@ -659,6 +639,7 @@ fun ScanSensorStep(
     }
     
     LazyColumn(
+        state = rememberLazyListState().scrollsUnderTopBar(),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(contentPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -679,7 +660,6 @@ fun ScanSensorStep(
                 manualFallbackLabel = stringResource(R.string.scan_qr_button),
                 onTouchInteractionChanged = { active ->
                     scannerTouchActive = active
-                    onScannerTouchInteractionChanged(active)
                 }
             )
             Text(
@@ -714,7 +694,7 @@ fun ScanSensorStep(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = buttonHeight),
-                    shapes = appButtonShapes(),
+                    shapes = ButtonDefaults.shapes(),
                     contentPadding = ButtonDefaults.ContentPadding
                 ) {
                     if (bleProbeScanning) {
@@ -725,7 +705,7 @@ fun ScanSensorStep(
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.scanning_devices))
                     } else {
-                        Icon(Icons.Default.BluetoothSearching, contentDescription = null)
+                        Icon(Symbols.BluetoothSearchingFilled, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.search_bluetooth))
                     }
@@ -748,11 +728,11 @@ fun ScanSensorStep(
                         supportingContent = {
                             Text(text = "${item.address} • RSSI ${item.rssi}", maxLines = 1)
                         },
-                        leadingContent = { Icon(Icons.Default.Bluetooth, contentDescription = null) },
+                        leadingContent = { Icon(Symbols.BluetoothFilled, contentDescription = null) },
                         trailingContent = {
                             if (selected) {
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    imageVector = Symbols.CheckFilled,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
@@ -780,10 +760,10 @@ fun ScanSensorStep(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = buttonHeight),
-                        shapes = appButtonShapes(),
+                        shapes = ButtonDefaults.shapes(),
                         contentPadding = ButtonDefaults.ContentPadding,
                     ) {
-                        Icon(Icons.Default.Bluetooth, contentDescription = null)
+                        Icon(Symbols.BluetoothFilled, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = "${stringResource(R.string.use_bluetooth)} · ${selectedBleDevice.name}",
@@ -805,10 +785,10 @@ fun ScanSensorStep(
                     ) 
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
-                Icon(Icons.Default.Image, contentDescription = null)
+                Icon(Symbols.ImageFilled, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.select_gallery_button))
             }
@@ -818,7 +798,7 @@ fun ScanSensorStep(
             TextButton(
                 onClick = { showManualEntry = true },
                         modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
 
             ) {
@@ -837,10 +817,10 @@ fun SelectTypeStep(
     onNavigateToReadiness: () -> Unit,
     onTypeSelected: (SibionicsType) -> Unit,
     onNext: () -> Unit,
-    onBack: () -> Unit
 ) {
     val horizontalPadding = if (compact) 16.dp else 24.dp
-    val verticalPadding = if (compact) 12.dp else 16.dp
+    // The container's own padding, so Continue keeps a full 16 dp off the navigation bar.
+    val verticalPadding = 16.dp
     val listGap = if (compact) 12.dp else 16.dp
     val cardPadding = if (compact) 16.dp else 20.dp
     val buttonHeight = 48.dp
@@ -850,15 +830,12 @@ fun SelectTypeStep(
             .padding(horizontal = horizontalPadding, vertical = verticalPadding)
     ) {
         Spacer(modifier = Modifier.height(if (compact) 12.dp else 16.dp))
-        Text(
-            text = stringResource(R.string.select_sibionics_type),
-            style = MaterialTheme.typography.headlineSmallEmphasized,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = stringResource(R.string.choose_sibionics_variant),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        SensorWizardHero(
+            SensorType.SIBIONICS,
+            title = stringResource(R.string.select_sibionics_type),
+            compact = rememberSensorHeroCompact(sharesScreen = true),
+            // The model picked below comes to the front of the pair.
+            pairLead = selectedType == SibionicsType.SIBIONICS2,
         )
         Spacer(modifier = Modifier.height(if (compact) 8.dp else 12.dp))
         tk.glucodata.ui.CgmReadinessSetupBanner(onOpenReadiness = onNavigateToReadiness)
@@ -932,7 +909,7 @@ fun SelectTypeStep(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    imageVector = Symbols.CheckFilled,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary.copy(alpha = checkAlpha),
                                     modifier = Modifier.size(if (compact) 20.dp else 24.dp)
@@ -953,26 +930,13 @@ fun SelectTypeStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = buttonHeight),
-            shapes = appButtonShapes(),
+            shapes = ButtonDefaults.shapes(),
             contentPadding = ButtonDefaults.ContentPadding,
         ) {
             Text(
                 text = stringResource(R.string.continue_action),
                 style = MaterialTheme.typography.labelLarge
             )
-        }
-        
-        Spacer(modifier = Modifier.height(if (compact) 8.dp else 12.dp))
-        
-        // Secondary cancel action
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-            shapes = appButtonShapes(),
-            contentPadding = ButtonDefaults.TextButtonContentPadding,
-
-            ) {
-            Text(stringResource(R.string.cancel))
         }
     }
 }
@@ -1037,6 +1001,7 @@ fun ScanTransmitterStep(
     }
     
     LazyColumn(
+        state = rememberLazyListState().scrollsUnderTopBar(),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(contentPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1062,7 +1027,7 @@ fun ScanTransmitterStep(
             OutlinedButton(
                 onClick = { isScanning = !isScanning },
                 modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
                 if (isScanning) {
@@ -1074,7 +1039,7 @@ fun ScanTransmitterStep(
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.scanning_devices))
                 } else {
-                    Icon(Icons.Default.BluetoothSearching, contentDescription = null)
+                    Icon(Symbols.BluetoothSearchingFilled, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.search_bluetooth))
                 }
@@ -1095,7 +1060,7 @@ fun ScanTransmitterStep(
             items(foundDevices.toList()) { device ->
                 ListItem(
                     headlineContent = { Text(device) },
-                    leadingContent = { Icon(Icons.Default.Bluetooth, null) },
+                    leadingContent = { Icon(Symbols.BluetoothFilled, null) },
                     modifier = Modifier
                         .clickable { onDeviceFound(device) }
                         .clip(RoundedCornerShape(8.dp))
@@ -1159,10 +1124,10 @@ fun ScanTransmitterStep(
             Button(
                 onClick = onScanClick,
                 modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = null)
+                Icon(Symbols.QrCodeScannerFilled, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.scan_transmitter_button))
             }
@@ -1177,10 +1142,10 @@ fun ScanTransmitterStep(
                     ) 
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
-                Icon(Icons.Default.Image, contentDescription = null)
+                Icon(Symbols.ImageFilled, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.select_gallery_button))
             }
@@ -1190,7 +1155,7 @@ fun ScanTransmitterStep(
             TextButton(
                 onClick = { showManualEntry = true },
                 modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight),
-                shapes = appButtonShapes(),
+                shapes = ButtonDefaults.shapes(),
                 contentPadding = ButtonDefaults.TextButtonContentPadding
             ) {
                  Text(stringResource(R.string.enter_code_manually))
@@ -1208,6 +1173,7 @@ fun ConnectingStep(
 ) {
     SensorSetupConnectingScreen(
         ui = ui,
+        sensor = SensorType.SIBIONICS,
         sensorLabel = sensorLabel
     )
 }
