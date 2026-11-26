@@ -56,7 +56,6 @@ import static tk.glucodata.Applic.isWearable;
 //import static tk.glucodata.DexGattCallback.setalarm;
 import static tk.glucodata.Log.doLog;
 import static tk.glucodata.LossOfSensorAlarm.cancelalarm;
-import static tk.glucodata.Natives.abbottinit;
 import static tk.glucodata.Natives.getstreamingAuthenticationData;
 import static tk.glucodata.Natives.hasalarmloss;
 import static tk.glucodata.Natives.processTooth;

@@ -2029,16 +2029,10 @@ extern "C" JNIEXPORT void JNICALL fromjava(initLibreCountryIfUnset)(
     data->librecountry = val + 1;
 }
 
-extern bool switchgen2();
-
 extern "C" JNIEXPORT void JNICALL fromjava(setStreamHistory)(JNIEnv *env,
                                                              jclass cl,
                                                              jboolean val) {
-  if (val != settings->data()->streamHistory) {
-    settings->data()->streamHistory = val;
-    if (val)
-      switchgen2();
-  }
+  settings->data()->streamHistory = val;
 }
 extern "C" JNIEXPORT jboolean JNICALL fromjava(getStreamHistory)(JNIEnv *env,
                                                                  jclass cl) {
