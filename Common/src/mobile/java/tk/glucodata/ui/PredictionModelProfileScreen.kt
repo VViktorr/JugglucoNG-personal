@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,7 +32,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +54,9 @@ import tk.glucodata.R
 import tk.glucodata.data.prediction.DoseTarget
 import tk.glucodata.data.prediction.PredictionModelBlock
 import tk.glucodata.data.prediction.PredictionModelProfile
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.util.GlucoseFormatter
 import tk.glucodata.ui.viewmodel.DashboardViewModel
 
@@ -75,7 +77,7 @@ fun PredictionModelProfileScreen(
     var timePickerRequest by remember { mutableStateOf<ProfileTimePickerRequest?>(null) }
     var pendingDeleteStart by remember { mutableStateOf<Int?>(null) }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -85,6 +87,7 @@ fun PredictionModelProfileScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import tk.glucodata.R
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.RevealSettingsSearchAnchor
 import tk.glucodata.ui.components.SectionLabel
@@ -65,7 +66,7 @@ fun PhoneAppsSettingsScreen(
 
     val appColor = MaterialTheme.colorScheme.tertiary
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -74,7 +75,7 @@ fun PhoneAppsSettingsScreen(
             )
         }
     ) { padding ->
-        val listState = rememberLazyListState()
+        val listState = rememberLazyListState().scrollsUnderTopBar()
         // With large text the options group can start below the built rows; only page for
         // the options this screen currently shows, as search does.
         RevealSettingsSearchAnchor(

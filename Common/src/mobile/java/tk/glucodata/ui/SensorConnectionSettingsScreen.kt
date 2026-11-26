@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import tk.glucodata.R
 import tk.glucodata.alerts.SensorHandoverRuntime
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.RevealSettingsSearchAnchor
 import tk.glucodata.ui.components.SectionLabel
@@ -48,7 +49,7 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
     var highPriority by remember { mutableStateOf(SensorConnectionSettings.highPriority) }
     var autoConnect by remember { mutableStateOf(SensorConnectionSettings.autoConnect) }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -57,7 +58,7 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        val listState = rememberLazyListState()
+        val listState = rememberLazyListState().scrollsUnderTopBar()
         // With large text the Bluetooth group can start below the built rows.
         RevealSettingsSearchAnchor(
             listState,
