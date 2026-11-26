@@ -172,6 +172,7 @@ object WearSync2 {
         // Fresh-watch bootstrap: always worth it.
         executor.execute {
             runCatching {
+                if (!wearCompanionEnabled()) return@execute
                 allowDeepServe(force = true)
                 serveSince(sanitizeFrom(0L))
             }.onFailure { Log.stack(LOG_ID, "serveAll", it) }
@@ -184,6 +185,7 @@ object WearSync2 {
         if (Applic.isWearable) return
         executor.execute {
             runCatching {
+                if (!wearCompanionEnabled()) return@execute
                 // Calibration changes every stored value, so the horizon does
                 // have to go again — but not once per keystroke of an edit.
                 if (allowDeepServe(force = false)) serveSince(sanitizeFrom(0L))

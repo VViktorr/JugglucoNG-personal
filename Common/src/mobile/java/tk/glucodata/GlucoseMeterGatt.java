@@ -55,6 +55,7 @@ import androidx.annotation.NonNull;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import tk.glucodata.glucosemeter.MeterClockSync;
 import tk.glucodata.glucosemeter.MeterLinkOutcome;
 import tk.glucodata.glucosemeter.MeterLinkPacer;
 import tk.glucodata.glucosemeter.MeterSyncPacing;
@@ -149,6 +150,10 @@ private final MeterLinkPacer pacer=new MeterLinkPacer();
 private boolean pacedWaiting=false;
 // Bumped by every cancel, so an alarm already being delivered sees it is stale.
 private long pacedTicket=0L;
+// GATT whose link we explicitly disconnected before a paced wait. On API <= 26 (useConnect=false),
+// disconnect() also cancels Android's background autoConnect request, so if STATE_DISCONNECTED
+// ends up waiting 0 ms (e.g. pacing changed to Right away mid-disconnect) we must re-arm connect().
+private BluetoothGatt pacedDisconnectGatt=null;
 private synchronized void markLinkAnswered() { linkAnswered=true; }
 private synchronized void markLinkFailed() { linkAnswered=linkFailed=true; }
 private synchronized void markLinkBroughtNew() { linkBroughtNew=true; }
@@ -161,13 +166,41 @@ synchronized void cancelPacedReconnect() {
     pacedWaiting=false;
     MeterRecheckAlarm.cancel(meterIndex);
 }
-private synchronized long pacedReconnectDelay() {
-    final MeterLinkOutcome outcome=linkBroughtNew?MeterLinkOutcome.NEW_READINGS
+private synchronized MeterLinkOutcome currentLinkOutcome() {
+    return linkBroughtNew?MeterLinkOutcome.NEW_READINGS
         :linkFailed?MeterLinkOutcome.FAILED
         :linkAnswered?MeterLinkOutcome.NOTHING_NEW
         :MeterLinkOutcome.UNANSWERED;
+}
+private synchronized long pacedReconnectDelay() {
+    return pacedReconnectDelay(MeterSyncPacing.minutes());
+}
+private synchronized long pacedReconnectDelay(int intervalMinutes) {
+    final MeterLinkOutcome outcome=currentLinkOutcome();
     resetLink();
-    return pacer.linkEnded(outcome,staysOn(),MeterSyncPacing.minutes());
+    return pacer.linkEnded(outcome,staysOn(),intervalMinutes);
+}
+private synchronized boolean shouldDisconnectBeforePacedWait() {
+    return !stop && connected && pacer.wouldWait(currentLinkOutcome(),staysOn(),MeterSyncPacing.minutes());
+}
+// Satellite holds an idle BLE link open for ~30s before dropping it. Once a sync finishes
+// and will enter a paced wait, disconnect cleanly right away instead of keeping the meter's
+// radio active and holding an extra ACL link alongside sensors. Never disconnect early when
+// the recheck interval is 0 (or on new readings), or it would spin every couple of seconds.
+private void disconnectIfPaced(BluetoothGatt gatt) {
+    synchronized(this) {
+        if(gatt==null || gatt!=mBluetoothGatt || gatt==pacedDisconnectGatt || !shouldDisconnectBeforePacedWait())
+            return;
+        pacedDisconnectGatt=gatt;
+        if(doLog) Log.i(LOG_ID,meterIndex+" sync complete, disconnecting before paced wait");
+        gatt.disconnect();
+    }
+}
+private synchronized boolean consumePacedDisconnect(BluetoothGatt gatt) {
+    final boolean matched = !stop && gatt!=null && gatt==pacedDisconnectGatt && gatt==mBluetoothGatt;
+    if(gatt==pacedDisconnectGatt)
+        pacedDisconnectGatt=null;
+    return matched;
 }
 private synchronized void schedulePacedReconnect(long wait) {
     cancelPacedReconnect();
@@ -203,6 +236,11 @@ private boolean discover(BluetoothGatt bluetoothGatt) {
     VerioWriteChar=null;
     VerioNotifyChar=null;
     verioSession.reset();
+    // Clock characteristics decide the sync path, so never carry them over from an
+    // earlier discovery.
+    TimeChar=null;
+    DateTimeChar=null;
+    IsensTimeChar=null;
     for(var ser:services) {
         if(doLog) Log.i(LOG_ID,"service: "+ser.getUuid().toString());
         final boolean satelliteService=ser.getUuid().equals(SatelliteMeterProtocol.SERVICE_UUID);
@@ -325,6 +363,7 @@ private void beginSatelliteSession(BluetoothGatt gatt) {
         Applic.argToaster(app, R.string.satellite_meter_code_missing, android.widget.Toast.LENGTH_LONG);
         // A failed link: never redialled and toasted twice a minute; saving a code retries at once.
         markLinkFailed();
+        disconnectIfPaced(gatt);
         return;
     }
     satelliteSession=new SatelliteMeterSession(pin,System.currentTimeMillis());
@@ -393,6 +432,7 @@ private synchronized void processSatelliteResponse(BluetoothGatt gatt, byte[] va
         satelliteSession=null;
         if(update.getError()!=null) markLinkFailed();
         else markLinkAnswered();
+        disconnectIfPaced(gatt);
         return;
     }
     final byte[] command=update.getCommand();
@@ -438,6 +478,10 @@ protected  final boolean enableIndication(BluetoothGatt bluetoothGatt1, Bluetoot
         return  enableIndicationnote(""+meterIndex, bluetoothGatt1, bluetoothGattCharacteristic) ;
         }
 private void tryer(Supplier<Boolean> worked) {
+        tryer(worked,null);
+        }
+// gaveUp runs when every attempt was refused while still connected.
+private void tryer(Supplier<Boolean> worked,Runnable gaveUp) {
         if(worked.get())
             return;
         Applic.scheduler.schedule(() -> { 
@@ -448,30 +492,58 @@ private void tryer(Supplier<Boolean> worked) {
                       }
                   if(worked.get()) return; 
                   sleep(20) ;
-                 } }, 20, TimeUnit.MILLISECONDS);
+                 }
+             if(gaveUp!=null && connected)
+                 gaveUp.run();
+             }, 20, TimeUnit.MILLISECONDS);
        } 
 private void handleManufactory(BluetoothGatt gatt,String manufacturer) {
         if(doLog)
             Log.i(LOG_ID,"handleManufactory "+ manufacturer);
         if(manufacturer.startsWith("Roche")) {
                 allRecordsOnly=true;
-                if(doLog)
-                        Log.i(LOG_ID,"read DateTime");
-                tryer(()->gatt.readCharacteristic(DateTimeChar));
-                return;
                 }
         if(manufacturer.startsWith("TaiDoc")) {
                 firstRecordonly=true;
                 tryer(()->enableNotification(gatt, GlucoseChar));
                 return;
                 }
-        if(manufacturer.startsWith("i-SENS")) {
-               // newerRecords=true;
+        // Only touch clock characteristics the meter exposes: some i-SENS meters
+        // (CareSens, discussion #787) have no FFF1, and enabling notifications on the
+        // missing characteristic threw on every retry so no record was ever requested.
+        switch(MeterClockSync.step(manufacturer,DateTimeChar!=null,IsensTimeChar!=null,TimeChar!=null)) {
+            case READ_DATE_TIME:
+                if(doLog) Log.i(LOG_ID,"read DateTime");
+                readClock(gatt,DateTimeChar);
+                break;
+            case WRITE_ISENS_TIME:
                 tryer(()->enableNotification(gatt, IsensTimeChar));
-                return;
-                }
-        tryer(()->gatt.readCharacteristic(TimeChar));
+                break;
+            case READ_CURRENT_TIME:
+                readClock(gatt,TimeChar);
+                break;
+            default:
+                Log.i(LOG_ID,"no usable clock characteristic, records without clock");
+                enableRecordNotifications(gatt);
+                break;
+            }
        }
+// The clock only corrects record times, so a read Android will not queue still
+// leads on to the records.
+private void readClock(BluetoothGatt gatt,BluetoothGattCharacteristic clock) {
+        tryer(()->gatt.readCharacteristic(clock),()->{
+            Log.i(LOG_ID,"clock read not queued, records without clock");
+            enableRecordNotifications(gatt);
+            });
+        }
+private void enableRecordNotifications(BluetoothGatt gatt) {
+        if(ContextChar!=null) {
+            tryer(()->enableNotification(gatt, ContextChar));
+            }
+        else {
+            tryer(()->enableNotification(gatt, GlucoseChar));
+            }
+        }
     @Override
     public void onCharacteristicRead(@NonNull BluetoothGatt bluetoothGatt,@NonNull  BluetoothGattCharacteristic bluetoothGattCharacteristic, int status) {
         final var value=bluetoothGattCharacteristic.getValue();
@@ -479,6 +551,14 @@ private void handleManufactory(BluetoothGatt gatt,String manufacturer) {
         if(doLog) {Log.d(LOG_ID, bluetoothGatt.getDevice().getAddress() + " onCharacteristicRead, status:" + status + " UUID:" + uuid);};;
 
       if(status!=GATT_SUCCESS) {
+            final boolean clock=uuid.equals(TimeCharUUID)||uuid.equals(DateTimeCharUUID);
+            final boolean bonded=bluetoothGatt.getDevice().getBondState()==BOND_BONDED;
+            if(clock && (bonded || status != GATT_INSUFFICIENT_AUTHENTICATION)) {
+                // Optional step: a meter that refuses its clock still hands over records.
+                Log.i(LOG_ID,"clock read failed status="+status+", records without clock");
+                enableRecordNotifications(bluetoothGatt);
+                return;
+                }
             if(status == GATT_INSUFFICIENT_AUTHENTICATION) { 
                 if(doLog)
                     Log.i(LOG_ID,"onCharacteristicRead GATT_INSUFFICIENT_AUTHENTICATION");
@@ -496,12 +576,7 @@ private void handleManufactory(BluetoothGatt gatt,String manufacturer) {
             case DateTimeCharUUID: 
             case TimeCharUUID: 
                 Natives.GlucoseMeterSaveTime(meterIndex,value);
-                if(ContextChar!=null) {
-                    tryer(()->enableNotification(bluetoothGatt, ContextChar));
-                    }
-                else {
-                    tryer(()->enableNotification(bluetoothGatt, GlucoseChar));break;
-                    }
+                enableRecordNotifications(bluetoothGatt);
                 break;
                  
             default: Log.e(LOG_ID,"onCharacteristicRead: Unknown UUID "+uuid);break;
@@ -550,6 +625,7 @@ boolean connected=false;
          // this link drops later.
          autoConnect=true;
          resetLink();
+         consumePacedDisconnect(bluetoothGatt);
          // Connected some other way while a paced reconnect waited.
          cancelPacedReconnect();
         if(stop) {
@@ -593,21 +669,29 @@ boolean connected=false;
                   else {
                      if(autoConnect)  {
                         final boolean paced;
+                        final boolean rearmDisconnect;
                         // One hold of the lock pacingChanged takes, so an interval change
                         // cannot slip between reading the interval and arming the alarm.
                         synchronized(this) {
-                            final long wait=pacedReconnectDelay();
+                            rearmDisconnect=consumePacedDisconnect(bluetoothGatt);
+                            final MeterLinkOutcome outcome=currentLinkOutcome();
+                            final int intervalMinutes=MeterSyncPacing.minutes();
+                            final long wait=pacedReconnectDelay(intervalMinutes);
                             paced=wait>0L;
                             if(paced) {
-                                if(doLog) Log.i(LOG_ID,meterIndex+" stays on, nothing new, reconnect in "+wait/1000+"s");
+                                if(doLog) Log.i(LOG_ID,meterIndex+" stays on, "+outcome+", reconnect in "+wait/1000+"s");
                                 close();
                                 schedulePacedReconnect(wait);
                                 }
+                            else if(staysOn() && doLog) {
+                                Log.i(LOG_ID,meterIndex+" stays on, reconnecting at once (outcome="+outcome+", interval="+intervalMinutes+"m)");
+                                }
                             }
-                        if(!paced && useConnect)
+                        if(!paced && (useConnect || rearmDisconnect))
                             bluetoothGatt.connect();
                         }
                     else {
+                        consumePacedDisconnect(bluetoothGatt);
                         // The one direct attempt a fresh sighting earns did not land.
                         // Fall back to the whitelist connect: retrying directly would
                         // keep the radio dialing for as long as the meter stays silent,
@@ -889,6 +973,7 @@ private void setCareSenseTime(BluetoothGatt bluetoothGatt) {
             }
         finally {    
             mBluetoothGatt = null;
+            pacedDisconnectGatt = null;
             }
         }
     else {
