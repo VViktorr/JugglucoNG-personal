@@ -1,6 +1,10 @@
 name: Personal APKs — Numbered build
 
 on:
+  push:
+    branches: [allnew]
+    paths:
+      - '.github/workflows/personal-apk.yml'
   workflow_dispatch:
     inputs:
       base_version:
@@ -16,5 +20,5 @@ jobs:
   publish:
     uses: ./.github/workflows/personal-apk-build.yml
     with:
-      version: ${{ format('{0}.{1}', inputs.base_version, github.run_number) }}
+      version: ${{ format('{0}.{1}', inputs.base_version || '1.4.0', github.run_number) }}
     secrets: inherit
