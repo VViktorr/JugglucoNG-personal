@@ -50,6 +50,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         private const val PERIODIC_REFRESH_MS = 60_000L
         private const val BROADCAST_FOLLOW_UP_MS = 750L
         private const val EVENT_MIN_INTERVAL_MS = 400L
+        private const val UNCHANGED_REDRAW_MS = 60_000L
         /** Two periodic drivers feed one refresh; anything sooner than this is the other one. */
         private const val PERIODIC_MIN_INTERVAL_MS = 30_000L
         const val ACTION_IMMEDIATE_REFRESH = "tk.glucodata.action.AOD_IMMEDIATE_REFRESH"
@@ -91,11 +92,13 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
     private var currentChartAnchorFraction = 0.5f
 
     private val eventGate = AodRefreshGate(EVENT_MIN_INTERVAL_MS)
+    private var lastDrawInputs = 0L
+    private var lastDrawElapsed = 0L
     private val eventRefreshRunnable = Runnable {
         eventGate.onRefresh(SystemClock.uptimeMillis())
         if (overlayView?.visibility == View.VISIBLE) {
             BatteryTrace.bump("aod.overlay.refresh.event", logEvery = 20L)
-            updateOverlayContent()
+            updateOverlayContent(force = false)
         }
     }
 
@@ -518,7 +521,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         } catch (e: Exception) {}
     }
 
-    private fun updateOverlayContent() {
+    private fun updateOverlayContent(force: Boolean = true) {
         val view = overlayView ?: return
         val usesLightPalette = resolveUsesLightPalette()
         NotificationChartDrawer.setAodUsesLightPalette(usesLightPalette)
@@ -642,6 +645,37 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         // arrow view would visually attach to the last peer value otherwise.
         val inlineMultiArrows = showArrow && peerValueItems.isNotEmpty()
 
+        val showChart = prefs.getBoolean("aod_show_chart", true)
+        val peerChartSeries = if (showChart) {
+            NotificationMultiSensorSource.peerSeries(peerCurrents, startT, isMmol)
+        } else {
+            emptyList()
+        }
+        val chartModel = if (showChart) {
+            tk.glucodata.NotificationChartModelSource.build(
+                this, overlayChartPoints, activeSensorSerial, viewMode, hasCalibration, peerChartSeries, startT
+            )
+        } else {
+            null
+        }
+        val inputs = tk.glucodata.NotificationFingerprint()
+            .add(valStr).add(primaryDisplayColor.toLong()).add(glucoseColor.toLong())
+            .add(displayRate).add(usesLightPalette).add(isMmol).add(viewMode.toLong())
+            .add(hasCalibration).add(dataState.isFresh).add(staleStatus).add(activeSensorSerial)
+            .add(showArrow).add(arrowScale).add(textScale).add(chartScale)
+            .add(fontSource).add(fontWeight.toLong()).add(showChart)
+            .add(tk.glucodata.JournalSnapshotAccess.revision)
+            .add(tk.glucodata.JournalSnapshotAccess.forecastJournalReady.value)
+            .also { hash ->
+                peerValueItems.forEach { hash.add(it.text).add(it.color.toLong()).add(it.rate) }
+                if (showChart) {
+                    hash.addPoints(overlayChartPoints, isMmol).addModel(chartModel, isMmol)
+                    peerChartSeries.forEach { hash.add(it.sensorId).addPoints(it.points, isMmol) }
+                }
+            }.value()
+        val nowElapsed = SystemClock.elapsedRealtime()
+        if (!force && inputs == lastDrawInputs && nowElapsed - lastDrawElapsed < UNCHANGED_REDRAW_MS) return
+
         // Use textScale here for high-res bitmap generation
         val textBitmap = NotificationChartDrawer.drawMultiGlucoseText(
             this,
@@ -675,9 +709,6 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
             arrowImg?.visibility = View.GONE
         }
 
-// CHART VISIBILITY CHECK
-        // prefs already defined above
-        val showChart = prefs.getBoolean("aod_show_chart", true)
         val chartImg = view.findViewById<ImageView>(R.id.notification_chart)
 
         if (showChart) {
@@ -685,14 +716,6 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
             val baseChartHeightPx = (200 * dm.density).toInt()
             val renderWidth = (dm.widthPixels * 1.5f).toInt()
             val renderHeight = (baseChartHeightPx * 1.5f).toInt()
-            val peerChartSeries = NotificationMultiSensorSource.peerSeries(peerCurrents, startT, isMmol)
-            // The same resolved model as the notification and the dashboard —
-            // values, ownership, lanes decided once — so the always-on display
-            // cannot disagree with them about a minute already shown.
-            val chartModel = tk.glucodata.NotificationChartModelSource.build(
-                this, overlayChartPoints, activeSensorSerial, viewMode, hasCalibration, peerChartSeries, startT
-            )
-
             val chartBitmap = NotificationChartDrawer.drawChartWithPrediction(
                 this,
                 overlayChartPoints,
@@ -736,6 +759,8 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
             }
         }
         applyBurnInProtection()
+        lastDrawInputs = inputs
+        lastDrawElapsed = nowElapsed
     }
 
     private fun estimateChartAnchorFraction(points: List<GlucosePoint>, startT: Long, endT: Long): Float {
