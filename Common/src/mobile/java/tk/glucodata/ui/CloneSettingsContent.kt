@@ -11,6 +11,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,8 @@ import tk.glucodata.R
 import tk.glucodata.util.DiscoveredMirror
 import tk.glucodata.ui.components.*
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.util.ConnectedButtonGroup
 
 internal enum class ClonePairMode { SEND, GET }
@@ -65,7 +68,7 @@ internal fun CloneSettingsContent(
     onAddManually: () -> Unit,
     connections: LazyListScope.() -> Unit,
 ) {
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -82,6 +85,7 @@ internal fun CloneSettingsContent(
         },
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),

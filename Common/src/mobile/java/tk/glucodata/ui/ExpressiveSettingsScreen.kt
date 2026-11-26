@@ -40,6 +40,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -78,6 +79,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import tk.glucodata.ui.components.TabScreenDefaults
 import tk.glucodata.ui.components.TabScreenHeader
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.util.findActivity
 import tk.glucodata.ui.util.fullRestart
 import tk.glucodata.ui.util.hardRestart
@@ -1245,7 +1248,7 @@ fun PredictiveSimulationSettingsScreen(
     }
     LaunchedEffect(Unit) { analysisViewModel.refresh() }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -1255,6 +1258,7 @@ fun PredictiveSimulationSettingsScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),

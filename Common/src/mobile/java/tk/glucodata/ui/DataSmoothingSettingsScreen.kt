@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -60,6 +59,8 @@ import kotlin.math.roundToInt
 import tk.glucodata.DataSmoothing
 import tk.glucodata.R
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.MasterSwitchCard
 import tk.glucodata.ui.components.SectionLabel
@@ -132,7 +133,7 @@ internal fun DataSmoothingSettingsContent(
     val fewerScope = dataSmoothingFewerScopeLabel(targets)
     val placeLabels = DataSmoothingPlace.entries.associateWith { stringResource(it.shortLabel) }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -145,7 +146,7 @@ internal fun DataSmoothingSettingsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState().scrollsUnderTopBar())
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 32.dp)
         ) {
             MasterSwitchCard(
