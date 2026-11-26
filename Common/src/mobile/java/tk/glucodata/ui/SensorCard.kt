@@ -360,6 +360,84 @@ internal fun bleErrorValue(status: String, relativeAge: CharSequence?): String {
     return if (age.isEmpty()) status else "$status · $age"
 }
 
+/**
+ * The status line beside the reading. One line while it fits; when it does not, a trailing
+ * "(qualifier)" drops to a supporting line under the state ("Connected" over "Broadcast
+ * fallback"), a status without one wraps between its words, and a single word shrinks on its
+ * line rather than break inside itself.
+ */
+@Composable
+private fun SensorStatusText(status: String, color: Color, modifier: Modifier = Modifier) {
+    var stacked by remember(status) { mutableStateOf(false) }
+    val open = status.lastIndexOf(" (")
+    val split = if (open > 0 && status.endsWith(")")) {
+        status.substring(0, open) to status.substring(open + 2, status.length - 1)
+            .replaceFirstChar { it.titlecase() }
+    } else {
+        null
+    }
+    if (!stacked) {
+        Text(
+            text = status,
+            style = MaterialTheme.typography.titleSmall,
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+            onTextLayout = { if (it.hasVisualOverflow) stacked = true },
+            modifier = modifier,
+        )
+    } else if (split != null) {
+        Column(modifier = modifier) {
+            Text(
+                text = split.first,
+                style = MaterialTheme.typography.titleSmall,
+                color = color,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+            Text(
+                text = split.second,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
+    } else if (status.none { it.isWhitespace() }) {
+        // One word ("Подключено") has nowhere to wrap but mid-word: it steps down a size on
+        // its one line instead, and only past the smallest size loses its end.
+        val maxSize = MaterialTheme.typography.titleSmall.fontSize
+        val minSize = MaterialTheme.typography.labelMedium.fontSize
+        val autoSize = remember(minSize, maxSize) {
+            androidx.compose.foundation.text.TextAutoSize.StepBased(
+                minFontSize = minSize,
+                maxFontSize = maxSize,
+                stepSize = 1.sp,
+            )
+        }
+        Text(
+            text = status,
+            style = MaterialTheme.typography.titleSmall,
+            color = color,
+            autoSize = autoSize,
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = modifier,
+        )
+    } else {
+        // Several words wrap between them, into two lines of about even length.
+        Text(
+            text = status,
+            style = MaterialTheme.typography.titleSmall.copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading),
+            color = color,
+            maxLines = 2,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = modifier,
+        )
+    }
+}
+
 @Composable
 private fun SensorCurrentValueChip(
     snapshot: CurrentDisplaySource.Snapshot,
@@ -2174,9 +2252,8 @@ fun SensorCard(
                                 )
                             }
                             sensorStatusText?.let { status ->
-                                Text(
-                                    text = status,
-                                    style = MaterialTheme.typography.titleSmall,
+                                SensorStatusText(
+                                    status = status,
                                     color = if (sensor.isCloneSource && !cloneHasRecentData) {
                                         MaterialTheme.colorScheme.error
                                     } else if (isStreaming) {
@@ -2184,8 +2261,6 @@ fun SensorCard(
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                     },
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
