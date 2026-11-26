@@ -67,7 +67,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -2280,251 +2279,264 @@ fun SensorCard(
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    val detailsExpanded = SensorCardDetails.expanded(context, sensor.serial)
+                    TextButton(
+                        onClick = { SensorCardDetails.setExpanded(context, sensor.serial, !detailsExpanded) },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        // Clean Label-Value rows
-                        val labelStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        val valueStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
-                        var batteryRefreshAnimation by remember(sensor.serial) { mutableIntStateOf(0) }
-
-                        @Composable
-                        fun DataRow(
-                            label: String,
-                            value: String,
-                            onClick: (() -> Unit)? = null,
-                            valueAnimationKey: Int? = null,
-                        ) {
-                            val rowModifier = if (onClick != null) {
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onClick,
-                                    )
-                            } else {
-                                Modifier.fillMaxWidth()
-                            }
-                            Row(
-                                modifier = rowModifier,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
+                        Text(stringResource(R.string.mirror_details))
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            imageVector = if (detailsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    AnimatedVisibility(visible = detailsExpanded) {
+                        BoxWithConstraints {
+                            val stackDetailRows = maxWidth / LocalDensity.current.fontScale < 240.dp
+                            Column(
+                                modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Text(
-                                    text = label,
-                                    style = labelStyle,
-                                    maxLines = 2,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(0.42f)
-                                )
-                                if (valueAnimationKey == null) {
-                                    Text(
-                                        text = value,
-                                        style = valueStyle,
-                                        maxLines = 2,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                                        modifier = Modifier.weight(0.58f)
-                                    )
-                                } else {
-                                    AnimatedContent(
-                                        targetState = value to valueAnimationKey,
-                                        transitionSpec = {
-                                            (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
-                                                .togetherWith(
-                                                    fadeOut(tween(120)) + slideOutVertically(tween(120)) { -it / 3 },
+                                // Clean Label-Value rows
+                                val labelStyle = MaterialTheme.typography.labelMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                val valueStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
+                                var batteryRefreshAnimation by remember(sensor.serial) { mutableIntStateOf(0) }
+
+                                @Composable
+                                fun DataRow(
+                                    label: String,
+                                    value: String,
+                                    onClick: (() -> Unit)? = null,
+                                    valueAnimationKey: Int? = null,
+                                ) {
+                                    val rowModifier = if (onClick != null) {
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                                onClick = onClick,
+                                            )
+                                    } else {
+                                        Modifier.fillMaxWidth()
+                                    }
+                                    val valueText: @Composable (Modifier, androidx.compose.ui.text.style.TextAlign) -> Unit = { modifier, alignment ->
+                                        if (valueAnimationKey == null) {
+                                            Text(value, modifier, style = valueStyle, textAlign = alignment)
+                                        } else {
+                                            AnimatedContent(
+                                                targetState = value to valueAnimationKey,
+                                                transitionSpec = {
+                                                    (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                                                        .togetherWith(
+                                                            fadeOut(tween(120)) + slideOutVertically(tween(120)) { -it / 3 },
+                                                        )
+                                                },
+                                                contentAlignment = Alignment.CenterEnd,
+                                                label = "sensorBatteryValue",
+                                                modifier = modifier,
+                                            ) { (animatedValue, _) ->
+                                                Text(
+                                                    animatedValue,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    style = valueStyle,
+                                                    textAlign = alignment,
                                                 )
-                                        },
-                                        contentAlignment = Alignment.CenterEnd,
-                                        label = "sensorBatteryValue",
-                                        modifier = Modifier.weight(0.58f),
-                                    ) { (animatedValue, _) ->
+                                            }
+                                        }
+                                    }
+                                    if (stackDetailRows) {
+                                        Column(rowModifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            Text(label, style = labelStyle)
+                                            valueText(Modifier.fillMaxWidth(), androidx.compose.ui.text.style.TextAlign.Start)
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = rowModifier,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            verticalAlignment = Alignment.Top,
+                                        ) {
+                                            Text(label, style = labelStyle, modifier = Modifier.weight(0.42f))
+                                            valueText(Modifier.weight(0.58f), androidx.compose.ui.text.style.TextAlign.End)
+                                        }
+                                    }
+                                }
+
+                                val connectedStatus = stringResource(R.string.status_connected)
+                                val errorEventAt = bleErrorEventTimeForDisplay(
+                                    sensor.connectionStatusAtMs,
+                                    bleErrorNow,
+                                )
+                                // A Clone record's link health is the mirror's, not this radio's;
+                                // a BLE error here would be the sending phone's to show.
+                                if (!sensor.isCloneSource &&
+                                    errorEventAt != null &&
+                                    sensor.connectionStatus.isNotEmpty() &&
+                                    !sensor.connectionStatus.equals(connectedStatus, ignoreCase = true)
+                                ) {
+                                    DataRow(
+                                        stringResource(R.string.last_ble_error),
+                                        bleErrorValue(
+                                            sensor.connectionStatus,
+                                            DateUtils.getRelativeTimeSpanString(
+                                                errorEventAt,
+                                                bleErrorNow,
+                                                DateUtils.MINUTE_IN_MILLIS,
+                                            ),
+                                        ),
+                                    )
+                                } else if (!sensor.isCloneSource &&
+                                    sensor.connectionStatusAtMs <= 0L &&
+                                    sensor.connectionStatus.isNotEmpty() &&
+                                    !sensor.connectionStatus.equals(connectedStatus, ignoreCase = true)
+                                ) {
+                                    // Managed drivers can publish a current diagnostic status without an
+                                    // event timestamp. Keep that live status; only timestamped history ages
+                                    // off after the one-hour card window.
+                                    DataRow(stringResource(R.string.last_ble_status), sensor.connectionStatus)
+                                }
+                                // A mirrored sensor may never have resolved an address on this phone;
+                                // a row saying "Unknown" is a row saying nothing.
+                                if (!(sensor.isCloneSource && sensor.deviceAddress.equals("Unknown", ignoreCase = true))) {
+                                    DataRow(stringResource(R.string.sensor_address), sensor.deviceAddress)
+                                }
+                                if (sensor.dexcomPairingCode.isNotEmpty()) {
+                                    DataRow(stringResource(R.string.dexcom_pairing_code), sensor.dexcomPairingCode)
+                                }
+
+                                // FIX: Use Long timestamp directly to avoid String Parsing Locale bugs in formatSensorTime
+                                // User reported "100% Fill / Red Color" bug in English Locale, likely due to startMs being 0 or parse fail.
+                                // We also ensure we only show valid dates.
+                                if (sensor.startMs > 1577836800000L) { // > Jan 1 2020
+                                    DataRow(stringResource(R.string.sensor_started), formatSensorTime(sensor.startMs.toString()))
+                                }
+
+                                if (sensor.officialEndMs > 0) {
+                                    DataRow(stringResource(R.string.sensor_ends_officially), formatSensorTime(sensor.officialEndMs.toString()))
+                                } else if (sensor.officialEnd.isNotEmpty()) {
+                                    DataRow(stringResource(R.string.sensor_ends_officially), formatSensorTime(sensor.officialEnd))
+                                }
+
+                                // Only when it says something the official end does not: for most
+                                // sensors the two are the same timestamp, printed twice.
+                                val officialEndText = when {
+                                    sensor.officialEndMs > 0 -> formatSensorTime(sensor.officialEndMs.toString())
+                                    sensor.officialEnd.isNotEmpty() -> formatSensorTime(sensor.officialEnd)
+                                    else -> null
+                                }
+                                val expectedEndText = when {
+                                    sensor.expectedEndMs > 0 -> formatSensorTime(sensor.expectedEndMs.toString())
+                                    sensor.expectedEnd.isNotEmpty() -> formatSensorTime(sensor.expectedEnd)
+                                    else -> null
+                                }
+                                if (expectedEndText != null && expectedEndText != officialEndText) {
+                                    DataRow(stringResource(R.string.sensor_expected_end), expectedEndText)
+                                }
+
+                                if (sensor.isAnytime && sensor.batteryMillivolts > 0) {
+                                    // Anytime: surface both percent and voltage — voltage is the
+                                    // health-critical metric (low-battery cutoff is 4.05 V on CT3).
+                                    val voltsText = String.format(java.util.Locale.getDefault(), "%.2f V", sensor.batteryMillivolts / 1000.0)
+                                    val combined = if (sensor.batteryPercent >= 0) {
+                                        "${sensor.batteryPercent}% · $voltsText"
+                                    } else {
+                                        voltsText
+                                    }
+                                    DataRow(stringResource(R.string.sensor_battery_voltage), combined)
+                                } else if (sensor.batteryPercent >= 0) {
+                                    val refreshBattery = if (sensor.isSibionics && sensor.isVendorConnected) {
+                                        {
+                                            if (viewModel.refreshSensorBattery(sensor.serial)) {
+                                                batteryRefreshAnimation++
+                                            }
+                                        }
+                                    } else {
+                                        null
+                                    }
+                                    DataRow(
+                                        label = stringResource(R.string.sensor_battery_voltage),
+                                        value = "${sensor.batteryPercent}%",
+                                        onClick = refreshBattery,
+                                        valueAnimationKey = if (sensor.isSibionics) batteryRefreshAnimation else null,
+                                    )
+                                } else if (sensor.batteryMillivolts > 0) {
+                                    DataRow(stringResource(R.string.sensor_battery_voltage), String.format(java.util.Locale.getDefault(), "%.3f V", sensor.batteryMillivolts / 1000.0))
+                                }
+
+                                if (sensor.sensorRemainingHours >= 0) {
+                                    val remainText = when {
+                                        sensor.isSensorExpired -> stringResource(R.string.expired)
+                                        sensor.sensorRemainingHours <= 0 -> stringResource(R.string.expired)
+                                        // The row is labelled "Remaining", so the value is just the duration.
+                                        sensor.sensorRemainingHours <= 24 -> stringResource(R.string.sensor_age_hours, sensor.sensorRemainingHours)
+                                        else -> {
+                                            val days = sensor.sensorRemainingHours / 24
+                                            val hours = sensor.sensorRemainingHours % 24
+                                            stringResource(R.string.days_hours_remaining, days, hours)
+                                        }
+                                    }
+                                    val remainColor = when {
+                                        sensor.isSensorExpired || sensor.sensorRemainingHours <= 0 -> MaterialTheme.colorScheme.error
+                                        sensor.sensorRemainingHours <= 24 -> MaterialTheme.colorScheme.error
+                                        sensor.sensorRemainingHours <= 48 -> MaterialTheme.colorScheme.tertiary
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(stringResource(R.string.sensor_life), style = labelStyle)
                                         Text(
-                                            text = animatedValue,
-                                            style = valueStyle,
-                                            maxLines = 2,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                                            modifier = Modifier.fillMaxWidth(),
+                                            remainText,
+                                            style = (if (sensor.sensorRemainingHours <= 24) MaterialTheme.typography.bodyMediumEmphasized else valueStyle)
+                                                .copy(color = remainColor)
                                         )
                                     }
                                 }
-                            }
-                        }
 
-                        val connectedStatus = stringResource(R.string.status_connected)
-                        val errorEventAt = bleErrorEventTimeForDisplay(
-                            sensor.connectionStatusAtMs,
-                            bleErrorNow,
-                        )
-                        // A Clone record's link health is the mirror's, not this radio's;
-                        // a BLE error here would be the sending phone's to show.
-                        if (!sensor.isCloneSource &&
-                            errorEventAt != null &&
-                            sensor.connectionStatus.isNotEmpty() &&
-                            !sensor.connectionStatus.equals(connectedStatus, ignoreCase = true)
-                        ) {
-                            DataRow(
-                                stringResource(R.string.last_ble_error),
-                                bleErrorValue(
-                                    sensor.connectionStatus,
-                                    DateUtils.getRelativeTimeSpanString(
-                                        errorEventAt,
-                                        bleErrorNow,
-                                        DateUtils.MINUTE_IN_MILLIS,
-                                    ),
-                                ),
-                            )
-                        } else if (!sensor.isCloneSource &&
-                            sensor.connectionStatusAtMs <= 0L &&
-                            sensor.connectionStatus.isNotEmpty() &&
-                            !sensor.connectionStatus.equals(connectedStatus, ignoreCase = true)
-                        ) {
-                            // Managed drivers can publish a current diagnostic status without an
-                            // event timestamp. Keep that live status; only timestamped history ages
-                            // off after the one-hour card window.
-                            DataRow(stringResource(R.string.last_ble_status), sensor.connectionStatus)
-                        }
-                        // A mirrored sensor may never have resolved an address on this phone;
-                        // a row saying "Unknown" is a row saying nothing.
-                        if (!(sensor.isCloneSource && sensor.deviceAddress.equals("Unknown", ignoreCase = true))) {
-                            DataRow(stringResource(R.string.sensor_address), sensor.deviceAddress)
-                        }
-                        if (sensor.dexcomPairingCode.isNotEmpty()) {
-                            DataRow(stringResource(R.string.dexcom_pairing_code), sensor.dexcomPairingCode)
-                        }
-                    
-                        // FIX: Use Long timestamp directly to avoid String Parsing Locale bugs in formatSensorTime
-                        // User reported "100% Fill / Red Color" bug in English Locale, likely due to startMs being 0 or parse fail.
-                        // We also ensure we only show valid dates.
-                        if (sensor.startMs > 1577836800000L) { // > Jan 1 2020
-                            DataRow(stringResource(R.string.sensor_started), formatSensorTime(sensor.startMs.toString()))
-                        }
+                                if (sensor.sensorAgeHours >= 0) {
+                                    val ageText = if (sensor.sensorAgeHours < 24) {
+                                        stringResource(R.string.sensor_age_hours, sensor.sensorAgeHours)
+                                    } else {
+                                        val days = sensor.sensorAgeHours / 24
+                                        val hours = sensor.sensorAgeHours % 24
+                                        stringResource(R.string.sensor_age_days_hours, days, hours)
+                                    }
+                                    DataRow(stringResource(R.string.sensor_age), ageText)
+                                }
 
-                        if (sensor.officialEndMs > 0) {
-                            DataRow(stringResource(R.string.sensor_ends_officially), formatSensorTime(sensor.officialEndMs.toString()))
-                        } else if (sensor.officialEnd.isNotEmpty()) {
-                            DataRow(stringResource(R.string.sensor_ends_officially), formatSensorTime(sensor.officialEnd))
-                        }
+                                if (sensor.vendorModel.isNotEmpty()) {
+                                    DataRow(stringResource(R.string.model), sensor.vendorModel)
+                                }
+                                if (sensor.sensorDetailTelemetry.isNotBlank()) {
+                                    DataRow(
+                                        stringResource(if (sensor.isIcan) R.string.ican_calibration_marker else R.string.anytime_sensor_telemetry),
+                                        sensor.sensorDetailTelemetry
+                                    )
+                                }
+                                if (sensor.vendorFirmware.isNotEmpty()) {
+                                    val firmwareText = if (sensor.vendorFirmware.startsWith("v", ignoreCase = true)) {
+                                        sensor.vendorFirmware
+                                    } else {
+                                        "v${sensor.vendorFirmware}"
+                                    }
+                                    DataRow(stringResource(R.string.firmware), firmwareText)
+                                }
 
-                        // Only when it says something the official end does not: for most
-                        // sensors the two are the same timestamp, printed twice.
-                        val officialEndText = when {
-                            sensor.officialEndMs > 0 -> formatSensorTime(sensor.officialEndMs.toString())
-                            sensor.officialEnd.isNotEmpty() -> formatSensorTime(sensor.officialEnd)
-                            else -> null
-                        }
-                        val expectedEndText = when {
-                            sensor.expectedEndMs > 0 -> formatSensorTime(sensor.expectedEndMs.toString())
-                            sensor.expectedEnd.isNotEmpty() -> formatSensorTime(sensor.expectedEnd)
-                            else -> null
-                        }
-                        if (expectedEndText != null && expectedEndText != officialEndText) {
-                            DataRow(stringResource(R.string.sensor_expected_end), expectedEndText)
-                        }
-
-                        if (sensor.isAnytime && sensor.batteryMillivolts > 0) {
-                            // Anytime: surface both percent and voltage — voltage is the
-                            // health-critical metric (low-battery cutoff is 4.05 V on CT3).
-                            val voltsText = String.format(java.util.Locale.getDefault(), "%.2f V", sensor.batteryMillivolts / 1000.0)
-                            val combined = if (sensor.batteryPercent >= 0) {
-                                "${sensor.batteryPercent}% · $voltsText"
-                            } else {
-                                voltsText
-                            }
-                            DataRow(stringResource(R.string.sensor_battery_voltage), combined)
-                        } else if (sensor.batteryPercent >= 0) {
-                            val refreshBattery = if (sensor.isSibionics && sensor.isVendorConnected) {
-                                {
-                                    if (viewModel.refreshSensorBattery(sensor.serial)) {
-                                        batteryRefreshAnimation++
+                                if (sensor.isSensorExpired) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(stringResource(R.string.status), style = labelStyle)
+                                        Text(
+                                            stringResource(R.string.sensor_expired_text),
+                                            style = MaterialTheme.typography.bodyMediumEmphasized.copy(color = MaterialTheme.colorScheme.error)
+                                        )
                                     }
                                 }
-                            } else {
-                                null
-                            }
-                            DataRow(
-                                label = stringResource(R.string.sensor_battery_voltage),
-                                value = "${sensor.batteryPercent}%",
-                                onClick = refreshBattery,
-                                valueAnimationKey = if (sensor.isSibionics) batteryRefreshAnimation else null,
-                            )
-                        } else if (sensor.batteryMillivolts > 0) {
-                            DataRow(stringResource(R.string.sensor_battery_voltage), String.format(java.util.Locale.getDefault(), "%.3f V", sensor.batteryMillivolts / 1000.0))
-                        }
-
-                        if (sensor.sensorRemainingHours >= 0) {
-                            val remainText = when {
-                                sensor.isSensorExpired -> stringResource(R.string.expired)
-                                sensor.sensorRemainingHours <= 0 -> stringResource(R.string.expired)
-                                // The row is labelled "Remaining", so the value is just the duration.
-                                sensor.sensorRemainingHours <= 24 -> stringResource(R.string.sensor_age_hours, sensor.sensorRemainingHours)
-                                else -> {
-                                    val days = sensor.sensorRemainingHours / 24
-                                    val hours = sensor.sensorRemainingHours % 24
-                                    stringResource(R.string.days_hours_remaining, days, hours)
-                                }
-                            }
-                            val remainColor = when {
-                                sensor.isSensorExpired || sensor.sensorRemainingHours <= 0 -> MaterialTheme.colorScheme.error
-                                sensor.sensorRemainingHours <= 24 -> MaterialTheme.colorScheme.error
-                                sensor.sensorRemainingHours <= 48 -> MaterialTheme.colorScheme.tertiary
-                                else -> MaterialTheme.colorScheme.onSurface
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(stringResource(R.string.sensor_life), style = labelStyle)
-                                Text(
-                                    remainText,
-                                    style = (if (sensor.sensorRemainingHours <= 24) MaterialTheme.typography.bodyMediumEmphasized else valueStyle)
-                                        .copy(color = remainColor)
-                                )
-                            }
-                        }
-
-                        if (sensor.sensorAgeHours >= 0) {
-                            val ageText = if (sensor.sensorAgeHours < 24) {
-                                stringResource(R.string.sensor_age_hours, sensor.sensorAgeHours)
-                            } else {
-                                val days = sensor.sensorAgeHours / 24
-                                val hours = sensor.sensorAgeHours % 24
-                                stringResource(R.string.sensor_age_days_hours, days, hours)
-                            }
-                            DataRow(stringResource(R.string.sensor_age), ageText)
-                        }
-
-                        if (sensor.vendorModel.isNotEmpty()) {
-                            DataRow(stringResource(R.string.model), sensor.vendorModel)
-                        }
-                        if (sensor.sensorDetailTelemetry.isNotBlank()) {
-                            DataRow(
-                                stringResource(if (sensor.isIcan) R.string.ican_calibration_marker else R.string.anytime_sensor_telemetry),
-                                sensor.sensorDetailTelemetry
-                            )
-                        }
-                        if (sensor.vendorFirmware.isNotEmpty()) {
-                            val firmwareText = if (sensor.vendorFirmware.startsWith("v", ignoreCase = true)) {
-                                sensor.vendorFirmware
-                            } else {
-                                "v${sensor.vendorFirmware}"
-                            }
-                            DataRow(stringResource(R.string.firmware), firmwareText)
-                        }
-
-                        if (sensor.isSensorExpired) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(stringResource(R.string.status), style = labelStyle)
-                                Text(
-                                    stringResource(R.string.sensor_expired_text),
-                                    style = MaterialTheme.typography.bodyMediumEmphasized.copy(color = MaterialTheme.colorScheme.error)
-                                )
                             }
                         }
                     }
