@@ -570,7 +570,9 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
                             )
                         }
                     }
-                }) { Text(stringResource(R.string.system_glucose_notification_permission)) }
+                }, shapes = appButtonShapes(), contentPadding = ButtonDefaults.ContentPadding) {
+                    Text(stringResource(R.string.system_glucose_notification_permission))
+                }
             }
         }
 

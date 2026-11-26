@@ -917,7 +917,8 @@ fun WearOsConfigScreen(navController: NavController) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showWatchIconDialog = false }) {
+                TextButton(onClick = { showWatchIconDialog = false }, shapes = appButtonShapes(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
                     Text(stringResource(R.string.cancel))
                 }
             },

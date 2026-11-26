@@ -29,6 +29,10 @@ internal fun FontPickerDialog(current: FontCatalog.Family, onSelect: (FontCatalo
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } }
+        confirmButton = { TextButton(
+            onClick = onDismiss,
+            shapes = tk.glucodata.ui.util.appButtonShapes(),
+            contentPadding = androidx.compose.material3.ButtonDefaults.TextButtonContentPadding,
+        ) { Text(stringResource(android.R.string.cancel)) } }
     )
 }

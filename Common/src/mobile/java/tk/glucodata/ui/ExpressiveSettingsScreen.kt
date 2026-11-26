@@ -1043,7 +1043,11 @@ fun ExpressiveSettingsScreen(
                 Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.font_notice), style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 16.dp))
-                androidx.compose.material3.TextButton(onClick = { tk.glucodata.FontLicenses.show(context) }) {
+                androidx.compose.material3.TextButton(
+                    onClick = { tk.glucodata.FontLicenses.show(context) },
+                    shapes = appButtonShapes(),
+                    contentPadding = androidx.compose.material3.ButtonDefaults.TextButtonContentPadding,
+                ) {
                     Text(stringResource(R.string.font_licenses_title))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
