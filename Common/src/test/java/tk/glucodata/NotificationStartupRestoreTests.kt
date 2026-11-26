@@ -972,6 +972,10 @@ class NotificationStartupRestoreTests {
                         public static NotifyStartupHarness owner;
                         static void send(Object app) { owner.broadcastSends++; }
                     }
+                    static class CustomGlucoseNotification {
+                        // Layout is outside this harness, which checks startup publication.
+                        static void applyStatus(Notification.Builder builder, TestApp app, String message) {}
+                    }
                     static class OngoingNotificationAccess {
                         public static NotifyStartupHarness owner;
                         static OngoingNotificationAccess shared = new OngoingNotificationAccess();
@@ -980,6 +984,7 @@ class NotificationStartupRestoreTests {
                             owner.attachCalls++;
                             return n;
                         }
+                        Notification applySmallIcon(TestApp app, Notification n) { return n; }
                         void updateStatus(Object app, int id) { owner.updateCalls++; }
                     }
                     static class keeprunning {
