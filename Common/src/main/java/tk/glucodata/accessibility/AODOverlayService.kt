@@ -30,7 +30,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import tk.glucodata.Applic
 import tk.glucodata.BatteryTrace
@@ -50,6 +49,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
     companion object {
         private const val PERIODIC_REFRESH_MS = 60_000L
         private const val BROADCAST_FOLLOW_UP_MS = 750L
+        private const val EVENT_MIN_INTERVAL_MS = 400L
         /** Two periodic drivers feed one refresh; anything sooner than this is the other one. */
         private const val PERIODIC_MIN_INTERVAL_MS = 30_000L
         const val ACTION_IMMEDIATE_REFRESH = "tk.glucodata.action.AOD_IMMEDIATE_REFRESH"
@@ -90,10 +90,25 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
     private var currentOverlayPosition = "TOP"
     private var currentChartAnchorFraction = 0.5f
 
+    private val eventGate = AodRefreshGate(EVENT_MIN_INTERVAL_MS)
+    private val eventRefreshRunnable = Runnable {
+        eventGate.onRefresh(SystemClock.uptimeMillis())
+        if (overlayView?.visibility == View.VISIBLE) {
+            BatteryTrace.bump("aod.overlay.refresh.event", logEvery = 20L)
+            updateOverlayContent()
+        }
+    }
+
+    private fun requestEventRefresh() {
+        if (overlayView?.visibility != View.VISIBLE) return
+        val delay = eventGate.delayForRequest(SystemClock.uptimeMillis()) ?: return
+        handler.postDelayed(eventRefreshRunnable, delay)
+    }
+
     private val broadcastFollowUpRunnable = Runnable {
         if (overlayView?.visibility == View.VISIBLE) {
             BatteryTrace.bump("aod.overlay.refresh.followup", logEvery = 20L)
-            updateOverlayContent()
+            requestEventRefresh()
         }
     }
 
@@ -117,7 +132,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
                 "tk.glucodata.action.GLUCOSE_UPDATE" -> {
                     if (overlayView?.visibility == View.VISIBLE) {
                         BatteryTrace.bump("aod.overlay.refresh.broadcast", logEvery = 20L)
-                        updateOverlayContent()
+                        requestEventRefresh()
                         if (shouldScheduleBroadcastFollowUp()) {
                             handler.removeCallbacks(broadcastFollowUpRunnable)
                             handler.postDelayed(broadcastFollowUpRunnable, BROADCAST_FOLLOW_UP_MS)
@@ -227,11 +242,7 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         lightSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
 
         serviceScope.launch {
-            UiRefreshBus.revision.collectLatest {
-                if (overlayView?.visibility == View.VISIBLE) {
-                    updateOverlayContent()
-                }
-            }
+            UiRefreshBus.revision.collect { requestEventRefresh() }
         }
         
         isScreenOn = resolveScreenOn()
@@ -379,6 +390,8 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         sensorManager?.unregisterListener(this)
         handler.removeCallbacks(updateRunnable)
         handler.removeCallbacks(broadcastFollowUpRunnable)
+        handler.removeCallbacks(eventRefreshRunnable)
+        eventGate.cancel()
         lastPeriodicRefreshElapsed = 0L
 
         // Remove the view entirely - instant disappearance like xDrip
@@ -757,6 +770,8 @@ class AODOverlayService : AccessibilityService(), SensorEventListener {
         } catch (e: Exception) {}
         handler.removeCallbacks(updateRunnable)
         handler.removeCallbacks(broadcastFollowUpRunnable)
+        handler.removeCallbacks(eventRefreshRunnable)
+        eventGate.cancel()
     }
 
     private fun isLockscreenPackage(packageName: String): Boolean {
