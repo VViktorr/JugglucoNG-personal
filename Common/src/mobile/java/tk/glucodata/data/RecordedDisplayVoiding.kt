@@ -80,6 +80,34 @@ object RecordedDisplayVoiding {
     }
 
     /**
+     * The minutes of [records] a removed calibration of [sensorId] can have
+     * produced: the sensor's own, in a lane the calibration applied to, recorded
+     * while it was switched on.
+     *
+     * A record belongs to whichever sensor won its minute, and in a two-sensor
+     * store the other sensor's minutes sit between these. A calibration says
+     * nothing about them, so they are never released on its account.
+     *
+     * A point with no sensor applies to none, and [SensorIdentity.matches] reads
+     * a blank expectation as "any", so it is answered here.
+     */
+    fun minutesOfCalibratedLane(
+        records: List<ReadingDisplay>,
+        sensorId: String,
+        rawLane: Boolean,
+        autoLane: Boolean,
+        pointSwitches: List<Long> = emptyList(),
+    ): List<Long> {
+        if (sensorId.isBlank()) return emptyList()
+        return records.mapNotNull { record ->
+            if (!tk.glucodata.SensorIdentity.matches(record.sensorSerial, sensorId)) return@mapNotNull null
+            if (CalibrationPointSwitches.isOffAt(pointSwitches, record.recordedAt)) return@mapNotNull null
+            val raw = record.viewMode == 1 || record.viewMode == 3
+            record.timestamp.takeIf { if (raw) rawLane else autoLane }
+        }
+    }
+
+    /**
      * Auto-lane records drawn from a Libre 1/2 history row that a native re-sync
      * has since taken off the Auto line.
      *
