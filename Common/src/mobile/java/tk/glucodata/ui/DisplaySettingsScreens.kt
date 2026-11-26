@@ -54,7 +54,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -63,6 +66,7 @@ import androidx.navigation.NavController
 import tk.glucodata.R
 import tk.glucodata.accessibility.AODOverlayService
 import tk.glucodata.data.settings.FloatingSettingsRepository
+import tk.glucodata.service.FloatingGlucoseService
 import tk.glucodata.ui.components.AppTopBar
 import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.AppScaffold
@@ -702,7 +706,8 @@ fun FloatingGlucoseSettingsScreen(
     val cornerRadius by repository.cornerRadius.collectAsStateWithLifecycle(initialValue = 28f)
     val opacity by repository.backgroundOpacity.collectAsStateWithLifecycle(initialValue = FloatingSettingsRepository.DEFAULT_BACKGROUND_OPACITY)
     val isDynamicIsland by repository.isDynamicIslandEnabled.collectAsStateWithLifecycle(initialValue = false)
-    val verticalOffset by repository.islandVerticalOffset.collectAsStateWithLifecycle(initialValue = FloatingSettingsRepository.DEFAULT_ISLAND_VERTICAL_OFFSET)
+    val islandNudge by repository.islandNudge.collectAsStateWithLifecycle(initialValue = FloatingSettingsRepository.DEFAULT_ISLAND_NUDGE)
+    val islandManualOffset by repository.islandManualOffset.collectAsStateWithLifecycle(initialValue = FloatingSettingsRepository.DEFAULT_ISLAND_MANUAL_OFFSET)
     val manualGap by repository.islandGap.collectAsStateWithLifecycle(initialValue = 0f)
     val useSubtleOutline by repository.useSubtleOutline.collectAsStateWithLifecycle(initialValue = false)
     var hasPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
@@ -803,13 +808,22 @@ fun FloatingGlucoseSettingsScreen(
                 animatePosition = true
             )
             if (isDynamicIsland) {
+                val display = LocalView.current.display
+                val automaticOffset = remember(display, display?.rotation, LocalConfiguration.current) {
+                    FloatingGlucoseService.displayCutoutBounds(display) != null
+                }
+                val islandOffset = if (automaticOffset) islandNudge else islandManualOffset
                 SettingsControlsCard(position = CardPosition.BOTTOM) {
                     SettingsSlider(
-                        title = "${stringResource(R.string.offset)}: ${stringResource(R.string.dp_value, verticalOffset.toInt())}",
-                        value = verticalOffset,
-                        onValueChange = { repository.setIslandVerticalOffset(it) },
-                        range = 0f..50f,
-                        steps = 50
+                        title = "${stringResource(R.string.offset)}: ${stringResource(R.string.dp_value, islandOffset.roundToInt())}",
+                        value = islandOffset,
+                        onValueChange = {
+                            val offset = it.roundToInt().toFloat()
+                            if (automaticOffset) repository.setIslandNudge(offset)
+                            else repository.setIslandManualOffset(offset)
+                        },
+                        range = if (automaticOffset) -20f..20f else 0f..50f,
+                        steps = if (automaticOffset) 39 else 49
                     )
                     val gapDisplay = if (manualGap == 0f) stringResource(R.string.auto) else stringResource(R.string.dp_value, manualGap.toInt())
                     SettingsSlider(
