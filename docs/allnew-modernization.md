@@ -17,7 +17,7 @@ Punkt wyjścia to `main5` w commicie `277c5303eec6a0f1610a6ed63cf2c741cab2ad26`.
 | Android Build Tools | 37.0.0 | 37.0.0 |
 | Android NDK | 29.0.14206865 | 30.0.16248370, Clang 21 |
 | CMake z SDK Managera | 4.1.2 | 4.1.2 |
-| Standard C++ | GNU C++26 | GNU C++26 |
+| Standard C++ Android | Gradle deklarował GNU C++26, CMake nadpisywał go na GNU C++23 | GNU C++26 ustawiany w CMake |
 | Compose BOM | 2026.10.01 z kanału alpha | 2026.11.01 stable |
 | Material 3 | 1.5.0 przypięte ręcznie | 1.5.0 z BOM |
 | Compose Material 3, Foundation i Navigation dla Wear | 1.7.1 | 1.7.2 |
@@ -50,10 +50,11 @@ Weryfikacja wersji korzystała z metadanych Google Maven, Maven Central, katalog
 
 ## Budowanie i dystrybucja
 
-`scripts/dist/install-sdk.sh` pobiera compile SDK i Build Tools z tych samych ustawień co projekt, niezależnie od target SDK. CI uruchamia testy JVM telefonu i Wear OS oraz kompilacje debug i release na ARM64, ARMv7, x86 i x86_64. Dystrybucyjne APK nadal mają domyślnie dwa ABI ARM. Natywne pliki dostawców pochodzą z przypiętego `main5-v1.4.0` w osobistym repozytorium. Źródłowy submoduł libjuice nadal wskazuje przypięty fork `ctqvva/libjuice`. Nie zmieniono podpisywania, numeracji telefonu i zegarka, repozytorium aktualizacji ani warunku publikacji dla `main5`.
+`scripts/dist/install-sdk.sh` pobiera compile SDK i Build Tools z tych samych ustawień co projekt, niezależnie od target SDK. CI uruchamia testy JVM telefonu i Wear OS oraz kompilacje debug i release na ARM64, ARMv7, x86 i x86_64. Dystrybucyjne APK nadal mają domyślnie dwa ABI ARM. Natywne pliki dostawców pochodzą z przypiętego `main5-v1.4.0` w osobistym repozytorium. Źródłowy submoduł libjuice 1.6.2 pozostaje na commicie `4625a1b` w forku `ctqvva/libjuice`. Głowa forka nie zawiera tego commita, a zmiana wskaźnika usunęłaby poprawkę obsługi tablicy poll. Kod LibAscon 1.1.1 i biblioteki kryptograficzne dobierane przez istniejący loader nie zostały zmienione. Workflow osobistych APK wyszukuje `apksigner` w faktycznie zainstalowanych stabilnych Build Tools. Zachowano podpisywanie, numerację telefonu i zegarka, repozytorium aktualizacji i warunek publikacji dla `main5`.
 
 ## Weryfikacja i braki
 
 - Lokalnie przeszły testy formatu plików dla stron 4/16 KB, symulacja odzyskiwania Libre 2, 98 testów dystrybucji, kontrola stylu Compose i 8 testów skryptu stylu. Gradle 9.9.2 wykonał zadanie `help`.
+- CMake 4.1.2 i NDK r30 zbudowały telefoniczne `libg.so` dla arm64-v8a, armeabi-v7a, x86 i x86_64. Zbudowano też `libg.so` Wear OS dla arm64-v8a. Segmenty `LOAD` wszystkich pięciu plików mają wyrównanie 16 KB. `apksigner` sprawdził podpis v2 telefonu z przypiętego wydania bazowego.
 - [GitHub Actions dla allnew](https://github.com/VViktorr/JugglucoNG-personal/actions?query=branch%3Aallnew) przechowuje wyniki JVM i kompilacji per ABI. Kontrolny APK z CI nie jest podpisanym wydaniem dystrybucyjnym.
 - Testy urządzeniowe pozostają do wykonania. Dotyczy to Androida 17, parowania i aktywacji NFC, aktywnego sensora, alarmów, widżetów, powiadomień, AOD, synchronizacji z Wear i Clone, importu/eksportu i aktualizacji istniejącej instalacji. Pomiar baterii, RAM, pracy przy wygaszonym ekranie, częstotliwości odświeżeń, logów i rozmiaru APK wymaga artefaktów oraz urządzeń. Testy hosta i kompilacja nie potwierdzają działania tych funkcji na sensorze ani zegarku.

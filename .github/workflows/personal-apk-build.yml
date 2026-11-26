@@ -83,14 +83,17 @@ jobs:
           from pathlib import Path
           import shutil
           import subprocess
+          import sys
           import zipfile
+
+          sys.path.insert(0, "scripts/dist")
+          from dist import sdk_tool
 
           apks = list(Path('Common/build/outputs/apk/mobile/release').glob('*.apk'))
           if len(apks) != 1:
               raise SystemExit(f'Expected one phone release APK, got {len(apks)}')
           apk = apks[0]
-          signer = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0/apksigner'
-          subprocess.run([str(signer), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
+          subprocess.run([sdk_tool('apksigner'), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
           inventory = json.loads(Path('scripts/dist/build-inputs.json').read_text())
           with zipfile.ZipFile(apk) as archive:
               for abi in ('arm64-v8a', 'armeabi-v7a'):
@@ -200,14 +203,17 @@ jobs:
           from pathlib import Path
           import shutil
           import subprocess
+          import sys
           import zipfile
+
+          sys.path.insert(0, "scripts/dist")
+          from dist import sdk_tool
 
           apks = list(Path('Common/build/outputs/apk/wear/release').glob('*.apk'))
           if len(apks) != 1:
               raise SystemExit(f'Expected one Wear OS release APK, got {len(apks)}')
           apk = apks[0]
-          signer = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0/apksigner'
-          subprocess.run([str(signer), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
+          subprocess.run([sdk_tool('apksigner'), 'verify', '--verbose', '--print-certs', str(apk)], check=True)
           inventory = json.loads(Path('scripts/dist/build-inputs.json').read_text())
           with zipfile.ZipFile(apk) as archive:
               for abi in ('arm64-v8a', 'armeabi-v7a'):
