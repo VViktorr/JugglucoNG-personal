@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -74,7 +75,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -131,7 +131,9 @@ import tk.glucodata.data.journal.builtInJournalCurve
 import tk.glucodata.data.journal.normalizeJournalCurvePoints
 import tk.glucodata.data.journal.serializeJournalCurve
 import tk.glucodata.ui.alerts.AddCustomAlertButton
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.ui.components.CardPosition
 import tk.glucodata.ui.components.ColorSwatchButton
 import tk.glucodata.ui.components.CompactSheetDragHandle
@@ -201,7 +203,7 @@ fun JournalSettingsScreen(
         )
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.journal_manage_title),
@@ -210,6 +212,7 @@ fun JournalSettingsScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -415,7 +418,7 @@ fun JournalEntryTypesSettingsScreen(
     val journalEnabled by viewModel.journalEnabled.collectAsStateWithLifecycle()
     val journalDashboardHiddenTypes by viewModel.journalDashboardHiddenTypes.collectAsStateWithLifecycle()
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.journal_entry_types_title),
@@ -424,6 +427,7 @@ fun JournalEntryTypesSettingsScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -555,7 +559,7 @@ fun JournalInsulinLibraryScreen(
     var editingPreset by remember { mutableStateOf<JournalInsulinPreset?>(null) }
     var creatingPreset by remember { mutableStateOf(false) }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.journal_insulin_library),
@@ -564,6 +568,7 @@ fun JournalInsulinLibraryScreen(
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),

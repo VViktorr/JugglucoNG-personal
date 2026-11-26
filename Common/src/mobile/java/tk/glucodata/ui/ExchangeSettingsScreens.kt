@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
@@ -72,7 +73,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -107,7 +107,9 @@ import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import tk.glucodata.ui.components.AppScaffold
 import tk.glucodata.ui.components.AppTopBar
+import tk.glucodata.ui.components.scrollsUnderTopBar
 import tk.glucodata.webserver.WebServerCertificate
 import tk.glucodata.Applic
 import tk.glucodata.AutoSensorSwitch
@@ -158,7 +160,7 @@ fun WatchSettingsScreen(navController: NavController) {
     val wearConfigEnabled = wearOsEnabled && gmsAvailable
     val garminStatusEnabled = kerfstokEnabled
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -175,6 +177,7 @@ fun WatchSettingsScreen(navController: NavController) {
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -601,7 +604,7 @@ fun WearOsConfigScreen(navController: NavController) {
         DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(timeMs))
     }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -618,6 +621,7 @@ fun WearOsConfigScreen(navController: NavController) {
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -938,7 +942,7 @@ fun GarminStatusScreen(navController: NavController) {
         kerfstokDark = WatchInterop.isKerfstokDarkMode()
     }
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -955,6 +959,7 @@ fun GarminStatusScreen(navController: NavController) {
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -1363,7 +1368,7 @@ fun WebServerSettingsScreen(navController: NavController) {
     val childEnabled = active
     val childAlpha = if (childEnabled) 1f else 0.58f
 
-    Scaffold(
+    AppScaffold(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
             AppTopBar(
@@ -1380,6 +1385,7 @@ fun WebServerSettingsScreen(navController: NavController) {
         }
     ) { padding ->
         LazyColumn(
+            state = rememberLazyListState().scrollsUnderTopBar(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
