@@ -7,7 +7,7 @@ Punkt wyjścia to `main5` w commicie `277c5303eec6a0f1610a6ed63cf2c741cab2ad26`.
 | Składnik | main5 | allnew |
 | --- | --- | --- |
 | Gradle Wrapper | 9.8.0 | 9.9.2, przypięta suma SHA-256 dystrybucji |
-| Android Gradle Plugin | 9.3.2 | 9.5.1 |
+| Android Gradle Plugin | 9.3.2 | 9.5.3 |
 | Kotlin i wtyczka Compose Compiler | 2.4.10 zadeklarowane dla Compose Compiler | 2.5.0-RC2, jawny wybór Kotlin dla wbudowanego trybu AGP |
 | KSP | 2.3.11 | 2.3.14 |
 | JDK w CI | 21 | 27 (Temurin) |
@@ -37,7 +37,7 @@ Punkt wyjścia to `main5` w commicie `277c5303eec6a0f1610a6ed63cf2c741cab2ad26`.
 | AndroidX Test Core | 1.6.1 | 1.7.0 |
 | SQLite JDBC w testach | 3.41.2.2 | 3.54.1.0 |
 
-AndroidX AppCompat, coroutines, RecyclerView, Startup, Health Connect, Material Components, Garmin, ZXing, ML Kit, Play Services Wearable, biblioteki Wear Tiles i ProtoLayout, JUnit oraz JSON pozostają na wersjach bazowych. Artefakty Watch Face pozostają w dotychczasowym spójnym zestawie 1.2.1. Nowsze wersje poszczególnych artefaktów obsługi komplikacji wymagają osobnej migracji zegarka. Robolectric 4.17 usunął parametr `callThroughByDefault`, z którego korzystają testy BLE i JNI. Wersja 4.16.1 zachowuje odcięcie wywołań do rzeczywistych implementacji w tych testach. Gradle rozwiązuje także zależności przechodnie. Raport wersji dotyczy deklaracji bezpośrednich i nie zastępuje sprawdzenia grafu rozwiązanego dla obu wariantów.
+AndroidX AppCompat, coroutines, RecyclerView, Startup, Health Connect, Material Components, Garmin, ZXing, ML Kit, Play Services Wearable, biblioteki Wear Tiles i ProtoLayout, JUnit oraz JSON pozostają na wersjach bazowych. Artefakty Watch Face pozostają w dotychczasowym spójnym zestawie 1.2.1. Artefakty komplikacji 1.3.0 wymagają dokładnie 1.3.0 w swoich zależnościach. Pozostałe moduły nadal publikowane tylko jako 1.2.1 wymagają dokładnie 1.2.1. Zmiana zestawu wymaga migracji tarczy zegarka. Robolectric 4.17 usunął parametr `callThroughByDefault`, z którego korzystają testy BLE i JNI. Wersja 4.16.1 zachowuje odcięcie wywołań do rzeczywistych implementacji w tych testach. Gradle rozwiązuje także zależności przechodnie. Raport wersji dotyczy deklaracji bezpośrednich i nie zastępuje sprawdzenia grafu rozwiązanego dla obu wariantów.
 
 Weryfikacja wersji korzystała z metadanych Google Maven, Maven Central, katalogu pakietów Android SDK i dokumentacji Gradle, Kotlin oraz Android Developers.
 
@@ -53,6 +53,8 @@ Weryfikacja wersji korzystała z metadanych Google Maven, Maven Central, katalog
 `scripts/dist/install-sdk.sh` pobiera compile SDK i Build Tools z tych samych ustawień co projekt, niezależnie od target SDK. CI uruchamia testy JVM telefonu i Wear OS oraz kompilacje debug i release na ARM64, ARMv7, x86 i x86_64. Dystrybucyjne APK nadal mają domyślnie dwa ABI ARM. Natywne pliki dostawców pochodzą z przypiętego `main5-v1.4.0` w osobistym repozytorium. Źródłowy submoduł libjuice 1.6.2 pozostaje na commicie `4625a1b` w forku `ctqvva/libjuice`. Głowa forka nie zawiera tego commita, a zmiana wskaźnika usunęłaby poprawkę obsługi tablicy poll. Kod LibAscon 1.1.1 i biblioteki kryptograficzne dobierane przez istniejący loader nie zostały zmienione. Workflow osobistych APK wyszukuje `apksigner` w faktycznie zainstalowanych stabilnych Build Tools. Zachowano podpisywanie, numerację telefonu i zegarka, repozytorium aktualizacji i warunek publikacji dla `main5`.
 
 Lokalne budowanie z CMake 4.5.1 wymaga wersji Kitware i Ninja w `PATH`. Android Studio może też dostać ścieżkę katalogu instalacji CMake przez `cmake.dir` w `local.properties`. Installer dla GitHub Actions pobiera archiwum Kitware dla Linux x86-64 i sprawdza jego SHA-256.
+
+Akcje CI przypięto do checkout 7.0.1, setup-java 6.3.0, setup-gradle 6.4.1, upload-artifact 7.0.2 i download-artifact 8.0.2. Porównanie bieżących deklaracji z metadanymi Google Maven i Maven Central pozostawiło pozostałe biblioteki na ich aktualnych stabilnych wersjach lub przy wcześniej odnotowanym ograniczeniu zgodności.
 
 ## Weryfikacja i braki
 

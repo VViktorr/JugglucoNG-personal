@@ -53,17 +53,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: '27'
       - name: Install Android toolchain
         run: scripts/dist/install-sdk.sh
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Restore and verify pinned sensor libraries
         run: scripts/restore-build-inputs.sh
       # Personal build uses this repository's existing fallback signing key.
@@ -154,7 +154,7 @@ jobs:
               }],
           }
           (assets / 'update-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: JugglucoNG-main5-phone-arm-${{ github.sha }}
           path: build/personal-apk/
@@ -173,17 +173,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: '27'
       - name: Install Android toolchain
         run: scripts/dist/install-sdk.sh
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Restore and verify pinned sensor libraries
         run: scripts/restore-build-inputs.sh
       # Personal build uses this repository's existing fallback signing key.
@@ -235,7 +235,7 @@ jobs:
               'abis': ['arm64-v8a', 'armeabi-v7a'], 'variant': 'wearRelease',
               'signing': 'repository fallback key', 'sha256': digest
           }, indent=2) + '\n')
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: JugglucoNG-main5-wear-arm-${{ github.sha }}
           path: build/personal-wear-apk/
@@ -252,7 +252,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
