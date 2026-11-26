@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.DateRangePickerState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
@@ -51,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tk.glucodata.R
+import tk.glucodata.ui.symbols.Symbols
 import tk.glucodata.ui.util.ConnectedButtonGroup
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -182,74 +182,70 @@ fun StatsRangeSelectorControl(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(
+        // The count and coverage take two lines before the date chip gives up its place
+        // beside them: a chip pushed onto a line of its own left a gap under the count.
+        BesideOrBelow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (hasData && readingCount > 0) {
-                // Reading count and sensor coverage are both facts about the window, so
-                // they belong on the window's own line rather than inside a result card.
-                val countText = "${java.text.NumberFormat.getIntegerInstance().format(readingCount)} ${stringResource(countLabelResId)}"
-                Text(
-                    text = coveragePercent
-                        ?.let { "$countText · ${stringResource(R.string.stats_coverage_active, it.roundToInt())}" }
-                        ?: countText,
-                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 16.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
-            }
-
-            Surface(
-                modifier = Modifier.heightIn(min = 36.dp),
-                onClick = onCustomRangeClick,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                color = if (selectedRange == null) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
-                },
-                contentColor = if (selectedRange == null) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .animateContentSize()
-                        .heightIn(min = 36.dp)
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            stackGap = 12.dp,
+            trailing = {
+                Surface(
+                    modifier = Modifier.heightIn(min = 36.dp),
+                    onClick = onCustomRangeClick,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    color = if (selectedRange == null) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    },
+                    contentColor = if (selectedRange == null) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.DateRange,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    AnimatedContent(
-                        targetState = subtitle ?: stringResource(R.string.statistics_subtitle),
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "statsRangeSubtitle"
-                    ) { targetSubtitle ->
-                        Text(
-                            text = targetSubtitle,
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    Row(
+                        modifier = Modifier
+                            .animateContentSize()
+                            .heightIn(min = 36.dp)
+                            .padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Symbols.DateRangeFilled,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
                         )
+                        AnimatedContent(
+                            targetState = subtitle ?: stringResource(R.string.statistics_subtitle),
+                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                            label = "statsRangeSubtitle"
+                        ) { targetSubtitle ->
+                            Text(
+                                text = targetSubtitle,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
+            },
+            leading = {
+                if (hasData && readingCount > 0) {
+                    val countText = "${java.text.NumberFormat.getIntegerInstance().format(readingCount)} ${stringResource(countLabelResId)}"
+                    JoinedOrStackedText(
+                        first = countText,
+                        second = coveragePercent?.let {
+                            stringResource(R.string.stats_coverage_active, it.roundToInt()).replace(' ', '\u00A0')
+                        },
+                        style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
             }
-        }
+        )
 
         val context = LocalContext.current
         ConnectedButtonGroup(

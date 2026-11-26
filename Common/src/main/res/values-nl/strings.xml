@@ -3423,4 +3423,11 @@ Als je op OK drukt, wordt er een verbinding gemaakt op deze telefoon en wordt er
     <string name="food_reorder">Voeding herschikken</string>
     <string name="food_move_up">Omhoog verplaatsen</string>
     <string name="food_move_down">Omlaag verplaatsen</string>
+    <string name="stats_duration_days">%1$d d</string>
+    <string name="stats_duration_days_hours">%1$d d %2$d u</string>
+    <plurals name="stats_duration_weeks">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weken</item>
+    </plurals>
+    <string name="stats_arrange_ring">Als ring tonen</string>
 </resources>

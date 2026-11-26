@@ -3470,4 +3470,13 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="food_reorder">Змяніць парадак</string>
     <string name="food_move_up">Перамясціць вышэй</string>
     <string name="food_move_down">Перамясціць ніжэй</string>
+    <string name="stats_duration_days">%1$d дз</string>
+    <string name="stats_duration_days_hours">%1$d дз %2$d гадз</string>
+    <plurals name="stats_duration_weeks">
+        <item quantity="one">%1$d тыдзень</item>
+        <item quantity="few">%1$d тыдні</item>
+        <item quantity="many">%1$d тыдняў</item>
+        <item quantity="other">%1$d тыдні</item>
+    </plurals>
+    <string name="stats_arrange_ring">Паказваць кольцам</string>
 </resources>
