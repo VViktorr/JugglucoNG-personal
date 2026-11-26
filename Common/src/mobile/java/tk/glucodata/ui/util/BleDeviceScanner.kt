@@ -86,7 +86,7 @@ class BleDeviceScanner(context: Context) {
             stopScan()
         }
 
-        scanCallback = object : ScanCallback() {
+        val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 result?.let {
                     // Debug builds only: every setup wizard scans through here, and
@@ -119,8 +119,9 @@ class BleDeviceScanner(context: Context) {
                 .build()
         }
 
+        scanCallback = callback
         try {
-            scanner.startScan(filters.ifEmpty { null }, settings, scanCallback)
+            scanner.startScan(filters.ifEmpty { null }, settings, callback)
         } catch (e: SecurityException) {
             Log.e(LOG_ID, "SecurityException during startScan: " + e.message)
             scanCallback = null

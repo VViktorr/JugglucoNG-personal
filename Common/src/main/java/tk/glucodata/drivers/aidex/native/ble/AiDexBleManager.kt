@@ -6924,10 +6924,11 @@ class AiDexBleManager(
             .setScanMode(scanMode)
             .build()
 
+        val callback = broadcastScanCallback ?: return
         try {
             cancelBroadcastScanAlarm()
             acquireBroadcastWakeLock(currentBroadcastScanWindowMs(continuous) + 2_000L)
-            scanner.startScan(filters, settings, broadcastScanCallback)
+            scanner.startScan(filters, settings, callback)
             broadcastScanActive = true
             broadcastScanContinuousMode = continuous
             broadcastScanStartedAtElapsed = SystemClock.elapsedRealtime()
