@@ -259,6 +259,8 @@ fun NightscoutSettingsScreen(navController: NavController) {
     var receiveTreatments by rememberSaveable { mutableStateOf(JournalTreatmentUploader.getReceiveTreatments()) }
     var uploadIob by rememberSaveable { mutableStateOf(NightPost.getUploadIob()) }
     var uploadSensorStart by rememberSaveable { mutableStateOf(NightPost.getUploadSensorStart()) }
+    // The journal is switched on and off on its own screen, so once per visit is enough.
+    val journalEnabled = remember(context) { tk.glucodata.JournalEnabled.isOn(context) }
     var isV3 by rememberSaveable { mutableStateOf(Natives.getnightscoutV3()) }
     var followerV3 by rememberSaveable { mutableStateOf(followerConfig.useV3) }
     var showSecret by rememberSaveable { mutableStateOf(false) }
@@ -446,7 +448,8 @@ fun NightscoutSettingsScreen(navController: NavController) {
     // The lines above report the native entries uploader only, so they can read HTTP 200 while
     // the JVM-side treatment path has been rejected for days (issue #191).
     val treatmentSummary: String? = when {
-        !isActive || mode != NightscoutModePreference.Mode.UPLOAD || !sendTreatments -> null
+        // Off with the journal: nothing is sent then, so an old failure would stay up for good.
+        !isActive || mode != NightscoutModePreference.Mode.UPLOAD || !journalEnabled || !sendTreatments -> null
         treatmentSync.failure == JournalSyncFailure.UPLOAD -> context.getString(
             R.string.nightscout_status_treatments_upload_failing,
             formatStatusMillis(treatmentSync.failingSince),
@@ -469,7 +472,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
     // The lines above report the native entries uploader only; the devicestatus channel
     // (IOB) fails on its own, and a "no token" skip must not read like a server rejection.
     val deviceStatusSummary: String? = when {
-        !isActive || mode != NightscoutModePreference.Mode.UPLOAD || !uploadIob -> null
+        !isActive || mode != NightscoutModePreference.Mode.UPLOAD || !journalEnabled || !uploadIob -> null
         deviceStatusOutcome == NightPost.DEVICE_STATUS_NO_TOKEN ->
             context.getString(R.string.nightscout_status_iob_no_token)
         deviceStatusOutcome == NightPost.DEVICE_STATUS_REJECTED -> context.getString(
@@ -745,7 +748,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                     }
                 }
 
-                item("nightscout_follow_send_treatments") {
+                if (journalEnabled) item("nightscout_follow_send_treatments") {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -851,60 +854,62 @@ fun NightscoutSettingsScreen(navController: NavController) {
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        SettingsSwitchItem(
-                            title = stringResource(R.string.nightscout_send_treatments),
-                            subtitle = stringResource(R.string.nightscout_send_amounts_desc),
-                            checked = sendTreatments,
-                            onCheckedChange = {
-                                sendTreatments = it
-                                Natives.setpostTreatments(it)
-                            },
-                            icon = Icons.Default.Medication,
-                            iconTint = MaterialTheme.colorScheme.primary,
-                            enabled = isActive,
-                            position = CardPosition.TOP
-                        )
-                        SettingsSwitchItem(
-                            title = stringResource(R.string.nightscout_send_long_insulin),
-                            subtitle = stringResource(R.string.nightscout_send_long_insulin_desc),
-                            checked = sendLongInsulin,
-                            onCheckedChange = {
-                                sendLongInsulin = it
-                                JournalTreatmentUploader.setSendLongInsulin(it)
-                                if (it) Natives.wakeuploader()
-                            },
-                            icon = Icons.Default.Medication,
-                            iconTint = MaterialTheme.colorScheme.tertiary,
-                            enabled = isActive && sendTreatments,
-                            position = CardPosition.MIDDLE
-                        )
-                        SettingsSwitchItem(
-                            title = stringResource(R.string.nightscout_receive_amounts),
-                            subtitle = stringResource(R.string.nightscout_receive_amounts_desc),
-                            checked = receiveTreatments,
-                            onCheckedChange = {
-                                receiveTreatments = it
-                                JournalTreatmentUploader.setReceiveTreatments(it)
-                            },
-                            icon = Icons.Default.Link,
-                            iconTint = MaterialTheme.colorScheme.secondary,
-                            enabled = isActive,
-                            position = CardPosition.MIDDLE
-                        )
-                        SettingsSwitchItem(
-                            title = stringResource(R.string.nightscout_upload_iob),
-                            subtitle = stringResource(R.string.nightscout_upload_iob_desc),
-                            checked = uploadIob,
-                            onCheckedChange = {
-                                uploadIob = it
-                                NightPost.setUploadIob(it)
-                                if (it) Natives.wakeuploader()
-                            },
-                            icon = Icons.Default.CloudUpload,
-                            iconTint = MaterialTheme.colorScheme.secondary,
-                            enabled = isActive,
-                            position = CardPosition.MIDDLE
-                        )
+                        if (journalEnabled) {
+                            SettingsSwitchItem(
+                                title = stringResource(R.string.nightscout_send_treatments),
+                                subtitle = stringResource(R.string.nightscout_send_amounts_desc),
+                                checked = sendTreatments,
+                                onCheckedChange = {
+                                    sendTreatments = it
+                                    Natives.setpostTreatments(it)
+                                },
+                                icon = Icons.Default.Medication,
+                                iconTint = MaterialTheme.colorScheme.primary,
+                                enabled = isActive,
+                                position = CardPosition.TOP
+                            )
+                            SettingsSwitchItem(
+                                title = stringResource(R.string.nightscout_send_long_insulin),
+                                subtitle = stringResource(R.string.nightscout_send_long_insulin_desc),
+                                checked = sendLongInsulin,
+                                onCheckedChange = {
+                                    sendLongInsulin = it
+                                    JournalTreatmentUploader.setSendLongInsulin(it)
+                                    if (it) Natives.wakeuploader()
+                                },
+                                icon = Icons.Default.Medication,
+                                iconTint = MaterialTheme.colorScheme.tertiary,
+                                enabled = isActive && sendTreatments,
+                                position = CardPosition.MIDDLE
+                            )
+                            SettingsSwitchItem(
+                                title = stringResource(R.string.nightscout_receive_amounts),
+                                subtitle = stringResource(R.string.nightscout_receive_amounts_desc),
+                                checked = receiveTreatments,
+                                onCheckedChange = {
+                                    receiveTreatments = it
+                                    JournalTreatmentUploader.setReceiveTreatments(it)
+                                },
+                                icon = Icons.Default.Link,
+                                iconTint = MaterialTheme.colorScheme.secondary,
+                                enabled = isActive,
+                                position = CardPosition.MIDDLE
+                            )
+                            SettingsSwitchItem(
+                                title = stringResource(R.string.nightscout_upload_iob),
+                                subtitle = stringResource(R.string.nightscout_upload_iob_desc),
+                                checked = uploadIob,
+                                onCheckedChange = {
+                                    uploadIob = it
+                                    NightPost.setUploadIob(it)
+                                    if (it) Natives.wakeuploader()
+                                },
+                                icon = Icons.Default.CloudUpload,
+                                iconTint = MaterialTheme.colorScheme.secondary,
+                                enabled = isActive,
+                                position = CardPosition.MIDDLE
+                            )
+                        }
                         SettingsSwitchItem(
                             title = stringResource(R.string.nightscout_upload_sensor_start),
                             subtitle = stringResource(R.string.nightscout_upload_sensor_start_desc),
@@ -917,7 +922,7 @@ fun NightscoutSettingsScreen(navController: NavController) {
                             icon = Icons.Default.CloudUpload,
                             iconTint = MaterialTheme.colorScheme.secondary,
                             enabled = isActive,
-                            position = CardPosition.MIDDLE
+                            position = if (journalEnabled) CardPosition.MIDDLE else CardPosition.TOP
                         )
                         SettingsSwitchItem(
                             title = stringResource(R.string.nightscout_use_v3_api),

@@ -82,6 +82,7 @@ fun RestrictedModeSettingsScreen(navController: NavController) {
     var showPinOptions by remember { mutableStateOf(false) }
     var handoverEnabled by remember { mutableStateOf(SensorConnectionSettings.handoverEnabled(context)) }
     val biometricsAvailable = remember(context) { RestrictedBiometrics.isAvailable(context) }
+    val journalEnabled = remember(context) { tk.glucodata.JournalEnabled.isOn(context) }
 
     AppScaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -190,15 +191,17 @@ fun RestrictedModeSettingsScreen(navController: NavController) {
                             },
                         )
                     }
-                    SettingsSwitchItem(
-                        title = stringResource(R.string.restricted_allow_journal),
-                        subtitle = stringResource(R.string.restricted_allow_journal_desc),
-                        checked = config.allowJournal,
-                        onCheckedChange = { on -> RestrictedMode.update(context) { it.copy(allowJournal = on) } },
-                        icon = Icons.Default.EditNote,
-                        iconTint = color,
-                        position = CardPosition.MIDDLE,
-                    )
+                    if (journalEnabled) {
+                        SettingsSwitchItem(
+                            title = stringResource(R.string.restricted_allow_journal),
+                            subtitle = stringResource(R.string.restricted_allow_journal_desc),
+                            checked = config.allowJournal,
+                            onCheckedChange = { on -> RestrictedMode.update(context) { it.copy(allowJournal = on) } },
+                            icon = Icons.Default.EditNote,
+                            iconTint = color,
+                            position = CardPosition.MIDDLE,
+                        )
+                    }
                     SettingsSwitchItem(
                         title = stringResource(R.string.settings_calibration_title),
                         subtitle = stringResource(R.string.restricted_allow_calibration_desc),
