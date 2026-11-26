@@ -1653,7 +1653,7 @@ private fun CalibrationTransferAction(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    style = MaterialTheme.typography.titleMedium,
                     color = if (isDestructive) contentColor else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -1727,7 +1727,7 @@ private fun ClearOptionsBottomSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.clear_disabled_only),
-                                style = MaterialTheme.typography.titleMediumEmphasized,)
+                                style = MaterialTheme.typography.titleMedium)
                             Text(
                                 stringResource(R.string.disabled_calibrations_count, disabledCount),
                                 style = MaterialTheme.typography.bodySmall,
@@ -1760,7 +1760,7 @@ private fun ClearOptionsBottomSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             stringResource(R.string.clear),
-                            style = MaterialTheme.typography.titleMediumEmphasized,
+                            style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.error
                         )
                         Text(
