@@ -295,6 +295,33 @@ internal fun DashboardSensorPanel(
     ) {
         val compactSignal = !stacked && bluetoothRssi != null
         val compactLabel = MaterialTheme.typography.labelSmall.copy(lineHeight = 12.sp)
+        val readingAgeStyle = when {
+            stacked -> MaterialTheme.typography.titleMedium
+            compactSignal -> compactLabel
+            else -> MaterialTheme.typography.labelMedium
+        }
+        val bluetoothSignal: @Composable () -> Unit = {
+            if (bluetoothRssi != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SensorLinkIcon(
+                        state = SensorLinkState.UP,
+                        rssi = bluetoothRssi,
+                        color = contentColor,
+                        waveHeight = if (stacked) 20.dp else 14.dp,
+                    )
+                    Text(
+                        text = stringResource(R.string.ottai_rssi_dbm, bluetoothRssi),
+                        style = readingAgeStyle.copy(fontFeatureSettings = "tnum"),
+                        color = contentColor,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+            }
+        }
         val elapsedColor = MaterialTheme.colorScheme.surfaceVariant
         Box(Modifier.fillMaxSize().sensorElapsedOverlay(progress, elapsedColor)) {
             Column(
@@ -311,11 +338,7 @@ internal fun DashboardSensorPanel(
                         noiseLevel = noiseLevel,
                         readingMillis = readingMillis,
                         contentColor = contentColor,
-                        readingAgeStyle = when {
-                            stacked -> MaterialTheme.typography.titleMedium
-                            compactSignal -> compactLabel
-                            else -> MaterialTheme.typography.labelMedium
-                        },
+                        readingAgeStyle = readingAgeStyle,
                         readingAgeIconSize = if (stacked) 16.dp else 14.dp,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -323,19 +346,33 @@ internal fun DashboardSensorPanel(
                     )
                 }
 
-                if (displayName.isNotEmpty()) {
-                    SensorNameLine(
-                        displayName = displayName,
-                        isCloneSource = isCloneSource,
-                        cloneTransport = cloneTransport,
-                        activeSensors = activeSensors,
-                        style = when {
-                            stacked -> MaterialTheme.typography.labelLarge
-                            compactSignal -> compactLabel
-                            else -> MaterialTheme.typography.labelMedium
-                        },
-                        color = contentColor.copy(alpha = 0.7f)
-                    )
+                val nameLine: @Composable () -> Unit = {
+                    if (displayName.isNotEmpty()) {
+                        SensorNameLine(
+                            displayName = displayName,
+                            isCloneSource = isCloneSource,
+                            cloneTransport = cloneTransport,
+                            activeSensors = activeSensors,
+                            style = when {
+                                stacked -> MaterialTheme.typography.labelLarge
+                                compactSignal -> compactLabel
+                                else -> MaterialTheme.typography.labelMedium
+                            },
+                            color = contentColor.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                if (stacked && bluetoothRssi != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.weight(1f)) { nameLine() }
+                        bluetoothSignal()
+                    }
+                } else {
+                    nameLine()
                 }
 
                 val lifetime: @Composable () -> Unit = {
@@ -433,26 +470,8 @@ internal fun DashboardSensorPanel(
                         expiry(Modifier.neverWidensParent().padding(top = 2.dp))
                     }
                 }
-                if (bluetoothRssi != null) {
-                    Row(
-                        modifier = Modifier.align(Alignment.End),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SensorLinkIcon(
-                            state = SensorLinkState.UP,
-                            rssi = bluetoothRssi,
-                            color = contentColor,
-                            waveHeight = 14.dp,
-                        )
-                        Text(
-                            text = stringResource(R.string.ottai_rssi_dbm, bluetoothRssi),
-                            style = compactLabel.copy(fontFeatureSettings = "tnum"),
-                            color = contentColor,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
+                if (compactSignal) {
+                    Box(Modifier.align(Alignment.End)) { bluetoothSignal() }
                 }
             }
         }

@@ -12,8 +12,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
@@ -224,27 +231,41 @@ class DashboardHeaderLayoutTests {
         assertEquals(left("3MH01") + (14 + 8) * 2f, left("5 / 15"), 0f)
     }
 
-    @Test fun bluetoothSignalFitsBelowTheCountdownInTheCompactPanel() {
+    @Test fun bluetoothSignalFitsBelowTheReadingAgeInTheCompactPanel() {
         header(showReadingAge = true, sensorRssi = -72)
-        assertBluetoothSignalBelowCountdown(expectedHeightPx = 160f)
+        assertBluetoothSignalBelowReadingAge(expectedHeightPx = 160f)
     }
 
-    @Test fun bluetoothSignalFitsBelowTheCountdownInTheStackedPanel() {
+    @Test fun bluetoothSignalFitsBelowTheReadingAgeInTheStackedPanel() {
         header(showReadingAge = true, stacked = true, sensorRssi = -72)
-        assertBluetoothSignalBelowCountdown(expectedHeightPx = 328f)
+        assertBluetoothSignalBelowReadingAge(expectedHeightPx = 328f)
         assertEquals(left("3MH01") + (14 + 8) * 2f, left("5 / 15"), 0f)
     }
 
-    private fun assertBluetoothSignalBelowCountdown(expectedHeightPx: Float) {
+    private fun assertBluetoothSignalBelowReadingAge(expectedHeightPx: Float) {
         val bars = compose.onNodeWithTag("dashboard-bars").fetchSemanticsNode().boundsInRoot
         val lifetime = compose.onNodeWithText("5 / 15", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        val signal = compose.onNodeWithText("-72 dBm", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val signalNode = compose.onNodeWithText("-72 dBm", useUnmergedTree = true)
+        val seconds = Regex("[0-9]+s")
+        val ageNode = compose.onNode(SemanticsMatcher("reading age in seconds") { node ->
+            node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { seconds.matches(it.text) }
+        }, useUnmergedTree = true)
+        val signal = signalNode.fetchSemanticsNode().boundsInRoot
+        val age = ageNode.fetchSemanticsNode().boundsInRoot
         assertEquals(expectedHeightPx, bars.height, 0f)
-        assertTrue("Bluetooth level is visible below the countdown", signal.height > 0 && signal.top >= lifetime.bottom)
+        assertTrue("Bluetooth level is visible below the reading age", signal.height > 0 && signal.top >= age.bottom)
+        assertEquals(age.right, signal.right, 1f)
+        assertEquals(fontSize(ageNode), fontSize(signalNode))
         val sensorNameLeft = left("3MH01")
         assertTrue(lifetime.left in sensorNameLeft..(sensorNameLeft + (14 + 8) * 2f))
         assertTrue(lifetime.right < signal.right)
         assertEquals(bars.right - 12 * 2f, signal.right, 1f)
+    }
+
+    private fun fontSize(node: SemanticsNodeInteraction): androidx.compose.ui.unit.TextUnit {
+        val layouts = mutableListOf<TextLayoutResult>()
+        node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        return layouts.single().layoutInput.style.fontSize
     }
 
     private companion object {
