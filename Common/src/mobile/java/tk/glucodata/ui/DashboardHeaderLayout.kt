@@ -257,16 +257,12 @@ internal fun DashboardSensorPanel(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (progress > 0f) {
-                val fillColor = when {
-                    progress > 0.95f -> MaterialTheme.colorScheme.error
-                    progress > 0.80f -> MaterialTheme.colorScheme.tertiary
-                    else -> StatusPalette.sensorLifeFill
-                }
                 Box(
                     modifier = Modifier
+                        .align(Alignment.CenterEnd)
                         .fillMaxHeight()
-                        .fillMaxWidth(progress)
-                        .background(fillColor.copy(alpha = 0.25f))
+                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
             }
 
