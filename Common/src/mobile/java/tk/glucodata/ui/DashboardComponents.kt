@@ -585,26 +585,17 @@ fun DashboardCombinedHeader(
                 )
             }
 
-            if (stacked) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(HeroSensorGap)
-                ) {
-                    if (showSensorCard) sensorPanel(Modifier.fillMaxWidth())
-                    heroCard(Modifier.fillMaxWidth())
-                }
-            } else {
-                HeroSensorSplit(
-                    heroNeedPx = heroLayout.contentNeedPx,
-                    heroRoomyNeedPx = heroLayout.roomyContentNeedPx,
-                    onPanelCrowded = { sensorPanelCrowded = it },
-                    glucoseWidthPercent = glucoseWidthPercent,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    heroCard(Modifier)
-                    if (showSensorCard) {
-                        sensorPanel(Modifier)
-                    }
+            HeroSensorSplit(
+                heroNeedPx = heroLayout.contentNeedPx,
+                heroRoomyNeedPx = heroLayout.roomyContentNeedPx,
+                onPanelCrowded = { sensorPanelCrowded = it },
+                glucoseWidthPercent = glucoseWidthPercent,
+                stacked = stacked,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                heroCard(Modifier)
+                if (showSensorCard) {
+                    sensorPanel(Modifier)
                 }
             }
         }

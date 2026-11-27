@@ -112,6 +112,29 @@ class DashboardHeaderLayoutTests {
         assertEquals(true, crowded)
     }
 
+    @Test fun stackedCardsShareTheTallerHeightAndPutTheSensorFirst() {
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                HeroSensorSplit(
+                    heroNeedPx = null,
+                    heroRoomyNeedPx = null,
+                    onPanelCrowded = {},
+                    modifier = Modifier.width(304.dp),
+                    stacked = true,
+                ) {
+                    Box(Modifier.height(80.dp).testTag("hero"))
+                    Box(Modifier.height(96.dp).testTag("panel"))
+                }
+            }
+        }
+
+        val hero = compose.onNodeWithTag("hero").fetchSemanticsNode().boundsInRoot
+        val panel = compose.onNodeWithTag("panel").fetchSemanticsNode().boundsInRoot
+        assertEquals(96f, hero.height, 0f)
+        assertEquals(panel.height, hero.height, 0f)
+        assertEquals(panel.bottom + 4f, hero.top, 0f)
+    }
+
     private fun header(showReadingAge: Boolean) {
         val now = System.currentTimeMillis()
         val at = now - 20_000L

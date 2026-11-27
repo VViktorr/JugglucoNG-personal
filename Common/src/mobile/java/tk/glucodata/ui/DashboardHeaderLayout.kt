@@ -126,6 +126,7 @@ internal fun HeroSensorSplit(
     onPanelCrowded: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     glucoseWidthPercent: Int? = null,
+    stacked: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -133,6 +134,7 @@ internal fun HeroSensorSplit(
     val roomyNeed by rememberUpdatedState(heroRoomyNeedPx)
     val reportCrowded by rememberUpdatedState(onPanelCrowded)
     val widthPercent by rememberUpdatedState(glucoseWidthPercent)
+    val stackPanels by rememberUpdatedState(stacked)
     // One policy for the life of the row: the need is read while measuring, so a new
     // reading costs a layout pass and the header's other animations cost none.
     val policy = remember(scope) {
@@ -148,6 +150,23 @@ internal fun HeroSensorSplit(
                 return@MeasurePolicy layout(totalWidth, height) { placeable.placeRelative(0, 0) }
             }
             val gap = HeroSensorGap.roundToPx()
+            if (stackPanels) {
+                reportCrowded(false)
+                val contentHeight = maxOf(hero.minIntrinsicHeight(totalWidth), sensor.minIntrinsicHeight(totalWidth))
+                val maxPanelHeight = if (constraints.hasBoundedHeight) {
+                    ((constraints.maxHeight - gap).coerceAtLeast(0)) / 2
+                } else {
+                    contentHeight
+                }
+                val height = minOf(contentHeight, maxPanelHeight)
+                val size = Constraints.fixed(totalWidth, height)
+                val sensorPlaceable = sensor.measure(size)
+                val heroPlaceable = hero.measure(size)
+                return@MeasurePolicy layout(totalWidth, constraints.constrainHeight(2 * height + gap)) {
+                    sensorPlaceable.placeRelative(0, 0)
+                    heroPlaceable.placeRelative(0, height + gap)
+                }
+            }
             val available = (totalWidth - gap).coerceAtLeast(0)
             val fixedPercent = widthPercent
             val sensorWidth = if (fixedPercent == null) {
