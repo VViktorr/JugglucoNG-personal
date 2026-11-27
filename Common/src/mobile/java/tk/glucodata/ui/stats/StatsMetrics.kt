@@ -1,7 +1,8 @@
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -1673,7 +1674,7 @@ private fun MetricSheetRow(
                 onClick = onTogglePinned,
                 enabled = pinEnabled,
                 modifier = Modifier.size(38.dp),
-                shapes = IconButtonDefaults.shapes()
+                shapes = appIconButtonShapes()
             ) {
                 Icon(
                     imageVector = if (pinned) Symbols.PushPinFilled else Symbols.PushPin,

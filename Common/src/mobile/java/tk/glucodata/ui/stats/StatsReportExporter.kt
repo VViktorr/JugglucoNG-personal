@@ -35,6 +35,7 @@ object StatsReportExporter {
         @StringRes val labelResId: Int
     ) {
         CURRENT("current", R.string.report_style_current),
+        LIBREVIEW_STYLE("libreview_style", R.string.report_style_libreviev),
         MINIMAL_SWISS("minimal_swiss", R.string.report_style_minimal_swiss),
         MEDICAL_JOURNAL("medical_journal", R.string.report_style_medical_journal),
         PREMIUM_DARK_INK("premium_dark_ink", R.string.report_style_dark_ink),
@@ -93,6 +94,12 @@ object StatsReportExporter {
         resolveVisualTheme(style).let { PdfStyleSwatch(it.paper, it.text, it.primary, it.secondary) }
 
     private fun resolveVisualTheme(style: PdfVisualStyle): PdfVisualTheme = when (style) {
+        PdfVisualStyle.LIBREVIEW_STYLE -> resolveVisualTheme(PdfVisualStyle.MINIMAL_SWISS).copy(
+            paper = android.graphics.Color.WHITE,
+            primary = android.graphics.Color.rgb(0, 103, 166),
+            secondary = android.graphics.Color.BLACK,
+            showSideStripe = false
+        )
         PdfVisualStyle.CURRENT -> PdfVisualTheme(
             paper = android.graphics.Color.rgb(245, 248, 253),
             text = android.graphics.Color.rgb(20, 28, 40),
@@ -315,8 +322,14 @@ object StatsReportExporter {
             ?: uiState.activeRange?.daySpan?.takeIf { it > 0 }
             ?: 90,
         patientInfo: PatientInfo? = null,
-        reportStyle: PdfVisualStyle = PdfVisualStyle.CURRENT
+        reportStyle: PdfVisualStyle = PdfVisualStyle.CURRENT,
+        reportGroups: Set<LibreViewReportGroup> = LibreViewReportGroup.defaults
     ): Result<Unit> = withContext(Dispatchers.IO) {
+        if (reportStyle == PdfVisualStyle.LIBREVIEW_STYLE) {
+            return@withContext runCatching {
+                LibreViewStyleReport.write(context, uri, uiState, reportDays, patientInfo, reportGroups)
+            }.onFailure { Log.e(TAG, "Libreviev style export failed", it) }
+        }
         runCatching {
             val reportWindowDays = reportDays.coerceAtLeast(1)
             val pageWidth = 1240

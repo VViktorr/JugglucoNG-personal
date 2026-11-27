@@ -1,7 +1,9 @@
 package tk.glucodata.ui.stats
 
+import tk.glucodata.ui.util.appButtonShapes
+import tk.glucodata.ui.util.appIconButtonShapes
+
 import tk.glucodata.ui.components.IconButtonTooltip
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateColorAsState
@@ -157,7 +159,7 @@ internal fun StatsLayoutEditor(
         TextButton(
             onClick = { StatsLayoutStore.resetLayout() },
             modifier = Modifier.padding(top = 4.dp),
-            shapes = ButtonDefaults.shapes(),
+            shapes = appButtonShapes(),
             contentPadding = ButtonDefaults.TextButtonContentPadding
         ) {
             Text(text = stringResource(R.string.stats_arrange_reset))
@@ -345,7 +347,7 @@ private fun EditorRow(
         }
         if (wide != null) {
             IconButtonTooltip(stringResource(R.string.stats_arrange_width)) {
-                IconButton(onClick = onToggleWide, modifier = Modifier.size(38.dp), shapes = IconButtonDefaults.shapes()) {
+                IconButton(onClick = onToggleWide, modifier = Modifier.size(38.dp), shapes = appIconButtonShapes()) {
                     Icon(
                         imageVector = if (wide) Symbols.WidthFullFilled else Symbols.WidthNormalFilled,
                         contentDescription = stringResource(R.string.stats_arrange_width),
@@ -381,7 +383,7 @@ private fun EditorRow(
                     onClick = onTogglePinned,
                     enabled = pinEnabled,
                     modifier = Modifier.size(38.dp),
-                    shapes = IconButtonDefaults.shapes()
+                    shapes = appIconButtonShapes()
                 ) {
                     Icon(
                         imageVector = if (pinned) Symbols.PushPinFilled else Symbols.PushPin,
@@ -397,7 +399,7 @@ private fun EditorRow(
             }
         }
         IconButtonTooltip(stringResource(R.string.stats_arrange_visibility)) {
-            IconButton(onClick = onToggleHidden, modifier = Modifier.size(38.dp), shapes = IconButtonDefaults.shapes()) {
+            IconButton(onClick = onToggleHidden, modifier = Modifier.size(38.dp), shapes = appIconButtonShapes()) {
                 Icon(
                     imageVector = if (hidden) Symbols.VisibilityOffFilled else Symbols.VisibilityFilled,
                     contentDescription = stringResource(R.string.stats_arrange_visibility),
@@ -425,7 +427,7 @@ internal fun StatsEditLayoutButton(
             .clip(RoundedCornerShape(20.dp)),
         horizontalArrangement = Arrangement.Center
     ) {
-        TextButton(onClick = onClick, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
+        TextButton(onClick = onClick, shapes = appButtonShapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) {
             Icon(
                 imageVector = Symbols.DragHandleFilled,
                 contentDescription = null,
