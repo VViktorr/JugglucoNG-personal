@@ -922,14 +922,7 @@ public class bluediag {
         view.setBackgroundColor(Applic.backgroundcolor);
         show(act, showview);
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            showview.setOnApplyWindowInsetsListener((v, insets) -> {
-                int top = insets.getSystemWindowInsetTop();
-                int bottom = insets.getSystemWindowInsetBottom();
-                v.setPadding(insets.getSystemWindowInsetLeft(), top, insets.getSystemWindowInsetRight(), bottom);
-                return insets.consumeSystemWindowInsets();
-            });
-        }
+        OverlayInsets.apply(showview, 0);
 
         android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);

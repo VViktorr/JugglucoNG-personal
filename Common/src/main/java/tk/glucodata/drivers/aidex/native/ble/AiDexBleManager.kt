@@ -13,7 +13,8 @@ package tk.glucodata.drivers.aidex.native.ble
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
@@ -2020,7 +2021,7 @@ class AiDexBleManager(
      *   - mBluetoothGatt != null: GATT handle exists
      */
     override fun connectDevice(delayMillis: Long): Boolean {
-        if (BluetoothAdapter.getDefaultAdapter()?.isEnabled != true) {
+        if (Applic.app?.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled != true) {
             Log.i(TAG, "connectDevice: skip — Bluetooth is disabled")
             connectAttemptInFlight = false
             setPhase(Phase.IDLE)
@@ -3384,9 +3385,9 @@ class AiDexBleManager(
             return
         }
 
-        f001.value = challenge
-        f001.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-        challengeWritten = gatt.writeCharacteristic(f001)
+        challengeWritten = gatt.writeCharacteristic(
+            f001, challenge, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
+        ) == BluetoothStatusCodes.SUCCESS
         if (!challengeWritten) {
             Log.e(TAG, "Fresh PAIR challenge was rejected by Android GATT")
             handleKeyExchangeFailure("f001-write-rejected")
@@ -5769,14 +5770,13 @@ class AiDexBleManager(
                     drainGattQueue()
                     return
                 }
-                characteristic.value = next.data
                 val writeType = if ((characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0) {
                     BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
                 } else {
                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                 }
-                characteristic.writeType = writeType
-                val ok = gatt.writeCharacteristic(characteristic)
+                val ok = gatt.writeCharacteristic(characteristic, next.data, writeType) ==
+                    BluetoothStatusCodes.SUCCESS
                 Log.d(TAG, "GATT write [${next.charUuid}]: ok=$ok, queueRemaining=${gattQueue.size}")
                 if (
                     pendingResetReconnect &&
@@ -6928,7 +6928,7 @@ class AiDexBleManager(
         if (postUnpairBroadcastScanSuppressed) return
         if (broadcastScanActive && !recoverAlarmScanIfStale("start-$reason")) return
 
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
+        val adapter = Applic.app?.getSystemService(BluetoothManager::class.java)?.adapter ?: return
         if (!adapter.isEnabled) return
 
         val scanner = adapter.bluetoothLeScanner ?: return

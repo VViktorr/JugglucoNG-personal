@@ -4164,14 +4164,10 @@ public class Notify {
                         primaryActionBackground);
 
                 // Bind to Builder
-                if (Build.VERSION.SDK_INT >= 24) {
-                    GluNotBuilder.setStyle(new Notification.DecoratedCustomViewStyle());
-                    GluNotBuilder.setCustomContentView(remoteViews);
-                    GluNotBuilder.setCustomBigContentView(remoteViewsExpanded);
-                    GluNotBuilder.setCustomHeadsUpContentView(remoteViewsHeadsUp);
-                } else {
-                    GluNotBuilder.setContent(remoteViews);
-                }
+                GluNotBuilder.setStyle(new Notification.DecoratedCustomViewStyle());
+                GluNotBuilder.setCustomContentView(remoteViews);
+                GluNotBuilder.setCustomBigContentView(remoteViewsExpanded);
+                GluNotBuilder.setCustomHeadsUpContentView(remoteViewsHeadsUp);
                 // --- RICH UI END ---
 
                 Notification notif = GluNotBuilder.build();
@@ -4251,17 +4247,7 @@ public class Notify {
 
     private Notification.Builder mkbuilderintent(String type, PendingIntent notifyPendingIntent,
             boolean groupWithService) {
-        Notification.Builder GluNotBuilder;
-        if (true) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                GluNotBuilder = new Notification.Builder(Applic.app, type);
-            } else {
-                GluNotBuilder = new Notification.Builder(Applic.app);
-            }
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                GluNotBuilder.setChannelId(type);
-        }
+        Notification.Builder GluNotBuilder = new Notification.Builder(Applic.app, type);
         GluNotBuilder.setContentIntent(notifyPendingIntent).setOnlyAlertOnce(true);
         if (Build.VERSION.SDK_INT >= 20) {
             GluNotBuilder.setLocalOnly(false);
@@ -5194,13 +5180,9 @@ public class Notify {
         remoteViewsExpanded.setTextColor(R.id.notification_status, startupStatusColor);
 
         var GluNotBuilder = mkbuilder(GLUCOSENOTIFICATION);
-        if (Build.VERSION.SDK_INT >= 24) {
-            GluNotBuilder.setStyle(new Notification.DecoratedCustomViewStyle());
-            GluNotBuilder.setCustomContentView(remoteViews);
-            GluNotBuilder.setCustomBigContentView(remoteViewsExpanded);
-        } else {
-            GluNotBuilder.setContent(remoteViews);
-        }
+        GluNotBuilder.setStyle(new Notification.DecoratedCustomViewStyle());
+        GluNotBuilder.setCustomContentView(remoteViews);
+        GluNotBuilder.setCustomBigContentView(remoteViewsExpanded);
         GluNotBuilder.setSmallIcon(R.drawable.novalue).setOnlyAlertOnce(true).setContentTitle(message);
         // The header carries the actual reading shown, if any. With no data no
         // timestamp is fabricated and no empty chart is rendered as data.

@@ -2193,13 +2193,9 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         fineres = proc;
     }
 
-    private static int getLocationMode(Context context) {
-        return Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.LOCATION_MODE,
-                Settings.Secure.LOCATION_MODE_OFF);
-    }
-
     public static boolean isLocationEnabled(Context context) {
-        return getLocationMode(context) != Settings.Secure.LOCATION_MODE_OFF;
+        var manager = context.getSystemService(android.location.LocationManager.class);
+        return manager != null && androidx.core.location.LocationManagerCompat.isLocationEnabled(manager);
     }
 
     boolean systemlocation() {
@@ -2233,7 +2229,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             }
             ;
         } catch (Throwable th) {
-            Log.stack(LOG_ID, "Settings.Secure.LOCATION_MODE", th);
+            Log.stack(LOG_ID, "isLocationEnabled", th);
             return false;
         }
         return true;

@@ -34,6 +34,8 @@ package tk.glucodata.drivers.anytime
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
@@ -2190,7 +2192,7 @@ class AnytimeBleManager(
     }
 
     private fun isBluetoothAdapterReady(): Boolean {
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return false
+        val adapter = Applic.app?.getSystemService(BluetoothManager::class.java)?.adapter ?: return false
         return adapter.isEnabled
     }
 
@@ -2696,7 +2698,7 @@ class AnytimeBleManager(
             ?.trim()
             ?.takeIf { BluetoothAdapter.checkBluetoothAddress(it) }
             ?: return
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
+        val adapter = Applic.app?.getSystemService(BluetoothManager::class.java)?.adapter ?: return
         mActiveBluetoothDevice = runCatching { adapter.getRemoteDevice(address) }.getOrNull()
         if (mActiveBluetoothDevice != null) {
             Log.i(TAG, "Resolved active BLE device from stored address $address")
@@ -2958,13 +2960,15 @@ class AnytimeBleManager(
         gatt.setCharacteristicNotification(notify, true)
         val cccd = notify.getDescriptor(AnytimeConstants.CCCD)
         if (cccd != null) {
-            cccd.value = if ((notify.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
+            val cccdValue = if ((notify.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
                 BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             } else {
                 BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
             }
-            Log.d(TAG, "Writing CCCD=${cccd.value.joinToHex()}")
-            val started = runCatching { gatt.writeDescriptor(cccd) }.getOrDefault(false)
+            Log.d(TAG, "Writing CCCD=${cccdValue.joinToHex()}")
+            val started = runCatching {
+                gatt.writeDescriptor(cccd, cccdValue) == BluetoothStatusCodes.SUCCESS
+            }.getOrDefault(false)
             if (!started) {
                 Log.w(TAG, "writeDescriptor returned false; starting handshake without descriptor callback")
                 pendingCccdGatt = null
@@ -5246,13 +5250,14 @@ class AnytimeBleManager(
             handler.post(drainGattWriteQueueRunnable)
             return
         }
-        ch.value = pending.bytes
-        ch.writeType = if ((ch.properties and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0) {
+        val writeType = if ((ch.properties and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0) {
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
         } else {
             BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         }
-        val ok = runCatching { pending.gatt.writeCharacteristic(ch) }.getOrDefault(false)
+        val ok = runCatching {
+            pending.gatt.writeCharacteristic(ch, pending.bytes, writeType) == BluetoothStatusCodes.SUCCESS
+        }.getOrDefault(false)
         if (!ok) {
             synchronized(pendingGattWrites) {
                 activeGattWrite = null

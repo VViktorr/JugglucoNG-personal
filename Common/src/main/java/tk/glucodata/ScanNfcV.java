@@ -562,15 +562,7 @@ public class ScanNfcV {
             lay.setPadding(pad, pad, pad, pad);
             lay.setBackgroundColor(Applic.backgroundcolor);
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                lay.setOnApplyWindowInsetsListener((v, insets) -> {
-                    int top = insets.getSystemWindowInsetTop();
-                    int bottom = insets.getSystemWindowInsetBottom();
-                    v.setPadding(insets.getSystemWindowInsetLeft() + pad, top + pad,
-                            insets.getSystemWindowInsetRight() + pad, bottom + pad);
-                    return insets.consumeSystemWindowInsets();
-                });
-            }
+            OverlayInsets.apply(lay, pad);
             android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(WRAP_CONTENT,
                     WRAP_CONTENT);
             params.gravity = android.view.Gravity.CENTER;

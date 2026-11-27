@@ -88,8 +88,7 @@ android {
         }
         // Ship ARM only. x86 and x86_64 are emulator and ChromeOS territory; on a phone app
         // they were half the native payload for hardware nobody wears a sensor next to.
-        // armeabi-v7a stays: minSdk is 26, and 32-bit ARM handsets of that vintage are
-        // exactly what people leave plugged in as a dedicated CGM receiver.
+        // Both ARM ABIs stay available for Android and Wear OS devices with a 32-bit runtime.
         //
         // Build for one architecture when asked: -PjugglucoAbi=arm64-v8a. A phone needs one
         // of the two, and the other is most of what is left. The property replaces this list
@@ -105,7 +104,7 @@ android {
         versionCode = appVersionCode
 
         targetSdk = TARGETSDK
-        minSdk = 26
+        minSdk = 34
         buildConfigField 'int', 'targetSDK', "$targetSdk"
         buildConfigField 'int', 'minSDK', "$minSdk"
         manifestPlaceholders["minSDK"] = "$minSdk"
@@ -172,7 +171,7 @@ android {
         wear {
             dimension = 'wearos'
             targetSdk = 35
-            minSdk = 26
+            minSdk = 34
             buildConfigField 'int', 'minSDK', "$minSdk"
             manifestPlaceholders["minSDK"] = "$minSdk"
             versionCode = 1000000 + appVersionCode //WATCH: mobile versionCode + 1M offset

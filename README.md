@@ -78,7 +78,7 @@ Use JDK 21, Android SDK Platform 37.2, Build-Tools 37.0.0, NDK r30 (`30.0.162483
 | --- | --- | --- |
 | Compile SDK | 37.2 | 37.2 |
 | Target SDK | 36 | 35 |
-| Minimum API level | 26 | 26 |
+| Minimum OS | Android 14 (API 34) | Wear OS 5 (API 34) |
 
 Initialize the libjuice submodule from the repository root before building.
 

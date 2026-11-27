@@ -26,10 +26,11 @@ GRADLE_FILE="$(dirname "$0")/../Common/build.gradle"
 
 version_code="$(sed -n 's/.*appVersionCode *= *\([0-9][0-9]*\).*/\1/p' "$GRADLE_FILE" | head -1)"
 version_name="$(sed -n "s/.*appVersionName *= *'\([^']*\)'.*/\1/p" "$GRADLE_FILE" | head -1)"
-min_sdk="$(sed -n 's/.*minSdk \([0-9][0-9]*\).*/\1/p' "$GRADLE_FILE" | head -1)"
+min_sdk="$(sed -n 's/.*minSdk *= *\([0-9][0-9]*\).*/\1/p' "$GRADLE_FILE" | head -1)"
 
 [ -n "$version_code" ] || { echo "could not read appVersionCode" >&2; exit 1; }
 [ -n "$version_name" ] || { echo "could not read appVersionName" >&2; exit 1; }
+[ -n "$min_sdk" ] || { echo "could not read minSdk" >&2; exit 1; }
 
 sha256() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
@@ -74,7 +75,7 @@ cat <<JSON
   "schema": 1,
   "versionName": "$version_name",
   "versionCode": $version_code,
-  "minSdk": ${min_sdk:-26},
+  "minSdk": $min_sdk,
   "artifacts": [$entries
   ]
 }

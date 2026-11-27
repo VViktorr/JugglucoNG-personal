@@ -124,7 +124,7 @@ class ExpressiveAppWidget : GlanceAppWidget() {
         val config = state.config
         val snapshot = state.snapshot
         val density = context.resources.displayMetrics.density
-        val fontScale = context.resources.displayMetrics.scaledDensity / density
+        val fontScale = context.resources.configuration.fontScale
         val headerHeightDp = ChartWidgetSizing.headerHeightDp(
             size.height.value, config, fontScale
         )

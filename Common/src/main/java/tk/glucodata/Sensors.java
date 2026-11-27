@@ -111,14 +111,7 @@ static    void show(MainActivity act,String text, long sensorptr) {
         scroll.setBackgroundColor(Applic.backgroundcolor);
         }
 
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-        sensors.viewgroup.setOnApplyWindowInsetsListener((v, insets) -> {
-             int top = insets.getSystemWindowInsetTop();
-             int bottom = insets.getSystemWindowInsetBottom();
-             v.setPadding(insets.getSystemWindowInsetLeft(), top, insets.getSystemWindowInsetRight(), bottom);
-             return insets.consumeSystemWindowInsets();
-        });
-    }
+    OverlayInsets.apply(sensors.viewgroup, 0);
 
     android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(param, param);
     params.gravity = android.view.Gravity.CENTER;

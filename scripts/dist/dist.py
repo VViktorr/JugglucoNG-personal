@@ -275,7 +275,9 @@ def manifest(directory):
         verify_apk(apk, flavor, build_type)
         artifacts.append({'applicationId': 'tk.glucodata.ng' + ('.dub' if build_type == 'releasedub' else ''),
                           'file': apk.name, 'size': apk.stat().st_size, 'sha256': digest(apk.read_bytes())})
-    return {'schema': 1, 'versionName': name, 'versionCode': code, 'minSdk': 26, 'artifacts': sorted(artifacts, key=lambda a: a['file'])}
+    source = (ROOT / 'Common/build.gradle').read_text()
+    min_sdk = int(re.search(r'^\s*minSdk\s*=\s*(\d+)', source, re.M)[1])
+    return {'schema': 1, 'versionName': name, 'versionCode': code, 'minSdk': min_sdk, 'artifacts': sorted(artifacts, key=lambda a: a['file'])}
 
 
 def main():

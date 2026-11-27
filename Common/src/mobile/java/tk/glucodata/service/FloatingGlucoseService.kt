@@ -134,22 +134,16 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
         val channelId = "glucoseNotification"
         val channelName = "JugglucoNG Service"
         
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val chan = android.app.NotificationChannel(channelId, channelName, android.app.NotificationManager.IMPORTANCE_HIGH)
-            chan.lockscreenVisibility = android.app.Notification.VISIBILITY_PRIVATE
-            chan.setShowBadge(true) // Standard behavior
-            chan.description = "Glucose Levels"
-            
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-            manager.createNotificationChannel(chan)
-        }
-        
-        val builder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            android.app.Notification.Builder(this, channelId)
-        } else {
-            android.app.Notification.Builder(this)
-        }
-        
+        val chan = android.app.NotificationChannel(channelId, channelName, android.app.NotificationManager.IMPORTANCE_HIGH)
+        chan.lockscreenVisibility = android.app.Notification.VISIBILITY_PRIVATE
+        chan.setShowBadge(true) // Standard behavior
+        chan.description = "Glucose Levels"
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        manager.createNotificationChannel(chan)
+
+        val builder = android.app.Notification.Builder(this, channelId)
+
         val prefs = getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
         val hideIcon = prefs.getBoolean("notification_hide_status_icon", false)
         val icon = if (hideIcon) tk.glucodata.R.drawable.transparent_icon else tk.glucodata.R.drawable.novalue
@@ -233,6 +227,9 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
         if (dynamicIslandEnabled || overlayRoot?.isAttachedToWindow != true) return
         val density = resources.displayMetrics.density
         val label = getString(tk.glucodata.R.string.floating_drag_handle)
+        val labelSizePx = android.util.TypedValue.applyDimension(
+            android.util.TypedValue.COMPLEX_UNIT_SP, 13f, resources.displayMetrics,
+        )
         val handle = object : View(this) {
             private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
             override fun onDraw(canvas: Canvas) {
@@ -245,13 +242,13 @@ class FloatingGlucoseService : Service(), LifecycleOwner, ViewModelStoreOwner, S
                 canvas.drawRoundRect(width / 2f - 18f * density, 9f * density,
                     width / 2f + 18f * density, 13f * density, 2f * density, 2f * density, paint)
                 paint.textAlign = Paint.Align.CENTER
-                paint.textSize = 13f * resources.displayMetrics.scaledDensity
+                paint.textSize = labelSizePx
                 canvas.drawText(label, width / 2f, cy + 12f * density, paint)
             }
         }
         handle.contentDescription = label
         val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 13f * resources.displayMetrics.scaledDensity
+            textSize = labelSizePx
         }
         val params = WindowManager.LayoutParams(
             maxOf((180f * density).roundToInt(), (labelPaint.measureText(label) + 32f * density).roundToInt()), (48f * density).roundToInt(),
