@@ -8,6 +8,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 
@@ -30,7 +31,13 @@ internal fun chartHeaderTextBaseline(date: String, backdropAlpha: Float): Float 
 internal fun Modifier.chartHeaderBaseline(baselinePx: Int): Modifier = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints)
     val firstBaseline = placeable[FirstBaseline]
-    layout(placeable.width, placeable.height) {
-        placeable.placeRelative(0, baselinePx - firstBaseline)
+    val top = if (firstBaseline == androidx.compose.ui.layout.AlignmentLine.Unspecified) {
+        0
+    } else {
+        baselinePx - firstBaseline
+    }
+    val height = constraints.constrainHeight(placeable.height + top.coerceAtLeast(0))
+    layout(placeable.width, height) {
+        placeable.placeRelative(0, top)
     }
 }

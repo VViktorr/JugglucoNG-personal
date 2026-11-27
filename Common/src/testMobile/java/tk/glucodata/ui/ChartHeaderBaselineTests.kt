@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -121,6 +122,37 @@ class ChartHeaderBaselineTests {
         output.outputStream().use {
             compose.onNodeWithTag("header").captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
         }
+    }
+
+    @Test
+    fun theVisibleBottomOfTheOffsetInsulinControlReceivesTaps() {
+        var expanded by mutableStateOf(false)
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                MaterialTheme {
+                    Box(Modifier.size(200.dp).testTag("plot")) {
+                        Surface(
+                            onClick = { expanded = !expanded },
+                            modifier = Modifier.chartHeaderBaseline(56),
+                        ) {
+                            Text(
+                                if (expanded) "Insulin on board" else "IOB",
+                                Modifier.padding(8.dp).testTag("insulin-text"),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val plot = compose.onNodeWithTag("plot")
+        val plotBounds = plot.fetchSemanticsNode().boundsInRoot
+        val label = compose.onNodeWithTag("insulin-text", useUnmergedTree = true)
+        val labelBounds = label.fetchSemanticsNode().boundsInRoot
+        plot.performTouchInput {
+            click(Offset(labelBounds.center.x - plotBounds.left, labelBounds.bottom - plotBounds.top - 1f))
+        }
+        compose.onNodeWithText("Insulin on board").assertExists()
     }
 
     private fun baseline(node: SemanticsNodeInteraction): Float {

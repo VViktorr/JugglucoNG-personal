@@ -40,6 +40,7 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.constrainHeight
@@ -259,6 +260,7 @@ internal fun DashboardSensorPanel(
     statusText: String?,
     daysText: String,
     hoursRemaining: Long,
+    stacked: Boolean,
     currentDay: Int,
     progress: Float,
     noiseLevel: Float,
@@ -300,6 +302,8 @@ internal fun DashboardSensorPanel(
                         noiseLevel = noiseLevel,
                         readingMillis = readingMillis,
                         contentColor = contentColor,
+                        readingAgeStyle = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+                        readingAgeIconSize = if (stacked) 16.dp else 14.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 4.dp)
@@ -312,6 +316,7 @@ internal fun DashboardSensorPanel(
                         isCloneSource = isCloneSource,
                         cloneTransport = cloneTransport,
                         activeSensors = activeSensors,
+                        style = if (stacked) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                         color = contentColor.copy(alpha = 0.7f)
                     )
                 }
@@ -321,7 +326,7 @@ internal fun DashboardSensorPanel(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = statusText,
-                            style = MaterialTheme.typography.labelLarge,
+                            style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
                             color = contentColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -335,6 +340,7 @@ internal fun DashboardSensorPanel(
                         Spacer(modifier = Modifier.height(4.dp))
                         SensorLifetimeLine(
                             text = lifetimeText,
+                            style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
                             color = contentColor,
                             // The hourglass is the warning, so it always shows; the calendar
                             // is decoration and steps aside when the text needs its room.
@@ -367,7 +373,7 @@ internal fun DashboardSensorPanel(
                     }
                     Text(
                         text = expiryText,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = if (stacked) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
                         color = contentColor.copy(alpha = 0.85f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -399,6 +405,7 @@ private fun SensorNameLine(
     isCloneSource: Boolean,
     cloneTransport: CloneTransport?,
     activeSensors: List<String>,
+    style: TextStyle,
     color: Color
 ) {
     Row(
@@ -410,12 +417,12 @@ private fun SensorNameLine(
                 transport = cloneTransport,
                 showLabel = true,
                 tint = color,
-                textStyle = MaterialTheme.typography.labelMedium,
+                textStyle = style,
             )
         } else {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.labelMedium,
+                style = style,
                 color = color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -458,6 +465,7 @@ private fun SensorNameLine(
 @Composable
 private fun SensorLifetimeLine(
     text: String,
+    style: TextStyle,
     color: Color,
     iconIsDecorative: Boolean,
     modifier: Modifier = Modifier,
@@ -469,7 +477,7 @@ private fun SensorLifetimeLine(
             icon()
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge,
+                style = style,
                 color = color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

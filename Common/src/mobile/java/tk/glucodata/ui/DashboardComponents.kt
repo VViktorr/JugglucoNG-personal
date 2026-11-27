@@ -570,6 +570,7 @@ fun DashboardCombinedHeader(
                     statusText = sensorPanelStatus,
                     daysText = daysRemaining,
                     hoursRemaining = sensorHoursRemaining,
+                    stacked = stackBars,
                     currentDay = currentDay,
                     progress = sensorProgress,
                     noiseLevel = trendResult.noiseLevel,
@@ -709,15 +710,16 @@ private fun resolveHeroLayout(
     // smaller, so the scaled value + chip cluster fills the SAME pinned height.
     val singleVerticalPadding = if (compact) 8.dp else 12.dp
     val verticalPadding = if (peers.any) 4.dp else singleVerticalPadding
-    val fullPrimaryStyle = (if (compact) typography.displayMedium else typography.displayLargeExpressive)
+    val unscaledPrimaryStyle = (if (compact) typography.displayMedium else typography.displayLargeExpressive)
         .copy(fontFeatureSettings = "tnum")
-    // Pinned to the MEASURED height of the full style (incl. font padding) + padding, not
-    // the lineHeight estimate, which understated it and made the peer layout smaller.
-    val contentMinHeight = remember(fullPrimaryStyle, density, singleVerticalPadding) {
-        with(density) {
-            textMeasurer.measure("0,0", style = fullPrimaryStyle, maxLines = 1).size.height.toDp()
-        } + singleVerticalPadding * 2
+    val contentMinHeight = DashboardBarHeight
+    val availableValueHeight = if (peers.any) 36.dp else contentMinHeight - singleVerticalPadding * 2
+    val valueHeight = with(density) {
+        textMeasurer.measure("0,0", style = unscaledPrimaryStyle, maxLines = 1).size.height.toDp()
     }
+    val fullPrimaryStyle = unscaledPrimaryStyle.scaleForHero(
+        (availableValueHeight / valueHeight).coerceAtMost(1f)
+    )
     val trendIconSize = when (widthClass) {
         AdaptiveContentWidthClass.Compact -> 30.dp
         AdaptiveContentWidthClass.Medium -> 38.dp
@@ -2350,7 +2352,9 @@ internal fun SignalQualityAndReadingAgeRow(
     noiseLevel: Float,
     readingMillis: Long?,
     contentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readingAgeStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    readingAgeIconSize: Dp = SIGNAL_AGE_CLOCK_SIZE,
 ) {
     val density = LocalDensity.current
     val gapPx = with(density) { SIGNAL_AGE_GAP.roundToPx() }
@@ -2362,15 +2366,15 @@ internal fun SignalQualityAndReadingAgeRow(
 
     // The counter's widest everyday form, so the row asks its card for the same width at
     // "9s", "10s" and "1m" and the card's edge does not follow the clock.
-    val counterStyle = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum")
+    val counterStyle = readingAgeStyle.copy(fontFeatureSettings = "tnum")
     val textMeasurer = rememberTextMeasurer()
     val widestSeconds = stringResource(R.string.sensor_reading_age_seconds, 88)
     val widestMinutes = stringResource(R.string.sensor_reading_age_minutes, 88)
-    val reservedCounterPx = remember(counterStyle, widestSeconds, widestMinutes, density) {
+    val reservedCounterPx = remember(counterStyle, widestSeconds, widestMinutes, density, readingAgeIconSize) {
         maxOf(
             textMeasurer.measure(widestSeconds, style = counterStyle, maxLines = 1).size.width,
             textMeasurer.measure(widestMinutes, style = counterStyle, maxLines = 1).size.width
-        ) + with(density) { SIGNAL_AGE_CLOCK_SIZE.roundToPx() + SIGNAL_AGE_CLOCK_GAP.roundToPx() }
+        ) + with(density) { readingAgeIconSize.roundToPx() + SIGNAL_AGE_CLOCK_GAP.roundToPx() }
     }
     val hasNoise = noiseLevel > 0f
     val hasCounter = readingMillis != null
@@ -2458,7 +2462,8 @@ internal fun SignalQualityAndReadingAgeRow(
                     // Match the lifetime calendar's tint.
                     iconTint = contentColor.copy(alpha = 0.6f),
                     textColor = contentColor.copy(alpha = 0.75f),
-                    iconSize = SIGNAL_AGE_CLOCK_SIZE,
+                    textStyle = counterStyle,
+                    iconSize = readingAgeIconSize,
                     iconGap = SIGNAL_AGE_CLOCK_GAP
                 )
             }

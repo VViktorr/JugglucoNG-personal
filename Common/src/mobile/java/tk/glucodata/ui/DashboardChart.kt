@@ -108,6 +108,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -2043,6 +2044,7 @@ fun InteractiveGlucoseChart(
 
     // Where the gesture surface sits on screen, to hand the held finger to the journal menu.
     var gestureSurfaceOnScreen by remember { mutableStateOf(Offset.Zero) }
+    var insulinControlBounds by remember { mutableStateOf<Rect?>(null) }
     // How far the range picker reaches up into the plot when expanded, to sit close to the
     // axis labels. Laid out rather than offset: an offset only moved the picker's paint,
     // and left the space it was measured into as a hole underneath it.
@@ -2085,6 +2087,9 @@ fun InteractiveGlucoseChart(
                             // FIX: Use requireUnconsumed = true (default) to respect z-order.
                             // This prevents the chart from hijacking touches meant for the floating buttons.
                             val down = awaitFirstDown()
+                            if (insulinControlBounds?.contains(down.position + gestureSurfaceOnScreen) == true) {
+                                return@awaitEachGesture
+                            }
                             val startedOnJournalMarker = down.id in activeJournalMarkerPointers
                             if (!startedOnJournalMarker) expandedJournalChipId = null
                             val gestureStartTime = System.currentTimeMillis()
@@ -4616,6 +4621,9 @@ fun InteractiveGlucoseChart(
             }
             val dateEndInset = maxOf(headerDateEndInset, activeInsulinHeaderSpace)
             if (activeInsulinPillShown) {
+                DisposableEffect(Unit) {
+                    onDispose { insulinControlBounds = null }
+                }
                 val summary = activeInsulinSummary
                 val unitsLabel = { units: Float ->
                     if (units % 1f < 0.05f) {
@@ -4705,6 +4713,7 @@ fun InteractiveGlucoseChart(
                     ACTIVE_INSULIN_MAX_WIDTH_FRACTION
                 }
                 Surface(
+                    onClick = { isActiveInsulinExpanded = !isActiveInsulinExpanded },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(end = activeInsulinEndInset)
@@ -4712,8 +4721,12 @@ fun InteractiveGlucoseChart(
                         .widthIn(max = activeInsulinMaxWidth)
                         .onSizeChanged { activeInsulinPillWidthPx = it.width }
                         .zIndex(1.6f)
-                        .clip(activeInsulinShape)
-                        .clickable(enabled = summary != null || activeCarbsGrams != null) { isActiveInsulinExpanded = !isActiveInsulinExpanded },
+                        .onGloballyPositioned { coordinates ->
+                            val origin = coordinates.positionOnScreen()
+                            insulinControlBounds = if (origin.isSpecified) {
+                                Rect(origin, Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat()))
+                            } else null
+                        },
                     shape = activeInsulinShape,
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
