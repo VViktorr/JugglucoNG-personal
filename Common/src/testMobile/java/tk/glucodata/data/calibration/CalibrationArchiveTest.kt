@@ -119,7 +119,7 @@ class CalibrationArchiveTestApplication : Applic() {
     override fun onCreate() {}
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class CalibrationArchiveNatives {
     companion object {
         @JvmStatic @Implementation

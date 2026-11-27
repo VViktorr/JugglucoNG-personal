@@ -181,7 +181,7 @@ class SensorBluetoothScanRetryTests {
     }
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class ScanRetryNatives {
     companion object {
         @JvmStatic @Implementation fun __staticInitializer__() {}

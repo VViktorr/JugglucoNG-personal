@@ -106,7 +106,7 @@ class NativeMirrorCalibrationTests {
     }
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class NativeMirrorCalibrationInputs {
     companion object {
         @JvmStatic @Implementation fun __staticInitializer__() {}

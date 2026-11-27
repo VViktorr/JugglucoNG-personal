@@ -198,7 +198,7 @@ class NightscoutPollDispatch {
     companion object { val connected = mutableListOf<String>() }
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class NightscoutLifecycleNatives {
     companion object {
         val history = mutableSetOf<String>()

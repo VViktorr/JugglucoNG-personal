@@ -175,7 +175,7 @@ class NativeHistoryTestApplication : Applic() {
     override fun onCreate() {}
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class NativeHistoryNames {
     companion object {
         val fullNames = mutableMapOf<String, String>()

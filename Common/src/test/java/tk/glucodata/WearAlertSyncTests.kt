@@ -47,8 +47,12 @@ class WearAlertSyncTests {
         }
     }
 
-    @Implements(value = Natives::class, callThroughByDefault = false)
-    class NativeSink
+    @Implements(Natives::class)
+    class NativeSink {
+        companion object {
+            @JvmStatic @Implementation fun __staticInitializer__() {}
+        }
+    }
 
     @Before fun setup() {
         Applic.app = ApplicationProvider.getApplicationContext<TestApplication>()

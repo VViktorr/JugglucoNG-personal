@@ -1,6 +1,7 @@
 package tk.glucodata.drivers.ottai
 
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.content.Context
@@ -433,8 +434,15 @@ class OttaiStreamRecoveryTests {
     private fun get(name: String): Any? = OttaiBleManager::class.java.getDeclaredField(name).apply { isAccessible = true }.get(manager)
 }
 
-@Implements(value = BluetoothGatt::class, callThroughByDefault = false)
+@Implements(BluetoothGatt::class)
 class OttaiRecoveryGatt {
+    @Implementation fun getDevice(): BluetoothDevice? = null
+    @Implementation fun discoverServices(): Boolean = false
+    @Implementation fun requestMtu(mtu: Int): Boolean = false
+    @Implementation fun requestConnectionPriority(priority: Int): Boolean = false
+    @Implementation fun disconnect() {}
+    @Implementation fun close() {}
+
     @Implementation
     fun getService(uuid: UUID): BluetoothGattService? = if (uuid == OttaiConstants.SERVICE_CGM) {
         BluetoothGattService(uuid, BluetoothGattService.SERVICE_TYPE_PRIMARY).apply {

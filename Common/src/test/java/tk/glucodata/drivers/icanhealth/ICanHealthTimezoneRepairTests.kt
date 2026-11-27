@@ -390,7 +390,7 @@ class ICanHealthTimezoneRepairTests {
         ICanHealthConstants.HISTORY_TIMEZONE_REPAIR_GENERATION
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class ICanTimezoneRepairNatives {
     companion object {
         val rebases = mutableListOf<Long>()

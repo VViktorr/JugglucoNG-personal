@@ -403,7 +403,7 @@ class MedtrumTestApplication : Applic() {
     override fun onCreate() {}
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class MedtrumTestNatives {
     companion object {
         /** The native calls that matter to ordering: the first touch of a mirror write, and the finish. */

@@ -85,7 +85,7 @@ class AlertSoundPreviewUsageTests {
     }
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class PreviewSoundNativeInputs {
     companion object {
         var configuredUsage = AudioAttributes.USAGE_NOTIFICATION

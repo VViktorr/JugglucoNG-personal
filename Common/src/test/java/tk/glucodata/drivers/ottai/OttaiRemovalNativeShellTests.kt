@@ -264,7 +264,7 @@ class OttaiRemovalTestApplication : Applic() {
     override fun onCreate() {}
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class OttaiRemovalNatives {
     companion object {
         val finished = mutableListOf<String>()

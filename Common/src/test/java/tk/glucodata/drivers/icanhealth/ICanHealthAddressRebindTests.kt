@@ -598,7 +598,7 @@ class ICanRebindApplication : Applic() {
     override fun onCreate() {}
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class ICanRebindNatives {
     companion object {
         var address: String? = null
@@ -607,8 +607,14 @@ class ICanRebindNatives {
     }
 }
 
-@Implements(value = BluetoothGatt::class, callThroughByDefault = false)
+@Implements(BluetoothGatt::class)
 class ICanRebindGatt {
+    @Implementation fun requestMtu(mtu: Int): Boolean = false
+    @Implementation fun discoverServices(): Boolean = false
+    @Implementation fun requestConnectionPriority(priority: Int): Boolean = false
+    @Implementation fun setCharacteristicNotification(characteristic: BluetoothGattCharacteristic, enabled: Boolean): Boolean = false
+    @Implementation fun writeDescriptor(descriptor: BluetoothGattDescriptor): Boolean = false
+
     lateinit var remoteDevice: BluetoothDevice
     val discoveredServices = mutableListOf<BluetoothGattService>()
     val reads = mutableListOf<UUID>()

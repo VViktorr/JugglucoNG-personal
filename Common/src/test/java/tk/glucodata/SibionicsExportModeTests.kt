@@ -133,7 +133,7 @@ class SibionicsExportModeTests {
     }
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class SibionicsExportNative {
     companion object {
         val modes = mutableMapOf<String, Int>()

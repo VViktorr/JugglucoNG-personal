@@ -58,9 +58,10 @@ class SignalRestoredRestartTests {
             .copy(enabled = type == AlertType.SIGNAL_RESTORED)
     }
 
-    @Implements(value = Natives::class, callThroughByDefault = false)
+    @Implements(Natives::class)
     class NativeSource {
         companion object {
+            @JvmStatic @Implementation fun __staticInitializer__() {}
             @JvmStatic @Implementation fun readalarmsuspension(kind: Int): Short = 30
         }
     }

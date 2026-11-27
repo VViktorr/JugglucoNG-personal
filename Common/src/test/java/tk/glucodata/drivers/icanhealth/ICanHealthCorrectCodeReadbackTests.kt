@@ -1,6 +1,7 @@
 package tk.glucodata.drivers.icanhealth
 
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.content.Context
@@ -358,8 +359,10 @@ class ICanHealthCorrectCodeReadbackTests {
         .apply { isAccessible = true }.set(manager, value)
 }
 
-@Implements(value = BluetoothGatt::class, callThroughByDefault = false)
+@Implements(BluetoothGatt::class)
 class ICanCorrectCodeGatt {
+    @Implementation fun getDevice(): BluetoothDevice? = null
+
     var service: BluetoothGattService? = null
     val writes = mutableListOf<ByteArray>()
     var writeStarts = true

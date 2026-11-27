@@ -226,7 +226,7 @@ class CloneCurrentTestApplication : Applic() {
     override fun onCreate() {}
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class CloneCurrentNativeInputs {
     companion object {
         var selected: String? = null

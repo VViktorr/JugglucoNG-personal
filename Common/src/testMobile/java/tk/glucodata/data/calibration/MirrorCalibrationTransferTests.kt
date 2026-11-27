@@ -435,7 +435,7 @@ class MirrorCalibrationTransferTests {
     }
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class MirrorCalibrationTransferNatives {
     companion object {
         var savedUnit = 0
