@@ -1261,6 +1261,12 @@ private fun NavGraphBuilder.appDestinations(
     gatedComposable("settings/journal/calculations") { JournalCalculationsSettingsScreen(navController, dashboardViewModel) }
     gatedComposable("settings/journal/entry-types") { JournalEntryTypesSettingsScreen(navController, dashboardViewModel) }
     gatedComposable("settings/journal/history") {
+        JournalSettingsHistoryRoute(
+            dashboardViewModel = dashboardViewModel,
+            navController = navController,
+            onTriggerCalibration = onTriggerCalibration
+        )
+    }
     gatedComposable("settings/category/{category}") { entry ->
         ExpressiveSettingsScreen(
             navController, themeMode, onThemeChanged, dashboardViewModel,
@@ -1268,12 +1274,6 @@ private fun NavGraphBuilder.appDestinations(
         )
     }
     gatedComposable("settings/widgets") { tk.glucodata.widgets.WidgetSettingsScreen(navController) }
-        JournalSettingsHistoryRoute(
-            dashboardViewModel = dashboardViewModel,
-            navController = navController,
-            onTriggerCalibration = onTriggerCalibration
-        )
-    }
     gatedComposable("settings/journal/foods") { JournalFoodLibraryScreen(navController, dashboardViewModel) }
     gatedComposable("settings/journal/insulin") { JournalInsulinLibraryScreen(navController, dashboardViewModel) }
     gatedComposable("settings/calibrations") {
