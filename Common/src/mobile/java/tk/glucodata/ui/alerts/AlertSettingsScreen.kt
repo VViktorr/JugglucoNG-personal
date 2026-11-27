@@ -71,6 +71,7 @@ import tk.glucodata.ui.components.CardPosition as SettingsItemPosition
 import tk.glucodata.ui.theme.displayLargeExpressive
 import tk.glucodata.ui.theme.labelLargeExpressive
 import tk.glucodata.ui.util.ConnectedButtonGroup
+import tk.glucodata.ui.util.SettingsChoiceChip
 import tk.glucodata.logic.CustomAlertManager
 import kotlinx.coroutines.delay
 import tk.glucodata.ui.symbols.Symbols
@@ -1333,7 +1334,7 @@ private fun SensorExpiryThresholdSelector(
         ) {
             EXPIRY_WARNING_PRESETS.forEach { minutes ->
                 val isSelected = minutes in selected
-                FilterChip(
+                SettingsChoiceChip(
                     selected = isSelected,
                     onClick = { onToggle(minutes) },
                     label = {
@@ -1345,8 +1346,6 @@ private fun SensorExpiryThresholdSelector(
                     leadingIcon = if (isSelected) {
                         { Icon(Symbols.CheckFilled, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
-                    shapes = FilterChipDefaults.shapes(),
-                    colors = FilterChipDefaults.filterChipColors()
                 )
             }
         }
@@ -1460,7 +1459,7 @@ private fun DeltaAlarmAdvancedSettings(
             1 to stringResource(R.string.delta_interval_1min),
             5 to stringResource(R.string.delta_interval_5min)
         )
-        tk.glucodata.ui.util.ConnectedButtonGroup(
+        ConnectedButtonGroup(
             options = listOf(0, 1, 5),
             selectedOption = config.deltaIntervalMinutes ?: 0,
             onOptionSelected = { onConfigChange(config.copy(deltaIntervalMinutes = if (it == 0) null else it)) },
@@ -1661,25 +1660,21 @@ private fun PreemptiveSnoozeDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
-                    FilterChip(
+                    SettingsChoiceChip(
                         selected = snoozeLow,
                         onClick = { snoozeLow = !snoozeLow },
                         label = { Text(stringResource(R.string.low_alerts)) },
                         leadingIcon = if (snoozeLow) {
                             { Icon(Symbols.CheckFilled, null, Modifier.size(16.dp)) }
                         } else null,
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
                     )
-                    FilterChip(
+                    SettingsChoiceChip(
                         selected = snoozeHigh,
                         onClick = { snoozeHigh = !snoozeHigh },
                         label = { Text(stringResource(R.string.high_alerts)) },
                         leadingIcon = if (snoozeHigh) {
                             { Icon(Symbols.CheckFilled, null, Modifier.size(16.dp)) }
                         } else null,
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
                     )
                 }
 
@@ -2053,7 +2048,7 @@ internal fun RetrySettings(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(
+                    SettingsChoiceChip(
                         selected = intervalMinutes <= 0,
                         onClick = { onIntervalChange(0) },
                         label = {
@@ -2063,16 +2058,12 @@ internal fun RetrySettings(
                                 overflow = TextOverflow.Ellipsis
                             )
                         },
-                        shapes = FilterChipDefaults.shapes(),
-                        colors = FilterChipDefaults.filterChipColors()
                     )
                     listOf(1, 2, 3, 5, 10, 15).forEach { minutes ->
-                        FilterChip(
+                        SettingsChoiceChip(
                             selected = intervalMinutes == minutes,
                             onClick = { onIntervalChange(minutes) },
                             label = { Text(stringResource(R.string.minutes_short_format, minutes)) },
-                            shapes = FilterChipDefaults.shapes(),
-                            colors = FilterChipDefaults.filterChipColors()
                         )
                     }
                 }
@@ -2086,7 +2077,7 @@ internal fun RetrySettings(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(0 to stringResource(R.string.retry_forever), 1 to "1", 2 to "2", 3 to "3", 5 to "5").forEach { (count, label) ->
-                        FilterChip(
+                        SettingsChoiceChip(
                             selected = retryCount == count,
                             onClick = { onCountChange(count) },
                             label = {
@@ -2096,8 +2087,6 @@ internal fun RetrySettings(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             },
-                            shapes = FilterChipDefaults.shapes(),
-                            colors = FilterChipDefaults.filterChipColors()
                         )
                     }
                 }

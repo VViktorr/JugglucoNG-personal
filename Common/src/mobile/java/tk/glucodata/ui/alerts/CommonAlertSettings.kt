@@ -134,10 +134,6 @@ fun CommonAlertSettings(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), // Transparent-ish on PrimaryContainer
-                unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
 
@@ -232,10 +228,6 @@ fun CommonAlertSettings(
                                     label = { Text(hapticProfileLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelMedium) },
                                     modifier = Modifier.fillMaxWidth(),
                                     itemHeight = 36.dp,
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    selectedContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                                    unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -263,10 +255,6 @@ fun CommonAlertSettings(
                             labelText = { deliveryModeLabels[it] ?: it.displayName },
                             label = { Text(deliveryModeLabels[it] ?: it.displayName, style = MaterialTheme.typography.labelLarge) },
                             modifier = Modifier.fillMaxWidth(),
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            unselectedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                            unselectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
 

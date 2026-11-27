@@ -6,6 +6,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -48,9 +49,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import tk.glucodata.ui.symbols.Symbols
 
 /**
- * M3 Expressive connected button group: material3's [ToggleButton]s with the
- * [ButtonGroupDefaults] connected shapes, so the outer ends are round, inner corners small,
- * the selected item a pill, and a press squeezes the inner corners with the expressive spring.
+ * A group of Material 3 [ToggleButton]s with filled selected pills and outlined unselected pills.
  *
  * On top of the library pieces this adds what the app's groups need: colours that cross-fade
  * (ToggleButton swaps them instantly), per-option colours, and labels that step down from
@@ -80,7 +79,7 @@ fun <T> ConnectedButtonGroup(
     spacing: Dp = ButtonGroupDefaults.ConnectedSpaceBetween,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primary,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
-    unselectedContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh, // Slightly darker than surface for contrast
+    unselectedContainerColor: Color = Color.Transparent,
     unselectedContentColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainerColorFor: ((T) -> Color)? = null,
     selectedContentColorFor: ((T) -> Color)? = null,
@@ -91,6 +90,13 @@ fun <T> ConnectedButtonGroup(
     // it never reports less than the 40dp minimum or the 48dp touch target, which hides a label
     // that outgrows a 36dp group while staying under 48dp.
     val labelHeights = remember(options.size) { mutableStateMapOf<Int, Int>() }
+    val shapes = ToggleButtonDefaults.shapesFor(itemHeight).copy(
+        shape = AppButtonShape,
+        pressedShape = AppButtonShape,
+        checkedShape = AppButtonShape,
+    )
+    val outline = MaterialTheme.colorScheme.outline
+    val unselectedBorder = BorderStroke(1.dp, if (enabled) outline else outline.copy(alpha = 0.12f))
     Row(
         modifier = modifier
             .selectableGroup()
@@ -134,12 +140,7 @@ fun <T> ConnectedButtonGroup(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
-                shapes = when {
-                    options.size == 1 -> ToggleButtonDefaults.shapesFor(itemHeight)
-                    index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    index == options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                },
+                shapes = shapes,
                 // The animated colour serves both states, so the swap cross-fades.
                 colors = ToggleButtonDefaults.colors(
                     containerColor = containerColor,
@@ -150,6 +151,7 @@ fun <T> ConnectedButtonGroup(
                     disabledContentColor = contentColor
                 ),
                 elevation = null,
+                border = if (isSelected) null else unselectedBorder,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 var availableWidthPx by remember(option) { mutableIntStateOf(0) }
@@ -229,13 +231,14 @@ fun <T> ConnectedButtonGroup(
                         Text(
                             text = labelText(option),
                             style = labelTextStyle,
+                            color = contentColor,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
                     } else if (!iconOnly) {
-                        androidx.compose.material3.ProvideTextStyle(value = labelTextStyle) {
+                        androidx.compose.material3.ProvideTextStyle(value = labelTextStyle.copy(color = contentColor)) {
                             label(option)
                         }
                     }

@@ -73,7 +73,7 @@ Corner radii come from the M3 Expressive scale: **4, 8, 12, 16, 20, 28, 32, full
 - **Connected buttons** (Reconnect | Disconnect) use `ConnectedButtonShapes`: pill ends
   outside, 4dp where the halves meet; pressed, the outer ends squeeze to 8dp
   (`LeadingPressed` / `TrailingPressed`). A split button is material3's `SplitButtonLayout`, and
-  a group of choices is `ConnectedButtonGroup`; both bring their own shapes and press morph.
+  a group of choices is `ConnectedButtonGroup`; it uses the same pill shape while pressed.
 - **Statistics cards** use the one leaf shape, `StatsCardShape` (28 / 16).
 - **The dashboard hero** morphs its corners with the trend direction. That is the app's
   signature shape and the one deliberate exception to the scale.
@@ -162,7 +162,7 @@ Reach for these before building a surface by hand.
 | Group label | `SectionLabel` (24 above, 8 below) | same |
 | Leading icon of a row/card | `IconTile` | `components/IconTile.kt` |
 | A sensor family, shown as itself | `SensorArtTile` in a list, `SensorWizardHero` at the top of every wizard's main step; see Sensor art and wizard heroes | `components/SensorArt.kt`, `components/SensorHeroDrawings.kt`, `components/SensorArtTile.kt` |
-| 2–5 exclusive choices | `ConnectedButtonGroup` (material3 `ToggleButton`s, connected shapes) | `util/ConnectedButtonGroup.kt` |
+| 2–5 exclusive choices | `ConnectedButtonGroup` (Material 3 `ToggleButton`s, filled or outlined pills) | `util/ConnectedButtonGroup.kt` |
 | Two buttons as one control | `ConnectedButtonShapes` | `components/ConnectedButtonShapes.kt` |
 | An action with a related second action | `SplitButtonLayout` + `SplitButtonDefaults` | material3 |
 | A short wait with no progress to show | `LoadingIndicator` | material3 |
