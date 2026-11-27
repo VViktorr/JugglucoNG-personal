@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="libreview_reregister_libre2_device">Zarejestruj ponownie urządzenie Libre 2</string>
+    <string name="libreview_reregistering_libre2_device">Ponowna rejestracja urządzenia Libre 2…</string>
+    <string name="libreview_model_value">Model aplikacji LibreView: %1$s</string>
+    <string name="libreview_uom_value">Jednostki wysyłane do LibreView: %1$s</string>
+    <string name="libreview_region_value">Region LibreView: %1$s</string>
+</resources>
