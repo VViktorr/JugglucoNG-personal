@@ -105,13 +105,19 @@ public class ScanNfcV {
         return true;
     }
 
+    static final AudioAttributes audioattributes =
+            new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build();
+    static final VibrationAttributes vibrationattributes = android.os.Build.VERSION.SDK_INT >= 33
+            ? VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM)
+            : null;
+
     @SuppressWarnings("deprecation") // The alarm usage still needs AudioAttributes before API 33.
     static void vibrates(Vibrator vibrator, long[] pattern, int[] amplitudes) {
         VibrationEffect effect = VibrationEffect.createWaveform(pattern, amplitudes, 1);
         if (android.os.Build.VERSION.SDK_INT >= 33) {
-            vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM));
+            vibrator.vibrate(effect, vibrationattributes);
         } else {
-            vibrator.vibrate(effect, new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build());
+            vibrator.vibrate(effect, audioattributes);
         }
     }
 
