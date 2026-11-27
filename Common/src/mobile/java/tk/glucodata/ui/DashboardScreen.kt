@@ -387,6 +387,7 @@ fun DashboardScreen(
     val sensorSetupSkipped by viewModel.sensorSetupSkipped.collectAsStateWithLifecycle()
     val hasSensorContext = sensorName.isNotBlank() || activeSensorList.isNotEmpty()
     val sensorHoursRemaining by viewModel.sensorHoursRemaining.collectAsStateWithLifecycle()
+    val sensorEndTimeMs by viewModel.sensorEndTimeMs.collectAsStateWithLifecycle()
     val dashboardBarsStacked by viewModel.dashboardBarsStacked.collectAsStateWithLifecycle()
     val dashboardBarsCustomRatio by viewModel.dashboardBarsCustomRatio.collectAsStateWithLifecycle()
     val dashboardGlucoseWidthPercent by viewModel.dashboardGlucoseWidthPercent.collectAsStateWithLifecycle()
@@ -1612,8 +1613,9 @@ fun DashboardScreen(
                                 sensorStatus = sensorStatus,
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
+                                sensorEndTimeMs = sensorEndTimeMs,
                                 stackBars = dashboardBarsStacked,
-                                glucoseWidthPercent = dashboardGlucoseWidthPercent.takeIf { dashboardBarsCustomRatio },
+                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast
@@ -1948,8 +1950,9 @@ fun DashboardScreen(
                                 sensorStatus = sensorStatus,
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
+                                sensorEndTimeMs = sensorEndTimeMs,
                                 stackBars = dashboardBarsStacked,
-                                glucoseWidthPercent = dashboardGlucoseWidthPercent.takeIf { dashboardBarsCustomRatio },
+                                glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
                                 history = glucoseHistory, // Trend must see measured data: visual smoothing
                                 // reshapes the recent slope, and the notification/broadcast

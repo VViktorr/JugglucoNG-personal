@@ -242,12 +242,11 @@ internal fun DashboardSensorPanel(
     noiseLevel: Float,
     /** Null hides the reading-age counter. */
     readingMillis: Long?,
-    quietWindowUntilMs: Long,
+    sensorEndTimeMs: Long,
     containerColor: Color,
     contentColor: Color,
     shape: Shape,
     onClick: () -> Unit,
-    onQuietWindowClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -278,15 +277,6 @@ internal fun DashboardSensorPanel(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
-                // Quiet window: visible while it runs, so nobody forgets it.
-                if (quietWindowUntilMs > 0L) {
-                    QuietWindowHeaderChip(
-                        untilMs = quietWindowUntilMs,
-                        onClick = onQuietWindowClick,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                }
-
                 // Signal quality (start) and how old the newest reading is (end). The
                 // counter is opt-in via Display → Dashboard readouts.
                 if (noiseLevel > 0f || readingMillis != null) {
@@ -353,6 +343,20 @@ internal fun DashboardSensorPanel(
                             }
                         }
                     }
+                }
+                if (sensorEndTimeMs > 0L) {
+                    val expiryText = remember(sensorEndTimeMs) {
+                        java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+                            .format(java.util.Date(sensorEndTimeMs))
+                    }
+                    Text(
+                        text = expiryText,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = contentColor.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.neverWidensParent().padding(top = 2.dp),
+                    )
                 }
             }
         }

@@ -394,6 +394,8 @@ class DashboardViewModel(
 
     private val _sensorHoursRemaining = MutableStateFlow(999L)
     val sensorHoursRemaining = _sensorHoursRemaining.asStateFlow()
+    private val _sensorEndTimeMs = MutableStateFlow(0L)
+    val sensorEndTimeMs = _sensorEndTimeMs.asStateFlow()
 
     private val _currentDay = MutableStateFlow(0)
     val currentDay = _currentDay.asStateFlow()
@@ -1020,6 +1022,11 @@ class DashboardViewModel(
             } else {
                 null
             }
+            // Use the same post-extension expiry as the NFC calendar action.
+            val calendarEndMs = if (hasNativeBacking) runCatching {
+                val seconds = Natives.getSensorEndData(sName) and 0xFFFFFFFFL
+                (seconds * 1000L).takeIf { it > 946684800000L }
+            }.getOrNull() else null
             val fallbackDurationDays =
                 if (managedSnapshot?.uiFamily == ManagedSensorUiFamily.AIDEX ||
                     sName.startsWith("X-", ignoreCase = true)
@@ -1054,6 +1061,10 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
+                _sensorEndTimeMs.value = calendarEndMs
+                    ?: lifecycleOfficialEndMs.takeIf { it > 0L }
+                    ?: lifecycleExpectedEndMs.takeIf { it > 0L }
+                    ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1073,6 +1084,10 @@ class DashboardViewModel(
                         !managedSnapshot.isSensorExpired,
                     nowMs = System.currentTimeMillis()
                 )
+                _sensorEndTimeMs.value = calendarEndMs
+                    ?: managedSnapshot?.officialEndMs?.takeIf { it > 0L }
+                    ?: managedSnapshot?.expectedEndMs?.takeIf { it > 0L }
+                    ?: 0L
                 _sensorProgress.value = lifecycle.progress
                 _sensorHoursRemaining.value = lifecycle.remainingHours
                 _daysRemaining.value = lifecycle.daysText
@@ -1085,6 +1100,7 @@ class DashboardViewModel(
             _viewMode.value = 0
             _sensorProgress.value = 0f
             _sensorHoursRemaining.value = 999L
+            _sensorEndTimeMs.value = 0L
             _daysRemaining.value = ""
         }
     }

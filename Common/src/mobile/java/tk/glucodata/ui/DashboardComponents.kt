@@ -215,6 +215,7 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    sensorEndTimeMs: Long = 0L,
     stackBars: Boolean = false,
     glucoseWidthPercent: Int? = null,
     currentDay: Int = 0,
@@ -587,86 +588,95 @@ fun DashboardCombinedHeader(
     // The header knows its width before it composes: every size-dependent choice below is
     // made for the width the cards really get, in the same pass, not a frame later.
     var sensorPanelCrowded by remember { mutableStateOf(false) }
-    androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val rowWidthPx = constraints.maxWidth
-        val stacked = isLandscape || stackBars
-        val availablePx = (rowWidthPx - with(LocalDensity.current) { HeroSensorGap.roundToPx() }).coerceAtLeast(0)
-        val heroShareWidthPx = if (stacked || !showSensorCard) {
-            rowWidthPx
-        } else {
-            glucoseWidthPercent?.let { availablePx * it.coerceIn(40, 70) / 100 }
-                ?: heroSensorBaseSplit(availablePx).first
-        }
-        val heroLayout = resolveHeroLayout(
-            widthPx = heroShareWidthPx,
-            isCompactWindow = adaptiveMetrics.isCompact,
-            isLandscape = isLandscape,
-            reading = heroReading,
-            peers = heroPeers,
-            hasStatus = statusCopy != null,
-            sensorPanelCrowded = !stacked && glucoseWidthPercent == null && sensorPanelCrowded
-        )
-
-        val heroCard: @Composable (Modifier) -> Unit = { modifier ->
-            DashboardHeroCard(
-                layout = heroLayout,
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(HeroSensorGap),
+    ) {
+        androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val rowWidthPx = constraints.maxWidth
+            val stacked = stackBars
+            val availablePx = (rowWidthPx - with(LocalDensity.current) { HeroSensorGap.roundToPx() }).coerceAtLeast(0)
+            val heroShareWidthPx = if (stacked || !showSensorCard) {
+                rowWidthPx
+            } else {
+                glucoseWidthPercent?.let { availablePx * it.coerceIn(40, 70) / 100 }
+                    ?: heroSensorBaseSplit(availablePx).first
+            }
+            val heroLayout = resolveHeroLayout(
+                widthPx = heroShareWidthPx,
+                isCompactWindow = adaptiveMetrics.isCompact,
+                isLandscape = isLandscape,
                 reading = heroReading,
                 peers = heroPeers,
-                statusCopy = statusCopy,
-                isLandscape = isLandscape,
-                widthPx = heroShareWidthPx,
-                containerColor = glucoseContainerColor,
-                shape = heroShape,
-                onClick = onHeroClick,
-                onAddSensorClick = onAddSensorClick,
-                modifier = modifier
+                hasStatus = statusCopy != null,
+                sensorPanelCrowded = !stacked && glucoseWidthPercent == null && sensorPanelCrowded
             )
-        }
-        val sensorPanel: @Composable (Modifier) -> Unit = { modifier ->
-            DashboardSensorPanel(
-                displayName = sensorDisplayName,
-                isCloneSource = isCloneSource,
-                cloneTransport = cloneTransport,
-                activeSensors = activeSensors,
-                statusText = sensorPanelStatus,
-                daysText = daysRemaining,
-                hoursRemaining = sensorHoursRemaining,
-                currentDay = currentDay,
-                progress = sensorProgress,
-                noiseLevel = trendResult.noiseLevel,
-                readingMillis = if (showReadingAge) primaryReadingMillis else null,
-                quietWindowUntilMs = quietWindowUntilMs,
-                containerColor = sensorContainerColor,
-                contentColor = sensorContentColor,
-                shape = sensorShape,
-                onClick = onSensorCardClick,
-                onQuietWindowClick = onQuietWindowClick,
-                modifier = modifier
-            )
-        }
 
-        if (stacked) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (stackBars && showSensorCard) sensorPanel(Modifier.fillMaxWidth())
-                heroCard(Modifier.fillMaxWidth())
-                if (!stackBars && showSensorCard) sensorPanel(Modifier.fillMaxWidth())
+            val heroCard: @Composable (Modifier) -> Unit = { modifier ->
+                DashboardHeroCard(
+                    layout = heroLayout,
+                    reading = heroReading,
+                    peers = heroPeers,
+                    statusCopy = statusCopy,
+                    isLandscape = isLandscape,
+                    widthPx = heroShareWidthPx,
+                    containerColor = glucoseContainerColor,
+                    shape = heroShape,
+                    onClick = onHeroClick,
+                    onAddSensorClick = onAddSensorClick,
+                    modifier = modifier
+                )
             }
-        } else {
-            HeroSensorSplit(
-                heroNeedPx = heroLayout.contentNeedPx,
-                heroRoomyNeedPx = heroLayout.roomyContentNeedPx,
-                onPanelCrowded = { sensorPanelCrowded = it },
-                glucoseWidthPercent = glucoseWidthPercent,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                heroCard(Modifier)
-                if (showSensorCard) {
-                    sensorPanel(Modifier)
+            val sensorPanel: @Composable (Modifier) -> Unit = { modifier ->
+                DashboardSensorPanel(
+                    displayName = sensorDisplayName,
+                    isCloneSource = isCloneSource,
+                    cloneTransport = cloneTransport,
+                    activeSensors = activeSensors,
+                    statusText = sensorPanelStatus,
+                    daysText = daysRemaining,
+                    hoursRemaining = sensorHoursRemaining,
+                    currentDay = currentDay,
+                    progress = sensorProgress,
+                    noiseLevel = trendResult.noiseLevel,
+                    readingMillis = if (showReadingAge) primaryReadingMillis else null,
+                    sensorEndTimeMs = sensorEndTimeMs,
+                    containerColor = sensorContainerColor,
+                    contentColor = sensorContentColor,
+                    shape = sensorShape,
+                    onClick = onSensorCardClick,
+                    modifier = modifier
+                )
+            }
+
+            if (stacked) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(HeroSensorGap)
+                ) {
+                    if (showSensorCard) sensorPanel(Modifier.fillMaxWidth())
+                    heroCard(Modifier.fillMaxWidth())
+                }
+            } else {
+                HeroSensorSplit(
+                    heroNeedPx = heroLayout.contentNeedPx,
+                    heroRoomyNeedPx = heroLayout.roomyContentNeedPx,
+                    onPanelCrowded = { sensorPanelCrowded = it },
+                    glucoseWidthPercent = glucoseWidthPercent,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    heroCard(Modifier)
+                    if (showSensorCard) {
+                        sensorPanel(Modifier)
+                    }
                 }
             }
+        }
+        if (quietWindowUntilMs > 0L) {
+            QuietWindowHeaderChip(
+                untilMs = quietWindowUntilMs,
+                onClick = onQuietWindowClick,
+            )
         }
     }
 }
