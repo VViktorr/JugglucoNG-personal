@@ -80,13 +80,44 @@ Use JDK 21, Android SDK Platform 37.2, Build-Tools 37.0.0, NDK r30 (`30.0.162483
 | Target SDK | 36 | 35 |
 | Minimum API level | 26 | 26 |
 
+Initialize the libjuice submodule from the repository root before building.
+
 ```sh
 git submodule update --init --recursive
+```
+
+### Windows (PowerShell)
+
+In Android Studio, open **Tools → SDK Manager** to find the **Android SDK Location**. Under **SDK Tools**, install **Android SDK Command-line Tools (latest)**. Set `ANDROID_HOME` to that SDK location. The example uses the default Windows path.
+
+```powershell
+$env:ANDROID_HOME = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+$sdkManager = Join-Path $env:ANDROID_HOME 'cmdline-tools\latest\bin\sdkmanager.bat'
+if (-not (Test-Path -LiteralPath $sdkManager -PathType Leaf)) {
+    throw "Check ANDROID_HOME and install Android SDK Command-line Tools (latest)."
+}
+
+& $sdkManager --licenses
+if ($LASTEXITCODE -ne 0) { throw "SDK license setup failed." }
+
+& $sdkManager 'platforms;android-37.2' 'platforms;android-36' 'build-tools;37.0.0' 'ndk;30.0.16248370' 'cmake;4.1.2'
+if ($LASTEXITCODE -ne 0) { throw "SDK package installation failed." }
+
+.\gradlew.bat :Common:assembleMobileDebug :Common:assembleWearDebug
+```
+
+Run these commands in the same PowerShell session. To persist the SDK location for this checkout, set `sdk.dir` in the root `local.properties` file, for example `sdk.dir=C:/Users/YourName/AppData/Local/Android/Sdk`. If the file already has an SDK path, make sure it points to the same installation.
+
+### Linux and macOS (Bash)
+
+Set `ANDROID_HOME` to your SDK directory and install Android SDK Command-line Tools (latest).
+
+```sh
 bash scripts/dist/install-sdk.sh
 ./gradlew :Common:assembleMobileDebug :Common:assembleWearDebug
 ```
 
-The SDK installer uses `ANDROID_HOME` and Android SDK Command-line Tools. See [build scripts](scripts/README.md) and the [numbered build workflow](.github/workflows/personal-apk.yml) for build and release tooling.
+See [build scripts](scripts/README.md) and the [numbered build workflow](.github/workflows/personal-apk.yml) for build and release tooling.
 
 ## License and credits
 
