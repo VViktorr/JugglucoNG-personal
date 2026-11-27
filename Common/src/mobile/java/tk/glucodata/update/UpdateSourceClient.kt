@@ -66,7 +66,8 @@ object UpdateSourceClient {
         return when (val resolved = UpdateSource.resolve(source)) {
             null -> UpdateCheckResult.Failed(UpdateError.PARSE)
             is UpdateSource.Resolved.GithubReleases -> {
-                val result = checkGithub(resolved.apiUrl)
+                val personalMain = resolved == UpdateSource.resolve(AppUpdateSettings.defaultUpdateSource)
+                val result = checkGithub(resolved.apiUrl, personalMain)
                 if (result is UpdateCheckResult.Failed &&
                     shouldTryBackup(source, AppUpdateSettings.defaultUpdateSource, result.error)
                 ) {
@@ -146,7 +147,7 @@ object UpdateSourceClient {
         }
         val trimmed = body.trimStart()
         // A releases array can be served from anywhere — a mirror, a proxy, a cached copy.
-        if (trimmed.startsWith("[")) return releasesResult(body, assetUrlsFromApi = true)
+        if (trimmed.startsWith("[")) return releasesResult(body)
 
         val manifest = GithubReleaseParser.parseManifest(body)
             ?: return UpdateCheckResult.Failed(UpdateError.PARSE)
@@ -159,7 +160,7 @@ object UpdateSourceClient {
         return verdictFor(update)
     }
 
-    private fun checkGithub(apiUrl: String): UpdateCheckResult {
+    private fun checkGithub(apiUrl: String, personalMain: Boolean): UpdateCheckResult {
         val separator = if (apiUrl.contains('?')) "&" else "?"
         val body = when (val response = getText(
             url = "$apiUrl${separator}per_page=$MAX_RELEASES",
@@ -168,17 +169,21 @@ object UpdateSourceClient {
             is TextResponse.Ok -> response.body
             is TextResponse.Error -> return UpdateCheckResult.Failed(response.error)
         }
-        return releasesResult(body, assetUrlsFromApi = true)
+        return releasesResult(body, personalMain)
     }
 
-    private fun releasesResult(body: String, assetUrlsFromApi: Boolean): UpdateCheckResult {
+    private fun releasesResult(body: String, personalMain: Boolean = false): UpdateCheckResult {
         val releases = runCatching { GithubReleaseParser.parseReleases(body) }.getOrNull()
             ?: return UpdateCheckResult.Failed(UpdateError.PARSE)
-        return resolveRelease(releases.asSequence())
+        val releasesForChannel = if (personalMain) releases.filter { it.tagName.startsWith("main-v") } else releases
+        return resolveRelease(releasesForChannel.asSequence(), requireManifest = personalMain)
     }
 
     /** Picks the update out of [releases] (newest first), skipping pre-releases. */
-    private fun resolveRelease(releases: Sequence<GithubReleaseParser.Release>): UpdateCheckResult {
+    private fun resolveRelease(
+        releases: Sequence<GithubReleaseParser.Release>,
+        requireManifest: Boolean = false
+    ): UpdateCheckResult {
         val candidates = releases.filterNot { it.prerelease }.iterator()
         if (!candidates.hasNext()) return UpdateCheckResult.UpToDate
 
@@ -187,6 +192,7 @@ object UpdateSourceClient {
         for (release in candidates) {
             val manifest = release.asset(GithubReleaseParser.MANIFEST_ASSET)
                 ?.let { fetchManifest(it.downloadUrl) }
+            if (requireManifest && manifest == null) return UpdateCheckResult.Failed(UpdateError.NO_ARTIFACT)
             val update = GithubReleaseParser.toAvailableUpdate(
                 release = release,
                 manifest = manifest,

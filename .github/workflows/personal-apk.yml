@@ -1,0 +1,21 @@
+name: Personal APKs — Numbered build
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_version:
+        description: 'Base version, e.g. 1.4.1'
+        required: true
+        default: '1.4.1'
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    uses: ./.github/workflows/personal-apk-build.yml
+    with:
+      version: ${{ format('{0}.{1}', inputs.base_version, github.run_number) }}
+    secrets: inherit

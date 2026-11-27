@@ -31,10 +31,14 @@ ext {
     // Bump the app version here only. Wear releases use appVersionCode + 1000000
     // so Play accepts both APKs in one release (distinct versionCodes per form
     // factor). Scheme originates on the wearos branch — keep the two in step.
-    appVersionCode = 1033
+    appVersionCode = 104000000
     // Base version, without the flavour/build-type suffix chain that gets appended
     // to versionName. Used for the APK filename so it stays readable.
-    appVersionName = '1.3.3-Alpha'
+    appVersionName = '1.4.0'
+
+    appVersionCode = providers.gradleProperty('personalVersionCode').map { it.toInteger() }
+        .getOrElse(appVersionCode)
+    appVersionName = providers.gradleProperty('personalVersion').getOrElse(appVersionName)
 
     ndkver       = '29.0.14206865'
     CMAKEVERSION = '4.1.2'
@@ -118,10 +122,10 @@ android {
         // be compared against a release tag. The in-app updater needs the bare number.
         buildConfigField 'String', 'BASE_VERSION_NAME', "\"$appVersionName\""
         // GitHub repo the in-app updater reads releases from. Forks change it here.
-        buildConfigField 'String', 'UPDATE_REPO', '"ctqvva/JugglucoNG"'
+        buildConfigField 'String', 'UPDATE_REPO', '"VViktorr/JugglucoNG-personal"'
         // Backup for the above, tried only when GitHub itself cannot be reached. A SourceForge
         // project files URL; empty disables the fallback. Forks change or clear it here.
-        buildConfigField 'String', 'UPDATE_BACKUP_SOURCE', '"https://sourceforge.net/projects/jugglucong/files/"'
+        buildConfigField 'String', 'UPDATE_BACKUP_SOURCE', '""'
 
         buildConfigField 'String', 'BUILD_TIME', 'new java.text.SimpleDateFormat("HH:mm:ss dd-MMM-yyyy").format(new java.util.Date(' + System.currentTimeMillis() + 'L))'
         buildConfigField 'int', 'isRelease', '0'
@@ -162,7 +166,7 @@ android {
     productFlavors {
         mobile {
             dimension = 'wearos'
-            versionNameSuffix = '-phone'
+            versionNameSuffix = project.hasProperty('personalVersion') ? '' : '-phone'
             buildConfigField 'int', 'isWear', '0'
         }
         wear {
@@ -172,7 +176,7 @@ android {
             buildConfigField 'int', 'minSDK', "$minSdk"
             manifestPlaceholders["minSDK"] = "$minSdk"
             versionCode = 1000000 + appVersionCode //WATCH: mobile versionCode + 1M offset
-            versionNameSuffix = '-wear'
+            versionNameSuffix = project.hasProperty('personalVersion') ? '' : '-wear'
             signingConfig = signingConfigs.alg
             buildConfigField 'int', 'isWear', '1'
             externalNativeBuild.cmake {
@@ -474,12 +478,12 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     // Compose (versions come from the BOM unless pinned deliberately)
-    def composeBom = platform('androidx.compose:compose-bom-alpha:2026.10.00')
+    def composeBom = platform('androidx.compose:compose-bom-alpha:2026.10.01')
     implementation composeBom
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material3:material3:1.5.0'
     mobileImplementation 'sh.calvin.reorderable:reorderable:3.1.0'
     implementation 'androidx.compose.ui:ui-text-google-fonts'
     implementation 'androidx.activity:activity-compose:1.13.0'
