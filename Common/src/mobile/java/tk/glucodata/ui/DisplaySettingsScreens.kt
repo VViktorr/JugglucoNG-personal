@@ -5,6 +5,7 @@ package tk.glucodata.ui
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
+import androidx.compose.material.icons.filled.Layers
 import android.net.Uri
 import android.provider.Settings
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -518,6 +519,190 @@ fun DisplayAndColorSettingsScreen(
                 showPreviewWindowDialog = false
             },
             onDismiss = { showPreviewWindowDialog = false }
+        )
+    }
+}
+
+/** Shared preference state keeps the category switch and detail screen in sync. */
+@Composable
+internal fun rememberSystemGlucoseEnabled(key: String, defaultValue: Boolean = false): androidx.compose.runtime.State<Boolean> {
+    val context = LocalContext.current
+    val prefs = remember(context) { tk.glucodata.SystemGlucoseNotification.preferences(context) }
+    val state = remember(prefs, key, defaultValue) { mutableStateOf(prefs.getBoolean(key, defaultValue)) }
+    androidx.compose.runtime.DisposableEffect(prefs, key, defaultValue) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == key || changed == null) state.value = prefs.getBoolean(key, defaultValue)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        state.value = prefs.getBoolean(key, defaultValue)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    return state
+}
+
+
+@Composable
+private fun rememberSystemGlucoseIntOption(key: String, defaultValue: Int): androidx.compose.runtime.State<Int> {
+    val context = LocalContext.current
+    val prefs = remember(context) { tk.glucodata.SystemGlucoseNotification.preferences(context) }
+    val state = remember(prefs, key, defaultValue) { mutableIntStateOf(prefs.getInt(key, defaultValue)) }
+    androidx.compose.runtime.DisposableEffect(prefs, key, defaultValue) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == key || changed == null) state.intValue = prefs.getInt(key, defaultValue)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        state.intValue = prefs.getInt(key, defaultValue)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    return state
+}
+
+@Composable
+fun LiveUpdateSettingsScreen(navController: NavController) {
+    val context = LocalContext.current
+    val systemLive by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
+
+    SettingsScreenScaffold(navController = navController, title = stringResource(R.string.system_glucose_live_title)) {
+        SectionLabel(
+            stringResource(R.string.system_glucose_live_title),
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        )
+        MasterSwitchCard(
+            title = stringResource(R.string.system_glucose_live_title),
+            subtitle = stringResource(R.string.system_glucose_live_summary),
+            checked = systemLive,
+            enabled = android.os.Build.VERSION.SDK_INT >= 36,
+            onCheckedChange = {
+                tk.glucodata.SystemGlucoseNotification.setEnabled(
+                    context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it
+                )
+            },
+            icon = Icons.Default.Layers,
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+        )
+        SystemGlucoseNotificationContentSettings(metric = android.os.Build.VERSION.SDK_INT >= 37)
+        SystemGlucoseCapsuleSettings(tk.glucodata.SystemGlucoseNotification.CAPSULE_LAYOUT)
+
+        if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
+            Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+                OutlinedButton(onClick = {
+                    val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
+                        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    runCatching { context.startActivity(intent) }.onFailure {
+                        runCatching {
+                            context.startActivity(
+                                Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            )
+                        }
+                    }
+                }) { Text(stringResource(R.string.system_glucose_notification_permission)) }
+            }
+        }
+
+        Text(
+            stringResource(R.string.system_glucose_notification_note),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = screenHorizontalPadding, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SystemGlucoseNotificationContentSettings(metric: Boolean) {
+    val context = LocalContext.current
+    val fields = listOf(
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_VALUE,
+            R.string.system_glucose_content_value, R.string.system_glucose_content_value_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_TREND,
+            R.string.system_glucose_content_trend, R.string.system_glucose_content_trend_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_UNIT,
+            R.string.system_glucose_content_unit, R.string.system_glucose_content_unit_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_TIME,
+            R.string.system_glucose_content_time, R.string.system_glucose_content_time_desc),
+        Triple(tk.glucodata.SystemGlucoseNotification.FIELD_LABEL,
+            R.string.system_glucose_content_label, R.string.system_glucose_content_label_desc)
+    )
+    SectionLabel(
+        stringResource(R.string.system_glucose_content_section),
+        modifier = Modifier.padding(horizontal = screenHorizontalPadding)
+    )
+    Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+        fields.forEach { (field, title, description) ->
+            androidx.compose.runtime.key(metric, field) {
+                val visible by rememberSystemGlucoseEnabled(
+                    tk.glucodata.SystemGlucoseNotification.contentVisibleKey(metric, field),
+                    tk.glucodata.SystemGlucoseNotification.defaultContentVisible(metric, field)
+                )
+                val position by rememberSystemGlucoseIntOption(
+                    tk.glucodata.SystemGlucoseNotification.contentPositionKey(metric, field),
+                    tk.glucodata.SystemGlucoseNotification.defaultContentPosition(metric, field)
+                )
+                SettingsSwitchItem(
+                    title = stringResource(title),
+                    subtitle = stringResource(description),
+                    checked = visible,
+                    onCheckedChange = {
+                        tk.glucodata.SystemGlucoseNotification.setContentVisible(context, metric, field, it)
+                    },
+                    position = if (visible) CardPosition.TOP else CardPosition.SINGLE
+                )
+                if (visible) {
+                    SettingsControlsCard(position = CardPosition.BOTTOM) {
+                        SettingsChoice(
+                            title = stringResource(R.string.system_glucose_content_position),
+                            options = listOf(
+                                tk.glucodata.SystemGlucoseNotification.POSITION_HEADER,
+                                tk.glucodata.SystemGlucoseNotification.POSITION_MAIN,
+                                tk.glucodata.SystemGlucoseNotification.POSITION_CAPTION
+                            ),
+                            labels = listOf(
+                                stringResource(R.string.system_glucose_content_header),
+                                stringResource(if (metric) R.string.system_glucose_content_metric else R.string.system_glucose_content_body),
+                                stringResource(R.string.system_glucose_content_caption)
+                            ),
+                            selectedOption = position,
+                            onOptionSelected = {
+                                tk.glucodata.SystemGlucoseNotification.setContentPosition(context, metric, field, it)
+                            },
+                            maxItemsPerRow = 1
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        Text(
+            stringResource(if (metric) R.string.system_glucose_content_metric_note else R.string.system_glucose_content_live_note),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SystemGlucoseCapsuleSettings(preferenceKey: String) {
+    val context = LocalContext.current
+    // One capsule preference is shared by both system templates.
+    val layout by rememberSystemGlucoseIntOption(
+        preferenceKey, tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE
+    )
+    SettingsControlsCard(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
+        SettingsChoice(
+            title = stringResource(R.string.system_glucose_capsule_layout),
+            options = listOf(
+                tk.glucodata.SystemGlucoseNotification.ARROW_THEN_VALUE,
+                tk.glucodata.SystemGlucoseNotification.VALUE_THEN_ARROW
+            ),
+            labels = listOf(
+                stringResource(R.string.system_glucose_layout_arrow_value),
+                stringResource(R.string.system_glucose_layout_value_arrow)
+            ),
+            selectedOption = layout,
+            onOptionSelected = {
+                tk.glucodata.SystemGlucoseNotification.setIntOption(context, preferenceKey, it)
+            },
+            maxItemsPerRow = 1
         )
     }
 }

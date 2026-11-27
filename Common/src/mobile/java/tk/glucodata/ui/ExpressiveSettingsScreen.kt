@@ -9,6 +9,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import androidx.compose.material.icons.filled.NotificationsActive
 import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.BackHandler
@@ -163,6 +164,7 @@ fun ExpressiveSettingsScreen(
     // system-granted ones can change while this screen is in the background, so they are
     // re-read on resume rather than only at first composition.
     val floatingOverlayEnabled by viewModel.floatingRepository.isEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val systemLiveEnabled by rememberSystemGlucoseEnabled(tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE)
     var floatingOverlayAllowed by remember {
         mutableStateOf(android.provider.Settings.canDrawOverlays(context))
     }
@@ -565,6 +567,21 @@ fun ExpressiveSettingsScreen(
                     iconTint = displayColor,
                     position = CardPosition.MIDDLE,
                     onClick = { navController.navigate("settings/notification-display") }
+                )
+                SettingsNavSwitchItem(
+                    title = stringResource(R.string.system_glucose_live_title),
+                    subtitle = stringResource(R.string.system_glucose_live_summary),
+                    checked = systemLiveEnabled,
+                    switchEnabled = Build.VERSION.SDK_INT >= 36,
+                    onCheckedChange = {
+                        tk.glucodata.SystemGlucoseNotification.setEnabled(
+                            context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it
+                        )
+                    },
+                    onClick = { navController.navigate("settings/live-update") },
+                    icon = Icons.Default.NotificationsActive,
+                    iconTint = displayColor,
+                    position = CardPosition.MIDDLE
                 )
                 SettingsNavSwitchItem(
                     title = stringResource(R.string.floatglucose),

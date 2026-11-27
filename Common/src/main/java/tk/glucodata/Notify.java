@@ -4885,6 +4885,9 @@ public class Notify {
                 fallbackDisplay != null ? fallbackDisplay.getTimeMillis() : 0L);
 
         Notification notif = GluNotBuilder.build();
+        if (customPhone) {
+            notif = SystemGlucoseNotification.present(Applic.app, notif, fallbackDisplay, rate);
+        }
 
         long fingerprint = 0L;
         if (customPhone) {

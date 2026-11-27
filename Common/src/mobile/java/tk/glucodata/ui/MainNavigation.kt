@@ -1223,6 +1223,7 @@ private fun NavGraphBuilder.appDestinations(
     gatedComposable("settings/watch/wearos-config") { WearOsConfigScreen(navController) }
     gatedComposable("settings/watch/garmin-status") { GarminStatusScreen(navController) }
     gatedComposable("settings/webserver") { WebServerSettingsScreen(navController) }
+    gatedComposable("settings/live-update") { LiveUpdateSettingsScreen(navController) }
     gatedComposable("settings/notification-display") {
         NotificationSettingsScreen(navController, dashboardViewModel)
     }
