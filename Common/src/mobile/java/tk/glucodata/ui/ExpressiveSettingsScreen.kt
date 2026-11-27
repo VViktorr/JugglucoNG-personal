@@ -4,6 +4,7 @@ package tk.glucodata.ui
 
 import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.components.settingsSearchAnchor
+import tk.glucodata.ui.components.ChoicePickerDialog
 import tk.glucodata.ui.components.RevealSettingsSearchAnchor
 import androidx.compose.foundation.lazy.rememberLazyListState
 import android.app.Activity
@@ -1606,42 +1607,20 @@ private fun UnitPickerDialog(isMmol: Boolean, onSelect: (Int) -> Unit, onDismiss
 
 @Composable
 private fun ThemePickerDialog(current: ThemeMode, onSelect: (ThemeMode) -> Unit, onDismiss: () -> Unit) {
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh
-        ) {
-            Column(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
-                Text(
-                    text = stringResource(R.string.choose_theme),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                )
-                ThemeMode.values().forEach { mode ->
-                    val label = when(mode) { ThemeMode.SYSTEM -> stringResource(R.string.theme_system); ThemeMode.LIGHT -> stringResource(R.string.theme_light); ThemeMode.DARK -> stringResource(R.string.theme_dark) }
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 56.dp)
-                            .clickable { onSelect(mode) }
-                            .padding(horizontal = 24.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(selected = current == mode, onClick = null)
-                        Spacer(Modifier.width(16.dp))
-                        Text(label, style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes(), contentPadding = ButtonDefaults.TextButtonContentPadding) { Text(stringResource(R.string.cancel)) }
-                }
-            }
-        }
-    }
+    val modes = ThemeMode.entries
+    ChoicePickerDialog(
+        title = stringResource(R.string.choose_theme),
+        options = modes.map { mode ->
+            stringResource(when (mode) {
+                ThemeMode.SYSTEM -> R.string.theme_system
+                ThemeMode.LIGHT -> R.string.theme_light
+                ThemeMode.DARK -> R.string.theme_dark
+            })
+        },
+        selectedIndex = modes.indexOf(current),
+        onSelect = { onSelect(modes[it]) },
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable

@@ -30,6 +30,8 @@ import androidx.compose.material3.Slider
 import tk.glucodata.ui.components.TabScreenDefaults
 import tk.glucodata.ui.restricted.addableSensorTypes
 import tk.glucodata.ui.components.TabScreenHeader
+import tk.glucodata.ui.components.IconButtonTooltip
+import tk.glucodata.ui.util.appIconButtonShapes
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
@@ -226,7 +228,6 @@ fun SensorScreen(
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val compactLayout = adaptiveMetrics.isCompact
     val panelPadding = 16.dp
-    val fabPadding = 16.dp
     
     // Start/stop real-time polling based on screen visibility.
     // Tied to the lifecycle, not just to composition: this screen is a tab, so leaving the
@@ -499,11 +500,23 @@ fun SensorScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
-                contentPadding = TabScreenDefaults.contentPadding(hasFab = true)
+                contentPadding = TabScreenDefaults.contentPadding()
             ) {
-                // Scrollable header
                 item {
-                    TabScreenHeader(title = stringResource(R.string.sensors_title))
+                    TabScreenHeader(title = stringResource(R.string.sensors_title)) {
+                        if (canAddSensor) {
+                            val label = stringResource(R.string.add_sensor)
+                            IconButtonTooltip(label) {
+                                IconButton(onClick = onAddSensor, shapes = appIconButtonShapes()) {
+                                    Icon(
+                                        imageVector = Symbols.AddFilled,
+                                        contentDescription = label,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 if (!restrictedLocked) {
                     item {
@@ -530,22 +543,6 @@ fun SensorScreen(
             }
         }
         
-        // FAB overlay - only show when sensors exist
-        if (sensors.isNotEmpty() && canAddSensor) {
-            FloatingActionButton(
-                onClick = onAddSensor,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(fabPadding)
-            ) {
-                Icon(
-                    imageVector = Symbols.AddFilled,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+
     }
 }

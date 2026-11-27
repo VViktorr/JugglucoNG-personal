@@ -290,7 +290,7 @@
     <string name="watches">Zegarek</string>
  <string name="menus">Całe menu</string>
  <string name="system_ui">Integr. z sys.</string>
- <string name="sensor">Sensor</string>
+ <string name="sensor">Czujnik</string>
  <string name="settings">Ustawienia</string>
  <string name="aboutname">Informacje</string>
  <string name="export">Eksport</string>
@@ -748,7 +748,7 @@
     <string name="about_text">GPL-3.0 • Fork of Juggluco</string>
     <string name="accuchek_scan_instruction">Zeskanuj matrycę danych na czujniku Accu-Chek SmartGuide</string>
     <string name="accuchek_setup_title">Konfiguracja Accu-Chek</string>
-    <string name="add_sensor">Dodaj sensor</string>
+    <string name="add_sensor">Dodaj czujnik</string>
     <string name="advanced_title">Advanced</string>
     <string name="aidex_connected">Połączono!</string>
     <string name="aidex_connecting_to">Łączę z %1$s…</string>
@@ -934,8 +934,8 @@
     <string name="min_glucose">Min</string>
     <string name="newdata">"Nowe dane"</string>
     <string name="no_data_available">Brak danych</string>
-    <string name="no_sensor_description">Connect a continuous glucose monitor to start tracking your glucose levels.</string>
-    <string name="no_sensor_title">Brak podłączonego sensora</string>
+    <string name="no_sensor_description">Podłącz czujnik ciągłego monitorowania glukozy, aby rozpocząć pomiary.</string>
+    <string name="no_sensor_title">Brak podłączonego czujnika</string>
     <string name="nonewdata">"Brak nowych danych"</string>
     <string name="not">Not</string>
     <string name="nothing"></string>
@@ -968,9 +968,9 @@
     <string name="scan_accuchek">Zeskanuj Accu-Chek</string>
     <string name="scan_caresens_air">Zeskanuj CareSens Air</string>
     <string name="sensor_address">Adres</string>
-    <string name="sensor_ends_officially">Ends Officially</string>
-    <string name="sensor_expected_end">Expected End</string>
-    <string name="sensor_started">Started</string>
+    <string name="sensor_ends_officially">Koniec wg producenta</string>
+    <string name="sensor_expected_end">Przewidywany koniec</string>
+    <string name="sensor_started">Początek pracy</string>
     <string name="sensornotstreamed">Jeszcze nic</string>
     <string name="sensors_title">Czujniki</string>
     <string name="sensorstreamed"></string>
@@ -979,10 +979,10 @@
     <string name="start_tracking">Rozpocznij śledzenie poziomu glukozy, aby zobaczyć statystyki</string>
     <string name="statistics_subtitle">Twoje analizy poziomu glukozy</string>
     <string name="statistics_title">Statystyki</string>
-    <string name="theme_dark">Dark</string>
-    <string name="theme_light">Light</string>
-    <string name="theme_system">System Default</string>
-    <string name="theme_title">Theme</string>
+    <string name="theme_dark">Ciemny</string>
+    <string name="theme_light">Jasny</string>
+    <string name="theme_system">Zgodny z systemem</string>
+    <string name="theme_title">Motyw</string>
     <string name="trend_falling">The trend is falling by %1$s percent.</string>
     <string name="trend_rising">The trend is rising by %1$s percent.</string>
     <string name="trend_unchanged">The trend remains unchanged.</string>
@@ -3138,9 +3138,9 @@
     <string name="dexcom_share_auth_blocked">Logowanie zablokowane — sprawdź konto i hasło</string>
     <string name="dexcom_share_credentials_required">Najpierw wpisz konto i hasło</string>
     <string name="dexcom_share_warning">Nieoficjalny interfejs: Dexcom może go w każdej chwili zmienić lub zablokować. To nie jest funkcja wyrobu medycznego.</string>
-    <string name="stream_history_mode">Strumień+Historia</string>
-    <string name="history_stream_mode">Historia+Strumień</string>
-    <string name="libre_history_mode_caption">Historia to własna wartość sensora, zapisywana co 15 minut i opóźniona względem strumienia o około 16 minut. Dopóki historia danej minuty nie dotrze, zastępuje ją strumień.</string>
+    <string name="stream_history_mode">Strumień + historia</string>
+    <string name="history_stream_mode">Historia + strumień</string>
+    <string name="libre_history_mode_caption">Czujnik zapisuje wartość historyczną co 15 minut. Historia dociera około 16 minut później niż odczyty bieżące. Do tego czasu w jej miejscu wyświetla się odczyt ze strumienia.</string>
     <!-- Settings tab -->
     <string name="settings_section_display">Wyświetlanie</string>
     <string name="settings_section_sharing">Udostępnianie</string>

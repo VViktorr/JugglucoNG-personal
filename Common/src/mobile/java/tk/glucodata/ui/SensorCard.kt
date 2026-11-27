@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import tk.glucodata.ui.restricted.sensorLifeFill
 import androidx.compose.ui.draw.clip
-import tk.glucodata.ui.util.SettingsChoiceChip
 import tk.glucodata.ui.util.inDisplayUnit
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -101,6 +100,7 @@ import androidx.compose.material3.Icon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import tk.glucodata.ui.components.CardPosition
+import tk.glucodata.ui.components.ChoicePickerDialog
 import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.SettingsItem
 import tk.glucodata.ui.components.SettingsSwitchItem
@@ -2889,53 +2889,50 @@ fun SensorCard(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Use the same choice chips as the settings screens.
-            // Libre 1/2 export their two lanes as Stream (Auto) and the sensor's own
-            // 15-minute History (Raw), so the same four modes switch between them.
             val isLibreStreamHistory = sensor.hasLibreHistoryLane
             if (sensor.isSibionics || sensor.supportsDisplayModes || isLibreStreamHistory) {
-                Text(
-                    stringResource(R.string.data_mode),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(16.dp))
                 val modeLabels = if (isLibreStreamHistory) listOf(
                     stringResource(R.string.streamname),
                     stringResource(R.string.historyname),
                     stringResource(R.string.stream_history_mode),
-                    stringResource(R.string.history_stream_mode)
+                    stringResource(R.string.history_stream_mode),
                 ) else listOf(
                     stringResource(R.string.auto),
                     stringResource(R.string.raw),
                     stringResource(R.string.auto_raw),
-                    stringResource(R.string.raw_auto)
+                    stringResource(R.string.raw_auto),
                 )
-                val modeChip: @Composable (Int, Modifier) -> Unit = { index, modifier ->
-                    SettingsChoiceChip(
-                        selected = sensor.viewMode == index,
-                        onClick = { viewModel.setCalibrationMode(sensor.serial, index) },
-                        modifier = modifier,
-                        label = { Text(modeLabels[index]) },
+                var showDataModePicker by rememberSaveable(sensor.serial) { mutableStateOf(false) }
+                SettingsItem(
+                    title = stringResource(R.string.data_mode),
+                    subtitle = modeLabels.getOrNull(sensor.viewMode),
+                    onClick = { showDataModePicker = true },
+                    trailingContent = {
+                        Icon(
+                            imageVector = Symbols.ExpandMoreFilled,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                )
+                if (showDataModePicker) {
+                    ChoicePickerDialog(
+                        title = stringResource(R.string.data_mode),
+                        options = modeLabels,
+                        selectedIndex = sensor.viewMode,
+                        onSelect = { index ->
+                            showDataModePicker = false
+                            if (index != sensor.viewMode) {
+                                viewModel.setCalibrationMode(sensor.serial, index)
+                            }
+                        },
+                        onDismiss = { showDataModePicker = false },
+                        description = if (isLibreStreamHistory) {
+                            stringResource(R.string.libre_history_mode_caption)
+                        } else null,
                     )
                 }
-                Column {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        modeChip(0, Modifier.weight(1f))
-                        modeChip(1, Modifier.weight(1f))
-                    }
-                    modeChip(2, Modifier.fillMaxWidth())
-                    modeChip(3, Modifier.fillMaxWidth())
-                }
-                if (isLibreStreamHistory) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        stringResource(R.string.libre_history_mode_caption),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Both managed algorithms replace the Auto lane; pure Raw hides this entry.
                 if ((sensor.isSibionics || sensor.isAidex) && sensor.viewMode != 1) {
