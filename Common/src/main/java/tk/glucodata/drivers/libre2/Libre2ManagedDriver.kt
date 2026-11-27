@@ -46,7 +46,7 @@ object Libre2ManagedDriver {
     @JvmStatic
     fun gen2ReadFram(nfc: NfcV, uid: ByteArray, offset: Int, length: Int): ByteArray? = guarded("read FRAM", null) {
         val driver = gen2Nfc(nfc)
-        driver.readFram(uid, offset, length).also { report("read FRAM", it != null, driver) }
+        driver.readFram(uid, offset, length).also { report("read FRAM offset=$offset requested=$length received=${it?.size ?: 0}", it != null, driver) }
     }
 
     /** Starts a Gen2 BLE login for one GATT link. */
@@ -54,8 +54,8 @@ object Libre2ManagedDriver {
     fun gen2BleLogin(): Libre2Gen2BleLogin = Libre2Gen2BleLogin(secureRandom::nextBytes)
 
     private fun report(what: String, ok: Boolean, driver: Libre2Gen2Nfc) {
-        if (ok) Log.i(LOG_ID, "Gen2 $what done")
-        else Log.e(LOG_ID, "Gen2 $what failed: ${driver.lastFailure}")
+        if (ok) Log.i(LOG_ID, "NFC_DIAG gen=2 operation=$what result=ok")
+        else Log.e(LOG_ID, "NFC_DIAG gen=2 operation=$what result=failed reason=${driver.lastFailure}")
     }
 
     private inline fun <T> guarded(what: String, fallback: T, block: () -> T): T = try {

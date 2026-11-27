@@ -58,6 +58,7 @@ jint parsertype=1095774808;
 
 // Libre 1/2 glucose, payloads and patch metadata come from the open libre2_imp backend.
 #include "libre2_imp/backend.hpp"
+#include "libre2_imp/processing/input_window.hpp"
 
 extern string  encodeStatusCode(jlong j);
 int gettimezoneoffset(const time_t *timp) {
@@ -351,7 +352,7 @@ const auto [bluestart,info]= usedhist->getbluedata();
 jnidata_t  hierjnidata={&envbuf,stateptr};
 JNIEnv *hiersubenv=(JNIEnv *) &hierjnidata;
     auto lock= usedhist->nextlock();
-    LOGGER("start getStreamingUnlockPayload(env,null,%d,%s,%s,%d,%d,%d,token)\n",parsertype,hexstr(usedhist->getsensorident()).str(),hexstr(info).str(),person,startsincebase,lock);
+    LOGGER("LIBRE2_DIAG stage=gen1-unlock-payload\n");
     data_t *res= reinterpret_cast<data_t *>(libre2_imp::unlock_payload(hiersubenv,nullptr, parsertype, (jbyteArray)usedhist->getsensorident(), (jbyteArray)info, person, startsincebase, lock,nullptr));
     LOGAR(" end getStreamingUnlockPayload");
     return res;
@@ -373,7 +374,7 @@ scanstate *newstate,uint32_t startsincebase,uint32_t nutime,int warmup,int wear,
 #endif
         bluedata,state,newstate,unsigned(nutime-basesecs),startsincebase,false,&why,&pastWear);
     if(!alg)
-        LOGGER("BLE frame refused: %s\n",why);
+        LOGGER("LIBRE2_DIAG stage=native-frame result=refused reason=%s\n",why);
     return alg;
     }
 
@@ -393,7 +394,7 @@ const data_t *info=getinfo();
 if(!state||!state->good()||!libre2_imp::usable_state(state,info)) {
     scanstate *fresh=locknew<scanstate>(hist->mutex,hist->getsensordir());
     if(!fresh||!fresh->good()||!libre2_imp::usable_state(fresh,info)) {
-        LOGGER("BLE frame refused: no usable saved state (%s), waiting for an NFC scan\n",
+        LOGGER("LIBRE2_DIAG stage=native-frame result=needs-nfc state=%s\n",
             !fresh||!fresh->good()?"missing":"does not fit this sensor");
         delete fresh;
         hist->awaitsScan=true;
@@ -401,6 +402,7 @@ if(!state||!state->good()||!libre2_imp::usable_state(state,info)) {
         }
     delete state;
     state=fresh;
+    LOGGER("LIBRE2_DIAG stage=native-state result=reloaded\n");
     }
 hist->awaitsScan=false;
 if(hist->getinfo()->wearduration<(7*24*60)) {
@@ -432,7 +434,14 @@ if(alg) {
         const int gluc=gl.getValue();
         const int qual=gl.getQuality();
         int gid=gl.getId();
-        LOGGER("processStream %d %d %.1f\n",gid,qual,gluc/convfactordL);
+        const int warmupMinutes = hist->getWarmupSEC() / 60;
+        const int nominalMinutes = hist->getinfo()->wearduration;
+        const char *wearBand = gid < warmupMinutes ? "warmup"
+            : (gid > nominalMinutes ? "grace" : "nominal");
+        LOGGER("LIBRE2_DIAG stage=native-frame minute=%d wearBand=%s warmupMinutes=%d "
+               "nominalMinutes=%d graceMinutes=%u quality=%d hasValue=%d hasRate=%d\n",
+               gid,wearBand,warmupMinutes,nominalMinutes,
+               unsigned(libre2_processing::wear_grace_minutes),qual,gluc>0,std::isfinite(gl.rate()));
         if(!qual&&gluc) {
             hist->clearSensorError();
             if(hist->savepoll(nutime,gid,gluc,gl.trend(),gl.rate())) {
@@ -575,7 +584,7 @@ bool  setDeviceAddressB(JNIEnv *env,SensorGlucoseData *hist,jbyteArray jaddress 
         *saddress++=':';
         }
     saddress[-1]='\0';
-    LOGGER("setDeviceAddressB(%s)\n",hist->deviceaddress());
+    LOGGER("LIBRE2_DIAG stage=ble-address result=stored\n");
     return true;
     }
 

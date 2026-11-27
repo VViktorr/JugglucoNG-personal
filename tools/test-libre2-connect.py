@@ -59,6 +59,10 @@ libre_methods = '\n'.join(method(libre, signature) for signature in [
     'private Runnable forCurrentGatt(', 'private void runPendingBleStep(', 'private void endBLEHandler(',
     'private void streamPacketReceived(', 'private synchronized void streamSilent(',
     'private void logLinkEnd(', 'private void holdRelink(', 'protected void onClosingGattTransport(',
+    'private boolean canRecoverLocally(', 'private void libre2Diag(', 'private void countAttemptWithoutPacket(',
+    'private synchronized void hardRecoverGatt()', 'private void hardRecoverGatt(String',
+    'private synchronized void resumeRecovery(', 'private void releaseRecoveryWakeLock(',
+    'private void cancelRecovery(', 'protected void onConnectionAttemptTimeout(',
 ])
 
 # Fields and all lifecycle/entry-point methods above come from production sources.
@@ -145,7 +149,20 @@ class SuperGattCallback {
     static class BluetoothGattService {
         BluetoothGattCharacteristic getCharacteristic(UUID u){return new BluetoothGattCharacteristic();}
     }
+    static final String POWER_SERVICE="power";
+    static class PowerManager {
+        static final int PARTIAL_WAKE_LOCK=1;
+        static class WakeLock {
+            boolean held;
+            void setReferenceCounted(boolean on){}
+            void acquire(long timeout){held=true;}
+            void release(){held=false;}
+            boolean isHeld(){return held;}
+        }
+        WakeLock newWakeLock(int type,String label){return new WakeLock();}
+    }
     static class Applic {
+        Object getSystemService(String name){return new PowerManager();}
         static final Applic app=new Applic(); static Scheduler scheduler;
         static Applic getContext(){return app;} String getString(int id){return "";}
         static void Toaster(String s){} static void Toaster(int id){} static boolean mayscan(){return true;}
@@ -188,6 +205,7 @@ java += field(libre, 'private final GattConnectDeadline<BluetoothGatt> streamDea
 java += field(libre, 'private long linkConnectedAt', ';') + field(libre, 'private int linkPackets', ';')
 java += field(libre, 'private static final long RELINK_DELAY_MILLIS', ';') + field(libre, 'private boolean linkWasUp', ';')
 java += field(libre, 'private long relinkNotBefore', ';')
+java += field(libre, 'private boolean softRecoveryTried', '}, ignored -> resumeRecovery());')
 java += r'''
     BluetoothGatt disconnectingGatt;
     long reconnectDelayMillis;
@@ -233,7 +251,7 @@ java += r'''
         Libre2GattCallback cb=fresh();BluetoothGatt old=null;
         BleErrorHistory.events.clear();
         for(int status:new int[]{8,147,147,133,19}){
-            old=cb.mBluetoothGatt;Applic.scheduler.advance(30_000);
+            old=cb.mBluetoothGatt;Applic.scheduler.advance(29_000);
             cb.onConnectionStateChange(old,status,0);
             check(old.closed==1&&cb.mBluetoothGatt==null,"disconnect did not retire old GATT");
             Applic.scheduler.advance(0);ignoredCallbacks(cb,old);
@@ -294,11 +312,16 @@ java += r'''
             old=cb.mBluetoothGatt;Applic.scheduler.advance(30_000);
             cb.onConnectionStateChange(old,147,0);Applic.scheduler.advance(0);
             check(old.closed==1,"pre-discovery timeout retained the old GATT");
+            if (cb.mBluetoothGatt == null) Applic.scheduler.advance(6_000);
+            check(cb.mBluetoothGatt!=null,"pre-discovery retry never resumed");
             old=cb.mBluetoothGatt;Applic.scheduler.advance(26_000);
             cb.onConnectionStateChange(old,0,2);Applic.scheduler.advance(3_000);
             cb.onConnectionStateChange(old,19,0);Applic.scheduler.advance(0);
             check(old.closed==1,"short connected link retained the old GATT");
+            if (cb.mBluetoothGatt == null) Applic.scheduler.advance(6_000);
+            check(cb.mBluetoothGatt!=null,"short connected link retry never resumed");
         }
+        check(Natives.resets==1,"extended failure sequence should escalate exactly once");
         check(cb.mActiveBluetoothDevice.calls==50&&cb.logins==0&&cb.frames==0,
                 "pre-discovery retry sequence fabricated login or packet progress");
 
@@ -420,6 +443,27 @@ java += r'''
         Applic.scheduler.advance(150_000);check(current.disconnected==1,"stalled handshake not recovered");
         Applic.scheduler.advance(2_000);check(current.closed==1&&cb.mActiveBluetoothDevice.calls==1,"stalled handshake reconnected onto the old link");
         Applic.scheduler.advance(RELINK_DELAY_MILLIS);check(cb.mActiveBluetoothDevice.calls==2,"stalled handshake got no fresh GATT");
+
+        // Escalate the original episode once; the silent retry cannot postpone it.
+        cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);
+        cb.onCharacteristicChanged(current,new BluetoothGattCharacteristic());
+        Applic.scheduler.advance(299_999);check(Natives.resets==0,"hard recovery was early");
+        Applic.scheduler.advance(1);check(Natives.resets==1&&cb.mBluetoothGatt==null,"hard recovery did not retire current GATT");
+        final int callsAfterHardReset=cb.mActiveBluetoothDevice.calls;
+        Applic.scheduler.advance(5_999);check(cb.mActiveBluetoothDevice.calls==callsAfterHardReset,"hard recovery resumed too soon");
+        Applic.scheduler.advance(1);check(cb.mActiveBluetoothDevice.calls==callsAfterHardReset+1,"hard recovery never resumed");
+        Applic.scheduler.advance(600_000);check(Natives.resets==1,"hard recovery repeated without a packet");
+
+        // Three failed attempts over the silence threshold trigger the other recovery path.
+        cb=fresh();
+        for(int failed=0;failed<3;failed++) {
+            Applic.scheduler.advance(50_000);
+            cb.onConnectionStateChange(cb.mBluetoothGatt,133,0);
+            Applic.scheduler.advance(0);
+        }
+        check(Natives.resets==1&&cb.mBluetoothGatt==null,"failed attempts did not trigger recovery");
+        cb.setPause(true);Applic.scheduler.advance(10_000);
+        check(cb.mBluetoothGatt==null,"pause failed to cancel hard recovery resume");
 
         // Pause and close cancel it.
         cb=fresh();current=cb.mBluetoothGatt;cb.onConnectionStateChange(current,0,2);cb.setPause(true);
