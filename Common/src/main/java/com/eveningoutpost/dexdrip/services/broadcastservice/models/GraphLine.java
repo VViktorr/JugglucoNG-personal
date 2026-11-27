@@ -1,5 +1,6 @@
 package com.eveningoutpost.dexdrip.services.broadcastservice.models;
 
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -61,8 +62,24 @@ public class GraphLine implements Parcelable {
 */
 
     public GraphLine(Parcel parcel) {
-        values = parcel.readArrayList(GraphPoint.class.getClassLoader());
+        values = readPoints(parcel);
         color = parcel.readInt();
+    }
+
+    @SuppressWarnings("deprecation") // Use the legacy reader below API 34 for platform compatibility.
+    private static List<GraphPoint> readPoints(Parcel parcel) {
+        ClassLoader loader = GraphPoint.class.getClassLoader();
+        if (Build.VERSION.SDK_INT >= 34) {
+            return parcel.readArrayList(loader, GraphPoint.class);
+        }
+
+        List<?> points = parcel.readArrayList(loader);
+        if (points == null) return null;
+        List<GraphPoint> result = new ArrayList<>(points.size());
+        for (Object point : points) {
+            result.add(GraphPoint.class.cast(point));
+        }
+        return result;
     }
 
     @Override

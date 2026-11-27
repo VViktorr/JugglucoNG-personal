@@ -173,9 +173,8 @@ static private void subEnableControls(View view,boolean enable){
 			    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL);
 			    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
 			    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false);
-			    final int request= MainActivity.REQUEST_RINGTONE|kind;
 			   Intent openInChooser = Intent.createChooser(intent, null);
-			    context.startActivityForResult(openInChooser, request);
+			    context.launchRingtonePicker(openInChooser, kind);
 			    }
 		    catch(Throwable th) {
 			Applic.argToaster(context, R.string.no_ringtone_picker_found, Toast.LENGTH_LONG);

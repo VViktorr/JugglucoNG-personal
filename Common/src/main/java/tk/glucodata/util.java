@@ -25,7 +25,6 @@ package tk.glucodata;
 import android.widget.RadioButton;
 import android.content.Context;
 import android.graphics.Color;
-import android.os.Build;
 import android.text.method.LinkMovementMethod;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -96,14 +95,9 @@ static void sethtml(TextView view, String text) {
 static void sethtml(TextView view,int res) {
 	sethtml(view,view.getContext().getString(res));
 	}
-static  Locale getReslocale() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-            return Applic.app.getResources().getConfiguration().getLocales().get(0);
-        } else{
-            //noinspection deprecation
-            return Applic.app.getResources().getConfiguration().locale;
-        }
-    }
+static Locale getReslocale() {
+    return Applic.app.getResources().getConfiguration().getLocales().get(0);
+}
 static public Locale getlocale() {
 	final var locales= AppCompatDelegate.getApplicationLocales();
 	if(locales.isEmpty())  {

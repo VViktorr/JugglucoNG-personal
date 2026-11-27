@@ -729,8 +729,7 @@ public Layout getdateviewal(MainActivity activity, long date, Dater erdate) {
     dater=erdate;
     if(datepicker==null) {
     {if(doLog) {Log.i(LOG_ID, " new");};};
-    datepick =new DatePicker(activity);
-    datepick.setCalendarViewShown(false);
+    datepick = (DatePicker) activity.getLayoutInflater().inflate(R.layout.number_date_picker, null);
         Button cancel=new Button(activity);
 
         cancel.setText(R.string.cancel);

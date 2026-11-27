@@ -65,13 +65,9 @@ public class ScanNfcV {
 
     static private byte[] newdevice = null;
 
-    @SuppressWarnings("deprecation")
     public static void failure(Vibrator vibrator) {
         final long[] vibrationPatternFailure = { 0, 500 }; // [ms]
-        if (android.os.Build.VERSION.SDK_INT < 26)
-            vibrator.vibrate(vibrationPatternFailure, -1);
-        else
-            vibrator.vibrate(VibrationEffect.createWaveform(vibrationPatternFailure, -1));
+        vibrator.vibrate(VibrationEffect.createWaveform(vibrationPatternFailure, -1));
     }
 
     static boolean mayEnablestreaming(Tag tag, byte[] uid, byte[] info) {
@@ -109,19 +105,13 @@ public class ScanNfcV {
         return true;
     }
 
-    static AudioAttributes audioattributes;
-    static {
-        if (android.os.Build.VERSION.SDK_INT >= 21)
-            audioattributes = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build();
-    };
-    static VibrationAttributes vibrationattributes = android.os.Build.VERSION.SDK_INT < 33 ? null
-            : new VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_ALARM).build();
-
-    static void vibrates(Vibrator vibrator, final long[] vibrationPatternstart, final int[] amplitude) {
-        if (android.os.Build.VERSION.SDK_INT < 33) {
-            vibrator.vibrate(VibrationEffect.createWaveform(vibrationPatternstart, amplitude, 1), audioattributes);
+    @SuppressWarnings("deprecation") // The alarm usage still needs AudioAttributes before API 33.
+    static void vibrates(Vibrator vibrator, long[] pattern, int[] amplitudes) {
+        VibrationEffect effect = VibrationEffect.createWaveform(pattern, amplitudes, 1);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM));
         } else {
-            vibrator.vibrate(VibrationEffect.createWaveform(vibrationPatternstart, amplitude, 1), vibrationattributes);
+            vibrator.vibrate(effect, new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build());
         }
     }
 
@@ -137,13 +127,9 @@ public class ScanNfcV {
     }
 
     public static void startvibration(Vibrator vibrator) {
-        if (android.os.Build.VERSION.SDK_INT < 26)
-            vibrator.vibrate(new long[] { 0, 100, 10, 50, 50 }, 1);
-        else {
-            final long[] vibrationPatternstart = { 0, 70, 50, 50, 50, 50, 50 };
-            final int[] amplitude = { 0, 255, 150, 0, 255, 50, 0 };
-            vibrates(vibrator, vibrationPatternstart, amplitude);
-        }
+        final long[] pattern = { 0, 70, 50, 50, 50, 50, 50 };
+        final int[] amplitudes = { 0, 255, 150, 0, 255, 50, 0 };
+        vibrates(vibrator, pattern, amplitudes);
     }
 
     static private int[] libre3scan(GlucoseCurve curve, MainActivity main, Vibrator vibrator, Tag tag) {
@@ -431,14 +417,8 @@ public class ScanNfcV {
                                         boolean actsuccess = AlgNfcV.activate(tag, info, uid);
                                         if (actsuccess) {
                                             final long[] needsactivationthrill = { 20, 10, 40, 5, 2, 15, 35, 7, 12 }; // [ms]
-                                            if (android.os.Build.VERSION.SDK_INT < 26) {
-                                                vibrator.vibrate(needsactivationthrill, -1);
-                                            } else {
-                                                final int[] needsactivationthrillamp = { 0, 255, 0, 255, 0, 255, 0, 255,
-                                                        0 }; //
-                                                vibrator.vibrate(VibrationEffect.createWaveform(needsactivationthrill,
-                                                        needsactivationthrillamp, -1));
-                                            }
+                                            final int[] amplitudes = { 0, 255, 0, 255, 0, 255, 0, 255, 0 };
+                                            vibrator.vibrate(VibrationEffect.createWaveform(needsactivationthrill, amplitudes, -1));
                                             newdevice = uid;
                                         } else {
                                             failure(vibrator);

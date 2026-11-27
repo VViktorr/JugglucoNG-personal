@@ -1036,7 +1036,7 @@ public class PhotoScan {
         if (!isWearable) {
             final Intent unifiedIntent = createUnifiedScanIntent(act, type, sensorptr, title);
             if (unifiedIntent != null) {
-                act.startActivityForResult(unifiedIntent, type);
+                act.launchBarcodePicker(unifiedIntent, type);
                 return;
             }
             scanZXingAlg(act, type, sensorptr);

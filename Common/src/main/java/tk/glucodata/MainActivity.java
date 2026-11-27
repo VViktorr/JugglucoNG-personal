@@ -78,6 +78,9 @@ import android.view.accessibility.AccessibilityManager;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.IntentCompat;
 import androidx.annotation.UiThread;
 import androidx.annotation.Keep;
 import androidx.appcompat.app.AlertDialog;
@@ -93,6 +96,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
@@ -491,6 +495,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         }
 
         super.onCreate(savedInstanceState);
+        registerRingtonePickers();
         thisone = this;
 
         if (android.os.Build.VERSION.SDK_INT >= 21) {
@@ -1629,7 +1634,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
     public static final int REQUEST_BARCODE_SIB2 = 0x11;
     public static final int REQUEST_EXPORT = 0x70;
     // public static final int REQUEST_EXPORT=0x54e806d0;
-    public static final int REQUEST_RINGTONE = 0x60;
     public static final int REQUEST_MASK = 0xFFFFFF00;
     public static final int IGNORE_BATTERY_OPTIMIZATION_SETTINGS = 0x100;
     static final int OVERLAY_PERMISSION_REQUEST_CODE = 0x40;
@@ -1747,17 +1751,8 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                 return;
             case REQUEST_BARCODE_SIB2:
             case REQUEST_BARCODE:
-                if (SiBionics == 1 && !isWearable) {
-                    if (PhotoScan.handleUnifiedScanResult(resultCode, data, this, requestCode)) {
-                        return;
-                    }
-                    if (useZXing) {
-                        ZXing.zXingResult(resultCode, data, this, requestCode);
-                        return;
-                    }
-                }
-                ;
-                break;
+                handleBarcodeResult(requestCode, resultCode, data);
+                return;
             case REQUEST_SAVE_LOGCAT:
             case REQUEST_SAVE_LOG: {
                 if (resultCode == Activity.RESULT_OK) {
@@ -1831,30 +1826,50 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                 return;
             }
         }
-        if ((requestCode & (REQUEST_MASK | REQUEST_RINGTONE)) == REQUEST_RINGTONE) {
-            if (resultCode == Activity.RESULT_OK) {
-                try {
-                    Uri uri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
-                    if (uri == null) {
-                        {
-                            if (doLog) {
-                                Log.i(LOG_ID, "getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)==null");
-                            }
-                            ;
-                        }
-                        ;
-                    } else {
-                        String uristr = uri.toString();
-                        if (uristr != null) {
-                            int kind = requestCode & 0xF;
-                            tk.glucodata.RingTones.setring(kind, uristr);
-                        }
-                    }
-                } catch (Throwable e) {
-                    Log.stack(LOG_ID, e);
-                }
-            }
+    }
+
+    private void handleBarcodeResult(int requestCode, int resultCode, Intent data) {
+        if (SiBionics == 1 && !isWearable
+                && !PhotoScan.handleUnifiedScanResult(resultCode, data, this, requestCode)
+                && useZXing) {
+            ZXing.zXingResult(resultCode, data, this, requestCode);
         }
+    }
+
+    private ActivityResultLauncher<Intent> registerBarcodePicker(int requestCode) {
+        return registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                result -> handleBarcodeResult(requestCode, result.getResultCode(), result.getData()));
+    }
+
+    private final ActivityResultLauncher<Intent> barcodePicker = registerBarcodePicker(REQUEST_BARCODE);
+    private final ActivityResultLauncher<Intent> sib2BarcodePicker = registerBarcodePicker(REQUEST_BARCODE_SIB2);
+
+    void launchBarcodePicker(Intent intent, int requestCode) {
+        (requestCode == REQUEST_BARCODE_SIB2 ? sib2BarcodePicker : barcodePicker).launch(intent);
+    }
+
+    private final List<ActivityResultLauncher<Intent>> ringtonePickers = new ArrayList<>();
+
+    private void registerRingtonePickers() {
+        for (int kind = 0; kind <= 8; kind++) {
+            final int ringtoneKind = kind;
+            ringtonePickers.add(getActivityResultRegistry().register(
+                    "ringtone-picker:" + kind, this, new ActivityResultContracts.StartActivityForResult(), result -> {
+                        Intent data = result.getData();
+                        if (result.getResultCode() != Activity.RESULT_OK || data == null) return;
+                        try {
+                            Uri uri = IntentCompat.getParcelableExtra(
+                                    data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri.class);
+                            if (uri != null) RingTones.setring(ringtoneKind, uri.toString());
+                        } catch (Throwable e) {
+                            Log.stack(LOG_ID, e);
+                        }
+                    }));
+        }
+    }
+
+    void launchRingtonePicker(Intent intent, int kind) {
+        ringtonePickers.get(kind).launch(intent);
     }
 
     @Override

@@ -224,14 +224,11 @@ public class Backup {
             });
          }
         }
-      static void setradiotest(RadioButton[] radios,Object[] ap) {
+      static void setradiotest(RadioButton[] radios,Consumer<View> test) {
          for(RadioButton but:radios) {
          but.setOnCheckedChangeListener( (buttonView,  isChecked) -> {
             if(isChecked) {
-               for(var o:ap) {
-                 var a = (Consumer<View>) o;
-                  a.accept(buttonView);
-               }
+               test.accept(buttonView);
             for(RadioButton b:radios) 
                 if(b!=buttonView)
                b.setChecked(false);
@@ -505,8 +502,7 @@ CheckBox ICE;
                   editIPs[i].setVisibility(vis4);
              }
       };
-      Object[] tests={test1};
-        setradiotest(actives,tests);
+        setradiotest(actives,test1);
       testip.setOnCheckedChangeListener( (buttonView,  isChecked)-> {
          final var vis2=(passiveonly.isChecked()&&!isChecked)?hide:VISIBLE;
          final var vis=(activeonly.isChecked()||(passiveonly.isChecked()&&!testip.isChecked()))?hide:VISIBLE;

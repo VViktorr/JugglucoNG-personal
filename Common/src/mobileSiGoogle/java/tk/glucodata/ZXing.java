@@ -3,64 +3,45 @@ package tk.glucodata;
 import static tk.glucodata.Applic.Toaster;
 import static tk.glucodata.Applic.isWearable;
 import static tk.glucodata.Applic.useZXing;
-import static tk.glucodata.Log.doLog;
-import static tk.glucodata.MainActivity.REQUEST_BARCODE;
 import static tk.glucodata.PhotoScan.connectSensor;
-import static tk.glucodata.watchdrip.tostring;
 
-import static com.google.zxing.integration.android.IntentIntegrator.DATA_MATRIX;
-import static com.google.zxing.integration.android.IntentIntegrator.QR_CODE;
-
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
-import android.app.Activity;
 import android.content.Intent;
 
+import com.journeyapps.barcodescanner.ScanIntentResult;
+import com.journeyapps.barcodescanner.ScanOptions;
+
 class ZXing {
-    final static String LOG_ID="ZXing";
-    static long wassensorptr=0L;
-    static void scanZXingAlg(Activity act,int type,long sensorptr) {
-         if(!isWearable&&useZXing) {
-             IntentIntegrator intentIntegrator = new IntentIntegrator(act);
-             intentIntegrator.setPrompt(Applic.app.getString(R.string.photomessage));
-             intentIntegrator.setOrientationLocked(true); 
-             intentIntegrator.setDesiredBarcodeFormats( DATA_MATRIX, QR_CODE);
-             intentIntegrator.setRequestCode(type);
-//             intentIntegrator.addExtra("sensorptr",sensorptr); //does
-             wassensorptr=sensorptr;
-             intentIntegrator.initiateScan(); 
-             }
-          }
-//    static void scanZXing(Activity act,int type) { scanZXingAlg(Activity act,REQUEST_BARCODE); }
-    static void zXingResult(int resultCode, Intent data,MainActivity act,int type) {
-         if(!isWearable&&useZXing) {
-                try {
-            //      var sensorptr=data.getLongExtra("sensorptr",0L); //is not there
-                   long sensorptr=wassensorptr;
-                   wassensorptr=0L;
-                   Log.i(LOG_ID,"zXingResult(" +resultCode+",data) sensorptr="+sensorptr);
-                   IntentResult intentResult = IntentIntegrator.parseActivityResult(resultCode, data);
-                   if(intentResult != null) {
-                      final var scan=intentResult.getContents();
-                      if (scan== null) 
-                        Toaster( "Cancelled");
-                       else {
-                            Log.i(LOG_ID,"Scan: "+scan);
-                            Toaster(scan);
-                            connectSensor(scan,act,type,sensorptr);
-                            return;
-                         }
-                      }
-                     else {
-                        Log.i(LOG_ID,"intentResult == null"); 
-                        }
-                  if(sensorptr!=0L) 
-                      PhotoScan.transmitterScanCancelled(sensorptr);
-                   }
-            catch(Throwable th) {
-                Log.stack(LOG_ID,"zXingResult",th);
-                }
-           return;
-           }
-         }
+    private static final String LOG_ID = "ZXing";
+    private static long pendingSensorPtr;
+
+    static void scanZXingAlg(MainActivity activity, int type, long sensorPtr) {
+        if (isWearable || !useZXing) return;
+
+        ScanOptions options = new ScanOptions()
+                .setPrompt(activity.getString(R.string.photomessage))
+                .setOrientationLocked(true)
+                .setDesiredBarcodeFormats(ScanOptions.DATA_MATRIX, ScanOptions.QR_CODE);
+        pendingSensorPtr = sensorPtr;
+        activity.launchBarcodePicker(options.createScanIntent(activity), type);
     }
+
+    static void zXingResult(int resultCode, Intent data, MainActivity activity, int type) {
+        if (isWearable || !useZXing) return;
+
+        long sensorPtr = pendingSensorPtr;
+        pendingSensorPtr = 0L;
+        try {
+            String scan = data == null ? null : ScanIntentResult.parseActivityResult(resultCode, data).getContents();
+            if (scan != null) {
+                Log.i(LOG_ID, "Scan: " + scan);
+                Toaster(scan);
+                connectSensor(scan, activity, type, sensorPtr);
+                return;
+            }
+            Toaster("Cancelled");
+            if (sensorPtr != 0L) PhotoScan.transmitterScanCancelled(sensorPtr);
+        } catch (Throwable error) {
+            Log.stack(LOG_ID, "zXingResult", error);
+        }
+    }
+}
