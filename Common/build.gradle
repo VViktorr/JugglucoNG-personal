@@ -510,7 +510,7 @@ dependencies {
     // Glance Support
     implementation "androidx.glance:glance-appwidget:1.2.0"
     implementation "androidx.glance:glance-material3:1.2.0"
-    implementation "androidx.work:work-runtime:2.11.2"
+    implementation "androidx.work:work-runtime:2.12.0"
 
     // ---- mobile ----
     mobileImplementation 'com.google.android.material:material:1.14.0'
@@ -518,14 +518,14 @@ dependencies {
     mobileImplementation 'com.garmin.connectiq:ciq-companion-app-sdk:2.4.0@aar'
 
     // Room Database for independent history storage
-    def room_version = "2.8.4"
+    def room_version = "2.8.5"
     mobileImplementation "androidx.room:room-runtime:$room_version"
     mobileImplementation "androidx.room:room-ktx:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
 
     // Scanning (QR / barcode). Used by src/mobileSi + the src/mobileSiGoogle
     // ZXing shim.
-    def cameraXVersion = "1.6.1"
+    def cameraXVersion = "1.7.0"
     mobileImplementation 'com.google.zxing:core:3.5.4'
     mobileImplementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     mobileImplementation "androidx.camera:camera-core:$cameraXVersion"
