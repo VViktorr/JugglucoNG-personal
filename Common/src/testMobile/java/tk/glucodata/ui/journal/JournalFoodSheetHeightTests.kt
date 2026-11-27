@@ -27,6 +27,8 @@ class JournalFoodSheetHeightTests {
     @get:Rule val compose = createComposeRule()
 
     @Test
+    // Leave room for the results above the full carbs form on API 34.
+    @Config(qualifiers = "+h1400dp")
     fun closingTallFoodSearchReturnsTheSheetToItsShortHeight() {
         val foods = (1L..30L).map { JournalFood(it, "Meal sample $it", 10f, null, null, 90, 0, false, false, it.toInt()) }
         compose.setContent {
