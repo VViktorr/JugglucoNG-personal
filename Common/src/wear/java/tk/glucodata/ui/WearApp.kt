@@ -16,6 +16,11 @@ import tk.glucodata.ui.screens.RecentReadingsScreen
 import tk.glucodata.ui.screens.SensorScreen
 import tk.glucodata.ui.screens.ExchangeScreen
 import tk.glucodata.ui.screens.SettingsScreen
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import tk.glucodata.ui.screens.WearAppUpdatesScreen
+import tk.glucodata.update.WearUpdateRequest
 
 object WearRoutes {
     const val MAIN = "main"
@@ -64,6 +69,13 @@ private fun readingTapRouteFor(point: tk.glucodata.GlucosePoint): String {
 @Composable
 fun WearApp() {
     val navController = rememberSwipeDismissableNavController()
+    val pendingRoute by PendingNavigation.route.collectAsState()
+    LaunchedEffect(pendingRoute) {
+        if (pendingRoute == WearUpdateRequest.ROUTE) {
+            navController.navigate(WearUpdateRequest.ROUTE) { launchSingleTop = true }
+            PendingNavigation.consume()
+        }
+    }
     // System back (button/bezel gesture) pops the stack; at the root it
     // backgrounds the app like the legacy watch UI did, never finishing it.
     // Swipe-to-dismiss is handled by SwipeDismissableNavHost (see wear styles.xml).
@@ -184,8 +196,10 @@ fun WearApp() {
                     onOpenAlerts = { navController.navigate(WearRoutes.ALERTS) },
                     onOpenSensor = { navController.navigate(WearRoutes.SENSOR) },
                     onOpenExchange = { navController.navigate(WearRoutes.EXCHANGE) },
+                    onOpenUpdates = { navController.navigate(WearUpdateRequest.ROUTE) },
                 )
             }
+            composable(WearUpdateRequest.ROUTE) { WearAppUpdatesScreen() }
             composable(WearRoutes.EXCHANGE) { ExchangeScreen() }
         }
     }

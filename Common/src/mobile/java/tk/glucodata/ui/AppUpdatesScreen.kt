@@ -56,6 +56,9 @@ import tk.glucodata.ui.components.SectionLabel
 import tk.glucodata.ui.components.SettingsItem
 import tk.glucodata.ui.components.SettingsSwitchItem
 import tk.glucodata.update.AppUpdateController
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import tk.glucodata.update.WearUpdateRequest
 import tk.glucodata.update.AppUpdateUiState
 import tk.glucodata.update.UpdateEligibility
 import tk.glucodata.update.UpdateError
@@ -75,6 +78,8 @@ fun AppUpdatesScreen(navController: NavController) {
     val context = LocalContext.current
     val state by AppUpdateController.state.collectAsStateWithLifecycle()
     var showSourceDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    var sendingToWatch by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { AppUpdateController.initialize(context) }
 
@@ -145,6 +150,26 @@ fun AppUpdatesScreen(navController: NavController) {
                 // check drops to the quieter treatment rather than competing with it.
                 emphasised = !hasStatusCard,
                 onClick = { AppUpdateController.checkNow(context) }
+            )
+
+            UpdateWatchAction(
+                sending = sendingToWatch,
+                onClick = {
+                    sendingToWatch = true
+                    scope.launch {
+                        try {
+                            val sent = WearUpdateRequest.send(context)
+                            val message = if (sent > 0) R.string.wear_app_update_sent else R.string.wear_app_update_no_watch
+                            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+                        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            android.widget.Toast.makeText(context, R.string.wear_app_update_no_watch, android.widget.Toast.LENGTH_LONG).show()
+                        } finally {
+                            sendingToWatch = false
+                        }
+                    }
+                },
             )
 
             if (!hasStatusCard && !state.checking && state.lastCheckAtMillis > 0L) {
@@ -355,3 +380,15 @@ private fun AppUpdateUiState.lastCheckedLabel(): String =
     } else {
         stringResource(R.string.app_updates_never_checked)
     }
+
+
+@Composable
+private fun UpdateWatchAction(sending: Boolean, onClick: () -> Unit) {
+    androidx.compose.material3.TextButton(
+        onClick = onClick,
+        enabled = !sending,
+        shapes = androidx.compose.material3.ButtonDefaults.shapes(),
+    ) {
+        Text(stringResource(if (sending) R.string.app_updates_checking_title else R.string.wear_app_update_send))
+    }
+}

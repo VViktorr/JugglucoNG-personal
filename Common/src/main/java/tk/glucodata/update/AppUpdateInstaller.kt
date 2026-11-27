@@ -39,7 +39,12 @@ object AppUpdateInstaller {
         return try {
             val params = PackageInstaller.SessionParams(
                 PackageInstaller.SessionParams.MODE_FULL_INSTALL
-            ).apply { setAppPackageName(appContext.packageName) }
+            ).apply {
+                setAppPackageName(appContext.packageName)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED)
+                }
+            }
             sessionId = installer.createSession(params)
             installer.openSession(sessionId).use { session ->
                 session.openWrite("base.apk", 0, file.length()).use { output ->

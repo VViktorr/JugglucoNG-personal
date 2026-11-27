@@ -16,6 +16,7 @@
     <uses-feature android:name="com.google.android.wearable" android:required="false" />
 
     <!-- android:debuggable="true" -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application android:name=".Applic" android:theme="@style/Theme.appstart"
         android:icon="@mipmap/ic_launcher">
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
@@ -39,6 +40,10 @@
 
         <uses-library android:name="com.google.android.wearable" android:required="false" />
 
+
+        <receiver
+            android:name="tk.glucodata.update.AppUpdateInstallReceiver"
+            android:exported="false" />
 
         <service
             android:name="tk.glucodata.watchface.WatchFaceService"
@@ -101,6 +106,7 @@
                 <data android:host="*" android:pathPrefix="/protocol" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/alertack" android:scheme="wear" />
                 <data android:host="*" android:pathPrefix="/sync2" android:scheme="wear" />
+                <data android:host="*" android:pathPrefix="/appupdate" android:scheme="wear" />
                 <!-- Every path this service handles must be listed: a
                      WearableListenerService is only delivered the prefixes its
                      filter names, so an unlisted one is dropped in silence. -->

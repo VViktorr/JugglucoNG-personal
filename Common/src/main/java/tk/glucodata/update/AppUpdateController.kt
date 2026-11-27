@@ -169,9 +169,11 @@ object AppUpdateController {
         if (AppUpdateSettings.isAutoCheckEnabled(appContext)) checkNow(appContext)
     }
 
-    fun checkNow(context: Context) {
+    @Synchronized
+    fun checkNow(context: Context, onResult: ((UpdateCheckResult) -> Unit)? = null) {
         val appContext = context.applicationContext
         if (_state.value.checking || !UpdateEligibility.isSupported(appContext)) return
+        if (_state.value.stage in setOf(UpdateStage.DOWNLOADING, UpdateStage.VERIFYING, UpdateStage.INSTALLING)) return
         _state.update { it.copy(checking = true, error = null) }
         scope.launch {
             val result = UpdateSourceClient.check(AppUpdateSettings.updateSource(appContext))
@@ -184,6 +186,7 @@ object AppUpdateController {
             (result as? UpdateCheckResult.Failed)?.let { failure ->
                 _state.update { it.copy(error = failure.error) }
             }
+            onResult?.invoke(result)
         }
     }
 

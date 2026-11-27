@@ -76,6 +76,38 @@ class GithubReleaseParserTests {
     }
 
     @Test
+    fun `same package uses a different APK and version code on Wear OS`() {
+        val packageId = "tk.glucodata.ng"
+        val phone = "JugglucoNG-1.4.3-phone.apk"
+        val watch = "JugglucoNG-1.4.3-wear.apk"
+        val release = GithubReleaseParser.parseReleases(
+            "[${release(tag = "main-v1.4.3", assets = """
+                {"name":"$phone","browser_download_url":"https://example.test/$phone","size":10},
+                {"name":"$watch","browser_download_url":"https://example.test/$watch","size":12}
+            """)}]"
+        ).single()
+        val manifestText = """
+            {"schema":1,"versionName":"1.4.3","versionCode":1403,"minSdk":26,"artifacts":[
+              {"applicationId":"$packageId","file":"$phone","sha256":"$SHA"},
+              {"applicationId":"$packageId","device":"wear","file":"$watch","versionCode":1001403,"minSdk":28,"sha256":"$SHA"}
+            ]}
+        """.trimIndent()
+        val manifest = GithubReleaseParser.parseManifest(manifestText)!!
+        val phoneUpdate = GithubReleaseParser.toAvailableUpdate(release, manifest, packageId, 34)!!
+        val watchUpdate = GithubReleaseParser.toAvailableUpdate(release, manifest, packageId, 34, wear = true)!!
+        assertEquals(phone, phoneUpdate.artifact.fileName)
+        assertEquals(1403, phoneUpdate.versionCode)
+        assertEquals(watch, watchUpdate.artifact.fileName)
+        assertEquals(1001403, watchUpdate.versionCode)
+        assertEquals(SHA, watchUpdate.artifact.sha256)
+        assertTrue(GithubReleaseParser.isNewerThanInstalled(watchUpdate, 1001402, "1.4.2"))
+        assertNull(GithubReleaseParser.toAvailableUpdate(release, manifest, packageId, 27, wear = true))
+        assertNull(GithubReleaseParser.toAvailableUpdate(release, null, packageId, 34, wear = true))
+        val phoneOnly = GithubReleaseParser.parseManifest(MANIFEST)!!
+        assertNull(GithubReleaseParser.toAvailableUpdate(release, phoneOnly, packageId, 34, wear = true))
+    }
+
+    @Test
     fun `a manifest that omits this variant means no update`() {
         val release = GithubReleaseParser.parseReleases("[${release()}]").single()
         val manifest = GithubReleaseParser.parseManifest(MANIFEST)

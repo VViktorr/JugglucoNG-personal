@@ -155,7 +155,8 @@ object UpdateSourceClient {
             manifest = manifest,
             manifestUrl = url,
             applicationId = BuildConfig.APPLICATION_ID,
-            deviceSdk = Build.VERSION.SDK_INT
+            deviceSdk = Build.VERSION.SDK_INT,
+            wear = BuildConfig.isWear != 0,
         ) ?: return UpdateCheckResult.Failed(UpdateError.NO_ARTIFACT)
         return verdictFor(update)
     }
@@ -197,7 +198,8 @@ object UpdateSourceClient {
                 release = release,
                 manifest = manifest,
                 applicationId = BuildConfig.APPLICATION_ID,
-                deviceSdk = Build.VERSION.SDK_INT
+                deviceSdk = Build.VERSION.SDK_INT,
+                wear = BuildConfig.isWear != 0,
             ) ?: continue
 
             if (!isDownloadableUrl(update.artifact.downloadUrl)) {

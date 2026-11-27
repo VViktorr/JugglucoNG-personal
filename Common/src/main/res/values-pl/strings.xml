@@ -3473,4 +3473,10 @@
     <string name="floating_layout_camera_desc">Elementy powyżej są przed aparatem, pozostałe za nim</string>
     <string name="floating_layout_hidden">Ukryte</string>
     <string name="floating_layout_order_desc">Przeciągnij uchwyt, aby przenieść element</string>
+    <string name="wear_app_update_send">Zaktualizuj zegarek</string>
+    <string name="wear_app_update_sent">Zlecono sprawdzenie. Otwórz Aktualizacje aplikacji na zegarku, aby zobaczyć wynik.</string>
+    <string name="wear_app_update_no_watch">Brak połączonego zegarka obsługującego tę funkcję.</string>
+    <string name="wear_app_update_available">Dostępna aktualizacja: %1$s</string>
+    <string name="wear_app_update_confirm">Potwierdź instalację na zegarku.</string>
+    <string name="wear_app_update_installer_unavailable">Jeśli zegarek nie otwiera instalatora, zaktualizuj go przez ADB po Wi-Fi.</string>
 </resources>

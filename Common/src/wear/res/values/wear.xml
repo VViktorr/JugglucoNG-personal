@@ -18,5 +18,6 @@
     <string-array name="android_wear_capabilities" tools:ignore="UnusedResources" translatable="false">
         <!-- declaring the provided capabilities -->
         <item>jugglucowatch</item>
+        <item>juggluco_watch_updates</item>
     </string-array>
 </resources>

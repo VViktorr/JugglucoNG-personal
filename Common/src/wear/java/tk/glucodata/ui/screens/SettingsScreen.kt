@@ -31,6 +31,7 @@ fun SettingsScreen(
     onOpenAlerts: () -> Unit,
     onOpenSensor: () -> Unit,
     onOpenExchange: () -> Unit = {},
+    onOpenUpdates: () -> Unit = {},
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val deltaSettings = androidx.compose.runtime.remember(context) { tk.glucodata.settings.DisplayDeltaSettings(context) }
@@ -57,6 +58,9 @@ fun SettingsScreen(
             }
             item {
                 WearNavigationRow(stringResource(R.string.sensor), onClick = onOpenSensor)
+            }
+            item {
+                WearNavigationRow(stringResource(R.string.app_updates_title), onClick = onOpenUpdates)
             }
             item { WearSectionTitle(stringResource(R.string.wear_ongoing_icon_title)) }
             val iconOptions = listOf(

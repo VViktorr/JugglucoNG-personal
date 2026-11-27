@@ -53,6 +53,11 @@ class MessageReceiver: WearableListenerService() {
         Log.i(LOG_ID,"onMessageReceived start $path"  )
         when(WearMessagePath.fromWire(path)) {
             WearMessagePath.ALERT_ACK -> WearAlertSync.onMessage(data)
+            WearMessagePath.APP_UPDATE_CHECK -> {
+                if (isWearable && data.isEmpty()) {
+                    tk.glucodata.update.WearUpdateRequest.checkOnWatch(applicationContext)
+                }
+            }
             WearMessagePath.DEFAULTS ->  {
                 MessageSender.scope.launch(nativeOps) {
                     if (!isWearable && !MessageSender.outgoingAllowed()) return@launch

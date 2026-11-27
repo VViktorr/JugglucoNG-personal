@@ -52,7 +52,9 @@ object GithubReleaseParser {
          * Only used by a self-hosted manifest, which has no asset listing to take URLs from.
          * May be relative to the manifest's own location. Ignored for a GitHub source.
          */
-        val url: String? = null
+        val url: String? = null,
+        val versionCode: Int? = null,
+        val minSdk: Int? = null,
     )
 
     data class UpdateManifest(
@@ -110,11 +112,14 @@ object GithubReleaseParser {
                 val entry = array.optJSONObject(i) ?: continue
                 val applicationId = entry.optString("applicationId").takeIf { it.isNotBlank() } ?: continue
                 val file = entry.optString("file").takeIf { it.isNotBlank() } ?: continue
-                artifacts[applicationId] = ManifestArtifact(
+                val key = if (entry.optString("device") == "wear") "$applicationId:wear" else applicationId
+                artifacts[key] = ManifestArtifact(
                     fileName = file,
                     sizeBytes = entry.optLong("size", 0L),
                     sha256 = entry.optString("sha256").takeIf { it.length == 64 }?.lowercase(),
-                    url = entry.optString("url").takeIf { it.isNotBlank() && it != "null" }
+                    url = entry.optString("url").takeIf { it.isNotBlank() && it != "null" },
+                    versionCode = entry.optInt("versionCode").takeIf { it > 0 },
+                    minSdk = entry.optInt("minSdk").takeIf { it > 0 },
                 )
             }
         }
@@ -137,24 +142,28 @@ object GithubReleaseParser {
         release: Release,
         manifest: UpdateManifest?,
         applicationId: String,
-        deviceSdk: Int
+        deviceSdk: Int,
+        wear: Boolean = false,
     ): AvailableUpdate? {
-        val manifestArtifact = manifest?.artifacts?.get(applicationId)
+        val key = if (wear) "$applicationId:wear" else applicationId
+        val manifestArtifact = manifest?.artifacts?.get(key)
         if (manifest != null && manifestArtifact == null) {
             // The maintainer published a manifest and this variant is not in it: that is an
             // explicit "no build for you", not a reason to fall back to name guessing.
             return null
         }
-        if (manifest != null && manifest.minSdk > 0 && deviceSdk < manifest.minSdk) return null
+        if (wear && manifestArtifact?.versionCode == null) return null
+        if (deviceSdk < (manifestArtifact?.minSdk ?: manifest?.minSdk ?: 0)) return null
 
         val assetName = manifestArtifact?.fileName
             ?: UpdateArtifacts.selectAssetName(release.assets.map { it.name }, applicationId)
             ?: return null
+        if (wear && UpdateArtifacts.tokensOf(assetName) != UpdateArtifacts.expectedTokens(applicationId)?.plus("wear")) return null
         val asset = release.asset(assetName) ?: return null
 
         return AvailableUpdate(
             versionName = manifest?.versionName ?: release.tagName.removePrefix("v"),
-            versionCode = manifest?.versionCode,
+            versionCode = manifestArtifact?.versionCode ?: manifest?.versionCode,
             tagName = release.tagName,
             notes = manifest?.notes?.takeIf { it.isNotBlank() } ?: release.body,
             publishedAtMillis = release.publishedAtMillis,
@@ -178,15 +187,19 @@ object GithubReleaseParser {
         manifest: UpdateManifest,
         manifestUrl: String,
         applicationId: String,
-        deviceSdk: Int
+        deviceSdk: Int,
+        wear: Boolean = false,
     ): AvailableUpdate? {
-        val artifact = manifest.artifacts[applicationId] ?: return null
-        if (manifest.minSdk > 0 && deviceSdk < manifest.minSdk) return null
+        val key = if (wear) "$applicationId:wear" else applicationId
+        val artifact = manifest.artifacts[key] ?: return null
+        if (wear && (artifact.versionCode == null ||
+                UpdateArtifacts.tokensOf(artifact.fileName) != UpdateArtifacts.expectedTokens(applicationId)?.plus("wear"))) return null
+        if (deviceSdk < (artifact.minSdk ?: manifest.minSdk)) return null
         val rawUrl = artifact.url ?: artifact.fileName
         val downloadUrl = UpdateSource.resolveArtifactUrl(manifestUrl, rawUrl) ?: return null
         return AvailableUpdate(
             versionName = manifest.versionName,
-            versionCode = manifest.versionCode,
+            versionCode = artifact.versionCode ?: manifest.versionCode,
             tagName = manifest.versionName,
             notes = manifest.notes.orEmpty(),
             publishedAtMillis = 0L,

@@ -20,6 +20,7 @@ package tk.glucodata
  */
 enum class WearMessagePath(val wire: String) {
     ALERT_ACK("/alertack"),
+    APP_UPDATE_CHECK("/appupdate/check"),
     ASKFORSTART("/askforstart"),
     BLUETOOTH("/bluetooth"),
     CALIBRATE("/calibrate"),

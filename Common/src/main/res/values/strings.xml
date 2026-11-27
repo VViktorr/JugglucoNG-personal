@@ -3735,4 +3735,10 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="floating_layout_camera_desc">Items above it sit before the camera, the rest after it</string>
     <string name="floating_layout_hidden">Hidden</string>
     <string name="floating_layout_order_desc">Drag a handle to move an item</string>
+    <string name="wear_app_update_send">Update watch</string>
+    <string name="wear_app_update_sent">Check requested. Open App updates on your watch to see the result.</string>
+    <string name="wear_app_update_no_watch">No reachable watch with this update feature.</string>
+    <string name="wear_app_update_available">Update available: %1$s</string>
+    <string name="wear_app_update_confirm">Confirm the installation on your watch.</string>
+    <string name="wear_app_update_installer_unavailable">If this watch cannot open the installer, update it over Wi-Fi using ADB.</string>
 </resources>

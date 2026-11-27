@@ -232,6 +232,18 @@ jobs:
           staged = out / f'JugglucoNG-{os.environ["APK_VERSION"]}-wear.apk'
           shutil.copy2(apk, staged)
           digest = hashlib.sha256(staged.read_bytes()).hexdigest()
+          apkanalyzer = Path(os.environ['ANDROID_HOME']) / 'cmdline-tools/latest/bin/apkanalyzer'
+          summary = subprocess.check_output([str(apkanalyzer), 'apk', 'summary', str(staged)], text=True).split()
+          expected = ['tk.glucodata.ng', str(1000000 + int(os.environ['APK_VERSION_CODE'])), os.environ['APK_VERSION']]
+          if summary != expected:
+              raise SystemExit(f'Expected Wear OS APK metadata {expected!r}, got {summary!r}')
+          min_sdk = int(subprocess.check_output(
+              [str(apkanalyzer), 'manifest', 'min-sdk', str(staged)], text=True,
+          ).strip())
+          (out / 'wear-update-artifact.json').write_text(json.dumps({
+              'applicationId': summary[0], 'device': 'wear', 'versionCode': int(summary[1]),
+              'minSdk': min_sdk, 'file': staged.name, 'size': staged.stat().st_size, 'sha256': digest
+          }, indent=2) + '\n')
           (out / 'SHA256SUMS.txt').write_text(f'{digest}  {staged.name}\n')
           (out / 'build-info.json').write_text(json.dumps({
               'version': os.environ['APK_VERSION'], 'sha': os.environ['GITHUB_SHA'], 'branch': os.environ['GITHUB_REF_NAME'],
@@ -274,7 +286,15 @@ jobs:
           set -euo pipefail
           mkdir -p build/release/assets
           cp build/release/phone/*.apk build/release/wear/*.apk build/release/assets/
-          cp build/release/phone/update-manifest.json build/release/assets/
+          python3 - <<'PY_MANIFEST'
+          import json
+          from pathlib import Path
+
+          release = Path('build/release')
+          manifest = json.loads((release / 'phone/update-manifest.json').read_text())
+          manifest['artifacts'].append(json.loads((release / 'wear/wear-update-artifact.json').read_text()))
+          (release / 'assets/update-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY_MANIFEST
           cp build/release/phone/build-info.json build/release/assets/phone-build-info.json
           cp build/release/wear/build-info.json build/release/assets/wear-build-info.json
           cat build/release/phone/SHA256SUMS.txt build/release/wear/SHA256SUMS.txt > build/release/assets/SHA256SUMS.txt
