@@ -778,7 +778,7 @@ class SensorViewModel : ViewModel() {
                         serial = gatt.SerialNumber ?: "Error",
                         displayName = tk.glucodata.SensorDisplayName.fromCallback(gatt, gatt.SerialNumber ?: "Error"),
                         deviceAddress = gatt.mActiveDeviceAddress ?: "Unknown",
-                        connectionStatus = "Load Error",
+                        connectionStatus = Applic.app.getString(tk.glucodata.R.string.sensor_error),
                         starttime = "",
                         streaming = false,
                         rssi = 0,
@@ -799,7 +799,7 @@ class SensorViewModel : ViewModel() {
                         customCalAutoReset = false,
                         supportsDisplayModes = false,
                         supportsManualCalibration = false,
-                        detailedStatus = "Error: ${e.message}",
+                        detailedStatus = Applic.app.getString(tk.glucodata.R.string.sensor_error),
                         isActive = false
                     )
                 }

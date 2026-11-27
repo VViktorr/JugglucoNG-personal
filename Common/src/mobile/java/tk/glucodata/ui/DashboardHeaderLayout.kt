@@ -54,6 +54,9 @@ import tk.glucodata.CloneTransport
 /** Space between the reading card and the sensor panel. */
 internal val HeroSensorGap = 4.dp
 
+// main5: both dashboard bars use 80 dp for a reading. Status text may need more room.
+internal val DashboardBarHeight = 80.dp
+
 private const val HERO_SHARE = 0.7f
 private const val SENSOR_SHARE = 0.3f
 /** However little the reading needs, the sensor panel never becomes the larger card. */
@@ -265,12 +268,10 @@ internal fun DashboardSensorPanel(
     containerColor: Color,
     contentColor: Color,
     shape: Shape,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.height(DashboardBarHeight),
         colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor),
         shape = shape
     ) {
@@ -288,7 +289,7 @@ internal fun DashboardSensorPanel(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = SensorPanelPadding, vertical = 12.dp),
+                    .padding(horizontal = SensorPanelPadding, vertical = 4.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -378,7 +379,7 @@ internal fun DashboardSensorPanel(
     }
 }
 
-private val SensorPanelPadding = 16.dp
+private val SensorPanelPadding = 12.dp
 /**
  * Every line of the panel that leads with an icon uses this slot and this gap, so the
  * icons share one column and the text after them one left edge.

@@ -47,7 +47,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.animation.core.Animatable
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -209,7 +208,6 @@ fun DashboardCombinedHeader(
     onHeroClick: () -> Unit = {},
     onAddSensorClick: () -> Unit = {},
     // Tapping the sensor card (name, lifetime, status) opens the Sensor tab.
-    onSensorCardClick: () -> Unit = {},
     // The alarm quiet window: 0 = none, and then nothing is drawn. A running one
     // shows as a chip with its end time; tapping it opens the quiet-window screen.
     quietWindowUntilMs: Long = 0L,
@@ -580,7 +578,6 @@ fun DashboardCombinedHeader(
                     containerColor = sensorContainerColor,
                     contentColor = sensorContentColor,
                     shape = sensorShape,
-                    onClick = onSensorCardClick,
                     modifier = modifier
                 )
             }
@@ -840,7 +837,7 @@ private fun DashboardHeroCard(
     when {
         // A state is not a reading: nothing to calibrate, so the card is not a button.
         statusCopy != null -> Card(
-            modifier = modifier.heightIn(min = 96.dp),
+            modifier = modifier.heightIn(min = DashboardBarHeight),
             colors = colors,
             shape = shape
         ) {
@@ -851,7 +848,7 @@ private fun DashboardHeroCard(
             }
         }
 
-        else -> Card(onClick = onClick, modifier = modifier, colors = colors, shape = shape) {
+        else -> Card(onClick = onClick, modifier = modifier.height(DashboardBarHeight), colors = colors, shape = shape) {
             when {
                 peers.paired != null -> HeroPairedContent(layout, reading, peers, peers.paired, contentModifier)
                 isLandscape -> HeroStackedReadingContent(layout, reading, peers, contentModifier)

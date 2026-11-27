@@ -135,7 +135,7 @@ class DashboardHeaderLayoutTests {
         assertEquals(panel.bottom + 4f, hero.top, 0f)
     }
 
-    private fun header(showReadingAge: Boolean) {
+    private fun header(showReadingAge: Boolean, stacked: Boolean = false) {
         val now = System.currentTimeMillis()
         val at = now - 20_000L
         val history = (0 until 16).map { i ->
@@ -156,7 +156,7 @@ class DashboardHeaderLayoutTests {
         compose.setContent {
             JugglucoTheme(ThemeMode.LIGHT) {
                 CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                    Box(Modifier.width(HEADER_WIDTH_DP.dp)) {
+                    Box(Modifier.width(HEADER_WIDTH_DP.dp).testTag("dashboard-bars")) {
                         DashboardCombinedHeader(
                             currentGlucose = "7,8",
                             currentRate = -0.4f,
@@ -172,6 +172,7 @@ class DashboardHeaderLayoutTests {
                             dataState = DisplayDataState.Status(DisplayDataState.Kind.FRESH, true, at, now - at),
                             isMmol = true,
                             showDelta = true,
+                            stackBars = stacked,
                             showReadingAge = showReadingAge
                         )
                     }
@@ -179,6 +180,18 @@ class DashboardHeaderLayoutTests {
             }
         }
         compose.waitForIdle()
+    }
+
+    @Test fun readingBarsHaveTheOriginal80DpHeight() {
+        header(showReadingAge = false)
+        val bars = compose.onNodeWithTag("dashboard-bars").fetchSemanticsNode().boundsInRoot
+        assertEquals(160f, bars.height, 0f)
+    }
+
+    @Test fun stackedReadingBarsHaveTwo80DpCardsAndA4DpGap() {
+        header(showReadingAge = false, stacked = true)
+        val bars = compose.onNodeWithTag("dashboard-bars").fetchSemanticsNode().boundsInRoot
+        assertEquals(328f, bars.height, 0f)
     }
 
     private fun left(text: String) =
@@ -189,7 +202,7 @@ class DashboardHeaderLayoutTests {
 
     /** Where the sensor panel's text starts at the default 70 / 30: after the reading card, the gap and its padding. */
     private val defaultPanelTextLeft: Float
-        get() = heroSensorBaseSplit(HEADER_WIDTH_DP * 2 - 4 * 2).first + (4 + 16) * 2f
+        get() = heroSensorBaseSplit(HEADER_WIDTH_DP * 2 - 4 * 2).first + (4 + 12) * 2f
 
     @Test fun headerKeepsItsSplitWhenThePanelFits() {
         header(showReadingAge = false)
@@ -200,7 +213,7 @@ class DashboardHeaderLayoutTests {
         header(showReadingAge = true)
         val panelTextLeft = left("3MH01")
         assertTrue("panel grew: $panelTextLeft < $defaultPanelTextLeft", panelTextLeft < defaultPanelTextLeft)
-        assertTrue("reading stays whole", right("7,8") < panelTextLeft - (4 + 16) * 2f)
+        assertTrue("reading stays whole", right("7,8") < panelTextLeft - (4 + 12) * 2f)
     }
 
     @Test fun lifetimeIconComesBeforeTheLifetime() {

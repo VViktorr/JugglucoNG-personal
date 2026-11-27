@@ -1638,7 +1638,6 @@ fun DashboardScreen(
                                 quietWindowUntilMs = quietWindowUntilMs,
                                 onQuietWindowClick = onNavigateToQuietWindow,
                                 onAddSensorClick = onNavigateToSensors,
-                                onSensorCardClick = onNavigateToSensors,
                                 onHeroClick = {
                                     val autoVal = latestPoint?.value ?: tk.glucodata.GlucoseValueParser.parseFirstOrZero(currentGlucose)
                                     val rawVal = latestPoint?.rawValue ?: autoVal
@@ -1975,7 +1974,6 @@ fun DashboardScreen(
                                 quietWindowUntilMs = quietWindowUntilMs,
                                 onQuietWindowClick = onNavigateToQuietWindow,
                                 onAddSensorClick = onNavigateToSensors,
-                                onSensorCardClick = onNavigateToSensors,
                                 onHeroClick = {
                                     val autoVal = latestPoint?.value ?: tk.glucodata.GlucoseValueParser.parseFirstOrZero(currentGlucose)
                                     val rawVal = latestPoint?.rawValue ?: autoVal
