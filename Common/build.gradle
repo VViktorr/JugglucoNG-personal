@@ -350,9 +350,8 @@ android {
         includeInBundle = true
     }
     compileSdk {
-        // Compose 1.13 (material3 1.5) needs the 37.1 minor SDK.
         version = release(37) {
-            minorApiLevel = 1
+            minorApiLevel = 2
         }
     }
     buildToolsVersion = '37.0.0'
