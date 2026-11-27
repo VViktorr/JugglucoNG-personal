@@ -352,7 +352,7 @@ const auto [bluestart,info]= usedhist->getbluedata();
 jnidata_t  hierjnidata={&envbuf,stateptr};
 JNIEnv *hiersubenv=(JNIEnv *) &hierjnidata;
     auto lock= usedhist->nextlock();
-    LOGGER("LIBRE2_DIAG stage=gen1-unlock-payload\n");
+    LOGSTRING("LIBRE2_DIAG stage=gen1-unlock-payload\n");
     data_t *res= reinterpret_cast<data_t *>(libre2_imp::unlock_payload(hiersubenv,nullptr, parsertype, (jbyteArray)usedhist->getsensorident(), (jbyteArray)info, person, startsincebase, lock,nullptr));
     LOGAR(" end getStreamingUnlockPayload");
     return res;
@@ -402,7 +402,7 @@ if(!state||!state->good()||!libre2_imp::usable_state(state,info)) {
         }
     delete state;
     state=fresh;
-    LOGGER("LIBRE2_DIAG stage=native-state result=reloaded\n");
+    LOGSTRING("LIBRE2_DIAG stage=native-state result=reloaded\n");
     }
 hist->awaitsScan=false;
 if(hist->getinfo()->wearduration<(7*24*60)) {
@@ -597,7 +597,7 @@ bool  setDeviceAddressB(JNIEnv *env,SensorGlucoseData *hist,jbyteArray jaddress 
         *saddress++=':';
         }
     saddress[-1]='\0';
-    LOGGER("LIBRE2_DIAG stage=ble-address result=stored\n");
+    LOGSTRING("LIBRE2_DIAG stage=ble-address result=stored\n");
     return true;
     }
 
