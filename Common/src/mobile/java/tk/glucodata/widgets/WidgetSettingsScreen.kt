@@ -2,10 +2,7 @@
 
 package tk.glucodata.widgets
 
-import tk.glucodata.ui.util.appFilterChipShapes
-import tk.glucodata.ui.util.appFilterChipColors
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.runtime.getValue
@@ -18,6 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 
 import tk.glucodata.ui.components.AppSlider
 
+import tk.glucodata.ui.util.SettingsChoiceChip
 import tk.glucodata.ui.util.appButtonShapes
 
 import android.Manifest
@@ -106,9 +104,7 @@ fun WidgetSettingsScreen(navController: NavController) {
                 Text(stringResource(R.string.widget_font_title), style = MaterialTheme.typography.titleMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     WidgetFontFamily.values().forEach { family ->
-                        FilterChip(
-                            shapes = appFilterChipShapes(),
-                            colors = appFilterChipColors(),
+                        SettingsChoiceChip(
                             selected = globalFont == family,
                             onClick = {
                                 globalFont = family
@@ -239,9 +235,7 @@ private fun WidgetDetailSettings(
         Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
-                FilterChip(
-                    shapes = appFilterChipShapes(),
-                    colors = appFilterChipColors(),
+                SettingsChoiceChip(
                     selected = config.primaryFontWeight == weight,
                     onClick = { onChange(config.copy(primaryFontWeight = weight, secondaryFontWeight = weight)) },
                     label = { Text(weight.toString()) })
@@ -385,9 +379,7 @@ private fun WidgetDetailSettings(
             Text(stringResource(R.string.widget_graph_hours), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(1, 3, 6, 12, 24).forEach { hours ->
-                    FilterChip(
-                        shapes = appFilterChipShapes(),
-                        colors = appFilterChipColors(),
+                    SettingsChoiceChip(
                         selected = config.graphHours == hours,
                         onClick = { onChange(config.copy(graphHours = hours)) },
                         label = { Text(stringResource(R.string.widget_hours_short, hours)) }
@@ -408,9 +400,7 @@ private fun WidgetDetailSettings(
                     WidgetStatsPeriod.DAY to R.string.widget_period_24h,
                     WidgetStatsPeriod.WEEK to R.string.widget_period_7d
                 ).forEach { (period, label) ->
-                    FilterChip(
-                        shapes = appFilterChipShapes(),
-                        colors = appFilterChipColors(),
+                    SettingsChoiceChip(
                         selected = config.statsPeriod == period,
                         onClick = { onChange(config.copy(statsPeriod = period)) },
                         label = { Text(stringResource(label)) }
@@ -448,9 +438,7 @@ private fun BackgroundChip(
     config: WidgetConfig,
     onChange: (WidgetConfig) -> Unit
 ) {
-    FilterChip(
-        shapes = appFilterChipShapes(),
-        colors = appFilterChipColors(),
+    SettingsChoiceChip(
         selected = config.background == background,
         onClick = { onChange(config.copy(background = background)) },
         label = { Text(stringResource(label)) }
