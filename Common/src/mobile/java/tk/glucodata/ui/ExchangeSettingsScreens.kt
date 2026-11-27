@@ -606,6 +606,7 @@ fun WearOsConfigScreen(navController: NavController) {
                 SettingsSearchAnchors.forRow(R.string.wear_auto_sensor_switch),
                 SettingsSearchAnchors.forRow(R.string.wear_direct_sensor_on_watch),
                 SettingsSearchAnchors.forRow(R.string.watch_enter_amounts),
+                SettingsSearchAnchors.forRow(R.string.phone_watch_icon_title),
             )
         )
         LazyColumn(
@@ -788,6 +789,7 @@ fun WearOsConfigScreen(navController: NavController) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingsItem(
                         title = stringResource(R.string.phone_watch_icon_title),
+                        searchAnchor = SettingsSearchAnchors.forRow(R.string.phone_watch_icon_title),
                         subtitle = stringResource(watchIconOptions.getOrNull(watchIconMode)
                             ?: R.string.phone_watch_icon_unset),
                         icon = Symbols.WatchFilled,
