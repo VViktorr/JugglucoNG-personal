@@ -1,10 +1,10 @@
 ![Logo-icon](Common/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp)
 
-# JugglucoNG
+# JugglucoNG — personal fork
 
-JugglucoNG is an experimental continuous glucose monitoring app for Android.
+This is an independent personal fork of [JugglucoNG](https://github.com/ctqvva/JugglucoNG), an experimental continuous glucose monitoring app for Android. JugglucoNG began as a fork of [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap Korthals Altes.
 
-Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap Korthals Altes, it continues to evolve with a modern Compose UI using Material 3, a sensor-independent data layer, support for multiple CGM systems, a treatment journal with IOB/eIOB/COB tracking, predictive simulation, a redesigned alarm engine, and bidirectional Nightscout integration.
+The `main` branch combines the newer upstream codebase with personal changes from [`main5`](https://github.com/VViktorr/JugglucoNG-personal/tree/main5). It includes a Material 3 Expressive interface on Android and Wear OS, a sensor-independent data layer, and a treatment journal with IOB/eIOB/COB tracking.
 
 ![Screenshot](docs/assets/juggluco_screenshot.png)
 
@@ -15,44 +15,25 @@ Originally forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap 
 >
 > JugglucoNG may contain bugs and may display incorrect, delayed, or missing data. Do not rely on it as the sole basis for treatment, insulin dosing, diagnosis, or other medical decisions. Always verify clinically significant readings using the manufacturer's official system or another appropriate method.
 
-## Download
+## Changes in this fork
 
-<!-- download-info:start -->
-[![Download JugglucoNG 1.3.3-Alpha for Android](docs/assets/download-android.svg?version=1.3.3-Alpha)][download-phone] [![Nightly builds](docs/assets/download-nightly.svg)](https://github.com/ctqvva/JugglucoNG/releases?q=nightly-&expanded=true)
-<!-- download-info:end -->
+- **Dashboard and chart.** Reorder glucose and information panels, adjust their widths and proportions, and set the chart’s vertical limits or drag the Y axis to rescale. The active insulin summary sits on the right of the dashboard chart. The floating glucose display has a drag handle after a position reset.
+- **Appearance and settings.** Choose the app and widget fonts independently. App typography can sync to Wear OS, and widgets preview and apply font changes separately. Settings search links directly to options such as the chart scale limits and the Wear OS notification icon.
+- **Home-screen widgets.** Classic, chart, range, and clock/weather layouts with adjustable sizes, colors, visibility, and font weights. Transfer shared settings to the other widget types in one action. The chart can span sensor handovers.
+- **Phone and watch notifications.** Configure the glucose content shown by Android Live Updates where supported. On Wear OS, choose a standard icon, glucose value, trend arrow, or value and arrow together.
+- **Reports and journal.** Create [LibreView-style PDF reports](docs/libreview-report-layout.md) with AGP percentiles, calendar summaries, meal profiles, and configurable fonts. The journal refreshes Health Connect activity when opened.
+- **Libre 2 and LibreView.** Libre 2 and Libre 2 Plus use the upstream Kotlin Gen2 connection and open Libre 2 processing, with the fork’s additional recovery for streams that stop delivering readings. LibreView supports region and unit selection, reauthentication, and registration retries.
 
-<sub>Android 8.0 or newer · [Release notes][download-release] · [Wear OS][download-wear] · [Phone DUB][download-phone-dub] · [Wear OS DUB][download-wear-dub]</sub>
+## Download and updates
 
-<details>
-<summary>Installation and other versions</summary>
+Use [Releases](https://github.com/VViktorr/JugglucoNG-personal/releases) for APKs from this fork. The [numbered build workflow](https://github.com/VViktorr/JugglucoNG-personal/actions/workflows/personal-apk.yml) publishes `main` builds with tags in the form `main-v<version>`.
 
-Open the downloaded APK on your phone. If Android asks, allow installation from
-the browser or file manager you used. Back up settings and data before updating;
-the matching APK updates your existing installation.
-
-| Download | Use it for |
+| APK filename suffix | Device |
 | --- | --- |
-| **[Android phone][download-phone]** | The standard phone app; the right choice for most people |
-| [Wear OS][download-wear] | A Wear OS watch |
-| [Phone DUB][download-phone-dub] | A second, separate phone app with its own data |
-| [Wear OS DUB][download-wear-dub] | The matching separate app on a Wear OS watch |
+| `-phone.apk` | Android phone |
+| `-wear.apk` | Wear OS watch |
 
-Standard and DUB installations update with their matching APK. Watch APKs are
-installed on the watch. [Nightlies](https://github.com/ctqvva/JugglucoNG/releases?q=nightly-&expanded=true)
-are test builds from recent main changes; choose the file ending in `-phone.apk`
-for a standard phone.
-
-Browse [all releases](https://github.com/ctqvva/JugglucoNG/releases) for older versions.
-
-</details>
-
-<!-- download-links:start -->
-[download-phone]: https://github.com/ctqvva/JugglucoNG/releases/download/1.3.3-Alpha/JugglucoNG-1.3.3-Alpha.apk
-[download-wear]: https://github.com/ctqvva/JugglucoNG/releases/download/1.3.3-Alpha/JugglucoNG-1.3.3-Alpha-wear.apk
-[download-phone-dub]: https://github.com/ctqvva/JugglucoNG/releases/download/1.3.3-Alpha/JugglucoNG-1.3.3-Alpha-dub.apk
-[download-wear-dub]: https://github.com/ctqvva/JugglucoNG/releases/download/1.3.3-Alpha/JugglucoNG-1.3.3-Alpha-wear-dub.apk
-[download-release]: https://github.com/ctqvva/JugglucoNG/releases/tag/1.3.3-Alpha
-<!-- download-links:end -->
+Both APKs are built for ARM64 and ARM32. Release assets include `SHA256SUMS.txt` and build metadata. Back up your settings and data before switching from `main5` or an upstream build. Android requires the app ID and signing key to match for an in-place update.
 
 ## Sensor and data-source support
 
@@ -60,7 +41,6 @@ Browse [all releases](https://github.com/ctqvva/JugglucoNG/releases) for older v
 - Dexcom G7 / ONE+
 - CareSens Air
 - Accu-Chek SmartGuide
-
 - Sibionics GS1 (EU, Chinese, and Hematonix), Sibionics 2
 - AiDex X / LinX
 - iCan i3 / i6 (Sinocare)
@@ -92,26 +72,37 @@ Support for individual sensors is community-developed and may change or stop wor
 
 ## Building
 
-Requirements: JDK 21, Android SDK with NDK and CMake, and the libjuice submodule:
+Use JDK 21, Android SDK Platform 37.2, Build-Tools 37.0.0, NDK r30 (`30.0.16248370`), and CMake 4.1.2. The repository includes the Gradle 9.9.2 wrapper.
+
+| SDK setting | Phone | Wear OS |
+| --- | --- | --- |
+| Compile SDK | 37.2 | 37.2 |
+| Target SDK | 36 | 35 |
+| Minimum API level | 26 | 26 |
 
 ```sh
-git submodule update --init
-
-./gradlew :Common:assembleMobileDebug --no-daemon
---
-./gradlew :Common:assembleMobileRelease --no-daemon
+git submodule update --init --recursive
+bash scripts/dist/install-sdk.sh
+./gradlew :Common:assembleMobileDebug :Common:assembleWearDebug
 ```
 
-The app is localized into 15 languages; new user-facing strings go into `Common/src/main/res/values/strings.xml` and every `values-*` locale.
-
-Build helpers live in [scripts/](scripts/README.md), developer tools in `tools/`, and documentation images in `docs/assets/`. Historical root files are preserved in [tools/archive/root-cleanup/](tools/archive/root-cleanup/README.md).
-
-## Version history
-
-See the [Releases page](https://github.com/ctqvva/JugglucoNG/releases) for the changelog of each Alpha build.
+The SDK installer uses `ANDROID_HOME` and Android SDK Command-line Tools. See [build scripts](scripts/README.md) and the [numbered build workflow](.github/workflows/personal-apk.yml) for build and release tooling.
 
 ## License and credits
 
-GPL-3.0 (see [LICENSE.txt](LICENSE.txt)). Forked from [Juggluco](https://github.com/j-kaltes/Juggluco) by Jaap Korthals Altes. Developed by [ctqvva](https://github.com/ctqvva) with contributions from the community.
+The app source is licensed under GPL-3.0. See [LICENSE.txt](LICENSE.txt). Thanks to Jaap Korthals Altes, [ctqvva](https://github.com/ctqvva), and the Juggluco and JugglucoNG contributors.
+
+### Bundled font licenses
+
+| Fonts | License and notices |
+| --- | --- |
+| IBM Plex Sans, Comfortaa, DM Sans, Inter, Noto Sans, Oswald, Plus Jakarta Sans, Poppins, Roboto Condensed, Roboto Flex, Rubik | SIL Open Font License 1.1. [Individual licenses and copyright notices](Common/src/main/assets/font_licenses/) |
+| Ubuntu | [Ubuntu Font Licence 1.0](Common/src/main/assets/font_licenses/ubuntu.txt) |
+| HarmonyOS Sans | [Huawei HarmonyOS Sans Fonts License Agreement](Common/src/main/assets/font_licenses/harmonyos.txt) and [copyright notice](Common/src/main/assets/font_licenses/NOTICE.txt) |
+| PDF report fonts | SIL Open Font License 1.1. [Inter](Common/src/mobile/assets/report_fonts/Inter-OFL.txt) and [Liberation Sans](Common/src/mobile/assets/report_fonts/Liberation-OFL.txt) |
+| Open Sans used in mobile resources | [SIL Open Font License 1.1](Common/src/mobile/assets/font_licenses/opensans.txt) |
+| Carlito subset in the native renderer | [SIL Open Font License 1.1](Common/src/main/assets/font_licenses/carlito.txt) |
+
+The selectable fonts’ licenses are available under **About → Font licences** on the phone and in the watch settings. For font sources and checksums, see the [font catalog documentation](docs/fonts/README.md).
 
 **Disclaimer:** This software is provided **"as is"**, without warranty of any kind, to the fullest extent permitted by applicable law. JugglucoNG is experimental software and is **not a medical device**. The authors and contributors make no guarantees regarding its accuracy, reliability, availability, or fitness for any particular purpose. Always verify clinically significant readings using the manufacturer's official system or another appropriate method before making treatment decisions.
