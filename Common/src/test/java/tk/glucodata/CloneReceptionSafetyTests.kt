@@ -1,6 +1,7 @@
 package tk.glucodata
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -143,8 +144,11 @@ class CloneReceptionSafetyTests {
             .replace(Regex("\\s+"), " ")
 
         assertTrue(transport.contains("std::lock_guard<std::mutex> sendLock(sendMutex)"))
-        assertTrue(transport.contains("lck.unlock(); rel_msec= sendpacket"))
-        assertTrue(transport.contains("rel_msec= sendpacket(agent, trans_id,data,len, index, starttime2); lck.lock();"))
+        val unlockedRetransmissions = Regex(
+            """lck\.unlock\(\); sendpacket\(agent,\s*trans_id,\s*data,\s*len,\s*""" +
+                """(index|totalminuslastunits),\s*starttime2\); lck\.lock\(\);"""
+        ).findAll(transport).map { it.groupValues[1] }.toSet()
+        assertEquals(setOf("index", "totalminuslastunits"), unlockedRetransmissions)
         assertTrue(transport.contains("lck.unlock(); con->endConnection();"))
     }
 
