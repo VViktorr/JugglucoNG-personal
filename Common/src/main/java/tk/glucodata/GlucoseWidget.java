@@ -36,6 +36,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.widget.RemoteViews;
+import org.json.JSONObject;
 
 public class GlucoseWidget extends AppWidgetProvider {
     private static final String ACTION_GLUCOSE_UPDATE = "tk.glucodata.action.GLUCOSE_UPDATE";
@@ -44,28 +45,51 @@ public class GlucoseWidget extends AppWidgetProvider {
     private static final WidgetWorkDispatcher worker = new WidgetWorkDispatcher();
     static RemoteGlucose remote = null;
     static int width=0;
+    static int height=0;
+    private static final int DEFAULT_WIDGET_WIDTH_DP = 200;
+    private static final int DEFAULT_WIDGET_HEIGHT_DP = 50;
 
-private static void setWidth(int widthdip) {
+private static void setSize(int widthdip, int heightdip) {
     synchronized (widgetLock) {
+        widthdip = Math.max(1, widthdip);
+        heightdip = Math.max(1, heightdip);
         var density = GlucoseCurve.getDensity();
         if (density <= 0.0f) {
             density = 1.0f;
         }
-        var widthpx = widthdip * density;
-//      var fontsize=widthpx*0.22f;
-        var fontsize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
-        remote = new RemoteGlucose(fontsize, widthpx, Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
+        final float widthpx = widthdip * density;
+        final float heightpx = heightdip * density;
+        // Size against both axes. The old widget only followed width, which made
+        // a resized 1x1 widget render a short bitmap inside a much taller host.
+        final float widthDrivenSize = widthpx * (Applic.unit == 1 ? 0.35f : 0.4f);
+        final float heightDrivenSize = heightpx * 0.72f;
+        float textScale = 1.0f;
+        try {
+            var prefs = Applic.app.getSharedPreferences("home_widget_defaults", Context.MODE_PRIVATE);
+            var raw = prefs.getString("BASIC", null);
+            if (raw != null) {
+                textScale = Math.max(0.70f, Math.min(1.40f, new JSONObject(raw).optInt("textScale", 100) / 100.0f));
+            } else {
+                textScale = Applic.app.getSharedPreferences("tk.glucodata_preferences", Context.MODE_PRIVATE)
+                        .getFloat("notification_font_size", 1.0f);
+            }
+        } catch (Throwable ignored) {}
+        final float fontsize = Math.max(1.0f, Math.min(widthDrivenSize, heightDrivenSize) * textScale);
+        remote = new RemoteGlucose(fontsize, widthpx, heightpx,
+                Applic.unit == 1 ? 0.30f : 0.32f, 2, true);
         width = widthdip;
+        height = heightdip;
     }
 }
 @Override
 public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle widgetInfo) {
    worker.execute(() -> {
       var widthdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+      var heightdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
       {if(doLog) {Log.i(LOG_ID,"onAppWidgetOptionsChanged widthdip="+widthdip);};};
       used=true;
-      if(widthdip!=0&&widthdip!=width) {
-          setWidth(widthdip);
+      if(widthdip>0 && heightdip>0 && (widthdip!=width || heightdip!=height)) {
+          setSize(widthdip, heightdip);
           updateAppWidget(context, appWidgetManager, appWidgetId, loadFrame());
           }
    });
@@ -116,19 +140,19 @@ static private void updateAppWidget(Context context, AppWidgetManager appWidgetM
         {if(doLog) {Log.d(LOG_ID, key + " = " + widgetInfo.get(key));};};
         }
    var widthdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-   if(widthdip==0) {
-      if(remote==null)
-         widthdip=200;
-      else
-         widthdip=width;
-      } if(widthdip!=width) {
-      setWidth(widthdip);
+   var heightdip=widgetInfo.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+   if(widthdip<=0)
+      widthdip=(remote==null || width<=0) ? DEFAULT_WIDGET_WIDTH_DP : width;
+   if(heightdip<=0)
+      heightdip=(remote==null || height<=0) ? DEFAULT_WIDGET_HEIGHT_DP : height;
+   if(widthdip!=width || heightdip!=height) {
+      setSize(widthdip, heightdip);
       }
    RemoteViews  views;
    int id= R.id.arrowandvalue;
    synchronized (widgetLock) {
       if (remote == null) {
-         setWidth(widthdip == 0 ? 200 : widthdip);
+         setSize(widthdip, heightdip);
       }
 	      final var current = frame.getSnapshot();
       if (current != null) {
@@ -136,7 +160,7 @@ static private void updateAppWidget(Context context, AppWidgetManager appWidgetM
          final var time = current.getTimeMillis();
          if ((now - time) > oldage) {
             final String tformat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(new java.util.Date(time));
-            String message = "\n  " + context.getString(R.string.nonewvalue) + tformat;
+            String message = context.getString(R.string.nonewvalue) + tformat;
             views = remoteMessage(message);
             id = R.id.content;
          } else {
@@ -144,7 +168,7 @@ static private void updateAppWidget(Context context, AppWidgetManager appWidgetM
             views = remote.widgetRemote(current, frame.getDeltaText());
          }
       } else {
-         views = remoteMessage("\n  " + context.getString(R.string.novalue));
+         views = remoteMessage(context.getString(R.string.novalue));
          id = R.id.content;
       }
    }
@@ -184,8 +208,9 @@ final    private static String LOG_ID="GlucoseWidget";
 
     @Override
     public void onEnabled(Context context) {
-   used=true;
-        // Enter relevant functionality for when the first widget is created
+        used=true;
+        // Do not wait for the next glucose broadcast after the launcher recreates the host.
+        update();
     }
 
     @Override
@@ -214,6 +239,15 @@ private static void showOldValue(long time) {
       }
 
    }
+ public static void refreshSettings() {
+    synchronized (widgetLock) {
+       remote = null;
+       width = 0;
+       height = 0;
+    }
+    worker.execute(() -> update(true));
+    }
+
  public static void update() {
     worker.execute(() -> update(false));
     }
@@ -224,8 +258,7 @@ private static void showOldValue(long time) {
       return;
     }
     try {
-    if(used) {
-      if (!updateThrottle.tryAcquire(SystemClock.elapsedRealtime(), force)) {
+      if (!used || !updateThrottle.tryAcquire(SystemClock.elapsedRealtime(), force)) {
          return;
       }
       final var cl= GlucoseWidget.class;
@@ -234,9 +267,6 @@ private static void showOldValue(long time) {
       if(ids.length>0) {
          updateall(Applic.app, manage, ids);
          }
-      else
-         used=false;
-      }
     } catch (Throwable th) {
       Log.stack(LOG_ID, "update()", th);
     }

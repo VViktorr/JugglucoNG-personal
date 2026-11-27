@@ -1260,6 +1260,7 @@ private fun NavGraphBuilder.appDestinations(
     gatedComposable("settings/journal/calculations") { JournalCalculationsSettingsScreen(navController, dashboardViewModel) }
     gatedComposable("settings/journal/entry-types") { JournalEntryTypesSettingsScreen(navController, dashboardViewModel) }
     gatedComposable("settings/journal/history") {
+    gatedComposable("settings/widgets") { tk.glucodata.widgets.WidgetSettingsScreen(navController) }
         JournalSettingsHistoryRoute(
             dashboardViewModel = dashboardViewModel,
             navController = navController,

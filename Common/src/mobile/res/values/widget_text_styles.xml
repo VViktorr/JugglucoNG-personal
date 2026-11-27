@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WidgetTextWeight300"><item name="android:textFontWeight">300</item></style>
+    <style name="WidgetTextWeight400"><item name="android:textFontWeight">400</item></style>
+    <style name="WidgetTextWeight500"><item name="android:textFontWeight">500</item></style>
+    <style name="WidgetTextWeight600"><item name="android:textFontWeight">600</item></style>
+    <style name="WidgetTextWeight700"><item name="android:textFontWeight">700</item></style>
+</resources>
