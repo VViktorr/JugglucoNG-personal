@@ -88,23 +88,22 @@ git submodule update --init --recursive
 
 ### Windows (PowerShell)
 
-In Android Studio, open **Tools → SDK Manager** to find the **Android SDK Location**. Under **SDK Tools**, install **Android SDK Command-line Tools (latest)**. Set `ANDROID_HOME` to that SDK location. The example uses the default Windows path.
+In Android Studio, open **Tools → SDK Manager** to find the **Android SDK Location**. Under **SDK Tools**, install **Android SDK Command-line Tools (latest)**. Set `ANDROID_HOME` to that SDK location. The example uses the default Windows path and [Android CLI](https://developer.android.com/tools/agents/android-cli/commands/sdk_install).
 
 ```powershell
 $env:ANDROID_HOME = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
-$sdkManager = Join-Path $env:ANDROID_HOME 'cmdline-tools\latest\bin\sdkmanager.bat'
-if (-not (Test-Path -LiteralPath $sdkManager -PathType Leaf)) {
+$androidCli = Join-Path $env:ANDROID_HOME 'cmdline-tools\latest\bin\android.exe'
+if (-not (Test-Path -LiteralPath $androidCli -PathType Leaf)) {
     throw "Check ANDROID_HOME and install Android SDK Command-line Tools (latest)."
 }
 
-& $sdkManager --licenses
-if ($LASTEXITCODE -ne 0) { throw "SDK license setup failed." }
-
-& $sdkManager 'platforms;android-37.2' 'platforms;android-36' 'build-tools;37.0.0' 'ndk;30.0.16248370' 'cmake;4.1.2'
+& $androidCli "--sdk=$env:ANDROID_HOME" sdk install 'platforms/android-37.2' 'platforms/android-36' 'build-tools/37.0.0' 'ndk/30.0.16248370' 'cmake/4.1.2'
 if ($LASTEXITCODE -ne 0) { throw "SDK package installation failed." }
 
 .\gradlew.bat :Common:assembleMobileDebug :Common:assembleWearDebug
 ```
+
+The Android Studio SDK Manager can also install the packages. Under **SDK Platforms**, select Android SDK Platform 37.2 and 36. Under **SDK Tools**, enable **Show Package Details** and select Build-Tools 37.0.0, NDK (Side by side) 30.0.16248370, and CMake 4.1.2.
 
 Run these commands in the same PowerShell session. To persist the SDK location for this checkout, set `sdk.dir` in the root `local.properties` file, for example `sdk.dir=C:/Users/YourName/AppData/Local/Android/Sdk`. If the file already has an SDK path, make sure it points to the same installation.
 
