@@ -156,8 +156,7 @@ fun CalibrationBottomSheet(
 
     // Data Flow
     val duplicateThresholdMs = 60_000L
-    val allCalibrations by CalibrationManager.getCalibrationsFlow()?.collectAsStateWithLifecycle(initialValue = emptyList())
-        ?: remember { mutableStateOf(emptyList()) }
+    val allCalibrations by CalibrationManager.getCalibrationsFlow().collectAsStateWithLifecycle(initialValue = emptyList())
     val calibrations = allCalibrations
         .filter { it.isRawMode == isRawMode }
         .filter { CalibrationManager.calibrationMatchesSensor(it.sensorId, currentSensor) }

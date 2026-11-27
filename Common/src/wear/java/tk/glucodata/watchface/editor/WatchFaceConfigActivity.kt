@@ -159,7 +159,7 @@ override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<Str
         }
 
         else -> {
-        {if(doLog) {Log.i(LOG_ID, "On known permission $requestCode");};};
+            if (doLog) Log.i(LOG_ID, "Permission result for request $requestCode")
         }
     }
 }
@@ -193,12 +193,10 @@ private val requestPermissionLauncher = registerForActivityResult(ActivityResult
                         val builder = AlertDialog.Builder(this)
                         builder.setTitle(R.string.sensorpermission)
                         builder.setMessage(R.string.sensorpermissionmessage).
-                        setPositiveButton(R.string.ok, { _, _ -> {
-                        Log.i(LOG_ID, "now ask permission")
-//                                heartratebox = box askpermission(bodies)
-
-                           }
-                       }) .show().setCanceledOnTouchOutside(false)
+                        setPositiveButton(R.string.ok) { _, _ ->
+                            heartratebox = box
+                            askpermission(bodies)
+                        }.show().setCanceledOnTouchOutside(false)
                         }
                 else {
                      askpermission(bodies)

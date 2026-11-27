@@ -3373,7 +3373,7 @@ class OttaiBleManager(
      * chunk. Record the miss first: a detected-gap window stays on the hole ledger until its data
      * arrives or the attempt cap retires it (truly-empty overshoot ranges).
      */
-    private fun abandonHistoryWindow() = synchronized(historyChainLock) {
+    private fun abandonHistoryWindow(): Unit = synchronized(historyChainLock) {
         val window = historyWindow ?: return
         cancelHistoryWatchdog()
         settleHistoryWindow(window)
@@ -4973,7 +4973,7 @@ class OttaiBleManager(
         handler.postDelayed(pendingHistoryChunkRunnable, HISTORY_CHUNK_DELAY_MS)
     }
 
-    private fun checkHistoryWatchdog() = synchronized(historyChainLock) {
+    private fun checkHistoryWatchdog(): Unit = synchronized(historyChainLock) {
         if (stop || phase != Phase.STREAMING || sessionKeyHex.isBlank()) return
         // Read once, under the lock: bounds and budget belong to this one window, and nothing can
         // complete or replace it until this run is done with it.

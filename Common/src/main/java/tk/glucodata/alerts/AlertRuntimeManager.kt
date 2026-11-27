@@ -480,7 +480,7 @@ object AlertRuntimeManager {
             nowMs = nowMs,
             sensorId = lastDisplaySnapshot?.sensorId,
             sensorGen = lastDisplaySnapshot?.sensorGen ?: 0,
-            forecastMinutes = config?.forecastMinutes,
+            forecastMinutes = config.forecastMinutes,
             isMmol = Applic.unit == 1,
             episodeActive = standardEpisodes.isActive(AlertType.PRE_LOW),
             iobNext30 = iobNext30,

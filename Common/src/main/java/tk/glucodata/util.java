@@ -84,10 +84,7 @@ public static Button getbutton(Context act, int res) {
 	}
 	@SuppressWarnings("deprecation")
 static void sethtml(TextView view, String text) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        view.setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
-    }
-    else view.setText(fromHtml(text));
+    view.setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
       view.setTextIsSelectable(true);
            view.setTextColor(Color.WHITE);
 

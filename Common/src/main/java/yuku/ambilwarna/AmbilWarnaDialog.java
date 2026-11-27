@@ -132,7 +132,7 @@ public interface LayoutView {
 				layoutset.lay(view);
 				moveCursor();
 				moveTarget();
-				view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+				view.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 			}
 		});
 	}

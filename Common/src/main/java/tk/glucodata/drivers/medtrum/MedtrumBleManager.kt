@@ -590,7 +590,7 @@ class MedtrumBleManager(
             if (retarget) {
                 // A scan found the patch at a new address while an attempt on the old one was
                 // still pending; that attempt would never complete.
-                Log.i(TAG, "Patch moved to ${target?.address} — dropping the pending attempt")
+                Log.i(TAG, "Patch moved to ${target.address} — dropping the pending attempt")
                 closeGattTransport()
             } else if (pending != null || target != null) {
                 Log.i(TAG, "Skipping duplicate connect: phase=$phase")

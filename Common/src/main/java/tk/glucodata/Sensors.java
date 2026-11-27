@@ -14,7 +14,6 @@ import static tk.glucodata.util.getbutton;
 import static tk.glucodata.util.getcheckbox;
 
 import android.graphics.Color;
-import android.os.Build;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,12 +44,7 @@ void setSensorptrText(long sensorptr) {
     settext(SuperGattCallback.localizeSensorStatus(Natives.sensortextfromSensorptr(sensorptr)));
     }
 void settext(String text) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            textview.setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
-            }
-        else {
-            textview.setText(fromHtml(text));
-            }
+        textview.setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
          }
 Sensors(MainActivity act) {
          textview=new TextView(act);

@@ -563,7 +563,7 @@ fun ReadingRow(
                                 insulinPreset = entry.insulinPresetId?.let(journalPresetsById::get),
                                 food = entry.foodId?.let(journalFoodsById::get),
                                 expanded = journalChipExpanded,
-                                onClick = { onJournalEntryClick?.invoke(entry) }
+                                onClick = { onJournalEntryClick.invoke(entry) }
                             )
                         }
                     },

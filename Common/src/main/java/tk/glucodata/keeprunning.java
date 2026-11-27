@@ -162,7 +162,7 @@ void stopper() {
    logLifecycleState("stopper",null);
    Notify.invalidateStartupRestore(this);
    Notify.cancelOngoingNotificationRefreshes(this);
-   stopForeground(true);
+   stopForeground(STOP_FOREGROUND_REMOVE);
    stopSelf();
 //   turnoffwakelock();
    {if(doLog) {Log.i(LOG_ID,"Stopped");};};

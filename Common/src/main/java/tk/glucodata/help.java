@@ -24,7 +24,6 @@ package tk.glucodata;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Color;
-import android.os.Build;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.view.ViewGroup;
@@ -102,12 +101,7 @@ public static   void basehelp(int res,Activity act,Consumer<ViewGroup> okproc) {
     ScrollView       helpscroll=new ScrollView(act);
     TextView helpview=new TextView(act);
 
-    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        helpview.setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
-        }
-    else {
-        helpview.setText(fromHtml(text));
-        }
+    helpview.setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
      helpview.setTextColor(Color.WHITE);
      helpview.setTextIsSelectable(true);
      helpview.setScroller(null);
@@ -287,12 +281,7 @@ public static   void help(String text,Activity act,Consumer<ViewGroup>  okproc,P
          }
      //   ViewGroup.MarginLayoutParams marg = (ViewGroup.MarginLayoutParams) helplayout.getLayoutParams();
 //       whelpview.get().setText(Html.fromHtml(text));
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        whelpview.get().setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
-    }
-    else {
-        whelpview.get().setText(fromHtml(text));
-    }
+    whelpview.get().setText(fromHtml(text,TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
 
      Runnable closerun=() -> {
          if (whelplayout != null) {
