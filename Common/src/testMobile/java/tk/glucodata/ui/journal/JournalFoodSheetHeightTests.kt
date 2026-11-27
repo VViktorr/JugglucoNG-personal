@@ -26,9 +26,9 @@ class JournalFoodSheetHeightTests {
     class TestApplication : Applic() { override fun onCreate() {} }
     @get:Rule val compose = createComposeRule()
 
+    // The idle carbs form is about 1,384 dp tall on API 34. Leave room to measure its growth.
     @Test
-    // Leave room for the results above the full carbs form on API 34.
-    @Config(qualifiers = "+h1400dp")
+    @Config(qualifiers = "+h1800dp")
     fun closingTallFoodSearchReturnsTheSheetToItsShortHeight() {
         val foods = (1L..30L).map { JournalFood(it, "Meal sample $it", 10f, null, null, 90, 0, false, false, it.toInt()) }
         compose.setContent {
