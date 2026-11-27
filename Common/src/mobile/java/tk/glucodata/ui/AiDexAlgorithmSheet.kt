@@ -1,4 +1,5 @@
 package tk.glucodata.ui
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,7 +49,7 @@ internal fun AiDexAlgorithmSheet(serial: String, selection: Int, onSelect: (Int)
     val context = LocalContext.current
     var ribbon by remember { mutableStateOf(GlucoseUncertaintyDisplay.isRibbonEnabled(context)) }
     StableModalBottomSheet(onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberExpandedModalSheetState(),
         dragHandle = { CompactSheetDragHandle() }) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp).padding(bottom = 32.dp)) {

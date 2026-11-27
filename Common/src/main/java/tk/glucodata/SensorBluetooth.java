@@ -2210,7 +2210,7 @@ public class SensorBluetooth {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     try {
-                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        final BluetoothDevice device = androidx.core.content.IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
                         final String address = device != null ? device.getAddress() : null;
                         if (doLog) {
                             Log.i(LOG_ID, "onReceive ACTION_PAIRING_REQUEST " + address);
@@ -2271,7 +2271,7 @@ public class SensorBluetooth {
         bondStateReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                final BluetoothDevice device = androidx.core.content.IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
                 final var tmp = blueone;
                 if (tmp == null) {
                     {

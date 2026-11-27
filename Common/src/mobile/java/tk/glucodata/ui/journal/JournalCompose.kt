@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 
 package tk.glucodata.ui.journal
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import tk.glucodata.data.journal.JournalActionOrder
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,7 +75,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.input.TextFieldValue
@@ -387,7 +387,7 @@ fun JournalEntrySheet(
     onDelete: ((Long) -> Unit)? = null,
     sensorSerialProvider: () -> String?
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     val context = LocalContext.current
     val activeInsulinPresets = remember(insulinPresets) { insulinPresets.filter { !it.isArchived } }
     val calculationInsulinPresets = remember(activeInsulinPresets) {

@@ -124,14 +124,14 @@ static bool copyfile(const char *infile, int out) {
   destruct _2([in] { close(in); });
   auto len = filesize(in);
   if (len <= 0) {
-    LOGGER("size %s=%d\n", infile, len);
+    LOGGER("size %s=%lld\n", infile, static_cast<long long>(len));
     return false;
   }
   auto outlen = sendfile(out, in, nullptr, len);
   bool suc = outlen == len;
   if (!suc) {
-    flerror("sendfile(%d,%d (%s) ,null,%lld)=%zd", out, in, infile, len,
-            outlen);
+    flerror("sendfile(%d,%d (%s) ,null,%lld)=%zd", out, in, infile,
+            static_cast<long long>(len), outlen);
   }
   return suc;
 #else

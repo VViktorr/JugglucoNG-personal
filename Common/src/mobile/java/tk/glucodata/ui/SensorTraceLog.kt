@@ -1,5 +1,6 @@
 package tk.glucodata.ui
 
+import android.content.ClipData
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
@@ -42,10 +44,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -221,7 +223,7 @@ internal fun sensorTraceExportName(serial: String, at: Date = Date()): String {
 @Composable
 internal fun SensorTraceLog(sensor: SensorInfo) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val identifiers = remember(sensor.serial, sensor.deviceAddress) {
         buildSet {
             add(sensor.serial)
@@ -259,6 +261,7 @@ internal fun SensorTraceLog(sensor: SensorInfo) {
 
     val scope = rememberCoroutineScope()
     val savingError = stringResource(R.string.error_saving_file)
+    val logLabel = stringResource(R.string.sensor_connection_log)
     val saveLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -364,7 +367,7 @@ internal fun SensorTraceLog(sensor: SensorInfo) {
         // button is a 40dp circle inside a 48dp target, so the row is nudged by that 4dp
         // overhang and the last button's rim lands on the padding, not past it.
         TraceLogActions(
-            onCopy = { clipboard.setText(AnnotatedString(rendered)) },
+            onCopy = { scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(logLabel, rendered))) } },
             onShare = {
                 val share = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
@@ -405,7 +408,7 @@ private fun TraceLogActions(onCopy: () -> Unit, onShare: () -> Unit, onSave: () 
 private fun TraceLogAction(icon: ImageVector, label: Int, onClick: () -> Unit) {
     val text = stringResource(label)
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
         tooltip = { PlainTooltip { Text(text) } },
         state = rememberTooltipState(),
     ) {

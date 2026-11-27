@@ -522,12 +522,14 @@ extern void stopreceiver() ;
 //constexpr const char orsettings[]="orsettings.dat";
 
 extern std::vector<Numdata*> numdatas;
+#ifdef WEAROS
+extern bool rmInitLayout();
+#endif
  void uptodate(int ind) {
      LOGGER("uptodate %d\n",ind);
     lastuptodate[ind]=time(nullptr);
     #ifdef WEAROS
-    bool rmInitLayout();
-        static bool did=rmInitLayout();
+    [[maybe_unused]] static const bool did = rmInitLayout();
     #endif
     }
 

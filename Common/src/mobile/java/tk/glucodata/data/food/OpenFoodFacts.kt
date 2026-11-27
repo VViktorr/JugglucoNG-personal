@@ -212,7 +212,7 @@ object OpenFoodFactsParser {
 
     /** The product page gives brands as "A, B"; the search service as ["A", "B"]. */
     private fun JSONObject.brand(): String? {
-        val value = opt("brands")
+        val value: Any? = opt("brands")
         val first = when (value) {
             is JSONArray -> (0 until value.length()).map { value.optString(it) }.firstOrNull { it.isNotBlank() }
             is String -> value.split(',').firstOrNull { it.isNotBlank() }
@@ -223,7 +223,8 @@ object OpenFoodFactsParser {
 
     private fun JSONObject.finite(key: String): Float? {
         if (!has(key) || isNull(key)) return null
-        val number = when (val value = opt(key)) {
+        val value: Any? = opt(key)
+        val number = when (value) {
             is Number -> value.toFloat()
             is String -> value.replace(',', '.').toFloatOrNull()
             else -> null

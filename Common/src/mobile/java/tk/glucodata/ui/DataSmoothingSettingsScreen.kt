@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.ControlledSlider
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -27,7 +29,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -213,7 +214,7 @@ internal fun DataSmoothingSettingsContent(
                             }
                         }
 
-                        Slider(
+                        ControlledSlider(
                             value = sliderIndex,
                             onValueChange = { sliderIndex = it },
                             onValueChangeFinished = {

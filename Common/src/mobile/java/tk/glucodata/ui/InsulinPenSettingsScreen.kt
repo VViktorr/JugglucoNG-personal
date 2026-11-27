@@ -5,6 +5,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.ControlledSlider
+
 import tk.glucodata.ui.SettingsSearchAnchors
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ButtonDefaults
@@ -46,7 +48,6 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
@@ -179,7 +180,7 @@ fun InsulinPenSettingsScreen(navController: NavController) {
                                 value = penImportNotificationDurationLabel(pendingDurationMinutes),
                                 enabled = enabled && backgroundImportEnabled,
                             )
-                            Slider(
+                            ControlledSlider(
                                 value = notificationDurationIndex,
                                 onValueChange = { value ->
                                     notificationDurationIndex = value.roundToInt().toFloat()

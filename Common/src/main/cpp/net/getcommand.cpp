@@ -1504,7 +1504,7 @@ static bool savefileonce(const struct fileonce_t *gegs, int cloneTransport,
     }
     LOGARTAG("savedata success");
 #ifdef WEAROS
-   static const bool res=startedreceiving();
+   [[maybe_unused]] static const bool res=startedreceiving();
 #endif
     return true;
     }

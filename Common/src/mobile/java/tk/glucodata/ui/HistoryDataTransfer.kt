@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.ControlledSlider
+
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.ButtonDefaults
 import android.content.Intent
@@ -31,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
@@ -1076,7 +1077,7 @@ private fun BackupRetentionRow(
             label = label,
             value = options[index.toInt().coerceIn(options.indices)].toString()
         )
-        Slider(
+        ControlledSlider(
             value = index,
             onValueChange = { index = it },
             onValueChangeFinished = { onSelected(options[index.toInt().coerceIn(options.indices)]) },

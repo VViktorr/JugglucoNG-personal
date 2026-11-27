@@ -18290,34 +18290,34 @@ private fun ClippingfilterStep120(f: ClippingfilterFrame, pc: Int): Int {
 private fun ClippingfilterStep121(f: ClippingfilterFrame, pc: Int): Int {
     return when (pc) {
         3872 -> {
-            if ((b(((f.lVar18).toInt()) != (0x5c))) != 0) 3879 else 3871
+            if ((b(((f.lVar18)) != (0x5c))) != 0) 3879 else 3871
         }
         3873 -> {
-            f.fVar35 = f32(((f.fVar35) + (readF32(f.param_1.plus((f.lVar5).toInt())))))
+            f.fVar35 = f32(((f.fVar35) + (readF32(f.param_1.plus((f.lVar5))))))
             3872
         }
         3874 -> {
-            f.fVar57 = f32(((f.fVar57) + (readF32(f.param_1.plus((f.lVar4).toInt())))))
+            f.fVar57 = f32(((f.fVar57) + (readF32(f.param_1.plus((f.lVar4))))))
             3873
         }
         3875 -> {
-            f.fVar22 = f32(((f.fVar22) + (readF32(f.param_1.plus((f.lVar3).toInt())))))
+            f.fVar22 = f32(((f.fVar22) + (readF32(f.param_1.plus((f.lVar3))))))
             3874
         }
         3876 -> {
-            f.lVar18 = (((f.lVar18).toInt()) + (4))
+            f.lVar18 = (((f.lVar18)) + (4))
             3875
         }
         3877 -> {
-            f.lVar5 = (((f.lVar18).toInt()) + (0xd8))
+            f.lVar5 = (((f.lVar18)) + (0xd8))
             3876
         }
         3878 -> {
-            f.lVar4 = (((f.lVar18).toInt()) + (0x7c))
+            f.lVar4 = (((f.lVar18)) + (0x7c))
             3877
         }
         3879 -> {
-            f.lVar3 = (((f.lVar18).toInt()) + (0x20))
+            f.lVar3 = (((f.lVar18)) + (0x20))
             3878
         }
         3880 -> {
@@ -18389,7 +18389,7 @@ private fun ClippingfilterStep121(f: ClippingfilterFrame, pc: Int): Int {
             3895
         }
         3897 -> {
-            if ((b(((f.lVar18).toInt()) != (0))) != 0) 3902 else 3896
+            if ((b(((f.lVar18)) != (0))) != 0) 3902 else 3896
         }
         3898 -> {
             writeI32(f.pjVar1.plus(0xb4), readI32(f.pjVar1.plus(0xb8)))
@@ -18404,11 +18404,11 @@ private fun ClippingfilterStep121(f: ClippingfilterFrame, pc: Int): Int {
             3899
         }
         3901 -> {
-            f.lVar18 = (((f.lVar18).toInt()) + (4))
+            f.lVar18 = (((f.lVar18)) + (4))
             3900
         }
         3902 -> {
-            f.pjVar1 = f.param_1.plus((f.lVar18).toInt()).plus(0x7c)
+            f.pjVar1 = f.param_1.plus((f.lVar18)).plus(0x7c)
             3901
         }
         3903 -> {

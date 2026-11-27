@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package tk.glucodata.ui.stats
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import tk.glucodata.ui.util.appButtonShapes
 
@@ -27,7 +28,6 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import tk.glucodata.ui.components.CompactSheetDragHandle
 import tk.glucodata.ui.components.StableModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -345,7 +345,7 @@ fun StatsDateRangeSheet(
 
     StableModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberExpandedModalSheetState(),
         dragHandle = { CompactSheetDragHandle() }
     ) {
         Column(

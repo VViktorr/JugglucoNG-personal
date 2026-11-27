@@ -48,7 +48,6 @@ LOGGER("bufaddress: %p: %s",buf,buf);
 
 extern int getlogfile();
 int getlogfile() {
-#pragma  message "basedir" BASEDIR
 	static int handle=-1;
         if(handle!=-1) 
                 return handle;

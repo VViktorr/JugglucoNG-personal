@@ -560,7 +560,7 @@ fun SettingsSlider(
     verticalArrangement = Arrangement.spacedBy(SliderHeaderGap)
     ) {
     SliderHeader(label = title, value = valueText)
-        Slider(
+        ControlledSlider(
             value = value,
             onValueChange = onValueChange,
             valueRange = range,

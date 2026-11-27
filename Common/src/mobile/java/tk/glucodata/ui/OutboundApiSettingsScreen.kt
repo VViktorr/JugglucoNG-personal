@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package tk.glucodata.ui
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import tk.glucodata.ui.components.ExpandableEditorCard
 import tk.glucodata.ui.components.AdaptiveTrailingRow
@@ -44,7 +45,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -684,7 +684,7 @@ private fun TriggerEditorSheet(
     onDismiss: () -> Unit,
     onChange: (OutboundApiSettings.Destination) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     var lowText by rememberSaveable(destination.id) {
         mutableStateOf(formatThreshold(destination.triggerLowMgdl))
     }
@@ -1165,7 +1165,7 @@ private fun PresetPickerSheet(
     onDismiss: () -> Unit,
     onPreset: (String) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     StableModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

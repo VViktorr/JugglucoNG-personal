@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package tk.glucodata.ui
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import tk.glucodata.ui.components.AdaptiveTrailingRow
 import tk.glucodata.ui.components.IconButtonTooltip
@@ -33,7 +34,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -460,7 +460,7 @@ private fun SourcePresetPickerSheet(
     onDismiss: () -> Unit,
     onPreset: (String) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     StableModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

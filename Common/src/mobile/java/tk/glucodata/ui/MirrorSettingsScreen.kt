@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package tk.glucodata.ui
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import tk.glucodata.ui.components.IconButtonTooltip
 import android.app.Activity
@@ -816,7 +817,7 @@ fun MirrorSettingsScreen(navController: NavController) {
     // ── Edit Bottom Sheet ────────────────────────────────────────────────
 
     if (editSheetPos != null) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val sheetState = rememberExpandedModalSheetState()
         MirrorEditSheet(
             pos = editSheetPos!!,
             sheetState = sheetState,
@@ -825,7 +826,7 @@ fun MirrorSettingsScreen(navController: NavController) {
     }
 
     historyRecoveryMirror?.let { mirror ->
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val sheetState = rememberExpandedModalSheetState()
         CloneHistoryRecoverySheet(
             mirror = mirror,
             sheetState = sheetState,

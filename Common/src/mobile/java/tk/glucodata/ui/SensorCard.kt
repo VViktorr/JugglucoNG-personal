@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.ControlledSlider
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import android.text.format.DateUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1334,7 +1337,7 @@ fun SensorCard(
         @OptIn(ExperimentalMaterial3Api::class)
         StableModalBottomSheet(
             onDismissRequest = { showAiDexClearDialog = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberExpandedModalSheetState(),
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             Column(
@@ -1494,7 +1497,7 @@ fun SensorCard(
         @OptIn(ExperimentalMaterial3Api::class)
         StableModalBottomSheet(
             onDismissRequest = { showSibionicsCalSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberExpandedModalSheetState(),
             dragHandle = { CompactSheetDragHandle() }
         ) {
             Column(
@@ -1619,7 +1622,7 @@ fun SensorCard(
                             ),
                         )
                         Spacer(Modifier.height(SliderHeaderGap))
-                        Slider(
+                        ControlledSlider(
                             value = sensitivityDraft,
                             onValueChange = {
                                 sensitivityDraft = (it * 100f).roundToInt() / 100f
@@ -1820,7 +1823,7 @@ fun SensorCard(
         @OptIn(ExperimentalMaterial3Api::class)
         StableModalBottomSheet(
             onDismissRequest = { showMqRestoreSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberExpandedModalSheetState(),
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             val savedAccountState = remember(showMqRestoreSheet) {
@@ -1905,7 +1908,7 @@ fun SensorCard(
                 showMqCalibrationSheet = false
                 mqCalibrationInputText = ""
             },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            sheetState = rememberExpandedModalSheetState(),
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             val isMmol = tk.glucodata.ui.util.GlucoseFormatter.isMmolApp()

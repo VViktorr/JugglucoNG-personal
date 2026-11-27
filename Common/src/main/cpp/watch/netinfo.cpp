@@ -330,7 +330,7 @@ static bool hasWatchNums(const passhost_t *wearhost) {
 template<typename OUTTYPE> int getownips(OUTTYPE *outips,int max,bool &) ;
 
 
-static int getreceivefrom(int index,bool receive,bool activeonly,bool passiveonly) {
+[[maybe_unused]] static int getreceivefrom(int index,bool receive,bool activeonly,bool passiveonly) {
     bool sendto;
     if(index<0) {
         sendto=false;
@@ -364,7 +364,7 @@ bool wearmessages[maxallhosts]={};
 
 
 extern void makepass(char *pass,int len);
-static bool sendpass=false;
+[[maybe_unused]] static bool sendpass=false;
 
 
 static int getmynetinfo(const char *id,jboolean create,jint watchHasSensor,jboolean galaxy,jint setnums,struct netinfo2 &info) {
@@ -950,6 +950,8 @@ bool setBlueWatch(passhost_t *host,int sensor,int nums) {
              LOGGER("setBlueWatch( %s sensor=%d nums=%d)=true\n",name,sensor,nums);
              return true;
             }
+#else
+        return false;
 #endif
         }
 #ifdef WEAROS

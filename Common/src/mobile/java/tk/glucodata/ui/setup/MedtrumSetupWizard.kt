@@ -239,7 +239,7 @@ fun MedtrumSetupWizard(
                             rejection == MedtrumAttachResult.REJECTED_AUTH -> {
                                 { Text(stringResource(R.string.medtrum_setup_auth_failed)) }
                             }
-                            isValid && serialNumber != null -> {
+                            isValid -> {
                                 { Text(stringResource(R.string.medtrum_serial_echo, normalized, serialNumber)) }
                             }
                             else -> null

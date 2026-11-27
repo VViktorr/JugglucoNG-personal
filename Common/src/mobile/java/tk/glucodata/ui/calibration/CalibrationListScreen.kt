@@ -1,5 +1,7 @@
 package tk.glucodata.ui.calibration
 
+import tk.glucodata.ui.components.rememberAdaptiveModalSheetState
+
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.activity.compose.BackHandler
 import tk.glucodata.ui.components.IconButtonTooltip
@@ -1465,7 +1467,7 @@ private fun CalibrationImportExportBottomSheet(
     onImportMerge: () -> Unit,
     onImportReplace: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberAdaptiveModalSheetState()
 
     StableModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1595,7 +1597,7 @@ private fun ClearOptionsBottomSheet(
     disabledCount: Int,
     totalCount: Int
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberAdaptiveModalSheetState()
     
     StableModalBottomSheet(
         onDismissRequest = onDismiss,

@@ -158,11 +158,9 @@ override fun onSensorChanged(event: SensorEvent) {
     }
 
         manage = context.getSystemService(SENSOR_SERVICE) as SensorManager
-        if(measureheart) {
-            if(manage != null) {
-                sensor = manage.getDefaultSensor(Sensor.TYPE_HEART_RATE)
-                registersensor(Applic.getHeartRate())
-            }
+        if (measureheart) {
+            sensor = manage.getDefaultSensor(Sensor.TYPE_HEART_RATE)
+            registersensor(Applic.getHeartRate())
         }
 
         scope.launch {

@@ -195,8 +195,6 @@ if(true) {
           build.append("\nVERSION.RELEASE: "+ RELEASE+"\n"+
           "VERSION.SDK_INT: "+ Build.VERSION.SDK_INT+"\n"+
           "BRAND: "+ Build.BRAND+"\n"+
-          "CPU_ABI2: "+ Build.CPU_ABI2+"\n"+
-          "CPU_ABI: "+ Build.CPU_ABI+"\n"+
           "DEVICE: "+ Build.DEVICE+"\n"+
           "FINGERPRINT: "+ Build.FINGERPRINT+"\n"+
           "MANUFACTURER: "+ Build.MANUFACTURER+"\n"+

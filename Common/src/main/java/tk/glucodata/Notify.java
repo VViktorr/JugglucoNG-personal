@@ -23,7 +23,6 @@ package tk.glucodata;
 import static android.app.Notification.FLAG_ONGOING_EVENT;
 import static android.app.Notification.VISIBILITY_PUBLIC;
 import static android.content.Context.NOTIFICATION_SERVICE;
-import static android.content.Context.VIBRATOR_SERVICE;
 import android.media.MediaPlayer;
 import static android.graphics.Color.BLACK;
 import static android.graphics.Color.WHITE;
@@ -66,7 +65,6 @@ import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.os.VibratorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -75,7 +73,6 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
 import android.os.Vibrator;
-import android.os.VibratorManager;
 import android.util.DisplayMetrics;
 import android.widget.RemoteViews;
 
@@ -2546,6 +2543,7 @@ public class Notify {
 
     Vibrator vibrator = null;
 
+    @SuppressWarnings("deprecation") // Android 26–32 use AudioAttributes for alarm vibration.
     private void vibrateWaveform(Vibrator vibrator, long[] timings, int[] amplitudes, int repeatIndex) {
         if (android.os.Build.VERSION.SDK_INT < 33) {
             vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, repeatIndex), ScanNfcV.audioattributes);
@@ -2565,11 +2563,7 @@ public class Notify {
 
     private void vibratealarm(int kind, String hapticProfileName, int durationSeconds, int soundDelayLeadInSeconds) {
         var context = Applic.app;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            vibrator = ((VibratorManager) (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE)))
-                    .getDefaultVibrator();
-        } else
-            vibrator = (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
+        vibrator = ScanNfcV.getvibrator(context);
 
         if (vibrator == null) {
             if (doLog) {
@@ -2615,31 +2609,25 @@ public class Notify {
         }
 
         // Apply Scaling or Ascending Logic
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            for (int i = 0; i < amplitudes.length; i++) {
-                if (amplitudes[i] > 0) {
-                    if (ascending) {
-                        // Simple ramp: later pulses get stronger, start at 30%
-                        // Not implemented perfectly for looped, but fine for one-shot sequence
-                        float progress = (float) i / amplitudes.length;
-                        amplitudes[i] = (int) (amplitudes[i] * (0.3f + 0.7f * progress));
-                    } else {
-                        amplitudes[i] = (int) (amplitudes[i] * scale);
-                    }
-                    if (amplitudes[i] > 255)
-                        amplitudes[i] = 255;
-                    if (amplitudes[i] < 1)
-                        amplitudes[i] = 1; // Ensure non-zero if it was meant to be on
+        for (int i = 0; i < amplitudes.length; i++) {
+            if (amplitudes[i] > 0) {
+                if (ascending) {
+                    // Simple ramp: later pulses get stronger, start at 30%
+                    // Not implemented perfectly for looped, but fine for one-shot sequence
+                    float progress = (float) i / amplitudes.length;
+                    amplitudes[i] = (int) (amplitudes[i] * (0.3f + 0.7f * progress));
+                } else {
+                    amplitudes[i] = (int) (amplitudes[i] * scale);
                 }
+                if (amplitudes[i] > 255)
+                    amplitudes[i] = 255;
+                if (amplitudes[i] < 1)
+                    amplitudes[i] = 1; // Ensure non-zero if it was meant to be on
             }
-            final AlertVibrationPattern finitePattern = AlertVibrationPattern.buildFinite(timings, amplitudes,
-                    durationSeconds, soundDelayLeadInSeconds);
-            vibrateWaveform(vibrator, finitePattern.timings, finitePattern.amplitudes, -1);
-        } else {
-            final AlertVibrationPattern finitePattern = AlertVibrationPattern.buildFinite(timings, amplitudes,
-                    durationSeconds, soundDelayLeadInSeconds);
-            vibrator.vibrate(finitePattern.timings, -1);
         }
+        final AlertVibrationPattern finitePattern = AlertVibrationPattern.buildFinite(timings, amplitudes,
+                durationSeconds, soundDelayLeadInSeconds);
+        vibrateWaveform(vibrator, finitePattern.timings, finitePattern.amplitudes, -1);
 
         if (doLog) {
             Log.i(LOG_ID, "vibratealarm " + kind + " hapticProfile=" + hapticProfileName
@@ -5090,12 +5078,10 @@ public class Notify {
                 if (width <= 0)
                     width = 100;
 
-                // Create StaticLayout
-                // Use deprecated constructor for broad compatibility (or logic check)
-                // For simplicity in this file, standard deprecated constructor works well on
-                // Android.
-                android.text.StaticLayout layout = new android.text.StaticLayout(startupValue, textPaint, width,
-                        android.text.Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                android.text.StaticLayout layout = android.text.StaticLayout.Builder
+                        .obtain(startupValue, 0, startupValue.length(), textPaint, width)
+                        .setIncludePad(false)
+                        .build();
 
                 int height = layout.getHeight() + 4;
                 if (height <= 0)

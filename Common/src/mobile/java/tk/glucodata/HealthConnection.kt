@@ -37,7 +37,6 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -210,6 +209,7 @@ private fun importActivityIns(daysBack: Int) {
 
 
 companion object {
+    private val initializationScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val PERMISSIONS =
         if(Build.VERSION.SDK_INT < 28) setOf("") else
             setOf(
@@ -236,7 +236,7 @@ companion object {
     }
    fun init(context:MainActivity)  {
      if(instance==null) {
-	       GlobalScope.launch {
+	       initializationScope.launch {
 		  susinit(context)
 		}
        }
@@ -287,7 +287,7 @@ fun writeAll(sensorptr:Long,sensorname:String) {
     }
     fun importActivity(daysBack: Int = 14) {
         instance?.importActivityIns(daysBack) ?: MainActivity.thisone?.let { context ->
-            GlobalScope.launch {
+            initializationScope.launch {
                 susinit(context)
                 instance?.importActivityIns(daysBack)
             }

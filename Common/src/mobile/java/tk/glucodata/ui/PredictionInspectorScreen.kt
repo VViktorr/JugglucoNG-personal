@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.ControlledSlider
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -171,7 +172,7 @@ internal fun PredictionInspectorContent(
 
         if (list.size > 1) {
             var dragging by remember(selected) { mutableFloatStateOf(selected.toFloat()) }
-            Slider(
+            ControlledSlider(
                 value = dragging,
                 onValueChange = { dragging = it },
                 onValueChangeFinished = { onSelect(dragging.roundToInt()) },

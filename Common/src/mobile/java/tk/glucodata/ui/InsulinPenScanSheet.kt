@@ -4,6 +4,7 @@
 )
 
 package tk.glucodata.ui
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.ButtonDefaults
@@ -30,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,7 +62,7 @@ fun InsulinPenScanSheetHost() {
     val pending by InsulinPenScanBus.pending.collectAsStateWithLifecycle()
     val result = pending ?: return
     val presets by rememberInsulinPresets()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
 
     val selectableInsulins = presets.filterNot(JournalInsulinPreset::isArchived)
     val storedPreset = InsulinPenManager.pen(result.serial)?.insulinPresetId ?: 0L

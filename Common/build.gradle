@@ -180,7 +180,6 @@ android {
             signingConfig = signingConfigs.alg
             buildConfigField 'int', 'isWear', '1'
             externalNativeBuild.cmake {
-                arguments "-DWEAROS=TRUE"
                 cppFlags " -DWEAROS=1  -DUSEDIN=1   "
                 cFlags " -DWEAROS=1  -DUSEDIN=1   "
             }

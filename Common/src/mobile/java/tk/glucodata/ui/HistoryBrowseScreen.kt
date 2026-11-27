@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.rememberAdaptiveModalSheetState
+
 import tk.glucodata.ui.components.IconButtonTooltip
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ButtonDefaults
@@ -36,7 +38,6 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -1036,7 +1037,7 @@ fun HistoryBrowseScreen(
     if (showExportSheet && showTransferActions) {
         HistoryExportSheet(
             onDismiss = { showExportSheet = false },
-            sheetState = rememberModalBottomSheetState()
+            sheetState = rememberAdaptiveModalSheetState()
         )
     }
 }

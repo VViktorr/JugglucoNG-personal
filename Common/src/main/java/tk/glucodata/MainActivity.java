@@ -653,7 +653,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             }
             ;
             try {
-                Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+                Tag tag = IntentCompat.getParcelableExtra(intent, NfcAdapter.EXTRA_TAG, Tag.class);
                 startnfc(tag);
             } catch (Throwable th) {
                 Log.stack(LOG_ID, "handleIntent", th);
@@ -2173,9 +2173,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             // final var colres= android.R.color.holo_blue_bright;
             // final var colres= android.R.color.holo_blue_light; //Very infrequently button
             // not shown. Maybe this helps.
-            final var col = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                    ? getResources().getColor(colres, getTheme())
-                    : getResources().getColor(colres);
+            final var col = getColor(colres);
             var negbut = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
             negbut.setTextColor(col);
             // negbut.setAllCaps(false);

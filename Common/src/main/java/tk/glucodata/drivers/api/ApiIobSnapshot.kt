@@ -159,7 +159,8 @@ object ApiIobSnapshot {
     private fun JSONObject.finiteFloat(vararg keys: String): Float? {
         for (key in keys) {
             if (!has(key) || isNull(key)) continue
-            val parsed = when (val value = opt(key)) {
+            val value: Any? = opt(key)
+            val parsed = when (value) {
                 is Number -> value.toDouble().takeIf(Double::isFinite)
                 is String -> value.trim().toDoubleOrNull()?.takeIf(Double::isFinite)
                 else -> null

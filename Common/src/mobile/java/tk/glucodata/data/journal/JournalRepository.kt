@@ -229,7 +229,7 @@ class JournalRepository {
                 },
                 insulinCurveWasApproximated = when {
                     !isInsulin -> false
-                    preserveCurveSnapshot -> existing.insulinCurveWasApproximated ?: true
+                    preserveCurveSnapshot -> existing.insulinCurveWasApproximated
                     else -> resolvedCurve?.approximated ?: true
                 }
             )

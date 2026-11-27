@@ -70,7 +70,7 @@ public class WeatherSpec implements Parcelable {
             todayMinTemp = in.readInt();
             windSpeed = in.readFloat();
             windDirection = in.readInt();
-            in.readList(forecasts, Forecast.class.getClassLoader());
+            androidx.core.os.ParcelCompat.readList(in, forecasts, Forecast.class.getClassLoader(), Forecast.class);
         }
     }
 

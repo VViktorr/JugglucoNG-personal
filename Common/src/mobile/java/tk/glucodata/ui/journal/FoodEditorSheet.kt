@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package tk.glucodata.ui.journal
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,7 +88,7 @@ internal fun FoodEditorSheet(
     onDelete: (() -> Unit)?,
     initialBarcode: String? = null
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     var draft by remember(food?.id) { mutableStateOf(foodEditorDraft(food, nextSortOrder)) }
     var showColorDialog by rememberSaveable(food?.id) { mutableStateOf(false) }
     val input = foodEditorInput(draft, food)?.let { it.copy(barcode = it.barcode ?: initialBarcode) }

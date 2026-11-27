@@ -2,6 +2,9 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.ControlledSlider
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
+
 import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.components.settingsSearchAnchor
 import tk.glucodata.ui.components.ChoicePickerDialog
@@ -40,7 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.Lifecycle
@@ -1107,14 +1110,14 @@ fun ExpressiveSettingsScreen(
     )
     
     if (showExportDialog) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val sheetState = rememberExpandedModalSheetState()
         ExportDataSettingsSheet(
             onDismiss = { showExportDialog = false },
             sheetState = sheetState
         )
     }
     if (showScheduledBackupDialog) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val sheetState = rememberExpandedModalSheetState()
         ScheduledBackupSettingsSheet(
             onDismiss = { showScheduledBackupDialog = false },
             sheetState = sheetState,
@@ -1468,7 +1471,7 @@ internal fun PredictiveSimulationParameterRow(
         verticalArrangement = Arrangement.spacedBy(SliderHeaderGap)
     ) {
         SliderHeader(label = title, value = valueLabel, enabled = enabled)
-        Slider(
+        ControlledSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,
@@ -1526,7 +1529,7 @@ private fun SealGraceDialog(currentHours: Int, onSave: (Int) -> Unit, onDismiss:
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Slider(
+                    ControlledSlider(
                         value = index,
                         onValueChange = { index = it },
                         valueRange = 0f..choices.lastIndex.toFloat(),

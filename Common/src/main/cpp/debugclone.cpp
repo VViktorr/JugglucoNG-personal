@@ -1360,8 +1360,8 @@ extern bool wrongfiles() ;
 bool *wrongptr=nullptr;
 bool wrongfiles() {
 
-//    static bool wrong=((wrong=needsdebug()),wrongptr=&wrong,wrong);
-    static bool wrong=(wrong=needsdebug(),wrongptr=&wrong,wrong);
+    static bool wrong = needsdebug();
+    [[maybe_unused]] static const auto resetTarget = wrongptr = &wrong;
 #ifdef TESTDEBUG
     return true;
 #else

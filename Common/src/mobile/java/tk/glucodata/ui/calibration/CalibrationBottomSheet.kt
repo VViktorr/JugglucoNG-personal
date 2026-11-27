@@ -1,4 +1,5 @@
 package tk.glucodata.ui.calibration
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import tk.glucodata.ui.components.IconButtonTooltip
 import tk.glucodata.ui.StatusPalette
@@ -77,7 +78,7 @@ fun CalibrationBottomSheet(
     val view = LocalView.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     val historyRepository = remember { HistoryRepository(context) }
 
     val isRawMode = viewMode == 1 || viewMode == 3

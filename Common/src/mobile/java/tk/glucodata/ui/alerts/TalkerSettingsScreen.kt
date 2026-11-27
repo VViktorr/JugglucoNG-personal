@@ -2,6 +2,8 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.ControlledSlider
+
 import tk.glucodata.ui.SettingsSearchAnchors
 import androidx.compose.material3.TimePickerDefaults
 import tk.glucodata.ui.components.IconButtonTooltip
@@ -42,7 +44,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
@@ -735,7 +736,7 @@ private fun SliderCard(
             }
 
             Spacer(Modifier.height(SliderHeaderGap))
-            Slider(
+            ControlledSlider(
                 value = sliderValue,
                 onValueChange = onValueChange,
                 onValueChangeFinished = onValueChangeFinished,

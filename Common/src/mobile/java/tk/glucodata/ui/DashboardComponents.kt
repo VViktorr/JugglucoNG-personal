@@ -1,5 +1,7 @@
 package tk.glucodata.ui
 
+import tk.glucodata.ui.components.rememberAdaptiveModalSheetState
+
 import android.view.HapticFeedbackConstants
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.animateColorAsState
@@ -2497,7 +2499,7 @@ private fun DashboardClearOptionsBottomSheet(
     disabledCount: Int,
     totalCount: Int
 ) {
-    val sheetState = androidx.compose.material3.rememberModalBottomSheetState()
+    val sheetState = rememberAdaptiveModalSheetState()
     
     StableModalBottomSheet(
         onDismissRequest = onDismiss,

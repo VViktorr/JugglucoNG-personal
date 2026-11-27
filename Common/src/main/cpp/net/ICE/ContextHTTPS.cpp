@@ -451,7 +451,7 @@ bool ContextHTTPS::initLibrary() {
         }
 //s/^ssl.h:# define \([^	 ]*\)[	 ]*\([0-9]\+\)[^0-9]*$/case \1: return "\1";/g
 //s/^ssl.h:# define \([^	 ]*\)[	 ]*\([0-9]\+\)[^0-9]*$/case \2: return "\1";/g
-#ifndef NOLOG
+#if defined(LOGHTTPS) && !defined(NOLOG)
 static const char *geterrorstring(int error) {
     switch(error) {
         case 0: return "SSL_ERROR_NONE";

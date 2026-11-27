@@ -448,7 +448,7 @@ object JournalTreatmentTransfer {
 
     private fun JSONObject.optEpochMillis(key: String): Long? {
         if (!has(key) || isNull(key)) return null
-        val value = opt(key)
+        val value: Any? = opt(key)
         val longValue = when (value) {
             is Number -> value.toDouble().takeIf { it.isFinite() }?.toLong()
             is String -> value.trim().toDoubleOrNull()?.toLong()
@@ -538,7 +538,7 @@ object JournalTreatmentTransfer {
     private fun JSONObject.optFiniteFloat(vararg keys: String): Float? {
         for (key in keys) {
             if (!has(key) || isNull(key)) continue
-            val value = opt(key)
+            val value: Any? = opt(key)
             val parsed = when (value) {
                 is Number -> value.toFloat()
                 is String -> value.trim().replace(',', '.').toFloatOrNull()

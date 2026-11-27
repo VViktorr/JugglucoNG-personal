@@ -42,7 +42,6 @@ import java.util.Arrays;
 
 import tk.glucodata.settings.Settings;
 
-import static android.content.Context.VIBRATOR_SERVICE;
 import static android.view.View.GONE;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static tk.glucodata.Applic.isWearable;
@@ -123,12 +122,11 @@ public class ScanNfcV {
 
     static private boolean askpermission = false;
 
-    @SuppressWarnings("deprecation")
     public static Vibrator getvibrator(Context context) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            return ((VibratorManager) context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE)).getDefaultVibrator();
+            return context.getSystemService(VibratorManager.class).getDefaultVibrator();
         } else
-            return (Vibrator) context.getSystemService(VIBRATOR_SERVICE);
+            return context.getSystemService(Vibrator.class);
 
     }
 
@@ -446,10 +444,7 @@ public class ScanNfcV {
 
                                 case 5: {
                                     final long[] newsensorwait = { 50, 300, 100, 10 };
-                                    if (android.os.Build.VERSION.SDK_INT < 26)
-                                        vibrator.vibrate(newsensorwait, -1);
-                                    else
-                                        vibrator.vibrate(VibrationEffect.createWaveform(newsensorwait, -1));
+                                    vibrator.vibrate(VibrationEffect.createWaveform(newsensorwait, -1));
                                     String sensorident = Natives.getserial(uid, info);
                                     curve.render.badscan = calendar(main, ret, sensorident, 0L);
                                 }
@@ -460,10 +455,7 @@ public class ScanNfcV {
                                     ret &= ~0x80;
                                 case 7:
                                     final long[] newsensorVib = { 50, 150, 50, 50, 12, 8, 15, 73 };
-                                    if (android.os.Build.VERSION.SDK_INT < 26)
-                                        vibrator.vibrate(newsensorVib, -1);
-                                    else
-                                        vibrator.vibrate(VibrationEffect.createWaveform(newsensorVib, -1));
+                                    vibrator.vibrate(VibrationEffect.createWaveform(newsensorVib, -1));
                                     String sensorident = Natives.getserial(uid, info);
                                     curve.render.badscan = calendar(main, ret, sensorident, 0L);
                                     // ret=0;

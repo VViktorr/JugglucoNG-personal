@@ -2,6 +2,7 @@ package tk.glucodata.ui
 
 import android.app.Activity
 import android.content.Intent
+import androidx.core.content.IntentCompat
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Bundle
@@ -39,7 +40,7 @@ class PenTagReceiverActivity : Activity() {
 
     private fun handle(intent: Intent?) {
         if (reading) return
-        val tag: Tag? = intent?.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        val tag: Tag? = intent?.let { IntentCompat.getParcelableExtra(it, NfcAdapter.EXTRA_TAG, Tag::class.java) }
         if (intent == null || tag == null || NfcAdapter.ACTION_TECH_DISCOVERED != intent.action) {
             finish()
             return

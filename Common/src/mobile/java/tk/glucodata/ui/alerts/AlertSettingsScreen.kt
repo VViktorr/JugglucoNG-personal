@@ -2,6 +2,10 @@
 
 package tk.glucodata.ui.alerts
 
+import tk.glucodata.ui.components.ControlledRangeSlider
+
+import tk.glucodata.ui.components.ControlledSlider
+
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -1513,7 +1517,7 @@ private fun ThresholdSlider(
             style = if (prominent) SliderHeaderStyle.Glucose else SliderHeaderStyle.Compact
         )
         Spacer(Modifier.height(SliderHeaderGap))
-        Slider(
+        ControlledSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1568,7 +1572,7 @@ internal fun DurationSlider(
             style = SliderHeaderStyle.Compact
         )
         Spacer(Modifier.height(SliderHeaderGap))
-        Slider(
+        ControlledSlider(
             value = sliderValue,
             onValueChange = { sliderValue = it },
             onValueChangeFinished = {
@@ -1906,7 +1910,7 @@ private fun TimeRangeSlider(
         mutableStateOf(startHour.toFloat()..endHour.toFloat())
     }
 
-    RangeSlider(
+    ControlledRangeSlider(
         value = sliderValues,
         onValueChange = { range ->
             sliderValues = range

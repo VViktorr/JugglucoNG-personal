@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package tk.glucodata.ui.journal
+import tk.glucodata.ui.components.rememberExpandedModalSheetState
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.runtime.key
@@ -69,7 +70,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -880,7 +880,7 @@ private fun JournalInsulinPresetSheet(
     onSave: (JournalInsulinPresetInput) -> Unit,
     onDelete: (() -> Unit)?
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberExpandedModalSheetState()
     val initialDraft = remember(preset?.id) { buildPresetDraft(preset) }
     var draft by remember(preset?.id) { mutableStateOf(initialDraft) }
     var selectedPointIndex by rememberSaveable(preset?.id) {

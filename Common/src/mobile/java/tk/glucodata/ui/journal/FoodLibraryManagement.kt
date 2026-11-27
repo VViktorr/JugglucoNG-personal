@@ -149,7 +149,6 @@ private fun ManagedFoodRow(
             SwipeToDismissBoxValue.StartToEnd -> latestActions.onArchive(setOf(food.id), !latestFood.isArchived) {
                 scope.launch { pending = false; swipe.reset() }
             }
-            else -> Unit
         }
     }
     val selected = food.id in management.selectedIds

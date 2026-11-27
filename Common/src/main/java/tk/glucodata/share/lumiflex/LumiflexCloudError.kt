@@ -44,7 +44,7 @@ object LumiflexCloudError {
 
     private fun bodyCode(body: String?): Int? {
         val parsed = runCatching { JSONObject(body.orEmpty()) }.getOrNull() ?: return null
-        val raw = parsed.opt("code")
+        val raw: Any? = parsed.opt("code")
         return when (raw) {
             is Number -> raw.toInt()
             is String -> raw.toIntOrNull()
