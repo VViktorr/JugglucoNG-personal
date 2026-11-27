@@ -445,7 +445,7 @@ internal class AiDexAlgorithmRuntime(
                                 output.takeLast(1500).forEach(::recordBaseline)
                                 val newest = output.lastOrNull { row -> retained == null || row.source.minute in retained }
                                 val deferredLive = newest != null && pendingLiveTime == newest.source.timestampMs
-                                latestPublished = if (deferredLive) storeLive(newest!!, latestPublished) else newest
+                                latestPublished = if (deferredLive) storeLive(newest, latestPublished) else newest
                                 // Set before the completion revision is announced,
                                 // so our own notification cannot restart this replay.
                                 appliedCalibrationInputs = inputs

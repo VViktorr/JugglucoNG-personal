@@ -3877,7 +3877,7 @@ class OttaiBleManager(
         val nextAdjacent = next != null && next.dataNo - candidate.record.dataNo in 1..2
 
         if (previousAdjacent && nextAdjacent) {
-            val neighborsAgree = abs(previous!!.mmol - next!!.mmol) < OttaiOutputFilter.SINGLE_SAMPLE_DELTA_MMOL
+            val neighborsAgree = abs(previous.mmol - next.mmol) < OttaiOutputFilter.SINGLE_SAMPLE_DELTA_MMOL
             if (neighborsAgree &&
                 OttaiOutputFilter.isOneMinuteRawExcursion(candidateMmol, candidate.record.rawCurrent, previous.mmol, previous.rawCurrent) &&
                 OttaiOutputFilter.isOneMinuteRawExcursion(candidateMmol, candidate.record.rawCurrent, next.mmol, next.rawCurrent)
@@ -3887,7 +3887,7 @@ class OttaiBleManager(
         }
 
         if (!previousAdjacent && nextAdjacent && candidate.record.dataNo <= 5 &&
-            OttaiOutputFilter.isOneMinuteRawExcursion(candidateMmol, candidate.record.rawCurrent, next!!.mmol, next.rawCurrent)
+            OttaiOutputFilter.isOneMinuteRawExcursion(candidateMmol, candidate.record.rawCurrent, next.mmol, next.rawCurrent)
         ) {
             return "history-start next=${next.dataNo}"
         }

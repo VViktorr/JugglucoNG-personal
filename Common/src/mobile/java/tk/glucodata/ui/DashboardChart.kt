@@ -2284,7 +2284,7 @@ fun InteractiveGlucoseChart(
                                 onTimelineTap != null && !isDoubleTapStart && !startedOnJournalMarker
                             ) {
                                 coroutineScope.launch {
-                                    kotlinx.coroutines.delay(viewConfiguration.longPressTimeoutMillis.toLong())
+                                    kotlinx.coroutines.delay(viewConfiguration.longPressTimeoutMillis)
                                     if (!longPressTriggered && totalDragDistance < viewConfiguration.touchSlop) {
                                         buildTimelineTapSuggestion(latestTouchPosition, forceMenu = true)?.let { suggestion ->
                                             dismissJournalActionIfNeeded()
@@ -4457,7 +4457,7 @@ fun InteractiveGlucoseChart(
                 val isPileFront = group != null && group[0] == index
                 val stackCount = when {
                     !isPileFront -> 0
-                    !inOpenGroup -> group!!.size
+                    !inOpenGroup -> group.size
                     openChipGroupStuck > 0 -> openChipGroupStuck + 1
                     else -> 0
                 }

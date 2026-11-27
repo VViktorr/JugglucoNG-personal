@@ -548,7 +548,7 @@ internal object ComplicationRenderer {
             // header height and pushing it right made it compete with the value.
             val arrowBox = if (showArrow) headerH * 0.58f else 0f
             val gap = if (showArrow) headerH * 0.10f else 0f
-            val valueW = measuredWidth(valueText!!, headerH) .coerceAtMost(contentW - arrowBox - gap)
+            val valueW = measuredWidth(valueText, headerH) .coerceAtMost(contentW - arrowBox - gap)
             val groupW = valueW + gap + arrowBox
             val groupX = marginX + (contentW - groupW) / 2f
             drawFittedText(canvas, valueText, color, groupX, marginY, valueW, headerH)

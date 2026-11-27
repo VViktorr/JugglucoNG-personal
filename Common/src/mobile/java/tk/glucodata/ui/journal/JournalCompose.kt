@@ -1159,7 +1159,7 @@ internal fun restoredFoodItem(food: JournalFood, entry: JournalEntry): JournalDr
     if (matches) {
         // The draft's recordFoodUses gate keeps an untouched reopen from learning a use.
         // A real edit may remember this amount because it uses the library's own units.
-        return JournalDraftFoodItem(food.toFoodItem(), tk.glucodata.data.food.FoodAmount(factor!! * (food.referenceGrams ?: 1f)))
+        return JournalDraftFoodItem(food.toFoodItem(), tk.glucodata.data.food.FoodAmount(factor * (food.referenceGrams ?: 1f)))
     }
     // One saved portion of unknown weight. Its macros are exactly the entry's totals, so
     // adding another food preserves them even if the library definition has since changed.

@@ -144,7 +144,7 @@ object HistoryMerge {
                 lastKnownGlucose = cachedGlucose
                 merged++
             } else if (lastKnownGlucose != null) {
-                glucose = lastKnownGlucose!!.toFloat()
+                glucose = lastKnownGlucose.toFloat()
                 fallback++
             } else {
                 glucose = 0f

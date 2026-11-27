@@ -117,12 +117,22 @@ try {
     Write-Host "=== JugglucoNG $variant build (phone and Wear OS) ==="
     Restore-BuildLibraries
 
-    $gradleArgs = @()
-    if ($Clean) { $gradleArgs += 'clean' }
-    $gradleArgs += ":Common:assembleMobile$variant", ":Common:assembleWear$variant", '--no-daemon', '--no-configuration-cache'
-    & $gradle @gradleArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "Gradle failed with exit code $LASTEXITCODE."
+    $gradleOptions = @('--no-daemon', '--no-configuration-cache', '--max-workers=1')
+    if ($Clean) {
+        & $gradle 'clean' @gradleOptions
+        if ($LASTEXITCODE -ne 0) {
+            throw "Gradle clean failed with exit code $LASTEXITCODE."
+        }
+    }
+
+    # Match the release workflow: use a separate Gradle process for each flavor.
+    foreach ($flavor in 'Mobile', 'Wear') {
+        $task = ":Common:assemble${flavor}${variant}"
+        Write-Host "Building $task..."
+        & $gradle $task @gradleOptions
+        if ($LASTEXITCODE -ne 0) {
+            throw "Gradle task $task failed with exit code $LASTEXITCODE."
+        }
     }
 
     $phoneApk = Get-BuiltApk -Flavor 'mobile' -BuildType $buildType

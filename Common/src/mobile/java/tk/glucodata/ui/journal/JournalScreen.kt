@@ -545,7 +545,7 @@ private fun JournalMetricsPanel(
         .toFloat()
     val activityMinutesToday = todaysEntries
         .filter { it.type == JournalEntryType.ACTIVITY }
-        .sumOf { (it.durationMinutes ?: 0).toInt() }
+        .sumOf { (it.durationMinutes ?: 0) }
 
     var iobDetailsExpanded by rememberSaveable { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -774,8 +774,8 @@ public fun sendDatawithInt(ident: Int, data: ByteArray) {
                 }
             var  othernode=nodes.elementAt(it)
             val nu = System.currentTimeMillis()
-            if(times!![it] > nu) {
-                Log.i(LOG_ID,"times!![it] > nu) it=$id times!![it]=${times!![it]} nu=$nu ")
+            if(times[it] > nu) {
+                Log.i(LOG_ID,"times!![it] > nu) it=$id times!![it]=${times[it]} nu=$nu ")
                 return
                 }
             if(sender.localnode==null) {

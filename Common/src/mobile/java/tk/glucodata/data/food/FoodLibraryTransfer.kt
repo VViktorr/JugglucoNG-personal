@@ -87,7 +87,10 @@ object FoodLibraryTransfer {
             val item = array.optJSONObject(index)
             val row = HashMap<String, String>()
             item?.keys()?.forEach { key ->
-                column(key)?.let { column -> if (!item.isNull(key)) row.putIfAbsent(column, item.opt(key).toString()) }
+                val column = column(key) ?: return@forEach
+                if (!item.isNull(key)) {
+                    item.opt(key)?.let { row.putIfAbsent(column, it.toString()) }
+                }
             }
             val hasReference = item?.keys()?.asSequence()?.any { column(it) == "per_grams" } == true
             toInput(row, hasReference) ?: run { skipped++; null }

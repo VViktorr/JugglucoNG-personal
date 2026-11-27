@@ -334,7 +334,7 @@ private fun HorizonTile(minutes: Int, stats: HorizonAccuracy?, isMmol: Boolean, 
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = if (enough) formatError(stats!!.meanAbsoluteError, isMmol) else "–",
+                text = if (enough) formatError(stats.meanAbsoluteError, isMmol) else "–",
                 style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
             )
             Text(

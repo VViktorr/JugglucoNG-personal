@@ -492,7 +492,7 @@ class MQFollowerManager(
                     } else {
                         deltaMgdl
                     }
-                    deltaDisplay.toFloat() / deltaMinutes
+                    deltaDisplay / deltaMinutes
                 } else {
                     0f
                 }
