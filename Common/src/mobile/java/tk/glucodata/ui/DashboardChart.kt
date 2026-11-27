@@ -4609,7 +4609,16 @@ fun InteractiveGlucoseChart(
 
             val activeInsulinPillShown =
                 activeInsulinSummary != null || activeCarbsGrams != null || stateDoseHint != null
+            val activeInsulinEndInset = 2.dp
+            val headerItemGap = 8.dp
             var activeInsulinPillWidthPx by remember { mutableIntStateOf(0) }
+            val activeInsulinHeaderSpace = if (activeInsulinPillShown) {
+                with(LocalDensity.current) { activeInsulinPillWidthPx.toDp() } +
+                    activeInsulinEndInset + headerItemGap
+            } else {
+                0.dp
+            }
+            val dateEndInset = maxOf(headerDateEndInset, activeInsulinHeaderSpace)
             if (activeInsulinPillShown) {
                 val summary = activeInsulinSummary
                 val unitsLabel = { units: Float ->
@@ -4700,8 +4709,8 @@ fun InteractiveGlucoseChart(
                 }
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 12.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(end = activeInsulinEndInset)
                         .chartHeaderBaseline(dateTextBaselinePx.roundToInt())
                         .widthIn(max = activeInsulinMaxWidth)
                         .onSizeChanged { activeInsulinPillWidthPx = it.width }
@@ -4709,7 +4718,8 @@ fun InteractiveGlucoseChart(
                         .clip(activeInsulinShape)
                         .clickable(enabled = summary != null || activeCarbsGrams != null) { isActiveInsulinExpanded = !isActiveInsulinExpanded },
                     shape = activeInsulinShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
@@ -4828,28 +4838,19 @@ fun InteractiveGlucoseChart(
                 }
             }
 
-            // Header-line control (voice readings): after the IOB pill, on the date chip's
-            // line and height, so it overlays the plot instead of pushing it down.
+            // Keep the voice control at the start of the line, clear of IOB and the date.
             headerAccessory?.let { accessory ->
-                val headerDensity = LocalDensity.current
-                val afterPill = if (activeInsulinPillShown && activeInsulinPillWidthPx > 0) {
-                    with(headerDensity) { activeInsulinPillWidthPx.toDp() } + 8.dp
+                val reservedEnd = if (showHeaderDate) {
+                    with(LocalDensity.current) { headerDateWidthPx.toDp() } + dateEndInset + headerItemGap
                 } else {
-                    0.dp
+                    activeInsulinHeaderSpace
                 }
-                val beforeDate = if (showHeaderDate) {
-                    with(headerDensity) { headerDateWidthPx.toDp() } + headerDateEndInset + 8.dp
-                } else {
-                    0.dp
-                }
-                // Sharing the line, it shrinks to its glyph; it steps aside only when even
-                // that would touch the date (a past day with an IOB pill on a narrow screen).
                 val compact = activeInsulinPillShown || showHeaderDate
-                if (maxWidth - 12.dp - afterPill - beforeDate >= 40.dp) Box(
+                if (maxWidth - 12.dp - reservedEnd >= 40.dp) Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(
-                            start = 12.dp + afterPill,
+                            start = 12.dp,
                             top = androidx.compose.ui.unit.lerp(16.dp, 0.dp, backdropAlpha)
                         )
                         .zIndex(1.6f)
@@ -5337,7 +5338,7 @@ fun InteractiveGlucoseChart(
                     .align(Alignment.TopEnd)
                     .padding(
                         top = androidx.compose.ui.unit.lerp(16.dp, 0.dp, backdropAlpha),
-                        end = headerDateEndInset
+                        end = dateEndInset
                     )
             ) {
                 Box(
