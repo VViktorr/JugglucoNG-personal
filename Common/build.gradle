@@ -557,9 +557,9 @@ dependencies {
     wearImplementation 'androidx.wear.protolayout:protolayout:1.4.2'
     wearImplementation 'androidx.concurrent:concurrent-futures:1.2.0'
     // Wear Compose Material 3 (Expressive) UI
-    wearImplementation 'androidx.wear.compose:compose-material3:1.6.2'
-    wearImplementation 'androidx.wear.compose:compose-foundation:1.6.2'
-    wearImplementation 'androidx.wear.compose:compose-navigation:1.6.2'
+    wearImplementation 'androidx.wear.compose:compose-material3:1.7.2'
+    wearImplementation 'androidx.wear.compose:compose-foundation:1.7.2'
+    wearImplementation 'androidx.wear.compose:compose-navigation:1.7.2'
     wearImplementation 'androidx.wear:wear-ongoing:1.1.0'
 
     // Unit tests
