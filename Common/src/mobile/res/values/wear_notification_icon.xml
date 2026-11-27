@@ -1,0 +1,8 @@
+<resources>
+    <string name="phone_watch_icon_title">Watch notification icon</string>
+    <string name="phone_watch_icon_unset">Set on the watch</string>
+    <string name="phone_watch_icon_standard">Standard icon</string>
+    <string name="phone_watch_icon_value">Glucose value</string>
+    <string name="phone_watch_icon_trend">Trend arrow</string>
+    <string name="phone_watch_icon_combined">Value and trend arrow</string>
+</resources>

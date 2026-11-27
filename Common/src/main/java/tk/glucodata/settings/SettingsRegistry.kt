@@ -235,6 +235,10 @@ object SettingsRegistry {
         SettingScope.MIRRORED, SettingBackup.INCLUDED, minValue = 1f, maxValue = 5f,
     )
 
+    val WATCH_ICON = SettingDefinition(
+        "watch_notification_icon_mode", SettingType.INT, -1, SettingScope.MIRRORED,
+    )
+
     val definitions: List<SettingDefinition> = listOf(
         DELTA_INTERVAL_MINUTES,
         SMOOTHING_MINUTES,
@@ -254,6 +258,7 @@ object SettingsRegistry {
         SENSOR_SELECTION,
         SENSOR_COLORS,
         SENSOR_DISPLAY_NAMES,
+        WATCH_ICON,
     )
 
     /**

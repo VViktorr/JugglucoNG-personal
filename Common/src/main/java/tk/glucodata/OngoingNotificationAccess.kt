@@ -24,6 +24,11 @@ interface OngoingNotification {
      */
     fun attach(context: Context, notification: Notification, notificationId: Int): Notification
 
+    /** Applies the watch-local icon choice to a separate reading notification. */
+    fun applySmallIcon(context: Context, notification: Notification): Notification = notification
+
+    fun syncIconMode(context: Context, mode: Int) {}
+
     /** Updates the ongoing activity's status, if there is one. */
     fun updateStatus(context: Context?, notificationId: Int)
 

@@ -321,6 +321,7 @@ Bitmap previewbitmap() {
 
 
 static public void updateall() {
+    tk.glucodata.WearOngoingActivity.requestRefresh();
 	ArrowValueDataSourceService.Companion.update();
 	NumberDataSourceService.Companion.update();
 	ArrowDataSourceService.Companion.update();

@@ -57,6 +57,7 @@ import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Icon;
 import android.graphics.Bitmap; // Added Import
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -4183,6 +4184,10 @@ public class Notify {
 
                 Notification notif = GluNotBuilder.build();
                 notif.when = glucose.time;
+                if (isWearable) {
+                    var ongoing = OngoingNotificationAccess.get();
+                    if (ongoing != null) notif = ongoing.applySmallIcon(Applic.app, notif);
+                }
                 notificationManager.notify(glucosealarmid, notif);
                 // Lets a periodic update due for the same reading stand down; the alarm
                 // itself is already out.
@@ -5232,6 +5237,38 @@ public class Notify {
 
     // static final private boolean alertseperate=true;
 
+    /** Refresh only an already posted Wear reading icon; never recreate a dismissed alert. */
+    public static void refreshWearNotificationIcon() {
+        if (!isWearable || onenot == null) return;
+        var ongoing = OngoingNotificationAccess.get();
+        if (ongoing == null) return;
+        try {
+            for (var active : onenot.notificationManager.getActiveNotifications()) {
+                if (active.getId() != glucosealarmid || active.getTag() != null) continue;
+                Notification current = active.getNotification();
+                Notification refreshed = ongoing.applySmallIcon(Applic.app, current);
+                if (refreshed == current) break;
+                if (Build.VERSION.SDK_INT >= 28) {
+                    var oldIcon = current.getSmallIcon();
+                    var newIcon = refreshed.getSmallIcon();
+                    if (oldIcon != null && newIcon != null
+                            && oldIcon.getType() == Icon.TYPE_RESOURCE
+                            && newIcon.getType() == Icon.TYPE_RESOURCE
+                            && oldIcon.getResId() == newIcon.getResId()
+                            && java.util.Objects.equals(oldIcon.getResPackage(), newIcon.getResPackage())) {
+                        break;
+                    }
+                }
+                refreshed = Notification.Builder.recoverBuilder(Applic.app, refreshed)
+                        .setOnlyAlertOnce(true).build();
+                onenot.notificationManager.notify(glucosealarmid, refreshed);
+                break;
+            }
+        } catch (Throwable th) {
+            Log.stack(LOG_ID, "refreshWearNotificationIcon", th);
+        }
+    }
+
     void fornotify(Notification notif) {
         {
             if (doLog) {
@@ -5246,8 +5283,9 @@ public class Notify {
         ;
         if (isWearable) {
             var ongoing = OngoingNotificationAccess.get();
-            if (ongoing != null) ongoing.updateStatus(Applic.app, glucosenotificationid);
+            if (ongoing != null) notif = ongoing.applySmallIcon(Applic.app, notif);
             notificationManager.notify(glucosealarmid, notif);
+            if (ongoing != null) ongoing.updateStatus(Applic.app, glucosenotificationid);
         } else {
             synchronized (foregroundPublicationLock) {
                 publishPhoneForegroundLocked(notif);

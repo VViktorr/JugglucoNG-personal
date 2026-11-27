@@ -1,5 +1,12 @@
 package tk.glucodata.ui.screens
 
+import android.content.SharedPreferences
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.wear.compose.material3.RadioButton
+import tk.glucodata.WearOngoingActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +35,15 @@ fun SettingsScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val deltaSettings = androidx.compose.runtime.remember(context) { tk.glucodata.settings.DisplayDeltaSettings(context) }
     val deltaState by deltaSettings.state.collectAsState(tk.glucodata.settings.DisplayDeltaSettings.State())
+    var ongoingIconMode by remember { mutableIntStateOf(WearOngoingActivity.iconMode(context)) }
+    DisposableEffect(context) {
+        val prefs = WearOngoingActivity.iconPreferences(context)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            ongoingIconMode = WearOngoingActivity.iconMode(context)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     ScreenScaffold(timeText = { TimeText() }) {
         ScalingLazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -41,6 +57,24 @@ fun SettingsScreen(
             }
             item {
                 WearNavigationRow(stringResource(R.string.sensor), onClick = onOpenSensor)
+            }
+            item { WearSectionTitle(stringResource(R.string.wear_ongoing_icon_title)) }
+            val iconOptions = listOf(
+                R.string.wear_ongoing_icon_normal,
+                R.string.wear_ongoing_icon_value,
+                R.string.wear_ongoing_icon_trend,
+                R.string.wear_ongoing_icon_combined,
+            )
+            items(iconOptions.size) { mode ->
+                RadioButton(
+                    selected = ongoingIconMode == mode,
+                    onSelect = {
+                        ongoingIconMode = mode
+                        WearOngoingActivity.setIconMode(context, mode)
+                    },
+                    label = { Text(stringResource(iconOptions[mode])) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
             // Reading colours are no longer a watch-local choice: the palette,
             // the band overrides and the "colour values by range" switch all
