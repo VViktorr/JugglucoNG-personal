@@ -131,7 +131,7 @@ data class WidgetConfig(
                     weatherScale = json.optInt("weatherScale", fallback.weatherScale).coerceIn(70, 200),
                     weatherIconScale = json.optInt("weatherIconScale", fallback.weatherIconScale).coerceIn(70, 220),
                     temperatureScale = json.optInt("temperatureScale", fallback.temperatureScale).coerceIn(70, 200),
-                    weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 40),
+                    weatherShiftDp = json.optInt("weatherShiftDp", fallback.weatherShiftDp).coerceIn(0, 80),
                     fontFamily = enum(json.optString("fontFamily"), fallback.fontFamily),
                     mainFontFamily = enum(json.optString("mainFontFamily"), enum(json.optString("fontFamily"), fallback.mainFontFamily)),
                     detailFontFamily = enum(json.optString("detailFontFamily"), enum(json.optString("fontFamily"), fallback.detailFontFamily)),
@@ -245,6 +245,42 @@ object WidgetConfigStore {
             detailFontFamily = saved.fontFamily,
             secondaryFontWeight = saved.primaryFontWeight
         )
+    }
+
+    /** Only settings actually exposed and rendered by the target are eligible. */
+    fun supportsSetting(kind: WidgetSettingsKind, key: String): Boolean = when (key) {
+        "glucoseScale", "detailScale", "primaryFontWeight", "background", "opacity",
+        "cornerRadiusDp", "showArrow", "showTime" -> true
+        "rangeColors", "showDelta", "showUnit" -> kind != WidgetSettingsKind.BASIC
+        "showDate", "showWeather", "weatherScale", "weatherIconScale", "temperatureScale",
+        "weatherShiftDp", "showWeatherIcon", "showTemperature" -> kind.hasWeather
+        "graphHours", "showTargetBand" -> kind.hasGraph
+        "statsPeriod" -> kind.hasStats
+        else -> false
+    }
+
+    /** Copy every setting shared by the source and each target in one write. */
+    fun applyToOthers(context: Context, source: WidgetSettingsKind, config: WidgetConfig): Boolean {
+        val sourceJson = config.toJson()
+        val editor = prefs(context).edit()
+        WidgetSettingsKind.entries.filter { it != source }.forEach { target ->
+            val existing = load(context, target)
+            val json = existing.toJson()
+            sourceJson.keys().forEach { key ->
+                if (supportsSetting(source, key) && supportsSetting(target, key)) {
+                    json.put(key, sourceJson.get(key))
+                    if (key == "primaryFontWeight") json.put("secondaryFontWeight", config.primaryFontWeight)
+                }
+            }
+            val copied = WidgetConfig.fromJson(json.toString(), existing)
+            editor.putString(target.name, copied.toJson().toString())
+        }
+        if (!editor.commit()) return false
+        synchronized(mutableRevision) { mutableRevision.value += 1L }
+        tk.glucodata.GlucoseWidget.refreshSettings()
+        tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
+        WidgetUpdater.requestUpdateAll(context)
+        return true
     }
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {

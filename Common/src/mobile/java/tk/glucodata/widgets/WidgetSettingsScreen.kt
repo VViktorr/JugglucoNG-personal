@@ -2,6 +2,14 @@
 
 package tk.glucodata.widgets
 
+import kotlinx.coroutines.withContext
+
+import kotlinx.coroutines.launch
+
+import kotlinx.coroutines.Dispatchers
+
+import androidx.compose.runtime.rememberCoroutineScope
+
 import tk.glucodata.ui.components.AppSlider
 
 import tk.glucodata.ui.util.appButtonShapes
@@ -173,6 +181,7 @@ private fun WidgetDetailSettings(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(stringResource(kind.descriptionRes), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ApplyOtherWidgets(kind, config)
 
         Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
@@ -300,7 +309,7 @@ private fun WidgetDetailSettings(
                 AppSlider(
                     value = config.weatherShiftDp.toFloat(),
                     onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },
-                    valueRange = 0f..40f
+                    valueRange = 0f..80f
                 )
 
                 WidgetSwitch(stringResource(R.string.widget_show_weather_icon), config.showWeatherIcon) {
@@ -360,6 +369,26 @@ private fun WidgetDetailSettings(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ApplyOtherWidgets(kind: WidgetSettingsKind, config: WidgetConfig) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    TextButton(shapes = appButtonShapes(), onClick = {
+        scope.launch {
+            val saved = withContext(Dispatchers.IO) {
+                WidgetConfigStore.applyToOthers(context, kind, config)
+            }
+            android.widget.Toast.makeText(
+                context,
+                if (saved) R.string.widget_applied_to_others else R.string.widget_apply_failed,
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }) {
+        Text(stringResource(R.string.widget_apply_all_to_others))
     }
 }
 
