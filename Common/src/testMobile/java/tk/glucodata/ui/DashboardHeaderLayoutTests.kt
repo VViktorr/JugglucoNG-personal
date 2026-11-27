@@ -135,7 +135,7 @@ class DashboardHeaderLayoutTests {
         assertEquals(panel.bottom + 4f, hero.top, 0f)
     }
 
-    private fun header(showReadingAge: Boolean, stacked: Boolean = false) {
+    private fun header(showReadingAge: Boolean, stacked: Boolean = false, sensorRssi: Int? = null) {
         val now = System.currentTimeMillis()
         val at = now - 20_000L
         val history = (0 until 16).map { i ->
@@ -173,7 +173,9 @@ class DashboardHeaderLayoutTests {
                             isMmol = true,
                             showDelta = true,
                             stackBars = stacked,
-                            showReadingAge = showReadingAge
+                            showReadingAge = showReadingAge,
+                            sensorEndTimeMs = if (sensorRssi != null) now + 10 * 86_400_000L else 0L,
+                            sensorBluetoothRssi = sensorRssi,
                         )
                     }
                 }
@@ -220,6 +222,25 @@ class DashboardHeaderLayoutTests {
         header(showReadingAge = false)
         // The name starts at the panel's padding; the lifetime starts an icon and a gap further in.
         assertEquals(left("3MH01") + (14 + 8) * 2f, left("5 / 15"), 0f)
+    }
+
+    @Test fun bluetoothSignalFitsBelowTheCountdownInTheCompactPanel() {
+        header(showReadingAge = true, sensorRssi = -72)
+        assertBluetoothSignalBelowCountdown(expectedHeightPx = 160f)
+    }
+
+    @Test fun bluetoothSignalFitsBelowTheCountdownInTheStackedPanel() {
+        header(showReadingAge = true, stacked = true, sensorRssi = -72)
+        assertBluetoothSignalBelowCountdown(expectedHeightPx = 328f)
+    }
+
+    private fun assertBluetoothSignalBelowCountdown(expectedHeightPx: Float) {
+        val bars = compose.onNodeWithTag("dashboard-bars").fetchSemanticsNode().boundsInRoot
+        val lifetime = compose.onNodeWithText("5 / 15", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val signal = compose.onNodeWithText("-72 dBm", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(expectedHeightPx, bars.height, 0f)
+        assertTrue("Bluetooth level is visible below the countdown", signal.height > 0 && signal.top >= lifetime.bottom)
+        assertEquals(lifetime.right, signal.right, 1f)
     }
 
     private companion object {

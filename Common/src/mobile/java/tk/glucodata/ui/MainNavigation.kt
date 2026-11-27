@@ -1089,10 +1089,10 @@ fun MainApp(themeMode: ThemeMode, onThemeChanged: (ThemeMode) -> Unit) {
                         .consumeWindowInsets(innerPadding),
                     // A short fade between destinations. NavHost's own default is a 700ms
                     // crossfade; landscape used to have none at all and portrait this one.
-                    enterTransition = { fadeIn(animationSpec = tween(200)) },
-                    exitTransition = { fadeOut(animationSpec = tween(200)) },
-                    popEnterTransition = { fadeIn(animationSpec = tween(200)) },
-                    popExitTransition = { fadeOut(animationSpec = tween(200)) }
+                    enterTransition = { fadeIn(animationSpec = tween(150)) },
+                    exitTransition = { fadeOut(animationSpec = tween(150)) },
+                    popEnterTransition = { fadeIn(animationSpec = tween(150)) },
+                    popExitTransition = { fadeOut(animationSpec = tween(150)) }
                 ) {
                     appDestinations(
                         navController = navController,

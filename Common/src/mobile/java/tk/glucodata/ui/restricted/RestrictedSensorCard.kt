@@ -73,6 +73,7 @@ import tk.glucodata.ui.AnimatedHourglassIcon
 import tk.glucodata.ui.CustomCalendarIcon
 import tk.glucodata.ui.StatusPalette
 import tk.glucodata.ui.lifetimeEndMs
+import tk.glucodata.ui.sensorElapsedOverlay
 import tk.glucodata.ui.viewmodel.SensorInfo
 import tk.glucodata.ui.viewmodel.SensorViewModel
 
@@ -227,19 +228,20 @@ internal fun SensorWear(life: SensorLife, modifier: Modifier = Modifier) {
 /** The radius of the corners inside the wear stack, where one tile meets another. */
 private val SensorStackCorner = 4.dp
 
-/**
- * The top of the wear stack: the dashboard's lifetime fill across the width, the sensor's age
- * at the start, and at the end the dashboard's calendar with the days the sensor is rated for
- * ("28 days"), so the fill is read against that span. The age's units are spelled out where there is the
- * room and abbreviated where not.
- */
+/** The remaining wear and rated duration, over the same elapsed overlay as the dashboard. */
 @Composable
 private fun SensorLifeBar(life: SensorLife, modifier: Modifier = Modifier) {
     val locale = LocalConfiguration.current.locales[0]
-    val ageMs = (life.nowMs - life.startMs).coerceAtLeast(0L)
+    val remainingMs = (life.endMs - life.nowMs).coerceAtLeast(0L)
     val ratedDays = ((life.endMs - life.startMs + DAY_MS / 2) / DAY_MS).coerceAtLeast(1L)
     val textStyle = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum")
-    val sensorAgeLabel = stringResource(R.string.sensor_age)
+    val remainingLabel = stringResource(R.string.sensor_life)
+    val finishedText = when {
+        life.overrun -> stringResource(R.string.sensor_expected_end)
+        remainingMs == 0L -> stringResource(R.string.expired)
+        else -> null
+    }
+    val elapsedColor = MaterialTheme.colorScheme.surfaceVariant
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(
@@ -254,28 +256,30 @@ private fun SensorLifeBar(life: SensorLife, modifier: Modifier = Modifier) {
         // The dates' own side padding, so the bar's two ends sit over the two dates.
         Row(
             modifier = Modifier
-                .sensorLifeFill(life)
+                .sensorElapsedOverlay(life.progress, elapsedColor)
                 .heightIn(min = 40.dp)
                 .padding(horizontal = SensorDatesPadding, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val wideText = sensorSpanText(locale, ageMs, MeasureFormat.FormatWidth.WIDE)
-            // Abbreviated once the spelled-out age has been seen not to fit.
+            val wideText = finishedText ?: sensorSpanText(locale, remainingMs, MeasureFormat.FormatWidth.WIDE)
+            // Abbreviated once the spelled-out duration has been seen not to fit.
             var abbreviated by remember(wideText.length, textStyle) { mutableStateOf(false) }
             val unitWidth = if (abbreviated) MeasureFormat.FormatWidth.NARROW else MeasureFormat.FormatWidth.WIDE
-            val ageText = if (abbreviated) sensorSpanText(locale, ageMs, unitWidth) else wideText
+            val remainingText = if (abbreviated && finishedText == null) {
+                sensorSpanText(locale, remainingMs, unitWidth)
+            } else wideText
             val ratedText = remember(locale, ratedDays, unitWidth) {
                 MeasureFormat.getInstance(locale, unitWidth).format(Measure(ratedDays, MeasureUnit.DAY))
             }
             Text(
-                text = ageText,
+                text = remainingText,
                 style = textStyle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 onTextLayout = { if (it.hasVisualOverflow) abbreviated = true },
                 modifier = Modifier
                     .weight(1f)
-                    .semantics { contentDescription = "$sensorAgeLabel $ageText" },
+                    .semantics { contentDescription = finishedText ?: "$remainingLabel $remainingText" },
             )
             Spacer(Modifier.width(16.dp))
             // The dashboard's sensor card draws the calendar at this size and strength.

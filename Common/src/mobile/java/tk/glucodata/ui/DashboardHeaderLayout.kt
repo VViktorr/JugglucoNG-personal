@@ -6,12 +6,14 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,17 +42,21 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import tk.glucodata.CloneTransport
+import tk.glucodata.R
 
 /** Space between the reading card and the sensor panel. */
 internal val HeroSensorGap = 4.dp
@@ -245,6 +251,15 @@ private object NeverWidensParent : LayoutModifier {
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(measurable: IntrinsicMeasurable, height: Int) = 0
 }
 
+/** Cover the elapsed part at the end edge, leaving the remaining part visible at the start. */
+internal fun Modifier.sensorElapsedOverlay(progress: Float, color: Color): Modifier = drawBehind {
+    val width = size.width * progress.coerceIn(0f, 1f)
+    if (width > 0f) {
+        val left = if (layoutDirection == LayoutDirection.Ltr) size.width - width else 0f
+        drawRect(color, Offset(left, 0f), Size(width, size.height))
+    }
+}
+
 /**
  * The sensor panel beside the reading: signal quality and reading age, the sensor's name,
  * and its lifetime (or its status when that matters more), over a fill showing how much
@@ -270,28 +285,22 @@ internal fun DashboardSensorPanel(
     containerColor: Color,
     contentColor: Color,
     shape: Shape,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bluetoothRssi: Int? = null,
 ) {
     Card(
         modifier = modifier.height(DashboardBarHeight),
         colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor),
         shape = shape
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (progress > 0f) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .fillMaxHeight()
-                        .fillMaxWidth(progress.coerceIn(0f, 1f))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
-            }
-
+        val compactSignal = !stacked && bluetoothRssi != null
+        val compactLabel = MaterialTheme.typography.labelSmall.copy(lineHeight = 12.sp)
+        val elapsedColor = MaterialTheme.colorScheme.surfaceVariant
+        Box(Modifier.fillMaxSize().sensorElapsedOverlay(progress, elapsedColor)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = SensorPanelPadding, vertical = 4.dp),
+                    .padding(horizontal = SensorPanelPadding, vertical = if (compactSignal) 2.dp else 4.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -302,11 +311,15 @@ internal fun DashboardSensorPanel(
                         noiseLevel = noiseLevel,
                         readingMillis = readingMillis,
                         contentColor = contentColor,
-                        readingAgeStyle = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+                        readingAgeStyle = when {
+                            stacked -> MaterialTheme.typography.titleMedium
+                            compactSignal -> compactLabel
+                            else -> MaterialTheme.typography.labelMedium
+                        },
                         readingAgeIconSize = if (stacked) 16.dp else 14.dp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 4.dp)
+                            .padding(bottom = if (compactSignal) 0.dp else 4.dp)
                     )
                 }
 
@@ -316,7 +329,11 @@ internal fun DashboardSensorPanel(
                         isCloneSource = isCloneSource,
                         cloneTransport = cloneTransport,
                         activeSensors = activeSensors,
-                        style = if (stacked) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
+                        style = when {
+                            stacked -> MaterialTheme.typography.labelLarge
+                            compactSignal -> compactLabel
+                            else -> MaterialTheme.typography.labelMedium
+                        },
                         color = contentColor.copy(alpha = 0.7f)
                     )
                 }
@@ -326,7 +343,11 @@ internal fun DashboardSensorPanel(
                         if (statusText.isNotEmpty()) {
                             Text(
                                 text = statusText,
-                                style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
+                                style = when {
+                                    stacked -> MaterialTheme.typography.titleMedium
+                                    compactSignal -> MaterialTheme.typography.labelMedium
+                                    else -> MaterialTheme.typography.labelLarge
+                                },
                                 color = contentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -339,7 +360,11 @@ internal fun DashboardSensorPanel(
                         if (lifetimeText.isNotEmpty()) {
                             SensorLifetimeLine(
                                 text = lifetimeText,
-                                style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
+                                style = when {
+                                    stacked -> MaterialTheme.typography.titleMedium
+                                    compactSignal -> MaterialTheme.typography.labelMedium
+                                    else -> MaterialTheme.typography.labelLarge
+                                },
                                 color = contentColor,
                                 // The hourglass is the warning, so it always shows; the calendar
                                 // is decoration and steps aside when the text needs its room.
@@ -373,14 +398,51 @@ internal fun DashboardSensorPanel(
                     }
                     Text(
                         text = expiryText,
-                        style = if (stacked) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
+                        style = when {
+                            stacked -> MaterialTheme.typography.labelLarge
+                            compactSignal -> compactLabel
+                            else -> MaterialTheme.typography.labelMedium
+                        },
                         color = contentColor.copy(alpha = 0.85f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = modifier,
                     )
                 }
-                if (stacked && sensorEndTimeMs > 0L) {
+                if (bluetoothRssi != null) {
+                    if (compactSignal && sensorEndTimeMs > 0L) {
+                        expiry(Modifier.neverWidensParent())
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.weight(1f)) {
+                            if (stacked && sensorEndTimeMs > 0L) expiry(Modifier)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            lifetime()
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                SensorLinkIcon(
+                                    state = SensorLinkState.UP,
+                                    rssi = bluetoothRssi,
+                                    color = contentColor,
+                                    waveHeight = 14.dp,
+                                )
+                                Text(
+                                    text = stringResource(R.string.ottai_rssi_dbm, bluetoothRssi),
+                                    style = compactLabel.copy(fontFeatureSettings = "tnum"),
+                                    color = contentColor,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                        }
+                    }
+                } else if (stacked && sensorEndTimeMs > 0L) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,

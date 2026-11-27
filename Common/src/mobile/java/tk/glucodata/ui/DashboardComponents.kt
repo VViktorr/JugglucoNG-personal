@@ -213,7 +213,8 @@ fun DashboardCombinedHeader(
     // The alarm quiet window: 0 = none, and then nothing is drawn. A running one
     // shows as a chip with its end time; tapping it opens the quiet-window screen.
     quietWindowUntilMs: Long = 0L,
-    onQuietWindowClick: () -> Unit = {}
+    onQuietWindowClick: () -> Unit = {},
+    sensorBluetoothRssi: Int? = null,
 ) {
     // Determine Colors based on logic
     // Glucose: primary tonal surface with a very light range tint when fresh data is out of range.
@@ -578,6 +579,7 @@ fun DashboardCombinedHeader(
                     noiseLevel = trendResult.noiseLevel,
                     readingMillis = if (showReadingAge) primaryReadingMillis else null,
                     sensorEndTimeMs = sensorEndTimeMs,
+                    bluetoothRssi = sensorBluetoothRssi.takeUnless { isCloneSource },
                     containerColor = sensorContainerColor,
                     contentColor = sensorContentColor,
                     shape = sensorShape,

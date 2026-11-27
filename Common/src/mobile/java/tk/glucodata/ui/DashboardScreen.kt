@@ -219,6 +219,7 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.changedToUp
@@ -1100,6 +1101,33 @@ fun DashboardScreen(
                 serial = reachSensor,
                 lastReadingMs = maxOf(reachOwnCurrentMs, reachLatestReading?.timestamp ?: 0L),
             )
+            val sensorRssi by key(reachSensor) {
+                produceState<Int?>(initialValue = null, key1 = lifecycleOwner) {
+                    if (reachSensor.isBlank()) return@produceState
+                    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        var nextRequestAt = 0L
+                        try {
+                            while (true) {
+                                val callback = SensorBluetooth.gattcallbacks.firstOrNull {
+                                    SensorIdentity.matches(it.SerialNumber, reachSensor) &&
+                                        it.hasLocallyConnectedGatt() && !SensorBluetooth.isSensorPaused(it)
+                                }
+                                value = callback?.readrssi?.takeIf { it in -120..-1 }
+                                val now = android.os.SystemClock.elapsedRealtime()
+                                if (callback == null) {
+                                    nextRequestAt = 0L
+                                } else if (now >= nextRequestAt) {
+                                    callback.requestRssi()
+                                    nextRequestAt = now + 10_000L
+                                }
+                                delay(2_000L)
+                            }
+                        } finally {
+                            value = null
+                        }
+                    }
+                }
+            }
             val showSensorReachPrompt = hasSensorContext &&
                 sensorReach.reach == tk.glucodata.drivers.SensorReach.OUT_OF_REACH
             val adaptiveMetrics = rememberAdaptiveWindowMetrics()
@@ -1614,6 +1642,7 @@ fun DashboardScreen(
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
                                 sensorEndTimeMs = sensorEndTimeMs,
+                                sensorBluetoothRssi = sensorRssi,
                                 stackBars = dashboardBarsStacked,
                                 glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
@@ -1950,6 +1979,7 @@ fun DashboardScreen(
                                 sensorProgress = sensorProgress,
                                 sensorHoursRemaining = sensorHoursRemaining,
                                 sensorEndTimeMs = sensorEndTimeMs,
+                                sensorBluetoothRssi = sensorRssi,
                                 stackBars = dashboardBarsStacked,
                                 glucoseWidthPercent = if (dashboardBarsCustomRatio) dashboardGlucoseWidthPercent else 70,
                                 currentDay = currentDay,
