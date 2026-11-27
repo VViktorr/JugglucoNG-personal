@@ -81,7 +81,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
-import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -108,13 +107,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
@@ -140,7 +137,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -923,65 +919,16 @@ fun DashboardChartSection(
                 }
         }
     }
-    val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
-    // No dead zone: the 6% one meant the colour and the corner radius sat still while
-    // the card was already pulling in from the edges, so the shape led the paint.
-    val collapseVisualProgress = 1f - safeExpandedProgress
-    val containerColor = androidx.compose.ui.graphics.lerp(
-        MaterialTheme.colorScheme.background,
-        MaterialTheme.colorScheme.surfaceContainerHigh,
-        collapseVisualProgress
-    )
-    val cornerRadius = (16.dp * collapseVisualProgress).coerceAtLeast(0.dp)
-    val density = LocalDensity.current
-    // The card is painted at its own bounds; only the clip reaches past them, by the
-    // backdrop's share of the bleed, so the grid that carries on behind the hero and the
-    // readings is let through while expanded and drawn back into the card as it forms.
-    val clipShape = with(density) {
-        ChartBleedClipShape(
-            cornerRadiusPx = cornerRadius.toPx(),
-            bleedPx = backdropBleed.toPx() * chartBackdropProgress(safeExpandedProgress)
-        )
-    }
+    // Preserve the journal-style card even when the dashboard viewport expands.
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val cornerRadius = 16.dp
     Surface(
-        modifier = modifier.background(containerColor, RoundedCornerShape(cornerRadius)),
-        shape = clipShape,
-        color = Color.Transparent,
-        contentColor = contentColorFor(containerColor),
-        // Deliberately no tonalElevation. Material's Surface only applies it when the
-        // colour is exactly colorScheme.surface, so with a lerped colour it switches on
-        // and off at whichever endpoint happens to match in the current scheme — a tint
-        // that pops at the end of the animation in some themes and never appears in
-        // others. surfaceContainerHigh is already the elevated tone, so the lerp alone
-        // carries the intent.
+        modifier = modifier,
+        shape = RoundedCornerShape(cornerRadius),
+        color = containerColor,
         shadowElevation = 0.dp
     ) {
         chartContent()
-    }
-}
-
-/**
- * How much of the backdrop bleed shows at [expandedProgress]. Squared so the grid outside
- * the card is all but gone by the time the card has visibly formed, instead of hanging off
- * its edges for the whole collapse.
- */
-internal fun chartBackdropProgress(expandedProgress: Float): Float {
-    val progress = expandedProgress.coerceIn(0f, 1f)
-    return progress * progress
-}
-
-/** The chart card's clip: its rounded bounds, stretched vertically by [bleedPx]. */
-private data class ChartBleedClipShape(
-    private val cornerRadiusPx: Float,
-    private val bleedPx: Float
-) : Shape {
-    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val bounds = Rect(0f, -bleedPx, size.width, size.height + bleedPx)
-        return if (cornerRadiusPx <= 0f) {
-            Outline.Rectangle(bounds)
-        } else {
-            Outline.Rounded(RoundRect(bounds, CornerRadius(cornerRadiusPx)))
-        }
     }
 }
 
@@ -1059,7 +1006,7 @@ fun InteractiveGlucoseChart(
     val secondaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     val tertiaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) // Lighter shade for 3rd line
     val pointColor = MaterialTheme.colorScheme.onSurface
-    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.16f else 0.125f)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.16f else 0.08f)
     // A dedicated override may replace the in-range hue; without one, the band
     // follows IN_RANGE. The 0.12 alpha restores the original target-band weight.
     val targetBandColor =
@@ -1091,16 +1038,14 @@ fun InteractiveGlucoseChart(
     // The grid that carries on past the chart's top and bottom edges when expanded. It is
     // drawn at full extent and faded, while the host's clip pulls the extent itself in.
     val backdropBleedPx = with(LocalDensity.current) { backdropBleed.toPx() }
-    val backdropAlpha = if (backdropBleedPx > 0f) chartBackdropProgress(safeExpandedProgress) else 0f
+    // The chart remains a bounded card, like the journal; do not draw behind dashboard cards.
+    val backdropAlpha = 0f
     // How far the range picker reaches below the plot, written by the layout below and
     // read only while drawing, so a picker that changes height costs a redraw, not a
     // recomposition.
     val pickerOverhangPx = remember { mutableFloatStateOf(0f) }
-    val axisLabelBackgroundColor = androidx.compose.ui.graphics.lerp(
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
-        MaterialTheme.colorScheme.background.copy(alpha = 0.96f),
-        safeExpandedProgress
-    )
+    val axisLabelBackgroundColor =
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
 
     val TirLowColor = Color(GlucoseRangeColors.low(isDark))
     val TirHighColor = Color(GlucoseRangeColors.high(isDark))
