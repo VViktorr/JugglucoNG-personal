@@ -2090,20 +2090,11 @@ fun CalibrationsCard(
                     )
                 }
                 
-                androidx.compose.material3.Switch(
+                tk.glucodata.ui.components.StyledSwitch(
                     checked = isCalibrationEnabled,
                     onCheckedChange = { enabled ->
                         tk.glucodata.data.calibration.CalibrationManager.setEnabledForMode(isRawMode, enabled, currentSensor)
                     },
-                    thumbContent = if (isCalibrationEnabled) {
-                        {
-                            Icon(
-                                imageVector = Symbols.CheckFilled,
-                                contentDescription = null,
-                                modifier = Modifier.size(androidx.compose.material3.SwitchDefaults.IconSize),
-                            )
-                        }
-                    } else null
                 )
             }
             
