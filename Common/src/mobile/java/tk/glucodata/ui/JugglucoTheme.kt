@@ -2,7 +2,11 @@
 
 package tk.glucodata.ui
 
+import androidx.compose.runtime.remember
 import android.app.Activity
+import tk.glucodata.composeFamily
+import tk.glucodata.rememberAppFont
+import tk.glucodata.FontCatalog
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -91,7 +95,7 @@ fun JugglucoTheme(
     MaterialExpressiveTheme(
         colorScheme = colorScheme,
         motionScheme = MotionScheme.expressive(),
-        typography = tk.glucodata.ui.theme.AppTypography,
+        typography = rememberAppTypography(),
     ) {
         // Display size (density) may grow at most 10% past the device's native density, so an
         // extreme Display Size setting cannot break M3 layouts. Font size is not capped here:
@@ -212,4 +216,14 @@ fun FontScaleCap(max: Float = DENSE_FONT_SCALE_CAP, content: @Composable () -> U
     // shape of the composition and throw away the content's state.
     val capped = if (density.fontScale <= max) density else Density(density.density, max)
     CompositionLocalProvider(LocalDensity provides capped, content = content)
+}
+
+@Composable
+internal fun rememberAppTypography(): androidx.compose.material3.Typography {
+    val context = LocalContext.current
+    val selectedAppFont = rememberAppFont()
+    return remember(context, selectedAppFont) {
+        if (selectedAppFont == FontCatalog.Family.IBM_PLEX) tk.glucodata.ui.theme.AppTypography
+        else tk.glucodata.ui.theme.appTypography(selectedAppFont.composeFamily(context))
+    }
 }

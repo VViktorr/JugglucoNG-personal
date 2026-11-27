@@ -2,6 +2,7 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.components.RevealSettingsSearchAnchor
 import androidx.compose.foundation.lazy.rememberLazyListState
 import tk.glucodata.ui.components.AdaptiveButtonRow
@@ -911,7 +912,7 @@ fun WearOsConfigScreen(navController: NavController) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showWatchIconDialog = false }) {
+                TextButton(shapes = appButtonShapes(), onClick = { showWatchIconDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

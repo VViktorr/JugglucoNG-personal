@@ -76,6 +76,11 @@ public class StatusIcon {
             paint.setTypeface(font);
         }
 
+        if (FontCatalog.hasSelection(mContext)) {
+            paint.setFontVariationSettings(null);
+            paint.setTypeface(FontCatalog.appTypeface(mContext, effectiveWeight));
+        }
+
         // 1. Measure at test size
         float testSize = 100f;
         paint.setTextSize(testSize);
@@ -186,6 +191,10 @@ public class StatusIcon {
             }
         } catch (Throwable t) {
             paint.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        }
+        if (FontCatalog.hasSelection(mContext)) {
+            paint.setFontVariationSettings(null);
+            paint.setTypeface(FontCatalog.appTypeface(mContext, effectiveWeight));
         }
         return paint;
     }

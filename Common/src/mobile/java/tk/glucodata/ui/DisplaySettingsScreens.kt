@@ -2,6 +2,7 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
@@ -577,7 +578,7 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
                     context, tk.glucodata.SystemGlucoseNotification.LIVE_UPDATE, it
                 )
             },
-            icon = Icons.Default.Layers,
+            icon = Symbols.LayersFilled,
             modifier = Modifier.padding(horizontal = screenHorizontalPadding)
         )
         SystemGlucoseNotificationContentSettings(metric = android.os.Build.VERSION.SDK_INT >= 37)
@@ -585,7 +586,7 @@ fun LiveUpdateSettingsScreen(navController: NavController) {
 
         if (android.os.Build.VERSION.SDK_INT >= 36 && systemLive) {
             Column(modifier = Modifier.padding(horizontal = screenHorizontalPadding)) {
-                OutlinedButton(onClick = {
+                OutlinedButton(shapes = appButtonShapes(), onClick = {
                     val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
                         .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
                     runCatching { context.startActivity(intent) }.onFailure {

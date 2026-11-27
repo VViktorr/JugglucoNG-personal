@@ -9,6 +9,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.tween
 import android.view.MotionEvent
 import android.content.Intent
+import tk.glucodata.composeFamily
 import android.graphics.Typeface // Added for Google Sans
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
@@ -374,7 +375,12 @@ internal fun rememberFloatingOverlayStyle(
         "MEDIUM" -> 500
         else -> 400
     }
-    val fontFamily = remember(fontSource, weightVal) {
+    val context = LocalContext.current
+    val selectedFont = tk.glucodata.rememberAppFont()
+    val fontFamily = remember(context, fontSource, weightVal, selectedFont) {
+        if (fontSource == "APP" && selectedFont != tk.glucodata.FontCatalog.Family.IBM_PLEX) {
+            FontFamily(tk.glucodata.FontCatalog.typeface(context, selectedFont, weightVal, false))
+        } else
         if (fontSource == "APP") {
             try {
                 FontFamily(Font(MainFontFile,

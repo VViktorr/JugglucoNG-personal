@@ -47,7 +47,7 @@ enum class WidgetSettingsKind(
 enum class WidgetBackground { SURFACE, RANGE, TRANSPARENT }
 enum class WidgetShape { SYSTEM, ROUND, PILL, SQUARE }
 enum class WidgetStatsPeriod(val hours: Int) { TODAY(0), DAY(24), WEEK(168) }
-enum class WidgetFontFamily { IBM_PLEX, SYSTEM }
+typealias WidgetFontFamily = tk.glucodata.FontCatalog.Family
 
 data class WidgetConfig(
     val background: WidgetBackground = WidgetBackground.SURFACE,
@@ -196,6 +196,8 @@ private fun WidgetSettingsKind.baseDefault(): WidgetConfig = when (this) {
 
 object WidgetConfigStore {
     private const val PREFS = "home_widget_defaults"
+    // One font choice shared by every widget type and every text field.
+    private const val GLOBAL_WIDGET_FONT = "global_widget_font_family"
     private val mutableRevision = MutableStateFlow(0L)
     val revision = mutableRevision.asStateFlow()
 
@@ -239,12 +241,30 @@ object WidgetConfigStore {
 
     fun load(context: Context, kind: WidgetSettingsKind): WidgetConfig {
         migrateOpacityTo65(context)
-        val saved = WidgetConfig.fromJson(prefs(context).getString(kind.name, null), defaults(context, kind))
+        val preferences = prefs(context)
+        val saved = WidgetConfig.fromJson(preferences.getString(kind.name, null), defaults(context, kind))
+        val globalFont = runCatching {
+            WidgetFontFamily.valueOf(preferences.getString(GLOBAL_WIDGET_FONT, saved.fontFamily.name) ?: saved.fontFamily.name)
+        }.getOrDefault(saved.fontFamily)
         return saved.copy(
-            mainFontFamily = saved.fontFamily,
-            detailFontFamily = saved.fontFamily,
+            fontFamily = globalFont,
+            mainFontFamily = globalFont,
+            detailFontFamily = globalFont,
             secondaryFontWeight = saved.primaryFontWeight
         )
+    }
+
+    /** Persist the global family before pushing fresh views to every provider. */
+    fun selectFont(context: Context, family: WidgetFontFamily) {
+        prefs(context).edit().putString(GLOBAL_WIDGET_FONT, family.name).apply()
+        synchronized(mutableRevision) {
+            mutableRevision.value = mutableRevision.value + 1L
+        }
+        // BASIC bypasses its reading-update throttle; the other providers queue
+        // an explicit render. None of these waits for a reading or clock tick.
+        tk.glucodata.GlucoseWidget.refreshSettings()
+        tk.glucodata.widget.ExpressiveWidgetReceiver.updateAll(context)
+        WidgetUpdater.requestUpdateAll(context)
     }
 
     /** Only settings actually exposed and rendered by the target are eligible. */
@@ -270,6 +290,7 @@ object WidgetConfigStore {
                 if (supportsSetting(source, key) && supportsSetting(target, key)) {
                     json.put(key, sourceJson.get(key))
                     if (key == "primaryFontWeight") json.put("secondaryFontWeight", config.primaryFontWeight)
+                    tk.glucodata.Log.i("WidgetSettingsTrace", "copy source=$source target=$target key=$key value=${sourceJson.get(key)}")
                 }
             }
             val copied = WidgetConfig.fromJson(json.toString(), existing)
@@ -284,7 +305,14 @@ object WidgetConfigStore {
     }
 
     fun save(context: Context, kind: WidgetSettingsKind, config: WidgetConfig) {
-        prefs(context).edit().putString(kind.name, config.toJson().toString()).apply()
+        tk.glucodata.Log.i("WidgetSettingsTrace", "save kind=$kind main=${config.glucoseScale} detail=${config.detailScale} weather=${config.weatherScale} icon=${config.weatherIconScale} temperature=${config.temperatureScale} shift=${config.weatherShiftDp} opacity=${config.opacity} radius=${config.cornerRadiusDp} font=${config.fontFamily}")
+
+        prefs(context).edit()
+            .putString(kind.name, config.copy(
+                mainFontFamily = config.fontFamily,
+                detailFontFamily = config.fontFamily
+            ).toJson().toString())
+            .apply()
         // Active Glance sessions must reload settings even without a glucose tick.
         synchronized(mutableRevision) {
             mutableRevision.value = mutableRevision.value + 1L

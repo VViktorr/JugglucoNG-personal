@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_font_title">Czcionka widżetów</string>
+    <string name="font_licenses_title">Licencje czcionek</string>
+    <string name="font_notice">Aplikacja korzysta z HarmonyOS Sans Fonts (Copyright 2021 Huawei Device Co., Ltd.) oraz innych dołączonych czcionek. Pełne licencje i informacje o prawach autorskich są dostępne poniżej.</string>
+</resources>

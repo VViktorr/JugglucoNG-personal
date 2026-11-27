@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/home_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageView
+        android:id="@+id/home_widget_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@string/widget_clock_weather" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+<FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+    <TextClock
+        android:id="@+id/home_widget_clock_300"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="start|center_vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:fontFamily="sans-serif-light"
+        android:textStyle="normal"
+        android:visibility="gone"
+        android:singleLine="true"
+        android:textSize="48sp"
+        android:textColor="#FFFFFFFF"
+        android:format12Hour="h:mm"
+        android:format24Hour="HH:mm"
+        android:importantForAccessibility="yes" />
+    <TextClock
+        android:id="@+id/home_widget_clock_400"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="start|center_vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:fontFamily="sans-serif"
+        android:textStyle="normal"
+        android:visibility="visible"
+        android:singleLine="true"
+        android:textSize="48sp"
+        android:textColor="#FFFFFFFF"
+        android:format12Hour="h:mm"
+        android:format24Hour="HH:mm"
+        android:importantForAccessibility="yes" />
+    <TextClock
+        android:id="@+id/home_widget_clock_500"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="start|center_vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:fontFamily="sans-serif-medium"
+        android:textStyle="normal"
+        android:visibility="gone"
+        android:singleLine="true"
+        android:textSize="48sp"
+        android:textColor="#FFFFFFFF"
+        android:format12Hour="h:mm"
+        android:format24Hour="HH:mm"
+        android:importantForAccessibility="yes" />
+    <TextClock
+        android:id="@+id/home_widget_clock_600"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="start|center_vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:fontFamily="sans-serif"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:singleLine="true"
+        android:textSize="48sp"
+        android:textColor="#FFFFFFFF"
+        android:format12Hour="h:mm"
+        android:format24Hour="HH:mm"
+        android:importantForAccessibility="yes" />
+    <TextClock
+        android:id="@+id/home_widget_clock_700"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="start|center_vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:fontFamily="sans-serif"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:singleLine="true"
+        android:textSize="48sp"
+        android:textColor="#FFFFFFFF"
+        android:format12Hour="h:mm"
+        android:format24Hour="HH:mm"
+        android:importantForAccessibility="yes" />
+</FrameLayout>
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+    </LinearLayout>
+</FrameLayout>

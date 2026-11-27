@@ -2,6 +2,7 @@
 
 package tk.glucodata.ui
 
+import tk.glucodata.ui.util.appButtonShapes
 import tk.glucodata.ui.components.settingsSearchAnchor
 import tk.glucodata.ui.components.RevealSettingsSearchAnchor
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -9,7 +10,6 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import androidx.compose.material.icons.filled.NotificationsActive
 import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.BackHandler
@@ -109,6 +109,8 @@ fun ExpressiveSettingsScreen(
     viewModel: DashboardViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val appFont = tk.glucodata.rememberAppFont()
+    var showFontDialog by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val sensorStatusRevision by tk.glucodata.UiRefreshBus.revision.collectAsStateWithLifecycle()
     val showMqAccount = remember(context, sensorStatusRevision) {
@@ -456,6 +458,14 @@ fun ExpressiveSettingsScreen(
                     onClick = { showThemeDialog = true }
                 )
                 SettingsItem(
+                    title = stringResource(R.string.app_font_title),
+                    subtitle = appFont.displayName(context),
+                    icon = Symbols.SettingsAccessibilityFilled,
+                    iconTint = generalColor,
+                    position = CardPosition.MIDDLE,
+                    onClick = { showFontDialog = true }
+                )
+                SettingsItem(
                     title = stringResource(R.string.languagename),
                     subtitle = currentLangName,
                     icon = Symbols.LanguageFilled,
@@ -563,7 +573,7 @@ fun ExpressiveSettingsScreen(
                 SettingsItem(
                     title = stringResource(R.string.widget_settings_title),
                     subtitle = stringResource(R.string.widget_settings_subtitle),
-                    icon = Icons.Default.ClearAll,
+                    icon = Symbols.ClearAllFilled,
                     iconTint = displayColor,
                     position = CardPosition.MIDDLE,
                     onClick = { navController.navigate("settings/widgets") }
@@ -587,7 +597,7 @@ fun ExpressiveSettingsScreen(
                         )
                     },
                     onClick = { navController.navigate("settings/live-update") },
-                    icon = Icons.Default.NotificationsActive,
+                    icon = Symbols.NotificationsActiveFilled,
                     iconTint = displayColor,
                     position = CardPosition.MIDDLE
                 )
@@ -927,6 +937,11 @@ fun ExpressiveSettingsScreen(
             ) {
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.font_notice), style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp))
+                TextButton(shapes = appButtonShapes(), onClick = { tk.glucodata.FontLicenses.show(context) }) {
+                    Text(stringResource(R.string.font_licenses_title))
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 // ui-guardrails: allow text_literal - a version number, the same in every language
                 Text(
@@ -954,6 +969,16 @@ fun ExpressiveSettingsScreen(
         showUnitDialog = false
         context.findActivity()?.hardRestart() 
     }, { showUnitDialog = false })
+    if (showFontDialog) {
+        FontPickerDialog(
+            current = appFont,
+            onSelect = {
+                tk.glucodata.FontCatalog.select(context, it)
+                showFontDialog = false
+            },
+            onDismiss = { showFontDialog = false }
+        )
+    }
     if (showThemeDialog) ThemePickerDialog(themeMode, { onThemeChanged(it); showThemeDialog = false }, { showThemeDialog = false })
     if (showLanguageDialog) LanguagePickerDialog { showLanguageDialog = false }
     if (showClearHistoryDialog) ClearHistoryDialog(

@@ -69,7 +69,7 @@ import kotlin.math.roundToInt
 import tk.glucodata.R
 import tk.glucodata.logic.TrendEngine
 import tk.glucodata.ui.components.TrendIndicator
-import tk.glucodata.ui.theme.AppTypography
+import tk.glucodata.ui.rememberAppTypography
 import tk.glucodata.ui.util.rememberAdaptiveWindowMetrics
 
 enum class AlarmSeverity { LOW, HIGH, NEUTRAL }
@@ -111,7 +111,7 @@ fun AlarmScreen(
     MaterialExpressiveTheme(
         colorScheme = colorScheme,
         motionScheme = MotionScheme.expressive(),
-        typography = AppTypography
+        typography = rememberAppTypography()
     ) {
         PixelAlarmContent(
             primaryGlucose = primaryGlucose,

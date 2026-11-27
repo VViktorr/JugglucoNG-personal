@@ -33,6 +33,7 @@ public class Specific {
 	// initproc() gets that far -- the forecast alerts then fired on the two-point
 	// fallback slope. Registration stores singletons and needs nothing from initproc.
 	static void registerBridges() {
+		tk.glucodata.widgets.WidgetClockRefresh.INSTANCE.install(Applic.app);
 		TrendAccess.register(tk.glucodata.logic.TrendEngineVelocityProvider.INSTANCE);
 		NoiseAccess.register(tk.glucodata.logic.TrendEngineNoiseProvider.INSTANCE);
 		CustomAlertAccess.register(tk.glucodata.logic.CustomAlertManagerController.INSTANCE);

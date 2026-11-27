@@ -2,19 +2,23 @@
 
 package tk.glucodata.widgets
 
-import kotlinx.coroutines.withContext
-
-import kotlinx.coroutines.launch
+import tk.glucodata.ui.util.appFilterChipShapes
+import tk.glucodata.ui.util.appFilterChipColors
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.IconButton
+import tk.glucodata.ui.components.StyledSwitch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 import kotlinx.coroutines.Dispatchers
-
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 
 import tk.glucodata.ui.components.AppSlider
 
 import tk.glucodata.ui.util.appButtonShapes
-import tk.glucodata.ui.util.appFilterChipShapes
-import tk.glucodata.ui.util.appFilterChipColors
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -32,32 +36,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import tk.glucodata.ui.components.AppTopBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import tk.glucodata.composeFamily
 import tk.glucodata.GlucoseWidget
 import tk.glucodata.R
 import tk.glucodata.widget.ExpressiveWidgetReceiver
@@ -103,6 +102,22 @@ fun WidgetSettingsScreen(navController: NavController) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                var globalFont by remember { mutableStateOf(WidgetConfigStore.load(context, WidgetSettingsKind.BASIC).fontFamily) }
+                Text(stringResource(R.string.widget_font_title), style = MaterialTheme.typography.titleMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    WidgetFontFamily.values().forEach { family ->
+                        FilterChip(
+                            shapes = appFilterChipShapes(),
+                            colors = appFilterChipColors(),
+                            selected = globalFont == family,
+                            onClick = {
+                                globalFont = family
+                                WidgetConfigStore.selectFont(context, family)
+                            },
+                            label = { Text(family.displayName(context), fontFamily = family.composeFamily(context)) }
+                        )
+                    }
+                }
                 WidgetSettingsKind.entries.forEach { kind ->
                     WidgetCard(kind = kind, onClick = { selected = kind })
                 }
@@ -122,6 +137,7 @@ fun WidgetSettingsScreen(navController: NavController) {
                 config = config,
                 hasLocationPermission = weatherPermissionGranted,
                 onLocationPermission = { locationRequest.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
+                onSettingsFinished = { refreshWidget(context, kind) },
                 onChange = {
                     config = it
                     WidgetConfigStore.save(context, kind, it)
@@ -130,6 +146,41 @@ fun WidgetSettingsScreen(navController: NavController) {
             )
         }
     }
+}
+
+/** Keep unsnapped drag position separate from persisted integer percentages.
+ * Feeding rounded preferences straight back into a continuous Slider resets
+ * its thumb offset on every recomposition, swallowing small drag movements.
+ */
+@Composable
+private fun WidgetSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
+    onValueChangeFinished: () -> Unit
+) {
+    var dragValue by remember { mutableStateOf(value) }
+    var dragging by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(value, dragging) {
+        if (!dragging) dragValue = value
+    }
+    AppSlider(
+        value = dragValue,
+        valueRange = valueRange,
+        steps = steps,
+        onValueChange = {
+            dragging = true
+            dragValue = it
+            onValueChange(it)
+        },
+        onValueChangeFinished = {
+            // Commit the final thumb position before requesting the last render.
+            onValueChange(dragValue)
+            dragging = false
+            onValueChangeFinished()
+        }
+    )
 }
 
 @Composable
@@ -171,7 +222,8 @@ private fun WidgetDetailSettings(
     config: WidgetConfig,
     onChange: (WidgetConfig) -> Unit,
     hasLocationPermission: Boolean,
-    onLocationPermission: () -> Unit
+    onLocationPermission: () -> Unit,
+    onSettingsFinished: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -184,17 +236,6 @@ private fun WidgetDetailSettings(
         ApplyOtherWidgets(kind, config)
 
         Text(stringResource(R.string.widget_section_appearance), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.widget_font), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            WidgetFontFamily.entries.forEach { family ->
-                FilterChip(
-                    shapes = appFilterChipShapes(),
-                    colors = appFilterChipColors(),
-                    selected = config.fontFamily == family,
-                    onClick = { onChange(config.copy(fontFamily = family, mainFontFamily = family, detailFontFamily = family)) },
-                    label = { Text(stringResource(if (family == WidgetFontFamily.IBM_PLEX) R.string.widget_font_ibm_plex else R.string.widget_font_system)) })
-            }
-        }
         Text(stringResource(R.string.widget_font_weight), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf(300, 400, 500, 600, 700).forEach { weight ->
@@ -209,21 +250,24 @@ private fun WidgetDetailSettings(
 
 
         Text(if (kind.hasWeather) stringResource(R.string.widget_clock_detail_size_value, config.detailScale) else stringResource(R.string.widget_detail_size_value, config.detailScale))
-        AppSlider(
+        WidgetSlider(
+            onValueChangeFinished = onSettingsFinished,
             value = config.detailScale.toFloat(),
             onValueChange = { onChange(config.copy(detailScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
 
         Text(if (kind.hasWeather) stringResource(R.string.widget_clock_glucose_size_value, config.glucoseScale) else stringResource(R.string.widget_glucose_size_value, config.glucoseScale))
-        AppSlider(
+        WidgetSlider(
+            onValueChangeFinished = onSettingsFinished,
             value = config.glucoseScale.toFloat(),
             onValueChange = { onChange(config.copy(glucoseScale = (it / 5f).toInt() * 5)) },
             valueRange = 70f..180f
         )
 
         Text(stringResource(R.string.widget_corner_radius_value, config.cornerRadiusDp))
-        AppSlider(
+        WidgetSlider(
+            onValueChangeFinished = onSettingsFinished,
             value = config.cornerRadiusDp.toFloat(),
             onValueChange = { onChange(config.copy(cornerRadiusDp = it.toInt().coerceIn(0, 24))) },
             valueRange = 0f..24f,
@@ -239,7 +283,8 @@ private fun WidgetDetailSettings(
 
         if (config.background != WidgetBackground.TRANSPARENT) {
             Text(stringResource(R.string.widget_opacity_value, config.opacity))
-            AppSlider(
+            WidgetSlider(
+                onValueChangeFinished = onSettingsFinished,
                 value = config.opacity.toFloat(),
                 onValueChange = { onChange(config.copy(opacity = (it / 5f).toInt() * 5)) },
                 valueRange = 20f..100f
@@ -285,28 +330,32 @@ private fun WidgetDetailSettings(
             }
             if (config.showWeather) {
                 Text(stringResource(R.string.widget_weather_size_value, config.weatherScale))
-                AppSlider(
+                WidgetSlider(
+                    onValueChangeFinished = onSettingsFinished,
                     value = config.weatherScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..200f
                 )
 
                 Text(stringResource(R.string.widget_weather_icon_size_value, config.weatherIconScale))
-                AppSlider(
+                WidgetSlider(
+                    onValueChangeFinished = onSettingsFinished,
                     value = config.weatherIconScale.toFloat(),
                     onValueChange = { onChange(config.copy(weatherIconScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..220f
                 )
 
                 Text(stringResource(R.string.widget_temperature_size_value, config.temperatureScale))
-                AppSlider(
+                WidgetSlider(
+                    onValueChangeFinished = onSettingsFinished,
                     value = config.temperatureScale.toFloat(),
                     onValueChange = { onChange(config.copy(temperatureScale = (it / 5f).toInt() * 5)) },
                     valueRange = 70f..200f
                 )
 
                 Text(stringResource(R.string.widget_weather_shift_value, config.weatherShiftDp))
-                AppSlider(
+                WidgetSlider(
+                    onValueChangeFinished = onSettingsFinished,
                     value = config.weatherShiftDp.toFloat(),
                     onValueChange = { onChange(config.copy(weatherShiftDp = it.toInt())) },
                     valueRange = 0f..80f
@@ -410,12 +459,9 @@ private fun BackgroundChip(
 
 @Composable
 private fun WidgetSwitch(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(title, modifier = Modifier.weight(1f))
-        StyledSwitch(checked = checked, onCheckedChange = onCheckedChange)
-    }
+    tk.glucodata.ui.components.SettingsSwitchItem(
+        title = title,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+    )
 }

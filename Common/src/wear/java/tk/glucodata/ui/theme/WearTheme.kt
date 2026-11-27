@@ -12,6 +12,10 @@ import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Typography
 import tk.glucodata.R
+import tk.glucodata.FontCatalog
+import tk.glucodata.rememberAppFont
+import tk.glucodata.composeFamily
+import androidx.compose.ui.platform.LocalContext
 
 // Same IBM Plex Sans Variable the phone UI uses (shared res/font).
 // Condensed width for data-dense watch layouts, mirroring the phone's
@@ -53,21 +57,21 @@ private val WearColors = ColorScheme().copy(
     onError = Color(0xFF690005),
 )
 
-private fun wearTypography(): Typography {
+private fun wearTypography(family: FontFamily? = null): Typography {
     val base = Typography()
     return base.copy(
-        displayLarge = base.displayLarge.copy(fontFamily = PlexDataCondensed),
-        displayMedium = base.displayMedium.copy(fontFamily = PlexDataCondensed),
-        displaySmall = base.displaySmall.copy(fontFamily = PlexDataCondensed),
-        titleLarge = base.titleLarge.copy(fontFamily = PlexMedium),
-        titleMedium = base.titleMedium.copy(fontFamily = PlexMedium),
-        titleSmall = base.titleSmall.copy(fontFamily = PlexMedium),
-        bodyLarge = base.bodyLarge.copy(fontFamily = PlexRegular),
-        bodyMedium = base.bodyMedium.copy(fontFamily = PlexRegular),
-        bodySmall = base.bodySmall.copy(fontFamily = PlexRegular),
-        labelLarge = base.labelLarge.copy(fontFamily = PlexMedium),
-        labelMedium = base.labelMedium.copy(fontFamily = PlexMedium),
-        labelSmall = base.labelSmall.copy(fontFamily = PlexMedium),
+        displayLarge = base.displayLarge.copy(fontFamily = family ?: PlexDataCondensed),
+        displayMedium = base.displayMedium.copy(fontFamily = family ?: PlexDataCondensed),
+        displaySmall = base.displaySmall.copy(fontFamily = family ?: PlexDataCondensed),
+        titleLarge = base.titleLarge.copy(fontFamily = family ?: PlexMedium),
+        titleMedium = base.titleMedium.copy(fontFamily = family ?: PlexMedium),
+        titleSmall = base.titleSmall.copy(fontFamily = family ?: PlexMedium),
+        bodyLarge = base.bodyLarge.copy(fontFamily = family ?: PlexRegular),
+        bodyMedium = base.bodyMedium.copy(fontFamily = family ?: PlexRegular),
+        bodySmall = base.bodySmall.copy(fontFamily = family ?: PlexRegular),
+        labelLarge = base.labelLarge.copy(fontFamily = family ?: PlexMedium),
+        labelMedium = base.labelMedium.copy(fontFamily = family ?: PlexMedium),
+        labelSmall = base.labelSmall.copy(fontFamily = family ?: PlexMedium),
     )
 }
 
@@ -75,7 +79,7 @@ private fun wearTypography(): Typography {
 fun WearJugglucoTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = WearColors,
-        typography = wearTypography(),
+        typography = rememberAppFont().let { wearTypography(if (it == FontCatalog.Family.IBM_PLEX) null else it.composeFamily(LocalContext.current)) },
         content = content,
     )
 }

@@ -50,8 +50,125 @@ class WidgetRenderer(private val context: Context) {
                 height.toFloat(),
                 config,
                 snapshot,
-                weather
+                weather,
+                pxPerDp
             )
+        }
+        return bitmap
+    }
+
+    /** Draw text directly: detached TextViews may retain an empty/clipped layout. */
+    fun renderClockHeader(
+        config: WidgetConfig, snapshot: WidgetSnapshot, widthDp: Float, heightDp: Float,
+        pxPerDp: Float, weather: WidgetWeather?, includeBackground: Boolean,
+        valueText: String, reserveTrendArrowSpace: Boolean, drawClock: Boolean
+    ): Bitmap {
+        val bitmap = render(WidgetKind.CLOCK_WEATHER, config, snapshot, widthDp, heightDp,
+            pxPerDp, weather, includeBackground)
+        val canvas = Canvas(bitmap)
+        val w = bitmap.width.toFloat()
+        val h = bitmap.height.toFloat()
+        val color = if ((context.resources.configuration.uiMode and 0x30) == 0x20 ||
+            config.background == WidgetBackground.RANGE) Color.WHITE else 0xFF1D1B20.toInt()
+        val fontScale = context.resources.configuration.fontScale
+        val mainSize = min(widthDp * .145f, heightDp * .46f) * config.glucoseScale / 100f * pxPerDp * fontScale
+        val detailSize = min(widthDp * .050f, heightDp * .23f) * config.detailScale / 100f * pxPerDp * fontScale
+        val hasWeather = config.showWeather && weather != null &&
+            (config.showWeatherIcon || config.showTemperature)
+        fun text(value: String, left: Float, right: Float, top: Float, bottom: Float,
+                 size: Float, primary: Boolean, end: Boolean, tint: Int = color) {
+            if (value.isBlank() || right <= left || bottom <= top) return
+            val p = paint(size, tint, config, primary)
+            // Only the visible glyphs occupy this bitmap row. Font-wide top/
+            // bottom can include unrelated scripts and must not cap digit sizes.
+            val bounds = Rect()
+            fun extents(): Pair<Float, Float> {
+                p.getTextBounds(value, 0, value.length, bounds)
+                return if (bounds.height() > 0) bounds.top.toFloat() to bounds.bottom.toFloat()
+                    else p.fontMetrics.ascent to p.fontMetrics.descent
+            }
+            val availableW = (right - left - 2f).coerceAtLeast(1f)
+            val availableH = (bottom - top - 2f).coerceAtLeast(1f)
+            val initial = extents()
+            p.textSize *= min(1f, availableH / (initial.second - initial.first).coerceAtLeast(1f))
+            extents()
+            val span = max(p.measureText(value), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
+            // Keep the selected text height when a wider clock/value reaches
+            // its horizontal slot; fit width independently instead of undoing zoom.
+            p.textScaleX = min(1f, availableW / span.coerceAtLeast(1f))
+            val (a, b) = extents()
+            p.textAlign = Paint.Align.LEFT
+            val x = if (end) right - 1f - max(p.measureText(value), bounds.right.toFloat())
+                else left + 1f - min(0f, bounds.left.toFloat())
+            // Align visible glyph centers, not family-dependent line-box centers.
+            // Font extents above still constrain size so accents cannot be clipped.
+            val glyphTop = if (bounds.height() > 0) bounds.top.toFloat() else a
+            val glyphBottom = if (bounds.height() > 0) bounds.bottom.toFloat() else b
+            canvas.drawText(value, x, (top + bottom - glyphTop - glyphBottom) / 2f, p)
+        }
+        val now = java.util.Date()
+        val clock = android.text.format.DateFormat.getTimeFormat(context).format(now)
+        val date = android.text.format.DateFormat.format("EEEE, d MMMM", now).toString()
+        if (drawClock) {
+            text(clock, 12f * pxPerDp, w * (if (hasWeather) .30f else .48f), 0f, h / 2f, mainSize, true, false)
+        }
+        fun detailRow(reading: String) {
+            val dateLabel = if (config.showDate) date else ""
+            if (dateLabel.isBlank() && reading.isBlank()) return
+            val p = paint(detailSize, color, config, false)
+            val left = 14f * pxPerDp
+            val right = w - 12f * pxPerDp
+            val gap = if (dateLabel.isNotBlank() && reading.isNotBlank()) 12f * pxPerDp else 0f
+            val dateBounds = Rect()
+            val readingBounds = Rect()
+            fun measure(): Pair<Float, Float> {
+                p.getTextBounds(dateLabel, 0, dateLabel.length, dateBounds)
+                p.getTextBounds(reading, 0, reading.length, readingBounds)
+                val fm = p.fontMetrics
+                val width = p.measureText(dateLabel) + p.measureText(reading) +
+                    max(0f, -dateBounds.left.toFloat()) + max(0f, -readingBounds.left.toFloat()) +
+                    max(0f, dateBounds.right - p.measureText(dateLabel)) +
+                    max(0f, readingBounds.right - p.measureText(reading))
+                val height = max(fm.bottom, max(dateBounds.bottom, readingBounds.bottom).toFloat()) -
+                    min(fm.top, min(dateBounds.top, readingBounds.top).toFloat())
+                return width to height
+            }
+            // Fit the ENTIRE row once. Never independently shrink the date.
+            repeat(2) {
+                val (width, height) = measure()
+                p.textSize *= min(1f, min((right - left - gap - 2f).coerceAtLeast(1f) / width.coerceAtLeast(1f),
+                    (h * .5f - 2f).coerceAtLeast(1f) / height.coerceAtLeast(1f)))
+            }
+            measure()
+            val fm = p.fontMetrics
+            val baseline = h * .75f - (fm.top + fm.bottom) / 2f
+            p.textAlign = Paint.Align.LEFT
+            if (dateLabel.isNotBlank()) canvas.drawText(dateLabel,
+                left - min(0f, dateBounds.left.toFloat()), baseline, p)
+            if (reading.isNotBlank()) canvas.drawText(reading,
+                right - max(p.measureText(reading), readingBounds.right.toFloat()), baseline, p)
+        }
+        val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
+        if (snapshot.hasFreshReading) {
+            val arrowSize = if (reserveTrendArrowSpace) min(w * .10f, h * .40f)
+                else min(w * .09f, h * .32f)
+            val endPadding = if (config.showArrow && snapshot.rate.isFinite())
+                max(12f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 12f * pxPerDp
+            val value = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"
+            text(value, rightStart, w - endPadding, 0f, h / 2f, mainSize, true, true,
+                glucoseTextColor(snapshot, config))
+            val detail = buildList {
+                if (config.showDelta) snapshot.delta?.let { add(deltaText(it, snapshot.isMmol)) }
+                if (config.showUnit) add(snapshot.unitText)
+                if (config.showTime) snapshot.current?.let {
+                    add(android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)))
+                }
+            }.joinToString("  ")
+            detailRow(detail)
+        } else {
+            val status = snapshot.statusText?.takeIf { it.isNotBlank() } ?: context.getString(R.string.novalue)
+            text("—", rightStart, w - 12f * pxPerDp, 0f, h / 2f, mainSize, true, true)
+            detailRow(status)
         }
         return bitmap
     }
@@ -128,18 +245,7 @@ class WidgetRenderer(private val context: Context) {
 
     private fun configuredTypeface(config: WidgetConfig, bold: Boolean): Typeface {
         val weight = if (bold) config.primaryFontWeight else config.secondaryFontWeight
-        return try {
-            val base = if (config.fontFamily == WidgetFontFamily.IBM_PLEX) {
-                ResourcesCompat.getFont(context, R.font.ibm_plex_sans_var)
-                    ?: Typeface.create("sans-serif", Typeface.NORMAL)
-            } else {
-                Typeface.create("sans-serif", Typeface.NORMAL)
-            }
-            if (Build.VERSION.SDK_INT >= 28) Typeface.create(base, weight, false) else base
-        } catch (_: Throwable) {
-            val fallback = Typeface.create("sans-serif", Typeface.NORMAL)
-            if (Build.VERSION.SDK_INT >= 28) Typeface.create(fallback, weight, false) else fallback
-        }
+        return tk.glucodata.FontCatalog.typeface(context, config.fontFamily, weight, false)
     }
 
     private fun paint(
@@ -164,9 +270,10 @@ class WidgetRenderer(private val context: Context) {
         color: Int,
         scale: Int,
         config: WidgetConfig,
-        bold: Boolean = true
+        bold: Boolean = true,
+        referenceScale: Int = 100
     ): Paint {
-        var size = maxH * 0.82f * scale / 100f
+        var size = maxH * 0.82f * referenceScale / 100f
         val p = paint(size, color, config, bold)
         val measured = p.measureText(text)
         if (measured > maxW && measured > 0f) {
@@ -174,16 +281,20 @@ class WidgetRenderer(private val context: Context) {
             p.textSize = size
         }
         val fm = p.fontMetrics
-        val textH = fm.descent - fm.ascent
+        val textH = fm.bottom - fm.top
         if (textH > maxH && textH > 0f) {
             p.textSize *= maxH / textH
         }
+        p.textSize *= scale.toFloat() / referenceScale
+        val scaledMetrics = p.fontMetrics
+        p.textSize *= min(1f, min(maxW / p.measureText(text).coerceAtLeast(1f),
+            maxH / (scaledMetrics.bottom - scaledMetrics.top).coerceAtLeast(1f)))
         return p
     }
 
     private fun baselineCenter(p: Paint, cy: Float): Float {
         val fm = p.fontMetrics
-        return cy - (fm.ascent + fm.descent) / 2f
+        return cy - (fm.top + fm.bottom) / 2f
     }
 
     private fun drawStatus(
@@ -233,7 +344,7 @@ class WidgetRenderer(private val context: Context) {
         } ?: return
         val rawW = arrow.width.toFloat().coerceAtLeast(1f)
         val rawH = arrow.height.toFloat().coerceAtLeast(1f)
-        val fit = min(1f, maxSize / max(rawW, rawH))
+        val fit = maxSize / max(rawW, rawH)
         val drawW = max(1, (rawW * fit).roundToInt())
         val drawH = max(1, (rawH * fit).roundToInt())
         val left = (cx - drawW / 2f).roundToInt()
@@ -246,13 +357,39 @@ class WidgetRenderer(private val context: Context) {
         )
     }
 
+    private fun weatherPaint(text: String, maxW: Float, maxH: Float, color: Int,
+                             scale: Int, config: WidgetConfig): Paint {
+        val p = paint(maxH * .82f * scale / 100f, color, config, false)
+        val bounds = Rect()
+        p.getTextBounds(text, 0, text.length, bounds)
+        val height = if (bounds.height() > 0) bounds.height().toFloat()
+            else p.fontMetrics.descent - p.fontMetrics.ascent
+        p.textSize *= min(1f, maxH / height.coerceAtLeast(1f))
+        p.getTextBounds(text, 0, text.length, bounds)
+        val span = max(p.measureText(text), bounds.right.toFloat()) - min(0f, bounds.left.toFloat())
+        p.textScaleX = min(1f, maxW / span.coerceAtLeast(1f))
+        return p
+    }
+
+    private fun visibleBaseline(text: String, paint: Paint, centerY: Float): Float {
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        return if (bounds.height() > 0) centerY - (bounds.top + bounds.bottom) / 2f
+            else baselineCenter(paint, centerY)
+    }
+
+    private fun clockArrowSize(w: Float, h: Float, config: WidgetConfig): Float =
+        min(min(w * .09f, h * .32f) * config.glucoseScale / 100f,
+            min(w * .10f, h * .40f))
+
     private fun drawClockWeather(
         canvas: Canvas,
         w: Float,
         h: Float,
         c: WidgetConfig,
         s: WidgetSnapshot,
-        weather: WidgetWeather?
+        weather: WidgetWeather?,
+        pxPerDp: Float
     ) {
         val dark = (context.resources.configuration.uiMode and 0x30) == 0x20
         val foreground =
@@ -261,8 +398,7 @@ class WidgetRenderer(private val context: Context) {
         fun componentScale(component: Int): Int =
             component.coerceIn(50, 260)
 
-        val weatherCenterX = (w * 0.44f - c.weatherShiftDp * density)
-            .coerceIn(w * 0.27f, w * 0.54f)
+        val weatherCenterX = w * .44f - c.weatherShiftDp * pxPerDp
         if (c.showWeather && weather != null) {
             val symbol = when (weather.weatherCode) {
                 0 -> "☀"
@@ -276,41 +412,39 @@ class WidgetRenderer(private val context: Context) {
             }
 
             val weatherBase = componentScale(c.weatherScale)
-            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt().coerceIn(45, 300)
-            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt().coerceIn(45, 300)
+            val iconScale = (weatherBase * c.weatherIconScale / 100f).roundToInt()
+            val tempScale = (weatherBase * c.temperatureScale / 100f).roundToInt()
             val iconMaxW = w * 0.11f
             val tempMaxW = w * 0.14f
-            val gap = 5f * density
+            val gap = min(5f * pxPerDp, w * .02f)
 
-            var iconW = 0f
-            if (c.showWeatherIcon) {
-                val iconPaint = fitText(symbol, iconMaxW, h * 0.44f, foreground, iconScale, c, false)
-                iconW = iconPaint.measureText(symbol)
-                val iconX = weatherCenterX - if (c.showTemperature) w * 0.045f else 0f
-                canvas.drawText(symbol, iconX, baselineCenter(iconPaint, h * 0.34f), iconPaint)
+            val temperature = "${weather.temperatureC}°"
+            val iconPaint = if (c.showWeatherIcon)
+                weatherPaint(symbol, iconMaxW, h * .46f, foreground, iconScale, c) else null
+            val tempPaint = if (c.showTemperature)
+                weatherPaint(temperature, tempMaxW, h * .46f, foreground, tempScale, c) else null
+            val iconW = iconPaint?.measureText(symbol) ?: 0f
+            val tempW = tempPaint?.measureText(temperature) ?: 0f
+            val spacing = if (iconPaint != null && tempPaint != null) gap else 0f
+            val groupWidth = iconW + spacing + tempW
+            val center = weatherCenterX.coerceIn(
+                max(w * .18f, groupWidth / 2f + 12f * pxPerDp).coerceAtMost(w * .54f), w * .54f)
+            val start = center - groupWidth / 2f
+            iconPaint?.let {
+                canvas.drawText(symbol, start + iconW / 2f,
+                    visibleBaseline(symbol, it, h * .25f), it)
             }
-
-            if (c.showTemperature) {
-                val temperature = "${weather.temperatureC}°"
-                val tempPaint = fitText(temperature, tempMaxW, h * 0.42f, foreground, tempScale, c, false)
-                val tempX = weatherCenterX + if (c.showWeatherIcon) max(iconW * 0.55f, gap) else 0f
-                canvas.drawText(temperature, tempX, baselineCenter(tempPaint, h * 0.34f), tempPaint)
+            tempPaint?.let {
+                canvas.drawText(temperature, start + iconW + spacing + tempW / 2f,
+                    visibleBaseline(temperature, it, h * .25f), it)
             }
         }
 
-        val glucoseCenterX = w * 0.80f
-        val glucoseText = if (s.hasFreshReading) s.valueText else "—"
         val glucoseColor = if (s.hasFreshReading) contentColor(s, c) else foreground
-        val glucosePaint = fitText(
-            glucoseText, w * 0.25f, h * 0.56f, glucoseColor,
-            c.glucoseScale, c.copy(fontFamily = c.mainFontFamily), true
-        )
-        // Glucose value is a native TextView beside TextClock, sharing its exact font and row.
-
         if (c.showArrow && s.hasFreshReading && s.rate.isFinite()) {
             drawTrendArrow(
-                canvas, w * 0.93f, h * 0.36f,
-                min(w * 0.09f, h * 0.32f) * c.glucoseScale / 100f,
+                canvas, w * 0.93f, h * 0.25f,
+                clockArrowSize(w, h, c),
                 s.rate, glucoseColor, s.isMmol
             )
         }

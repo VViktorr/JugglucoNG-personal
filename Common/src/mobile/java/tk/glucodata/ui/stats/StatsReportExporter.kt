@@ -398,6 +398,7 @@ object StatsReportExporter {
             val preferredTypeface = when {
                 theme.useOutfitFont -> loadFontSafely(R.font.outfit)
                 theme.useSerifFont -> android.graphics.Typeface.create("serif", android.graphics.Typeface.NORMAL)
+                tk.glucodata.FontCatalog.hasSelection(context) -> tk.glucodata.FontCatalog.appTypeface(context, 400)
                 else -> loadFontSafely(R.font.ibm_plex_sans_var)
             }
             val plexRegular = preferredTypeface ?: android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.NORMAL)
