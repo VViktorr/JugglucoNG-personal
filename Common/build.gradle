@@ -40,7 +40,7 @@ ext {
         .getOrElse(appVersionCode)
     appVersionName = providers.gradleProperty('personalVersion').getOrElse(appVersionName)
 
-    ndkver       = '29.0.14206865'
+    ndkver       = '30.0.16248370'
     CMAKEVERSION = '4.1.2'
     CPPSTD       = '-std=gnu++26'
     TARGETSDK    = 36
