@@ -2507,6 +2507,12 @@ fun SensorCard(
                                     DataRow(stringResource(R.string.sensor_age), ageText)
                                 }
 
+                                if (sensor.sensorType == tk.glucodata.SensorTypeName.LIBRE_2 &&
+                                    !sensor.isCloneSource && isLocallyEnabled && sensor.rssi in -120..-1
+                                ) {
+                                    DataRow("RSSI", stringResource(R.string.ottai_rssi_dbm, sensor.rssi))
+                                }
+
                                 if (sensor.vendorModel.isNotEmpty()) {
                                     DataRow(stringResource(R.string.model), sensor.vendorModel)
                                 }

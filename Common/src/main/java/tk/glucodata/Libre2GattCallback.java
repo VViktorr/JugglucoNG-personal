@@ -260,6 +260,33 @@ public class Libre2GattCallback extends SuperGattCallback {
 		return 120_000L;
 	}
 
+	private static final long RSSI_CALLBACK_TIMEOUT_MS = 5_000L;
+	private static final RssiReadQueue<BluetoothGatt> rssiReads = new RssiReadQueue<>(
+			work -> Applic.scheduler.execute(work),
+			timeout -> Applic.scheduler.schedule(timeout, RSSI_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+
+	public synchronized void requestRssi() {
+		final BluetoothGatt gatt = mBluetoothGatt;
+		if (!canReadRssi(gatt)) return;
+		rssiReads.request(gatt, () -> startRssiRead(gatt), () -> {
+			if (doLog) Log.i(LOG_ID, SerialNumber + " RSSI callback timed out");
+		});
+	}
+
+	private boolean canReadRssi(BluetoothGatt gatt) {
+		return acceptGattCallback(gatt) && hasLocallyConnectedGatt();
+	}
+
+	private synchronized boolean startRssiRead(BluetoothGatt gatt) {
+		if (!canReadRssi(gatt)) return false;
+		try {
+			return gatt.readRemoteRssi();
+		} catch (RuntimeException error) {
+			if (doLog) Log.stack(LOG_ID, SerialNumber + " RSSI request failed", error);
+			return false;
+		}
+	}
+
 	private boolean acceptGattCallback(BluetoothGatt gatt) {
 		return gatt != null && gatt == mBluetoothGatt && disconnectingGatt == null && !stop && !recoveryInProgress;
 	}
@@ -271,6 +298,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 	}
 
 	private void resetConnectionState() {
+		readrssi = 9999;
 		endBLEHandler();
 		streamDeadline.cancel();
 		connected = false;
@@ -1048,7 +1076,8 @@ private void endBLEHandler() {
 		}
 @Override
 public synchronized void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status)  {
-		if (!acceptGattCallback(gatt)) return;
+		rssiReads.onResult(gatt);
+		if (!canReadRssi(gatt)) return;
 
 		libre2Diag("onReadRemoteRssi", "status=" + status);
 	{if(doLog) {Log.i(LOG_ID,"onReadRemoteRssi(BluetoothGatt,"+ rssi+","+status+(status==GATT_SUCCESS?" SUCCESS":" FAILURE"));};};

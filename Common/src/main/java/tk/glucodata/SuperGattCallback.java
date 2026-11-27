@@ -156,7 +156,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
 
     boolean superseded = false;
     public final int sensorgen;
-    public int readrssi = 9999;
+    public volatile int readrssi = 9999;
     protected long sensorstartmsec;
 
     protected SuperGattCallback(String SerialNumber, long dataptr, int gen) {
