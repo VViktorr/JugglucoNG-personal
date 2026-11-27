@@ -440,6 +440,13 @@ public class Libre2GattCallback extends SuperGattCallback {
 
 		}
 	}
+    // Legacy callers use the cached value only for diagnostic output.
+    @SuppressWarnings("deprecation")
+    static void showCharacter(String label, BluetoothGattCharacteristic characteristic) {
+        if (doLog)
+            Log.showbytes(label + " UUID: " + characteristic.getUuid(), characteristic.getValue());
+    }
+
     @SuppressLint("MissingPermission")
     private boolean writeLogin(BluetoothGatt gatt, byte[] value) {
         var login = BLELogincharacteristic;
