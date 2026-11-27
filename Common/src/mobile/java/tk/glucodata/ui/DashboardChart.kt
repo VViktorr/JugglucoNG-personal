@@ -4696,6 +4696,7 @@ fun InteractiveGlucoseChart(
                     label = "activeInsulinCorner"
                 )
                 val activeInsulinShape = RoundedCornerShape(activeInsulinCorner)
+                val detailColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
                 // Collapsed stays under half the chart so it never reaches the date chip;
                 // expanded is allowed a little more room but still stops short of it.
                 val activeInsulinMaxWidth = maxWidth * if (isActiveInsulinExpanded) {
@@ -4737,7 +4738,7 @@ fun InteractiveGlucoseChart(
                                     Text(
                                         text = stringResource(R.string.dashboard_eiob_full, eiobValue),
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = detailColor
                                     )
                                 }
                             } else {
@@ -4754,7 +4755,7 @@ fun InteractiveGlucoseChart(
                                         Text(
                                             text = stringResource(R.string.dashboard_eiob_short, eiobValue),
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = detailColor,
                                             maxLines = 1
                                         )
                                     }
@@ -4780,7 +4781,7 @@ fun InteractiveGlucoseChart(
                             Text(
                                 text = doseHintLabel,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = detailColor,
                                 maxLines = if (isActiveInsulinExpanded) 2 else 1
                             )
                         } else if (remainingLabel != null && !isActiveInsulinExpanded) {
@@ -4788,14 +4789,14 @@ fun InteractiveGlucoseChart(
                                 Icon(
                                     imageVector = Symbols.AccessTimeFilled,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = detailColor,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = remainingLabel,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = detailColor,
                                     maxLines = 1
                                 )
                             }
@@ -4809,7 +4810,7 @@ fun InteractiveGlucoseChart(
                                     summary.weightedActivityPercent
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = detailColor
                             )
                             summary.activeUntil?.let { activeUntil ->
                                 Text(
@@ -4819,14 +4820,14 @@ fun InteractiveGlucoseChart(
                                             .format(java.util.Date(activeUntil))
                                     ),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = detailColor
                                 )
                             }
                             if (activeInsulinFromRemote) {
                                 Text(
                                     text = stringResource(R.string.journal_iob_source_remote),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = detailColor
                                 )
                             }
                         }
