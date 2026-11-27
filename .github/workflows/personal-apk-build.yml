@@ -292,7 +292,9 @@ jobs:
 
           release = Path('build/release')
           manifest = json.loads((release / 'phone/update-manifest.json').read_text())
-          manifest['artifacts'].append(json.loads((release / 'wear/wear-update-artifact.json').read_text()))
+          # Older phone updaters keep the last artifact for a shared application ID.
+          # Keep the phone entry last so those versions can still install their update.
+          manifest['artifacts'].insert(0, json.loads((release / 'wear/wear-update-artifact.json').read_text()))
           (release / 'assets/update-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
           PY_MANIFEST
           cp build/release/phone/build-info.json build/release/assets/phone-build-info.json

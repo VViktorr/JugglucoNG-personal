@@ -112,7 +112,9 @@ object GithubReleaseParser {
                 val entry = array.optJSONObject(i) ?: continue
                 val applicationId = entry.optString("applicationId").takeIf { it.isNotBlank() } ?: continue
                 val file = entry.optString("file").takeIf { it.isNotBlank() } ?: continue
-                val key = if (entry.optString("device") == "wear") "$applicationId:wear" else applicationId
+                val wear = entry.optString("device") == "wear"
+                if (!wear && UpdateArtifacts.tokensOf(file)?.contains("wear") == true) continue
+                val key = if (wear) "$applicationId:wear" else applicationId
                 artifacts[key] = ManifestArtifact(
                     fileName = file,
                     sizeBytes = entry.optLong("size", 0L),
