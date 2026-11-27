@@ -1,0 +1,12 @@
+JugglucoNG bundled font notices
+
+This application uses HarmonyOS Sans Fonts.
+Copyright 2021 Huawei Device Co., Ltd.
+HarmonyOS Sans Fonts Software is licensed under the HarmonyOS Sans Fonts License Agreement.
+The original unmodified font binaries and the full agreement are distributed together with this application.
+
+Existing IBM Plex Sans Variable font copyright from its name table:
+Copyright 2019 IBM Corp. All rights reserved.
+SIL Open Font License 1.1 (see ibmplex.txt).
+
+For every other family, its complete upstream licence including the copyright notice is provided in the corresponding file in this directory. Source URLs, original filenames, metadata and SHA-256 identifiers are recorded in docs/fonts/.
