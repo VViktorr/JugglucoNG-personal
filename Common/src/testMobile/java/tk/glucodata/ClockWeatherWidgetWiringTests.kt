@@ -12,17 +12,14 @@ class ClockWeatherWidgetWiringTests {
     private fun mobile(path: String) = File(root, "src/mobile/$path").readText()
 
     @Test
-    fun clockUsesNativeTextClockAndFullDate() {
-        val layout = mobile("res/layout/home_widget_clock_weather.xml")
-        val updater = mobile("java/tk/glucodata/widgets/WidgetUpdater.kt")
-        assertTrue(layout.contains("<TextClock"))
-        assertTrue(layout.contains("home_widget_clock"))
-        assertTrue(layout.contains("home_widget_date"))
-        assertTrue(layout.contains("EEEE, d MMMM"))
+    fun clockAndChartWidgetsShareTheBitmapHeader() {
         val header = mobile("java/tk/glucodata/widgets/ClockWeatherWidgetViews.kt")
+        val renderer = mobile("java/tk/glucodata/widgets/WidgetRenderer.kt")
+        val updater = mobile("java/tk/glucodata/widgets/WidgetUpdater.kt")
         val chart = mobile("java/tk/glucodata/widget/ExpressiveAppWidget.kt")
-        assertTrue(header.contains("R.layout.home_widget_clock_weather"))
-        assertTrue(header.contains("config.glucoseScale"))
+        assertTrue(header.contains("R.layout.home_widget"))
+        assertTrue(header.contains("renderer.renderClockHeader"))
+        assertTrue(renderer.contains("EEEE, d MMMM"))
         assertTrue(updater.contains("ClockWeatherWidgetViews.create"))
         assertTrue(chart.contains("ClockWeatherWidgetViews.create"))
     }

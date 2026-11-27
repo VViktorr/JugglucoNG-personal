@@ -92,13 +92,37 @@ fun getview(type: ComplicationType):WearComplicationValue {
             tk.glucodata.ExchangeTrend.fromDisplayRate(it.rate).arrow.takeIf { glyph -> glyph.isNotEmpty() }
         }
         val description = listOfNotNull(label, reading?.text, arrow).joinToString(", ")
+        val inline = if (reading != null && arrow != null) reading.copy(text = reading.text + arrow) else reading
         return when (type) {
-            SHORT_TEXT -> GlucoseComplicationData.shortValueData(reading, description, title = arrow)
+            SHORT_TEXT -> GlucoseComplicationData.shortValueData(inline, description)
             LONG_TEXT -> GlucoseComplicationData.longTextData(reading, description, title = arrow)
             RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                reading, description,
+                inline, description,
                 icon = reading?.let { Icon.createWithBitmap(arrowTimeBitmap(it.rate, it.timeMillis)) },
             )
+            SMALL_IMAGE, MONOCHROMATIC_IMAGE -> {
+                val monochrome = type == MONOCHROMATIC_IMAGE
+                val bitmap = reading?.let {
+                    ComplicationRenderer.valueWithArrowBitmap(
+                        ICON_PX, it.text, it.value, it.rate, it.isMmol,
+                        if (monochrome) ComplicationRenderer.ICON_TINT
+                        else ComplicationRenderer.valueColor(it.value, it.isMmol),
+                        icon = monochrome,
+                    )
+                } ?: ComplicationRenderer.noValueBitmap(ICON_PX)
+                val image = Icon.createWithBitmap(bitmap)
+                val text = PlainComplicationText.Builder(description).build()
+                val tap = GlucoseComplicationData.tapAction()
+                if (monochrome) {
+                    MonochromaticImageComplicationData.Builder(
+                        MonochromaticImage.Builder(image).build(), text,
+                    ).setTapAction(tap).build()
+                } else {
+                    SmallImageComplicationData.Builder(
+                        SmallImage.Builder(image, SmallImageType.PHOTO).build(), text,
+                    ).setTapAction(tap).build()
+                }
+            }
             else -> null
         }
     }

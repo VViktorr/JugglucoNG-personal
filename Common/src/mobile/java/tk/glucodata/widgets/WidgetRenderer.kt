@@ -61,7 +61,7 @@ class WidgetRenderer(private val context: Context) {
     fun renderClockHeader(
         config: WidgetConfig, snapshot: WidgetSnapshot, widthDp: Float, heightDp: Float,
         pxPerDp: Float, weather: WidgetWeather?, includeBackground: Boolean,
-        valueText: String, reserveTrendArrowSpace: Boolean, drawClock: Boolean
+        valueText: String, reserveTrendArrowSpace: Boolean
     ): Bitmap {
         val bitmap = render(WidgetKind.CLOCK_WEATHER, config, snapshot, widthDp, heightDp,
             pxPerDp, weather, includeBackground)
@@ -109,9 +109,7 @@ class WidgetRenderer(private val context: Context) {
         val now = java.util.Date()
         val clock = android.text.format.DateFormat.getTimeFormat(context).format(now)
         val date = android.text.format.DateFormat.format("EEEE, d MMMM", now).toString()
-        if (drawClock) {
-            text(clock, 12f * pxPerDp, w * (if (hasWeather) .30f else .48f), 0f, h / 2f, mainSize, true, false)
-        }
+        text(clock, 12f * pxPerDp, w * (if (hasWeather) .30f else .48f), 0f, h / 2f, mainSize, true, false)
         fun detailRow(reading: String) {
             val dateLabel = if (config.showDate) date else ""
             if (dateLabel.isBlank() && reading.isBlank()) return
@@ -150,8 +148,7 @@ class WidgetRenderer(private val context: Context) {
         }
         val rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f
         if (snapshot.hasFreshReading) {
-            val arrowSize = if (reserveTrendArrowSpace) min(w * .10f, h * .40f)
-                else min(w * .09f, h * .32f)
+            val arrowSize = min(w * .10f, h * .40f)
             val endPadding = if (config.showArrow && snapshot.rate.isFinite())
                 max(12f * pxPerDp, w * .07f + arrowSize / 2f + 8f * pxPerDp) else 12f * pxPerDp
             val value = valueText.takeIf { it.isNotBlank() } ?: snapshot.valueText.takeIf { it.isNotBlank() } ?: "—"

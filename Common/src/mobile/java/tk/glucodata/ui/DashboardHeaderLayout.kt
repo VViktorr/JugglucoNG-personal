@@ -321,52 +321,52 @@ internal fun DashboardSensorPanel(
                     )
                 }
 
-                if (statusText != null) {
-                    if (statusText.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = statusText,
-                            style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
-                            color = contentColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.neverWidensParent()
-                        )
-                    }
-                } else {
-                    val showRemainingHours = hoursRemaining in 0L..24L
-                    val lifetimeText = if (showRemainingHours) "$hoursRemaining" + "h" else daysText
-                    if (lifetimeText.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        SensorLifetimeLine(
-                            text = lifetimeText,
-                            style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
-                            color = contentColor,
-                            // The hourglass is the warning, so it always shows; the calendar
-                            // is decoration and steps aside when the text needs its room.
-                            iconIsDecorative = !showRemainingHours
-                        ) {
-                            if (showRemainingHours) {
-                                // Turns faster as the last hours run out.
-                                val duration = (500 + (1500 * (hoursRemaining / 24f))).toInt().coerceAtLeast(500)
-                                AnimatedHourglassIcon(
-                                    color = contentColor.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(SensorPanelIconSize),
-                                    cycleDuration = duration
-                                )
-                            } else {
-                                CustomCalendarIcon(
-                                    color = contentColor.copy(alpha = 0.6f),
-                                    modifier = Modifier
-                                        .size(SensorPanelIconSize)
-                                        .padding(SensorPanelDrawnIconInset),
-                                    currentDay = currentDay
-                                )
+                val lifetime: @Composable () -> Unit = {
+                    if (statusText != null) {
+                        if (statusText.isNotEmpty()) {
+                            Text(
+                                text = statusText,
+                                style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
+                                color = contentColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.neverWidensParent()
+                            )
+                        }
+                    } else {
+                        val showRemainingHours = hoursRemaining in 0L..24L
+                        val lifetimeText = if (showRemainingHours) "$hoursRemaining" + "h" else daysText
+                        if (lifetimeText.isNotEmpty()) {
+                            SensorLifetimeLine(
+                                text = lifetimeText,
+                                style = if (stacked) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
+                                color = contentColor,
+                                // The hourglass is the warning, so it always shows; the calendar
+                                // is decoration and steps aside when the text needs its room.
+                                iconIsDecorative = !showRemainingHours
+                            ) {
+                                if (showRemainingHours) {
+                                    // Turns faster as the last hours run out.
+                                    val duration = (500 + (1500 * (hoursRemaining / 24f))).toInt().coerceAtLeast(500)
+                                    AnimatedHourglassIcon(
+                                        color = contentColor.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(SensorPanelIconSize),
+                                        cycleDuration = duration
+                                    )
+                                } else {
+                                    CustomCalendarIcon(
+                                        color = contentColor.copy(alpha = 0.6f),
+                                        modifier = Modifier
+                                            .size(SensorPanelIconSize)
+                                            .padding(SensorPanelDrawnIconInset),
+                                        currentDay = currentDay
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                if (sensorEndTimeMs > 0L) {
+                val expiry: @Composable (Modifier) -> Unit = { modifier ->
                     val expiryText = remember(sensorEndTimeMs) {
                         java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
                             .format(java.util.Date(sensorEndTimeMs))
@@ -377,8 +377,28 @@ internal fun DashboardSensorPanel(
                         color = contentColor.copy(alpha = 0.85f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.neverWidensParent().padding(top = 2.dp),
+                        modifier = modifier,
                     )
+                }
+                if (stacked && sensorEndTimeMs > 0L) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Box(Modifier.weight(1f, fill = false)) { lifetime() }
+                        expiry(Modifier)
+                    }
+                } else {
+                    if (statusText?.isNotEmpty() == true ||
+                        (statusText == null && (daysText.isNotEmpty() || hoursRemaining in 0L..24L))
+                    ) {
+                        Spacer(Modifier.height(4.dp))
+                        lifetime()
+                    }
+                    if (sensorEndTimeMs > 0L) {
+                        expiry(Modifier.neverWidensParent().padding(top = 2.dp))
+                    }
                 }
             }
         }

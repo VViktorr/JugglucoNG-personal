@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import tk.glucodata.ui.restricted.sensorLifeFill
 import androidx.compose.ui.draw.clip
-import tk.glucodata.ui.util.ConnectedButtonGroup
+import tk.glucodata.ui.util.SettingsChoiceChip
 import tk.glucodata.ui.util.inDisplayUnit
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -2889,7 +2889,7 @@ fun SensorCard(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Edit 79 rev: Sensor Data Mode — ConnectedButtonGroup
+            // Use the same choice chips as the settings screens.
             // Libre 1/2 export their two lanes as Stream (Auto) and the sensor's own
             // 15-minute History (Raw), so the same four modes switch between them.
             val isLibreStreamHistory = sensor.hasLibreHistoryLane
@@ -2911,27 +2911,22 @@ fun SensorCard(
                     stringResource(R.string.auto_raw),
                     stringResource(R.string.raw_auto)
                 )
-                ConnectedButtonGroup(
-                    options = modeLabels.indices.toList(),
-                    selectedOption = sensor.viewMode,
-                    onOptionSelected = { viewModel.setCalibrationMode(sensor.serial, it) },
-                    labelText = { modeLabels[it] },
-                    label = {
-                        Text(
-                            text = modeLabels[it],
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                    unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                val modeChip: @Composable (Int, Modifier) -> Unit = { index, modifier ->
+                    SettingsChoiceChip(
+                        selected = sensor.viewMode == index,
+                        onClick = { viewModel.setCalibrationMode(sensor.serial, index) },
+                        modifier = modifier,
+                        label = { Text(modeLabels[index]) },
+                    )
+                }
+                Column {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        modeChip(0, Modifier.weight(1f))
+                        modeChip(1, Modifier.weight(1f))
+                    }
+                    modeChip(2, Modifier.fillMaxWidth())
+                    modeChip(3, Modifier.fillMaxWidth())
+                }
                 if (isLibreStreamHistory) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
