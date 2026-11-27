@@ -409,42 +409,10 @@ internal fun DashboardSensorPanel(
                         modifier = modifier,
                     )
                 }
-                if (bluetoothRssi != null) {
-                    if (compactSignal && sensorEndTimeMs > 0L) {
-                        expiry(Modifier.neverWidensParent())
-                    }
+                if (stacked && sensorEndTimeMs > 0L) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(Modifier.weight(1f)) {
-                            if (stacked && sensorEndTimeMs > 0L) expiry(Modifier)
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            lifetime()
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                SensorLinkIcon(
-                                    state = SensorLinkState.UP,
-                                    rssi = bluetoothRssi,
-                                    color = contentColor,
-                                    waveHeight = 14.dp,
-                                )
-                                Text(
-                                    text = stringResource(R.string.ottai_rssi_dbm, bluetoothRssi),
-                                    style = compactLabel.copy(fontFeatureSettings = "tnum"),
-                                    color = contentColor,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
-                        }
-                    }
-                } else if (stacked && sensorEndTimeMs > 0L) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(top = if (bluetoothRssi == null) 2.dp else 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -452,14 +420,38 @@ internal fun DashboardSensorPanel(
                         expiry(Modifier)
                     }
                 } else {
+                    if (compactSignal && sensorEndTimeMs > 0L) {
+                        expiry(Modifier.neverWidensParent())
+                    }
                     if (statusText?.isNotEmpty() == true ||
                         (statusText == null && (daysText.isNotEmpty() || hoursRemaining in 0L..24L))
                     ) {
-                        Spacer(Modifier.height(4.dp))
+                        if (bluetoothRssi == null) Spacer(Modifier.height(4.dp))
                         lifetime()
                     }
-                    if (sensorEndTimeMs > 0L) {
+                    if (!compactSignal && sensorEndTimeMs > 0L) {
                         expiry(Modifier.neverWidensParent().padding(top = 2.dp))
+                    }
+                }
+                if (bluetoothRssi != null) {
+                    Row(
+                        modifier = Modifier.align(Alignment.End),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SensorLinkIcon(
+                            state = SensorLinkState.UP,
+                            rssi = bluetoothRssi,
+                            color = contentColor,
+                            waveHeight = 14.dp,
+                        )
+                        Text(
+                            text = stringResource(R.string.ottai_rssi_dbm, bluetoothRssi),
+                            style = compactLabel.copy(fontFeatureSettings = "tnum"),
+                            color = contentColor,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
             }

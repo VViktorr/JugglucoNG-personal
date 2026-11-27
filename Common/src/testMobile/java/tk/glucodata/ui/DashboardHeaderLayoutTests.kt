@@ -232,6 +232,7 @@ class DashboardHeaderLayoutTests {
     @Test fun bluetoothSignalFitsBelowTheCountdownInTheStackedPanel() {
         header(showReadingAge = true, stacked = true, sensorRssi = -72)
         assertBluetoothSignalBelowCountdown(expectedHeightPx = 328f)
+        assertEquals(left("3MH01") + (14 + 8) * 2f, left("5 / 15"), 0f)
     }
 
     private fun assertBluetoothSignalBelowCountdown(expectedHeightPx: Float) {
@@ -240,7 +241,10 @@ class DashboardHeaderLayoutTests {
         val signal = compose.onNodeWithText("-72 dBm", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
         assertEquals(expectedHeightPx, bars.height, 0f)
         assertTrue("Bluetooth level is visible below the countdown", signal.height > 0 && signal.top >= lifetime.bottom)
-        assertEquals(lifetime.right, signal.right, 1f)
+        val sensorNameLeft = left("3MH01")
+        assertTrue(lifetime.left in sensorNameLeft..(sensorNameLeft + (14 + 8) * 2f))
+        assertTrue(lifetime.right < signal.right)
+        assertEquals(bars.right - 12 * 2f, signal.right, 1f)
     }
 
     private companion object {
