@@ -5,6 +5,7 @@
 .gradle/
 build/
 */build/
+/Builds/
 
 # CMake / NDK build cache
 .cxx/

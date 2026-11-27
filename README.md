@@ -105,6 +105,16 @@ if ($LASTEXITCODE -ne 0) { throw "SDK package installation failed." }
 
 The Android Studio SDK Manager can also install the packages. Under **SDK Platforms**, select Android SDK Platform 37.2 and 36. Under **SDK Tools**, enable **Show Package Details** and select Build-Tools 37.0.0, NDK (Side by side) 30.0.16248370, and CMake 4.1.2.
 
+For a local phone and Wear OS build with a timestamped APK archive, run [`BUILD.ps1`](BUILD.ps1) from the repository root. It requires Python 3.9 or newer to verify the JNI libraries and restore missing files from the baseline pinned in `scripts/dist/build-inputs.json`.
+
+```powershell
+.\BUILD.ps1                          # Release APKs
+.\BUILD.ps1 -Configuration Debug     # Debug APKs
+.\BUILD.ps1 -Clean                   # Clean first, then build Release
+```
+
+Archives are stored in `Builds/Build-<timestamp>/` with `SHA256.txt` and `BUILD-INFO.txt`. Release signing follows your Gradle configuration.
+
 Run these commands in the same PowerShell session. To persist the SDK location for this checkout, set `sdk.dir` in the root `local.properties` file, for example `sdk.dir=C:/Users/YourName/AppData/Local/Android/Sdk`. If the file already has an SDK path, make sure it points to the same installation.
 
 ### Linux and macOS (Bash)
