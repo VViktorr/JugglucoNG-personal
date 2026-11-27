@@ -3378,6 +3378,8 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="settings_dashboard_charts_desc">Target range, colors and readouts</string>
     <string name="settings_floating_desc">Current reading on top of other apps</string>
     <string name="settings_floating_permission_desc">Needs permission to show over other apps</string>
+    <string name="lock_screen_aod">Lock screen (AOD)</string>
+    <string name="aod_settings_title">AOD settings</string>
     <string name="settings_lock_screen_title">Lock screen (AOD)</string>
     <string name="settings_lock_screen_desc">Current reading on the lock screen and always-on display</string>
     <string name="settings_lock_screen_off_desc">Turned on in Accessibility settings</string>

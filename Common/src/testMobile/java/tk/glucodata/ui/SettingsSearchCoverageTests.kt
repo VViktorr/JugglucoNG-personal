@@ -88,7 +88,7 @@ class SettingsSearchCoverageTests {
         because(
             "on a sensor's card or in a setup wizard, outside Settings",
             "calibration", "sibionics_uncertainty_ribbon", "aidex_key_management_title", "libre_setup_step_libreview",
-            "ottai_account_title", "ottai_saved_sensors_title",
+            "data_mode", "ottai_account_title", "ottai_saved_sensors_title",
         )
     }
 
