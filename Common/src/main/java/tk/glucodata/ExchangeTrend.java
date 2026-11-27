@@ -159,6 +159,24 @@ public final class ExchangeTrend {
         if (key != null) sensorTrendCache.remove(key);
     }
 
+    /** Discrete icon nearest to the continuous in-app arrow, for display only. */
+    public static ExchangeTrend fromDisplayRate(float rate) {
+        if (!Float.isFinite(rate)) return unknown();
+        final float magnitude = Math.abs(rate);
+        final float angle = Math.abs(TrendArrowAngle.rotationDegrees(rate));
+        final int index;
+        if (magnitude > 2f) {
+            index = rate > 0f ? DOUBLE_UP : DOUBLE_DOWN;
+        } else if (angle >= 67.5f) {
+            index = rate > 0f ? SINGLE_UP : SINGLE_DOWN;
+        } else if (angle >= 22.5f) {
+            index = rate > 0f ? FORTY_FIVE_UP : FORTY_FIVE_DOWN;
+        } else {
+            index = FLAT;
+        }
+        return new ExchangeTrend(index, rate, "display");
+    }
+
     private static ExchangeTrend fromRate(float rateMgdlPerMinute, String source) {
         if (!Float.isFinite(rateMgdlPerMinute)) {
             return unknown();

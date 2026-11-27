@@ -444,7 +444,20 @@ if(alg) {
                unsigned(libre2_processing::wear_grace_minutes),qual,gluc>0,std::isfinite(gl.rate()));
         if(!qual&&gluc) {
             hist->clearSensorError();
-            if(hist->savepoll(nutime,gid,gluc,gl.trend(),gl.rate())) {
+#ifndef NOLOG
+            const bool firstPoll = hist->pollcount() == 0;
+            const auto previousStart = hist->getstarttime();
+#endif
+            const bool saved = hist->savepoll(nutime,gid,gluc,gl.trend(),gl.rate());
+#ifndef NOLOG
+            if (firstPoll) {
+                LOGGER("LIBRE2_EXPIRY stage=first-ble received=%u readingId=%d previousStart=%u estimatedStart=%lld storedStart=%u saved=%d\n",
+                       static_cast<unsigned>(nutime), gid, previousStart,
+                       static_cast<long long>(nutime) - 60LL * gid,
+                       hist->getstarttime(), saved);
+            }
+#endif
+            if(saved) {
                 if(streamHistory()) {
                          addStreamHistory(alg->history(), nutime,gid, *hist) ;
                     }

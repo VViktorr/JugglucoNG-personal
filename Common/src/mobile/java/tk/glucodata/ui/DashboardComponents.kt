@@ -292,6 +292,9 @@ fun DashboardCombinedHeader(
             tk.glucodata.logic.TrendEngine.TrendResult(tk.glucodata.logic.TrendEngine.TrendState.Unknown, 0f, 0f, 0f, 0f)
         }
     }
+    val heroTrend = currentSnapshot?.rate?.takeIf { it.isFinite() }?.let { rate ->
+        trendResult.copy(state = tk.glucodata.logic.TrendEngine.stateFor(rate), velocity = rate)
+    } ?: trendResult
     // Signed change over the selected interval — a raw
     // number to sanity-check the estimated arrow against. Same computation as
     // the per-row deltas in the readings list, anchored at the newest point.
@@ -308,7 +311,7 @@ fun DashboardCombinedHeader(
     }
     val adaptiveMetrics = rememberAdaptiveWindowMetrics()
     val isLandscape = adaptiveMetrics.isLandscape
-    val cornerWeights = remember(trendResult.velocity) { trendCornerWeightsFromVelocity(trendResult.velocity) }
+    val cornerWeights = remember(heroTrend.velocity) { trendCornerWeightsFromVelocity(heroTrend.velocity) }
     val cornerAnimSpec = spring<Dp>(
         dampingRatio = Spring.DampingRatioLowBouncy,
         stiffness = Spring.StiffnessLow
@@ -539,7 +542,7 @@ fun DashboardCombinedHeader(
         tertiaryText = tertiaryText,
         deltaText = heroDeltaText,
         rangeText = currentRangeText,
-        trend = trendResult,
+        trend = heroTrend,
         valueColor = heroValueColor,
         arrowColor = heroArrowColor,
         contentColor = glucoseContentColor

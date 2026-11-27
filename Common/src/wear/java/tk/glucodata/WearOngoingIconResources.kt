@@ -27,7 +27,7 @@ internal object WearOngoingIconResources {
         return if (combined != 0) combined else value
     }
 
-    fun trend(rate: Float): Int = when (ExchangeTrend.fromRate(rate).index) {
+    fun trend(rate: Float): Int = when (ExchangeTrend.fromDisplayRate(rate).index) {
         ExchangeTrend.DOUBLE_UP -> R.drawable.wear_ongoing_trend_double_up
         ExchangeTrend.SINGLE_UP -> R.drawable.wear_ongoing_trend_up
         ExchangeTrend.FORTY_FIVE_UP -> R.drawable.wear_ongoing_trend_up_right

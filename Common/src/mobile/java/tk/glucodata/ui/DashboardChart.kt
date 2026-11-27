@@ -1059,7 +1059,7 @@ fun InteractiveGlucoseChart(
     val secondaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     val tertiaryColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f) // Lighter shade for 3rd line
     val pointColor = MaterialTheme.colorScheme.onSurface
-    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.125f)
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDark) 0.16f else 0.125f)
     // A dedicated override may replace the in-range hue; without one, the band
     // follows IN_RANGE. The 0.12 alpha restores the original target-band weight.
     val targetBandColor =
@@ -1070,7 +1070,8 @@ fun InteractiveGlucoseChart(
     // Axis labels were android.graphics.Color.GRAY and the min/max labels DKGRAY, which is
     // near-invisible on a dark surface. Theme roles instead: quiet for the axis, full
     // contrast for the min/max values that are actually being called out.
-    val axisTextColorArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val axisTextColorArgb = (if (isDark) MaterialTheme.colorScheme.onSurface
+        else MaterialTheme.colorScheme.onSurfaceVariant).toArgb()
     val indicatorTextColorArgb = MaterialTheme.colorScheme.onSurface.toArgb()
     val safeExpandedProgress = expandedProgress.coerceIn(0f, 1f)
     val chartUnderlayBottomDp = expandedUnderlayBottom * safeExpandedProgress
@@ -2874,7 +2875,6 @@ fun InteractiveGlucoseChart(
                 val backdropBottomStart = size.height + pickerOverhangPx.floatValue
                 val backdropBottom = backdropBottomStart + backdropBleedPx
                 val backdropGridColor = gridColor.copy(alpha = gridColor.alpha * backdropAlpha)
-                val backdropDateLineColor = gridColor.copy(alpha = 0.8f * backdropAlpha)
                 // A line that marks a moment runs the full height of the plot, and on into
                 // the backdrop above it when that shows, so it comes out from behind the
                 // hero like the grid does instead of starting in mid-air.
@@ -2991,10 +2991,6 @@ fun InteractiveGlucoseChart(
                             if (isMidnight) {
                                 // Date Line
                                 drawLine(gridColor.copy(alpha=0.8f), Offset(x, 0f), Offset(x, chartHeight), 3f)
-                                if (drawBackdrop) {
-                                    drawLine(backdropDateLineColor, Offset(x, backdropTop), Offset(x, 0f), 3f)
-                                    drawLine(backdropDateLineColor, Offset(x, backdropBottomStart), Offset(x, backdropBottom), 3f)
-                                }
                                 val dateLabel = labelCache.getOrPut(tGrid) {
                                     reusableDate.time = tGrid
                                     formatDate.format(reusableDate)
@@ -3010,10 +3006,6 @@ fun InteractiveGlucoseChart(
                             } else {
                                 // Time Line
                                 drawLine(gridColor, Offset(x, 0f), Offset(x, chartHeight), 1f)
-                                if (drawBackdrop) {
-                                    drawLine(backdropGridColor, Offset(x, backdropTop), Offset(x, 0f), 1f)
-                                    drawLine(backdropGridColor, Offset(x, backdropBottomStart), Offset(x, backdropBottom), 1f)
-                                }
                                 val timeLabel = labelCache.getOrPut(tGrid) {
                                     val hh = if (h < 10) "0$h" else h.toString()
                                     val mm = if (m < 10) "0$m" else m.toString()
@@ -5585,15 +5577,7 @@ fun InteractiveGlucoseChart(
                 modifier = Modifier
                     .widthIn(max = maxWidth) // Hard cap: NEVER overflow the container
                     .wrapContentWidth()
-                    .background(
-                        // Opaque once it stands on its own, like every other card the chart's
-                        // grid passes behind; the same tone the see-through version showed
-                        // over the background. In the collapsed card it fades into the card.
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
-                            .compositeOver(MaterialTheme.colorScheme.background)
-                            .copy(alpha = safeExpandedProgress),
-                        shape = RoundedCornerShape(scaled(16.dp))
-                    )
+                    // Inherit the chart card background at every expansion state.
                     .padding(
                         horizontal = scaled(baseInnerPadding),
                         vertical = scaled(baseVerticalPadding)
