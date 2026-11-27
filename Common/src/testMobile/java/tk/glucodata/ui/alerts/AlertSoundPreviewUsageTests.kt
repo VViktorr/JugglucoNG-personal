@@ -76,12 +76,12 @@ class AlertSoundPreviewUsageTests {
         assertEquals(.385f, AlertSoundVolume.gain(custom.volumePercent, custom.intensityProfile), .000001f)
     }
 
-    @Test fun legacyNotificationOnlyKindsKeepTheirConfiguredUsage() {
+    @Test fun onlyTheHiddenAmountAlertKeepsNotificationAudioWhenOverridingDnd() {
         configureUsage(AudioAttributes.USAGE_MEDIA)
-        for (type in listOf(AlertType.AVAILABLE, AlertType.AMOUNT)) {
-            assertEquals(AudioAttributes.USAGE_MEDIA,
-                AlertConfig(type, overrideDND = true).soundPickerRequest {}.audioUsage)
-        }
+        assertEquals(AudioAttributes.USAGE_MEDIA,
+            AlertConfig(AlertType.AMOUNT, overrideDND = true).soundPickerRequest {}.audioUsage)
+        assertEquals(AudioAttributes.USAGE_ALARM,
+            AlertConfig(AlertType.AVAILABLE, overrideDND = true).soundPickerRequest {}.audioUsage)
     }
 }
 

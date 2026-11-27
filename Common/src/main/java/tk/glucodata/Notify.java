@@ -1013,6 +1013,16 @@ public class Notify {
         ;
         if (waiting) {
             updateForegroundGlucoseNotification(FOREGROUND_GLUCOSE_NOTIFICATION_KIND, gl, strgl);
+            final AlertType type = AlertType.AVAILABLE;
+            if (AlertRepository.INSTANCE.loadConfig(type).getEnabled()) {
+                // The native code marks a new availability event. Rearm that episode
+                // and let the normal delivery gate apply snooze and active hours.
+                AlertStateTracker.INSTANCE.resetState(type);
+                cancelRetrySession(type.getId(), "value-available-new-episode");
+                final String label = Applic.app.getString(type.getNameResId());
+                arrowglucosealarm(type.getId(), gl, label + " " + message, strgl,
+                        alertChannelForKind(type.getId()), true);
+            }
         }
 
         else if (!isWearable) {
