@@ -352,6 +352,7 @@ private fun JournalRoute(
     val timelineExtents by dashboardViewModel.timelineExtents.collectAsStateWithLifecycle()
     // The ledger's readings come from bounded reads around the entries, not from
     // the loaded list; nothing else needs them, so they start with this screen.
+    LaunchedEffect(dashboardViewModel) { dashboardViewModel.importHealthConnectActivity() }
     LaunchedEffect(dashboardViewModel) { dashboardViewModel.ensureJournalGlucoseAnchorsObserved() }
     val journalGlucoseAnchors by dashboardViewModel.journalGlucoseAnchors.collectAsStateWithLifecycle()
     val unit by dashboardViewModel.unit.collectAsStateWithLifecycle()
