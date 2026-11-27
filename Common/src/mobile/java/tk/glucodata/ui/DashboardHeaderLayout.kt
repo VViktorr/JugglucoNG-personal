@@ -125,12 +125,14 @@ internal fun HeroSensorSplit(
     heroRoomyNeedPx: Int?,
     onPanelCrowded: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    glucoseWidthPercent: Int? = null,
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val need by rememberUpdatedState(heroNeedPx)
     val roomyNeed by rememberUpdatedState(heroRoomyNeedPx)
     val reportCrowded by rememberUpdatedState(onPanelCrowded)
+    val widthPercent by rememberUpdatedState(glucoseWidthPercent)
     // One policy for the life of the row: the need is read while measuring, so a new
     // reading costs a layout pass and the header's other animations cost none.
     val policy = remember(scope) {
@@ -147,20 +149,26 @@ internal fun HeroSensorSplit(
             }
             val gap = HeroSensorGap.roundToPx()
             val available = (totalWidth - gap).coerceAtLeast(0)
-            val heroNeed = need
-            val base = heroSensorBaseSplit(available).second
-            val preferred = sensor.maxIntrinsicWidth(Constraints.Infinity)
-            reportCrowded(isSensorPanelCrowded(available, preferred, roomyNeed))
-            val target = sensorPanelWidth(
-                availablePx = available,
-                preferredPx = preferred,
-                heroNeedPx = heroNeed,
-                stepPx = SensorGrowthStep.roundToPx()
-            )
-            // The move is animated, but the reading is never squeezed while it runs: when
-            // the value grows a digit the panel gives the width back at once.
-            val sensorWidth = panelWidth.widthFor(target, totalWidth)
-                .coerceIn(base, maxOf(base, available - (heroNeed ?: available)))
+            val fixedPercent = widthPercent
+            val sensorWidth = if (fixedPercent == null) {
+                val heroNeed = need
+                val base = heroSensorBaseSplit(available).second
+                val preferred = sensor.maxIntrinsicWidth(Constraints.Infinity)
+                reportCrowded(isSensorPanelCrowded(available, preferred, roomyNeed))
+                val target = sensorPanelWidth(
+                    availablePx = available,
+                    preferredPx = preferred,
+                    heroNeedPx = heroNeed,
+                    stepPx = SensorGrowthStep.roundToPx()
+                )
+                // The move is animated, but the reading is never squeezed while it runs: when
+                // the value grows a digit the panel gives the width back at once.
+                panelWidth.widthFor(target, totalWidth)
+                    .coerceIn(base, maxOf(base, available - (heroNeed ?: available)))
+            } else {
+                reportCrowded(false)
+                available - available * fixedPercent.coerceIn(40, 70) / 100
+            }
             val heroWidth = available - sensorWidth
             val height = constraints.constrainHeight(
                 maxOf(hero.minIntrinsicHeight(heroWidth), sensor.minIntrinsicHeight(sensorWidth))

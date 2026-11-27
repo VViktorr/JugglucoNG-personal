@@ -215,6 +215,8 @@ fun DashboardCombinedHeader(
     activeSensors: List<String> = emptyList(),
     sensorProgress: Float = 0f,
     sensorHoursRemaining: Long = 999L,
+    stackBars: Boolean = false,
+    glucoseWidthPercent: Int? = null,
     currentDay: Int = 0,
     history: List<GlucosePoint> = emptyList(),
     calibratedValue: Float? = null,
@@ -584,11 +586,13 @@ fun DashboardCombinedHeader(
     var sensorPanelCrowded by remember { mutableStateOf(false) }
     androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val rowWidthPx = constraints.maxWidth
-        val stacked = isLandscape
+        val stacked = isLandscape || stackBars
+        val availablePx = (rowWidthPx - with(LocalDensity.current) { HeroSensorGap.roundToPx() }).coerceAtLeast(0)
         val heroShareWidthPx = if (stacked || !showSensorCard) {
             rowWidthPx
         } else {
-            heroSensorBaseSplit(rowWidthPx - with(LocalDensity.current) { HeroSensorGap.roundToPx() }).first
+            glucoseWidthPercent?.let { availablePx * it.coerceIn(40, 70) / 100 }
+                ?: heroSensorBaseSplit(availablePx).first
         }
         val heroLayout = resolveHeroLayout(
             widthPx = heroShareWidthPx,
@@ -597,7 +601,7 @@ fun DashboardCombinedHeader(
             reading = heroReading,
             peers = heroPeers,
             hasStatus = statusCopy != null,
-            sensorPanelCrowded = sensorPanelCrowded
+            sensorPanelCrowded = !stacked && glucoseWidthPercent == null && sensorPanelCrowded
         )
 
         val heroCard: @Composable (Modifier) -> Unit = { modifier ->
@@ -643,16 +647,16 @@ fun DashboardCombinedHeader(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (stackBars && showSensorCard) sensorPanel(Modifier.fillMaxWidth())
                 heroCard(Modifier.fillMaxWidth())
-                if (showSensorCard) {
-                    sensorPanel(Modifier.fillMaxWidth())
-                }
+                if (!stackBars && showSensorCard) sensorPanel(Modifier.fillMaxWidth())
             }
         } else {
             HeroSensorSplit(
                 heroNeedPx = heroLayout.contentNeedPx,
                 heroRoomyNeedPx = heroLayout.roomyContentNeedPx,
                 onPanelCrowded = { sensorPanelCrowded = it },
+                glucoseWidthPercent = glucoseWidthPercent,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 heroCard(Modifier)
