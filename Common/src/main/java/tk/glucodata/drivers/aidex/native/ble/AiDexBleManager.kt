@@ -6934,46 +6934,44 @@ class AiDexBleManager(
         val scanner = adapter.bluetoothLeScanner ?: return
         broadcastScanner = scanner
 
-        if (broadcastScanCallback == null) {
-            broadcastScanCallback = object : ScanCallback() {
-                override fun onScanResult(callbackType: Int, result: ScanResult) {
-                    val device = result.device ?: return
-                    val address = device.address
-                    val scanRecord = result.scanRecord?.bytes ?: return
-                    val targetAddress = mActiveDeviceAddress
-                    val addressMatches = targetAddress != null && address == targetAddress
-                    val advertisedName = device.name ?: aiDexExtractLocalName(scanRecord)
-                    val identityMatches = addressMatches ||
-                        (advertisedName?.let { aiDexDeviceNameMatchesSerial(it, SerialNumber) } == true)
+        val callback = broadcastScanCallback ?: object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val device = result.device ?: return
+                val address = device.address
+                val scanRecord = result.scanRecord?.bytes ?: return
+                val targetAddress = mActiveDeviceAddress
+                val addressMatches = targetAddress != null && address == targetAddress
+                val advertisedName = device.name ?: aiDexExtractLocalName(scanRecord)
+                val identityMatches = addressMatches ||
+                    (advertisedName?.let { aiDexDeviceNameMatchesSerial(it, SerialNumber) } == true)
 
-                    if (!identityMatches) return
-                    noteAdvertisedBrand(advertisedName)
+                if (!identityMatches) return
+                noteAdvertisedBrand(advertisedName)
 
-                    if (
-                        reconnect.isBroadcastOnlyMode &&
-                        targetAddress != null &&
-                        !addressMatches
-                    ) {
-                        Log.i(
-                            TAG,
-                            "Broadcast-only identity matched via name; rebinding address " +
-                                "$targetAddress -> $address (${advertisedName ?: "unknown-name"})"
-                        )
-                        setDevice(device)
-                    }
-                    parseScanRecord(scanRecord, result.rssi)
+                if (
+                    reconnect.isBroadcastOnlyMode &&
+                    targetAddress != null &&
+                    !addressMatches
+                ) {
+                    Log.i(
+                        TAG,
+                        "Broadcast-only identity matched via name; rebinding address " +
+                            "$targetAddress -> $address (${advertisedName ?: "unknown-name"})"
+                    )
+                    setDevice(device)
                 }
-
-                override fun onBatchScanResults(results: List<ScanResult>) {
-                    results.forEach { onScanResult(ScanSettings.CALLBACK_TYPE_ALL_MATCHES, it) }
-                }
-
-                override fun onScanFailed(errorCode: Int) {
-                    Log.w(TAG, "Broadcast scan failed: $errorCode")
-                    stopBroadcastScan("scan-failed-$errorCode", found = false)
-                }
+                parseScanRecord(scanRecord, result.rssi)
             }
-        }
+
+            override fun onBatchScanResults(results: List<ScanResult>) {
+                results.forEach { onScanResult(ScanSettings.CALLBACK_TYPE_ALL_MATCHES, it) }
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                Log.w(TAG, "Broadcast scan failed: $errorCode")
+                stopBroadcastScan("scan-failed-$errorCode", found = false)
+            }
+        }.also { broadcastScanCallback = it }
 
         // Always pin the scan to the AiDEX CGM service UUID (0x181F). An empty
         // filter list — which we used previously in broadcast-only mode — lets
@@ -7010,7 +7008,7 @@ class AiDexBleManager(
         try {
             cancelBroadcastScanAlarm()
             acquireBroadcastWakeLock(currentBroadcastScanWindowMs(continuous) + 2_000L)
-            scanner.startScan(filters, settings, broadcastScanCallback)
+            scanner.startScan(filters, settings, callback)
             broadcastScanActive = true
             broadcastScanContinuousMode = continuous
             broadcastScanStartedAtElapsed = SystemClock.elapsedRealtime()
