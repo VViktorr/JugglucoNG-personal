@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -435,16 +437,43 @@ fun MasterSwitchCard(
     iconTint: Color = MaterialTheme.colorScheme.primary,
     enabled: Boolean = true,
 ) {
-    SettingsSwitchItem(
-        title = title,
-        subtitle = subtitle,
-        checked = checked,
-        onCheckedChange = onCheckedChange,
-        icon = icon,
-        iconTint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
-        enabled = enabled,
-        modifier = modifier,
-    )
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            ),
+        shape = cardShape(CardPosition.SINGLE),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        AdaptiveTrailingRow(
+            modifier = Modifier
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            trailingContent = {
+                StyledSwitch(checked = checked, onCheckedChange = null, enabled = enabled)
+            },
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(
+                    icon = icon,
+                    tint = if (checked) iconTint else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(IconTileDefaults.Gap))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**
