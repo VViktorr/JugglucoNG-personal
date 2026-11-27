@@ -123,9 +123,10 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
     }
     var chartExpanded by rememberSaveable { mutableStateOf(false) }
     var glucoseExpanded by rememberSaveable { mutableStateOf(false) }
-    // A search for Target range opens this card; the controls then mark themselves.
+    val scaleLimitsSearchAnchor = SettingsSearchAnchors.forRow(R.string.chart_scale_limits_title)
     LaunchedEffect(Unit) {
         if (SettingsSearchReveal.isPending(SettingsSearchAnchors.TARGET_RANGE)) glucoseExpanded = true
+        if (SettingsSearchReveal.isPending(scaleLimitsSearchAnchor)) chartExpanded = true
     }
 
     val targetSummary = formatRangeSummary(targetLowSlider, targetHighSlider, isMmol)
@@ -175,38 +176,46 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
                 }
             )
             HorizontalDivider()
-            Text(
-                text = stringResource(R.string.chart_scale_limits_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = stringResource(R.string.chart_scale_limits_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            GlucoseRangeSliderSection(
-                lowLabel = stringResource(R.string.low_label),
-                highLabel = stringResource(R.string.high_label),
-                lowValue = scaleLow,
-                highValue = scaleHigh,
-                lowBounds = 0f..(216f / scaleFactor),
-                highBounds = (108f / scaleFactor)..(1000f / scaleFactor),
-                isMmol = isMmol,
-                onLowValueChange = { candidate ->
-                    scaleLow = snapRangeValue(candidate, isMmol)
-                        .coerceIn(0f, minOf(216f / scaleFactor, scaleHigh - scaleMinimumSpan))
-                },
-                onHighValueChange = { candidate ->
-                    scaleHigh = snapRangeValue(candidate, isMmol)
-                        .coerceIn(scaleLow + scaleMinimumSpan, 1000f / scaleFactor)
-                },
-                onLowValueChangeFinished = {
-                    saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
-                },
-                onHighValueChangeFinished = {
-                    saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
-                }
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.settingsSearchAnchor(
+                    SettingsSearchAnchors.forRow(R.string.chart_scale_limits_title),
+                    RoundedCornerShape(12.dp), outset = 8.dp
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.chart_scale_limits_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.chart_scale_limits_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                GlucoseRangeSliderSection(
+                    lowLabel = stringResource(R.string.low_label),
+                    highLabel = stringResource(R.string.high_label),
+                    lowValue = scaleLow,
+                    highValue = scaleHigh,
+                    lowBounds = 0f..(216f / scaleFactor),
+                    highBounds = (108f / scaleFactor)..(1000f / scaleFactor),
+                    isMmol = isMmol,
+                    onLowValueChange = { candidate ->
+                        scaleLow = snapRangeValue(candidate, isMmol)
+                            .coerceIn(0f, minOf(216f / scaleFactor, scaleHigh - scaleMinimumSpan))
+                    },
+                    onHighValueChange = { candidate ->
+                        scaleHigh = snapRangeValue(candidate, isMmol)
+                            .coerceIn(scaleLow + scaleMinimumSpan, 1000f / scaleFactor)
+                    },
+                    onLowValueChangeFinished = {
+                        saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
+                    },
+                    onHighValueChangeFinished = {
+                        saveChartScaleLimits(context, scaleLow, scaleHigh, isMmol)
+                    }
+                )
+            }
         }
         ExpandableSettingsCard(
             title = stringResource(R.string.glucose_range_title),
