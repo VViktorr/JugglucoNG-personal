@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chart_scale_limits_title">Limity skali wykresu</string>
+    <string name="chart_scale_limits_description">Najniższa i najwyższa rysowana wartość, także przy automatycznej skali. Przesuwaj pionowo po wartościach z lewej strony, aby zmienić skalę.</string>
+</resources>
