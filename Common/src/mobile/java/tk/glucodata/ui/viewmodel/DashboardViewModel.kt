@@ -2218,10 +2218,14 @@ class DashboardViewModel(
         } ?: return
 
         viewModelScope.launch {
-            historyRepository.deleteReading(
+            val deleted = historyRepository.deleteReading(
                 timestamp = point.timestamp,
                 sensorSerial = targetSerial
-            )
+            ) ?: return@launch
+            if (deleted.removedCount <= 0) return@launch
+            tk.glucodata.ui.UndoSnackbar.show(
+                tk.glucodata.Applic.app.getString(tk.glucodata.R.string.reading_deleted)
+            ) { historyRepository.restoreDeletedReading(deleted) }
         }
     }
 

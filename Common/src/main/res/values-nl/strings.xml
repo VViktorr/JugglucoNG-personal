@@ -563,7 +563,7 @@ Als je op OK drukt, wordt er een verbinding gemaakt op deze telefoon en wordt er
     <string name="clear_history_title">Geschiedenis wissen?</string>
     <string name="clear_history_confirmation">Hiermee worden alle glucosemetingen uit de database verwijderd. Dit kan niet ongedaan worden gemaakt.</string>
     <string name="delete_reading_title">Meting verwijderen?</string>
-    <string name="delete_reading_confirmation">Verwijder deze glucosemeting uit de lokale geschiedenis. Deze actie kan niet ongedaan worden gemaakt.</string>
+    <string name="delete_reading_confirmation">Verwijder deze glucosemeting uit de lokale geschiedenis.</string>
     <string name="clear_button">Wissen</string>
     
     <string name="clear_app_data_title">App-gegevens wissen?</string>
@@ -3430,4 +3430,5 @@ Als je op OK drukt, wordt er een verbinding gemaakt op deze telefoon en wordt er
         <item quantity="other">%1$d weken</item>
     </plurals>
     <string name="stats_arrange_ring">Als ring tonen</string>
+    <string name="reading_deleted">Meting verwijderd</string>
 </resources>

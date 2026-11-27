@@ -569,7 +569,7 @@
     <string name="clear_history_title">Очистить историю?</string>
     <string name="clear_history_confirmation">Это удалит все показания глюкозы из базы данных. Это действие необратимо.</string>
     <string name="delete_reading_title">Удалить показание?</string>
-    <string name="delete_reading_confirmation">Удалить это показание глюкозы из локальной истории. Это действие необратимо.</string>
+    <string name="delete_reading_confirmation">Удалить это показание глюкозы из локальной истории.</string>
     <string name="clear_button">Очистить</string>
     <string name="clear_app_data_title">Очистить данные приложения?</string>
     <string name="clear_app_data_intro">Это удалит:</string>
@@ -3516,4 +3516,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d недели</item>
     </plurals>
     <string name="stats_arrange_ring">Показывать кольцом</string>
+    <string name="reading_deleted">Показание удалено</string>
 </resources>

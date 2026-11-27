@@ -344,7 +344,7 @@
     <string name="clear_history_title">Cancellare Cronologia?</string>
     <string name="clear_history_confirmation">Questo rimuoverà tutte le letture glucosio dal database. Azione irreversibile.</string>
     <string name="delete_reading_title">Eliminare lettura?</string>
-    <string name="delete_reading_confirmation">Rimuovere questa lettura del glucosio dalla cronologia locale. Questa azione non può essere annullata.</string>
+    <string name="delete_reading_confirmation">Rimuovere questa lettura del glucosio dalla cronologia locale.</string>
     <string name="clear_button">Cancella</string>
     <string name="clear_app_data_title">Cancellare Dati App?</string>
     <string name="clear_app_data_intro">Questo rimuoverà:</string>
@@ -3378,4 +3378,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d settimane</item>
     </plurals>
     <string name="stats_arrange_ring">Mostra come anello</string>
+    <string name="reading_deleted">Lettura eliminata</string>
 </resources>

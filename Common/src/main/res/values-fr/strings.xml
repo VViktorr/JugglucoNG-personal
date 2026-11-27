@@ -421,7 +421,7 @@
     <string name="import_unsupported_file">Fichier non pris en charge. Choisissez une exportation JugglucoNG ou un historique de glucose CSV.</string>
     <string name="clear_history_confirmation">Ceci supprimera toutes les lectures de glucose de la base de données. Cette action est irréversible.</string>
     <string name="delete_reading_title">Supprimer la lecture ?</string>
-    <string name="delete_reading_confirmation">Supprimer cette lecture de glucose de l’historique local. Cette action est irréversible.</string>
+    <string name="delete_reading_confirmation">Supprimer cette lecture de glucose de l’historique local.</string>
     <string name="clear_button">Effacer</string>
     <string name="clear_app_data_intro">Ceci supprimera:</string>
     <string name="all_glucose_readings">• Toutes les lectures de glucose</string>
@@ -3394,4 +3394,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d semaines</item>
     </plurals>
     <string name="stats_arrange_ring">Afficher en anneau</string>
+    <string name="reading_deleted">Lecture supprimée</string>
 </resources>

@@ -906,7 +906,7 @@ OK дарснаар энэ утсан дээр холболт үүсч, өөр A
     <string name="clear_history_title">Түүхийг цэвэрлэх үү?</string>
     <string name="clear_history_confirmation">Энэ нь өгөгдлийн сангаас бүх глюкозын уншилтуудыг устгах болно. Үүнийг буцаах боломжгүй.</string>
     <string name="delete_reading_title">Уншилтыг устгах уу?</string>
-    <string name="delete_reading_confirmation">Энэ глюкозын уншилтыг локал түүхээс устгах. Үүнийг буцаах боломжгүй.</string>
+    <string name="delete_reading_confirmation">Энэ глюкозын уншилтыг локал түүхээс устгах.</string>
     <string name="clear_button">Цэвэрлэх</string>
     <string name="clear_app_data_title">Апп-ийн өгөгдлийг цэвэрлэх үү?</string>
     <string name="clear_app_data_intro">Энэ нь дараах зүйлсийг устгана:</string>
@@ -3488,4 +3488,5 @@ OK дарснаар энэ утсан дээр холболт үүсч, өөр A
         <item quantity="other">%1$d долоо хоног</item>
     </plurals>
     <string name="stats_arrange_ring">Цагираг хэлбэрээр харуулах</string>
+    <string name="reading_deleted">Уншилт устгагдлаа</string>
 </resources>

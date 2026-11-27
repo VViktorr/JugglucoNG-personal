@@ -371,7 +371,7 @@
     <string name="clear_history_title">Limpar Histórico?</string>
     <string name="clear_history_confirmation">Isso removerá todas as leituras de glicose do banco de dados. Esta ação não pode ser desfeita.</string>
     <string name="delete_reading_title">Excluir leitura?</string>
-    <string name="delete_reading_confirmation">Remova esta leitura de glicose do histórico local. Esta ação não pode ser desfeita.</string>
+    <string name="delete_reading_confirmation">Remova esta leitura de glicose do histórico local.</string>
     <string name="clear_button">Limpar</string>
     <string name="clear_app_data_title">Limpar Dados do App?</string>
     <string name="clear_app_data_intro">Isso removerá:</string>
@@ -3389,4 +3389,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d semanas</item>
     </plurals>
     <string name="stats_arrange_ring">Mostrar como anel</string>
+    <string name="reading_deleted">Leitura excluída</string>
 </resources>

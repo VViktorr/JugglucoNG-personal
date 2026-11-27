@@ -986,7 +986,7 @@ Marka la cadaadiyo OK waxay dhalin doontaa xidhiidh teleefankan oo waxa ay soo b
     <string name="clear_history_title">Taariikhda tirtiri?</string>
     <string name="clear_history_confirmation">Tani waxay ka saari doontaa dhammaan akhrinta gulukooska ee kaydka xogta. Tallaabadan lama noqon karo.</string>
     <string name="delete_reading_title">Ma tirtirtaa Akhriska?</string>
-    <string name="delete_reading_confirmation">Ka saar akhriska gulukoosta taariikhda deegaanka. Tallaabadan lama noqon karo.</string>
+    <string name="delete_reading_confirmation">Ka saar akhriska gulukoosta taariikhda deegaanka.</string>
     <string name="clear_button">Cad</string>
     
     <string name="clear_app_data_title">Masaar xogta Appka?</string>
@@ -3572,4 +3572,5 @@ Marka la cadaadiyo OK waxay dhalin doontaa xidhiidh teleefankan oo waxa ay soo b
         <item quantity="other">%1$d toddobaad</item>
     </plurals>
     <string name="stats_arrange_ring">U muuji sida giraan</string>
+    <string name="reading_deleted">Akhriska waa la tirtiray</string>
 </resources>

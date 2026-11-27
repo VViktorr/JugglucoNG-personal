@@ -523,7 +523,7 @@ Tamam\'a basmak bağlantı için QR kod görüntüleyecektir. QR kodu diğer tel
     <string name="clear_history_title">Geçmişi Temizle?</string>
     <string name="clear_history_confirmation">Bu, veritabanındaki tüm glikoz okumalarını silecektir. Bu işlem geri alınamaz.</string>
     <string name="delete_reading_title">Okuma silinsin mi?</string>
-    <string name="delete_reading_confirmation">Bu glikoz okumasını yerel geçmişten kaldır. Bu işlem geri alınamaz.</string>
+    <string name="delete_reading_confirmation">Bu glikoz okumasını yerel geçmişten kaldır.</string>
     <string name="clear_button">Temizle</string>
     <string name="clear_app_data_title">Uygulama Verilerini Temizle?</string>
     <string name="clear_app_data_intro">Bu şunları kaldıracaktır:</string>
@@ -3415,4 +3415,5 @@ Tamam\'a basmak bağlantı için QR kod görüntüleyecektir. QR kodu diğer tel
         <item quantity="other">%1$d hafta</item>
     </plurals>
     <string name="stats_arrange_ring">Halka olarak göster</string>
+    <string name="reading_deleted">Okuma silindi</string>
 </resources>

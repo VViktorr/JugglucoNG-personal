@@ -483,7 +483,7 @@
     <string name="clear_history_title">Очистити Історію?</string>
     <string name="clear_history_confirmation">Це видалить усі показання глюкози з бази даних. Ця дія незворотна.</string>
     <string name="delete_reading_title">Видалити показання?</string>
-    <string name="delete_reading_confirmation">Видалити це показання глюкози з локальної історії. Цю дію не можна скасувати.</string>
+    <string name="delete_reading_confirmation">Видалити це показання глюкози з локальної історії.</string>
     <string name="clear_button">Очистити</string>
     <string name="clear_app_data_title">Очистити Дані Програми?</string>
     <string name="clear_app_data_intro">Це видалить:</string>
@@ -3484,4 +3484,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d тижні</item>
     </plurals>
     <string name="stats_arrange_ring">Показувати кільцем</string>
+    <string name="reading_deleted">Показання видалено</string>
 </resources>

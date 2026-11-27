@@ -928,7 +928,7 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
     <string name="clear_history_title">Mérési előzmények törlése?</string>
     <string name="clear_history_confirmation">Ez minden glükózértéket eltávolít az adatbázisból. A művelet nem vonható vissza.</string>
     <string name="delete_reading_title">Mérés törlése?</string>
-    <string name="delete_reading_confirmation">A glükózérték eltávolítása a helyi előzményekből. A művelet nem vonható vissza.</string>
+    <string name="delete_reading_confirmation">A glükózérték eltávolítása a helyi előzményekből.</string>
     <string name="clear_button">Törlés</string>
     <string name="clear_app_data_title">Alkalmazásadatok törlése?</string>
     <string name="clear_app_data_intro">A következők törlődnek:</string>
@@ -3456,4 +3456,5 @@ Az OK megnyomása létrehoz egy kapcsolatot ezen a telefonon, és megjelenít eg
         <item quantity="other">%1$d hét</item>
     </plurals>
     <string name="stats_arrange_ring">Megjelenítés gyűrűként</string>
+    <string name="reading_deleted">Érték törölve</string>
 </resources>

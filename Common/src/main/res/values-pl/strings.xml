@@ -546,7 +546,7 @@
     <string name="clear_history_title">Wyczyścić Historię?</string>
     <string name="clear_history_confirmation">To usunie wszystkie odczyty glukozy z bazy danych. Tej operacji nie można cofnąć.</string>
     <string name="delete_reading_title">Usunąć odczyt?</string>
-    <string name="delete_reading_confirmation">Usuń ten odczyt glukozy z lokalnej historii. Tej operacji nie można cofnąć.</string>
+    <string name="delete_reading_confirmation">Usuń ten odczyt glukozy z lokalnej historii.</string>
     <string name="clear_button">Wyczyść</string>
     <string name="clear_app_data_title">Wyczyścić Dane Aplikacji?</string>
     <string name="clear_app_data_intro">To usunie:</string>
@@ -3679,4 +3679,5 @@
         <item quantity="other">%1$d tygodnie</item>
     </plurals>
     <string name="stats_arrange_ring">Pokaż jako pierścień</string>
+    <string name="reading_deleted">Odczyt usunięty</string>
 </resources>

@@ -1036,7 +1036,7 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="clear_history_title">Clear History?</string>
     <string name="clear_history_confirmation">This will remove all glucose readings from the database. This action cannot be undone.</string>
     <string name="delete_reading_title">Delete Reading?</string>
-    <string name="delete_reading_confirmation">Remove this glucose reading from local history. This action cannot be undone.</string>
+    <string name="delete_reading_confirmation">Remove this glucose reading from local history.</string>
     <string name="clear_button">Clear</string>
     
     <string name="clear_app_data_title">Clear App Data?</string>
@@ -3800,4 +3800,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d weeks</item>
     </plurals>
     <string name="stats_arrange_ring">Show as ring</string>
+    <string name="reading_deleted">Reading deleted</string>
 </resources>

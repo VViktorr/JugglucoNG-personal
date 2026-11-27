@@ -478,7 +478,7 @@
     <string name="clear_history_title">清除历史记录？</string>
     <string name="clear_history_confirmation">这将从数据库中删除所有血糖读数。此操作无法撤销。</string>
     <string name="delete_reading_title">删除读数？</string>
-    <string name="delete_reading_confirmation">从本地历史记录中删除这条血糖读数。此操作无法撤销。</string>
+    <string name="delete_reading_confirmation">从本地历史记录中删除这条血糖读数。</string>
     <string name="clear_button">清除</string>
     <string name="clear_app_data_title">清除应用数据？</string>
     <string name="clear_app_data_intro">这将删除：</string>
@@ -3393,4 +3393,5 @@ Pressing OK will generate a connection on this phone and display a QR code that 
         <item quantity="other">%1$d 周</item>
     </plurals>
     <string name="stats_arrange_ring">以圆环显示</string>
+    <string name="reading_deleted">读数已删除</string>
 </resources>

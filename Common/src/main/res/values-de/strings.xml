@@ -578,7 +578,7 @@ Durch Drücken von „OK“ wird eine Verbindung auf diesem Telefon hergestellt 
     <string name="clear_history_title">Verlauf löschen?</string>
     <string name="clear_history_confirmation">Dies löscht alle Glukosewerte aus der Datenbank. Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="delete_reading_title">Messwert löschen?</string>
-    <string name="delete_reading_confirmation">Diesen Glukosewert aus der lokalen Historie entfernen. Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="delete_reading_confirmation">Diesen Glukosewert aus der lokalen Historie entfernen.</string>
     <string name="clear_button">Löschen</string>
     <string name="clear_app_data_title">App-Daten löschen?</string>
     <string name="clear_app_data_intro">Dies entfernt:</string>
@@ -3500,4 +3500,5 @@ Durch Drücken von „OK“ wird eine Verbindung auf diesem Telefon hergestellt 
         <item quantity="other">%1$d Wochen</item>
     </plurals>
     <string name="stats_arrange_ring">Als Ring anzeigen</string>
+    <string name="reading_deleted">Messwert gelöscht</string>
 </resources>
