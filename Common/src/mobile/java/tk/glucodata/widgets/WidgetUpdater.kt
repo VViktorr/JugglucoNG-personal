@@ -112,7 +112,9 @@ object WidgetUpdater {
                 try {
                     manager.updateAppWidget(id,buildViews(context,manager,kind,id){w,h,px->
                         val views = if (kind == WidgetKind.CLOCK_WEATHER) {
-                            ClockWeatherWidgetViews.create(context, config, snapshot, w, h, px, weather)
+                            ClockWeatherWidgetViews.create(
+                                context, config, snapshot, w, h, px, weather, includeBackground = true
+                            )
                         } else {
                             RemoteViews(context.packageName, R.layout.home_widget).apply {
                                 setImageViewBitmap(R.id.home_widget_image,
