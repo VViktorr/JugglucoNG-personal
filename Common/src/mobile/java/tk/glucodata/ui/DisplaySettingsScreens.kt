@@ -6,7 +6,6 @@ import tk.glucodata.ui.util.appButtonShapes
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
-import androidx.compose.material.icons.filled.Layers
 import android.net.Uri
 import android.provider.Settings
 import androidx.lifecycle.compose.collectAsStateWithLifecycle

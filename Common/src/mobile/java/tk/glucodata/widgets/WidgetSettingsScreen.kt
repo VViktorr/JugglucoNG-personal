@@ -2,7 +2,6 @@
 
 package tk.glucodata.widgets
 
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.IconButton
 import tk.glucodata.ui.components.StyledSwitch
 import androidx.compose.runtime.getValue
@@ -33,8 +32,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,6 +54,7 @@ import androidx.navigation.NavController
 import tk.glucodata.composeFamily
 import tk.glucodata.GlucoseWidget
 import tk.glucodata.R
+import tk.glucodata.ui.symbols.Symbols
 import tk.glucodata.widget.ExpressiveWidgetReceiver
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,7 +195,7 @@ private fun WidgetCard(kind: WidgetSettingsKind, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(Symbols.ChevronRightFilled, contentDescription = null)
         }
     }
 }

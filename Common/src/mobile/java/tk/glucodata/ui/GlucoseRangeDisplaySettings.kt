@@ -220,7 +220,7 @@ fun GlucoseRangeDisplaySettings(viewModel: DashboardViewModel) {
         ExpandableSettingsCard(
             title = stringResource(R.string.glucose_range_title),
             summary = glucoseSummary,
-            icon = Icons.Default.TrackChanges,
+            icon = Symbols.TrackChangesFilled,
             expanded = glucoseExpanded,
             onExpandedChange = { glucoseExpanded = it },
             position = CardPosition.BOTTOM
