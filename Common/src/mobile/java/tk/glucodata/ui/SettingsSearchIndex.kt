@@ -14,7 +14,7 @@ import tk.glucodata.ui.symbols.Symbols
 
 /** Something on the Settings tab itself that opens a dialog or sheet rather than a screen. */
 internal enum class SettingsSearchAction {
-    THEME, LANGUAGE, UNIT, KEEP_DISPLAYED_VALUES, BACKUPS, EXPORT, IMPORT,
+    THEME, APP_FONT, LANGUAGE, UNIT, KEEP_DISPLAYED_VALUES, BACKUPS, EXPORT, IMPORT,
     RESTART, CLEAR_HISTORY, FACTORY_RESET,
 }
 
@@ -311,6 +311,8 @@ internal object SettingsSearchIndex {
         // General (first group, no label)
         SettingsSearchEntry(R.string.theme_title, TOP, Symbols.DarkModeFilled, P, action(SettingsSearchAction.THEME),
             keywords = listOf(R.string.theme_light, R.string.theme_dark)),
+        SettingsSearchEntry(R.string.app_font_title, TOP, Symbols.SettingsAccessibilityFilled, P,
+            action(SettingsSearchAction.APP_FONT), keywords = listOf(R.string.app_font_system)),
         SettingsSearchEntry(R.string.languagename, TOP, Symbols.LanguageFilled, P, action(SettingsSearchAction.LANGUAGE)),
         SettingsSearchEntry(R.string.settings_unit_title, TOP, Symbols.StraightenFilled, P, action(SettingsSearchAction.UNIT),
             terms = listOf("mg/dL", "mmol/L")),
@@ -438,6 +440,12 @@ internal object SettingsSearchIndex {
         // Display
         SettingsSearchEntry(R.string.settings_dashboard_charts_title, DISPLAY, Symbols.PaletteFilled, S, route("settings/display-colors"),
             keywords = listOf(R.string.settings_dashboard_charts_desc)),
+        SettingsSearchEntry(R.string.dashboard_bars_stacked_title,
+            DISPLAY + R.string.settings_dashboard_charts_title, Symbols.LayersFilled, S,
+            route("settings/display-colors"), keywords = listOf(R.string.dashboard_bars_stacked_desc)),
+        SettingsSearchEntry(R.string.dashboard_bars_ratio_title,
+            DISPLAY + R.string.settings_dashboard_charts_title, Symbols.LayersFilled, S,
+            route("settings/display-colors"), keywords = listOf(R.string.dashboard_bars_ratio_desc)),
         SettingsSearchEntry(R.string.target_range_title,
             DISPLAY + R.string.settings_dashboard_charts_title + R.string.glucose_range_title,
             Symbols.TrackChangesFilled, S, route("settings/display-colors"),
@@ -480,6 +488,14 @@ internal object SettingsSearchIndex {
         SettingsSearchEntry(R.string.prediction_adaptive_title, PREDICTION + R.string.prediction_analysis_section,
             Symbols.AutoAwesomeFilled, S, route("settings/predictive-simulation"),
             anchor = SettingsSearchAnchors.PREDICTION_ADAPTIVE),
+        SettingsSearchEntry(R.string.widget_settings_title, DISPLAY, Symbols.ClearAllFilled, S,
+            route("settings/widgets"), keywords = listOf(R.string.widget_settings_subtitle, R.string.widget_font_title)),
+        SettingsSearchEntry(R.string.system_glucose_live_title, DISPLAY, Symbols.NotificationsActiveFilled, S,
+            route("settings/live-update"), keywords = listOf(R.string.system_glucose_live_summary)),
+        SettingsSearchEntry(R.string.system_glucose_content_position, DISPLAY + R.string.system_glucose_live_title,
+            Symbols.NotificationsActiveFilled, S, route("settings/live-update")),
+        SettingsSearchEntry(R.string.system_glucose_capsule_layout, DISPLAY + R.string.system_glucose_live_title,
+            Symbols.NotificationsActiveFilled, S, route("settings/live-update")),
         SettingsSearchEntry(R.string.notification_settings_title, DISPLAY, Symbols.ClearAllFilled, S, route("settings/notification-display"),
             keywords = listOf(R.string.notification_settings_subtitle, R.string.typography)),
         SettingsSearchEntry(R.string.show_trend_arrow, DISPLAY + R.string.notification_settings_title,
@@ -674,6 +690,8 @@ internal object SettingsSearchIndex {
         SettingsSearchEntry(R.string.watch_forwarding_interval_title, WATCH, Symbols.TimerFilled, P,
             route("settings/watch"), condition = SettingsSearchCondition.WATCH_FORWARDING_INTERVAL,
             anchor = row(R.string.watch_forwarding_interval_title), otherwise = row(R.string.watch_forwarding_title)),
+        SettingsSearchEntry(R.string.phone_watch_icon_title, WATCH, Symbols.NotificationsActiveFilled, P,
+            route("settings/watch")),
         SettingsSearchEntry(R.string.wearos_config_title, WATCH, Symbols.WatchFilled, P,
             route("settings/watch/wearos-config"), terms = listOf("Wear OS")),
         SettingsSearchEntry(R.string.wear_auto_sensor_switch, WATCH + R.string.wearos_config_title, Symbols.SwapHorizFilled, P,

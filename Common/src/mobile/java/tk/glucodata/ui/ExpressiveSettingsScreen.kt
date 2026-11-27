@@ -378,6 +378,7 @@ fun ExpressiveSettingsScreen(
             }
             is SettingsSearchTarget.Action -> when (target.action) {
                 SettingsSearchAction.THEME -> showThemeDialog = true
+                SettingsSearchAction.APP_FONT -> showFontDialog = true
                 SettingsSearchAction.LANGUAGE -> showLanguageDialog = true
                 SettingsSearchAction.UNIT -> showUnitDialog = true
                 SettingsSearchAction.KEEP_DISPLAYED_VALUES -> showSealGraceDialog = true
