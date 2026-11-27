@@ -77,80 +77,30 @@ fun getview(type: ComplicationType):WearComplicationValue {
          }
       return glview as WearComplicationValue;
       }
-    override fun getPreviewData(type: ComplicationType): ComplicationData {
-      val reading = GlucoseComplicationData.previewReading()
-      val tapAction = GlucoseComplicationData.tapAction()
-      val icon=Icon.createWithBitmap( arrowTimeBitmap(reading.rate, reading.timeMillis));
-       Log.i(LOG_ID,"getPreviewData $type")
-         return when (type) {
-             SHORT_TEXT -> GlucoseComplicationData.shortValueData(
-                 reading,
-                 "Small Glucose",
-                 tapAction,
-                 icon,
-              )
-             LONG_TEXT -> GlucoseComplicationData.longTextData(
-                 reading,
-                 "Small Glucose",
-                 tapAction,
-                 icon,
-              )
-             RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                 reading,
-                 "Small Glucose",
-                 tapAction,
-                 icon,
-             )
-             else -> GlucoseComplicationData.shortValueData(null, "Small Glucose", tapAction)
-         }
+    override fun getPreviewData(type: ComplicationType): ComplicationData? =
+        buildData(type, GlucoseComplicationData.previewReading())
+
+    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? =
+        buildData(request.complicationType, GlucoseComplicationData.currentReading())
+
+    private fun buildData(
+        type: ComplicationType,
+        reading: GlucoseComplicationData.Reading?,
+    ): ComplicationData? {
+        val label = getString(tk.glucodata.R.string.glucoseshortcomplicationlabel)
+        val arrow = reading?.let {
+            tk.glucodata.ExchangeTrend.fromDisplayRate(it.rate).arrow.takeIf { glyph -> glyph.isNotEmpty() }
         }
-
-    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
-        Log.d(LOG_ID, "onComplicationRequest() id: ${request.complicationInstanceId}")
-        val complicationPendingIntent = GlucoseComplicationData.tapAction()
-        val type=        request.complicationType
-      val glucose = GlucoseComplicationData.currentReading()
-      if(glucose==null) {
-         Log.i(LOG_ID,"no glucose") 
-           return when (type) {
-               RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                   null,
-                   "Small Glucose",
-                   complicationPendingIntent,
-               )
-               else -> GlucoseComplicationData.shortValueData(
-                   null,
-                   "Small Glucose",
-                   complicationPendingIntent,
-               )
-           }
-         }
-      else {
-
-            val bitmap=arrowTimeBitmap(glucose.rate, glucose.timeMillis);
-            Log.i(LOG_ID," glucose==${glucose.text}")
-                val image=Icon.createWithBitmap(bitmap)
-             return when (type) {
-                 RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
-                     glucose,
-                     "Small Glucose",
-                     complicationPendingIntent,
-                     image,
-                 )
-                 LONG_TEXT -> GlucoseComplicationData.longTextData(
-                     glucose,
-                     "Small Glucose",
-                     complicationPendingIntent,
-                     image,
-                      )
-                 else -> GlucoseComplicationData.shortValueData(
-                     glucose,
-                     "Small Glucose",
-                     complicationPendingIntent,
-                     image,
-                      )
-             }
-            }
+        val description = listOfNotNull(label, reading?.text, arrow).joinToString(", ")
+        return when (type) {
+            SHORT_TEXT -> GlucoseComplicationData.shortValueData(reading, description, title = arrow)
+            LONG_TEXT -> GlucoseComplicationData.longTextData(reading, description, title = arrow)
+            RANGED_VALUE -> GlucoseComplicationData.rangedValueData(
+                reading, description,
+                icon = reading?.let { Icon.createWithBitmap(arrowTimeBitmap(it.rate, it.timeMillis)) },
+            )
+            else -> null
+        }
     }
 
     companion object {
