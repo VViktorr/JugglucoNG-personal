@@ -63,8 +63,8 @@ font into ignored build resources; no duplicate font asset is checked in.
 First compile `:Common:compileMobileDebugJavaWithJavac` and
 `:Common:compileMobileDebugKotlin`. The probe includes only the required pure
 presentation helpers, not the full renderer or driver classes. Set
-`GRADLE_USER_HOME` to the cache containing Kotlin 2.4.10, or specify its stdlib
-jar via `PROBE_KOTLIN_STDLIB`.
+`GRADLE_USER_HOME` to the cache containing the Kotlin version declared in the
+root build file, or specify its stdlib jar via `PROBE_KOTLIN_STDLIB`.
 
 ```sh
 sh tools/notification-native-view-probe/build.sh

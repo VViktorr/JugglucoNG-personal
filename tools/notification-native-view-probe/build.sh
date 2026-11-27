@@ -18,7 +18,8 @@ probe_java_classes=../../Common/build/intermediates/javac/mobileDebug/compileMob
 probe_kotlin_classes=../../Common/build/intermediates/built_in_kotlinc/mobileDebug/compileMobileDebugKotlin/classes
 probe_stdlib="${PROBE_KOTLIN_STDLIB:-}"
 if [ -z "$probe_stdlib" ]; then
-    probe_stdlib="$(rg --files "${GRADLE_USER_HOME:-$HOME/.gradle}/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.10" -g '*.jar')"
+    probe_kotlin_version="$(sed -n "s/.*id 'org.jetbrains.kotlin.plugin.compose' version '\([^']*\)'.*/\1/p" ../../build.gradle)"
+    probe_stdlib="$(rg --files "${GRADLE_USER_HOME:-$HOME/.gradle}/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/$probe_kotlin_version" -g '*.jar')"
 fi
 test -f "$probe_stdlib"
 test -f "$probe_java_classes/tk/glucodata/NotificationChartDrawer\$ValueItem.class"
