@@ -179,7 +179,8 @@ class AiDexAlgorithmRuntimeTests {
         RefreshSink.statusRefreshes = 0
         SensorBluetooth.gattcallbacks.clear()
         ManagedCurrentSensor.clear()
-        Applic.app.getSharedPreferences("calibration_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        Applic.app.getSharedPreferences("calibration_prefs", Context.MODE_PRIVATE)
+            .edit().clear().putBoolean("calibration_enabled_by_default", true).commit()
         runBlocking { CalibrationDatabase.getInstance(Applic.app).calibrationDao().deleteAll() }
         runBlocking {
             HistoryDatabase.getInstance(Applic.app).historyDao().deleteAllReadings()

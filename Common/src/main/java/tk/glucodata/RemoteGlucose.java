@@ -234,7 +234,7 @@ class RemoteGlucose {
    }
 
    final RemoteViews widgetRemote(CurrentDisplaySource.Snapshot snapshot, String deltaText) {
-      RemoteViews remoteViews = new RemoteViews(Applic.app.getPackageName(), R.layout.arrowandvalue);
+      RemoteViews remoteViews = new RemoteViews(Applic.app.getPackageName(), R.layout.widget_arrow_and_value);
       if (snapshot == null) {
          return remoteViews;
       }

@@ -172,6 +172,7 @@ class WearMessagePathManifestTests {
     fun theWireStringsAreTheOnesOlderBuildsSpeak() {
         val frozen = mapOf(
             "ALERT_ACK" to "/alertack",
+            "APP_UPDATE_CHECK" to "/appupdate/check",
             "ASKFORSTART" to "/askforstart",
             "BLUETOOTH" to "/bluetooth",
             "CALIBRATE" to "/calibrate",

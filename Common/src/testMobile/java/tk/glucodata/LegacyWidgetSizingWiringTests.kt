@@ -35,8 +35,10 @@ class LegacyWidgetSizingWiringTests {
     @Test
     fun oneByOneWidgetCanFillItsWholeCell() {
         val info = File(moduleRoot, "src/mobile/res/xml/glucose_widget_info.xml").readText()
-        val layout = File(moduleRoot, "src/main/res/layout/arrowandvalue.xml").readText()
+        val layout = File(moduleRoot, "src/main/res/layout/widget_arrow_and_value.xml").readText()
         val initial = File(moduleRoot, "src/mobile/res/layout/glucose_widget.xml").readText()
+        val remote = File(moduleRoot, "src/main/java/tk/glucodata/RemoteGlucose.java").readText()
+        assertTrue(remote.contains("R.layout.widget_arrow_and_value"))
         assertTrue(info.contains("""android:targetCellWidth="1""""))
         assertTrue(info.contains("""android:targetCellHeight="1""""))
         assertTrue(info.contains("""android:minWidth="40dp""""))

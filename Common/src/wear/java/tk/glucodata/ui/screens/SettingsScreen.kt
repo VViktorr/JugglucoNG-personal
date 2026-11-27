@@ -1,6 +1,5 @@
 package tk.glucodata.ui.screens
 
-import android.content.SharedPreferences
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +22,7 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import tk.glucodata.BuildConfig
 import tk.glucodata.R
+import tk.glucodata.settings.observeChanges
 import tk.glucodata.ui.WearNavigationRow
 import tk.glucodata.ui.WearSectionTitle
 
@@ -36,14 +36,13 @@ fun SettingsScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val deltaSettings = androidx.compose.runtime.remember(context) { tk.glucodata.settings.DisplayDeltaSettings(context) }
     val deltaState by deltaSettings.state.collectAsState(tk.glucodata.settings.DisplayDeltaSettings.State())
-    var ongoingIconMode by remember { mutableIntStateOf(WearOngoingActivity.iconMode(context)) }
+    var ongoingIconMode by remember(context) { mutableIntStateOf(WearOngoingActivity.iconMode(context)) }
     DisposableEffect(context) {
         val prefs = WearOngoingActivity.iconPreferences(context)
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+        val stop = prefs.observeChanges("mode") {
             ongoingIconMode = WearOngoingActivity.iconMode(context)
         }
-        prefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+        onDispose(stop)
     }
     ScreenScaffold(timeText = { TimeText() }) {
         ScalingLazyColumn(

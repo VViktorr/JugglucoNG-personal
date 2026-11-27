@@ -65,6 +65,9 @@ class SettingsRegistryTests {
                 KEY_SENSOR_SELECTION,
                 KEY_SENSOR_COLORS,
                 KEY_SENSOR_DISPLAY_NAMES,
+                "app_font_family",
+                "app_use_system_font",
+                "watch_notification_icon_mode",
             ),
             SettingsRegistry.mirrored.map { it.key }.toSet(),
         )

@@ -34,6 +34,8 @@ class CalibrationArchiveTest {
     fun setUp() = runBlocking {
         val context = RuntimeEnvironment.getApplication()
         Applic.app = context as Applic
+        context.getSharedPreferences("calibration_prefs", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("calibration_enabled_by_default", true).commit()
         CalibrationManager.init(context)
         CalibrationManager.clearAll()
         CalibrationManager.resetLoadedStateForTests(keepBoundaries = false)

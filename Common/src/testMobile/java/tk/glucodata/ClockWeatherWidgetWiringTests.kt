@@ -27,8 +27,9 @@ class ClockWeatherWidgetWiringTests {
     @Test
     fun weatherIsNearClockAndGlucoseIsOnRight() {
         val renderer = mobile("java/tk/glucodata/widgets/WidgetRenderer.kt")
-        assertTrue(renderer.contains("weatherCenterX = (w * 0.44f - c.weatherShiftDp * density)"))
-        assertTrue(renderer.contains("glucoseCenterX = w * 0.80f"))
+        assertTrue(renderer.contains("weatherCenterX = w * .44f - c.weatherShiftDp * pxPerDp"))
+        assertTrue(renderer.contains("rightStart = if (hasWeather) w * .68f + 8f * pxPerDp else w * .50f"))
+        assertTrue(renderer.contains("text(value, rightStart, w - endPadding"))
         val start = renderer.indexOf("private fun drawClockWeather")
         val end = renderer.indexOf("private fun drawRange", start)
         assertTrue(start >= 0 && end > start)

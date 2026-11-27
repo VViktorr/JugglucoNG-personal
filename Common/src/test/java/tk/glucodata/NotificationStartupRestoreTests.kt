@@ -1052,6 +1052,7 @@ class NotificationStartupRestoreTests {
                             owner.attachCalls++;
                             return n;
                         }
+                        Notification applySmallIcon(TestApp app, Notification n) { return n; }
                         void updateStatus(Object app, int id) { owner.updateCalls++; }
                         boolean updateStatusText(Object app, int id, String text) { owner.updateCalls++; return true; }
                     }

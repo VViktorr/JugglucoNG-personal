@@ -15,6 +15,7 @@
 #define fromjava(x) x
 #define LOGGER(...) ((void)0)
 #define LOGAR(...) ((void)0)
+#define LOGSTRING(...) ((void)0)
 #define setthreadname(x) ((void)0)
 #define NORAWSTREAM
 using jlong = int64_t; using jbyte = int8_t; using JNIEnv = int; using jclass = void *; using jbyteArray = void *;
