@@ -34,7 +34,7 @@ import tk.glucodata.ui.ThemeMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(
-    sdk = [33],
+    sdk = [34],
     application = JournalCarbHintSheetTests.TestApplication::class,
     qualifiers = "en-w411dp-h900dp-night-xxhdpi"
 )

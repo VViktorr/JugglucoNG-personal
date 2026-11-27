@@ -31,7 +31,7 @@ import tk.glucodata.ui.ThemeMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @ConscryptMode(ConscryptMode.Mode.OFF)
-@Config(sdk = [33], application = AdaptiveSheetHeightTests.TestApplication::class,
+@Config(sdk = [34], application = AdaptiveSheetHeightTests.TestApplication::class,
     qualifiers = "en-w411dp-h1000dp-night-xxhdpi")
 class AdaptiveSheetHeightTests {
     class TestApplication : Applic() { override fun onCreate() {} }

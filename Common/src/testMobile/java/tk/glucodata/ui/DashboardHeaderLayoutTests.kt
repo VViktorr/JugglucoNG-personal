@@ -30,7 +30,7 @@ import tk.glucodata.DisplayDataState
 
 /** The dashboard header's split between the reading card and the sensor panel (#918). */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w360dp-h800dp-xhdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w360dp-h800dp-xhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DashboardHeaderLayoutTests {
     @get:Rule val compose = createComposeRule()

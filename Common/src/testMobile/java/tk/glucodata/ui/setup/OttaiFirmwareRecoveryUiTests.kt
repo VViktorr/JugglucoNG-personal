@@ -22,7 +22,7 @@ import tk.glucodata.drivers.ottai.*
 import tk.glucodata.ui.theme.AppTypography
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w400dp-h800dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w400dp-h800dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class OttaiFirmwareRecoveryUiTests {
     @get:Rule val compose = createComposeRule()

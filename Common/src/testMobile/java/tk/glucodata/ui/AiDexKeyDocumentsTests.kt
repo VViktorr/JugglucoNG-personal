@@ -23,7 +23,7 @@ import tk.glucodata.drivers.aidex.native.protocol.AiDexPairingMaterialRegistry
 import tk.glucodata.ui.setup.AiDexKeyDocuments
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, shadows = [AiDexTestKeystore::class])
+@Config(sdk = [34], application = Application::class, shadows = [AiDexTestKeystore::class])
 @ConscryptMode(ConscryptMode.Mode.OFF)
 class AiDexKeyDocumentsTests {
     private val context get() = RuntimeEnvironment.getApplication()

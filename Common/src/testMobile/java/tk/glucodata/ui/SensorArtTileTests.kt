@@ -22,7 +22,7 @@ import tk.glucodata.ui.components.SensorType
 import tk.glucodata.ui.components.sensorTypeOptions
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class)
+@Config(sdk = [34], application = Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SensorArtTileTests {
     @get:Rule

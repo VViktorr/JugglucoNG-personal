@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.ConscryptMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [26, 34], application = Application::class)
+@Config(sdk = [34], application = Application::class)
 @ConscryptMode(ConscryptMode.Mode.OFF)
 class CustomGlucoseNotificationTests {
     private val app: Application = ApplicationProvider.getApplicationContext()

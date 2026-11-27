@@ -43,7 +43,7 @@ import java.io.File
 import tk.glucodata.R
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "ru-w400dp-h820dp-mdpi", shadows = [AiDexTestKeystore::class])
+@Config(sdk = [34], application = Application::class, qualifiers = "ru-w400dp-h820dp-mdpi", shadows = [AiDexTestKeystore::class])
 @ConscryptMode(ConscryptMode.Mode.OFF)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AiDexKeyManagementTests {

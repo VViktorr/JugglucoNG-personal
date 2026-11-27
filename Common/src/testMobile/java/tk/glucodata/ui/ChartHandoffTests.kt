@@ -19,7 +19,7 @@ import tk.glucodata.chart.HistoryChartModel
 import tk.glucodata.chart.MainSensorOwnership
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class)
+@Config(sdk = [34], application = Application::class)
 class ChartHandoffTests {
     @get:Rule val compose = createComposeRule()
     private fun inputs(primary: String, peer: String, mode: Int = 0) = ChartResolutionInputs(

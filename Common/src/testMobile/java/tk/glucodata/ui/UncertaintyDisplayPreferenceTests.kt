@@ -11,7 +11,7 @@ import org.robolectric.annotation.Config
 import tk.glucodata.UiRefreshBus
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class)
+@Config(sdk = [34], application = Application::class)
 class UncertaintyDisplayPreferenceTests {
     @Test fun displayToggleDoesNotPublishADataChangeOrRebuildHistory() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)

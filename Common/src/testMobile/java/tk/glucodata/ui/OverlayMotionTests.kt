@@ -20,7 +20,7 @@ import org.robolectric.annotation.GraphicsMode
 import tk.glucodata.ui.overlay.*
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class)
+@Config(sdk = [34], application = Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class OverlayMotionTests {
     @get:Rule val compose = createComposeRule()

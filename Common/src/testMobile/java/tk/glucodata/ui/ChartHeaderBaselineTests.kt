@@ -34,7 +34,7 @@ import org.robolectric.annotation.GraphicsMode
 import tk.glucodata.ui.theme.AppTypography
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w1200dp-h2400dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w1200dp-h2400dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ChartHeaderBaselineTests {
     @get:Rule val compose = createComposeRule()

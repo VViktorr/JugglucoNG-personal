@@ -29,6 +29,7 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothProfile;
 import android.os.Build;
 import android.os.PowerManager;
@@ -420,17 +421,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 		bArr[0] = 32;
 		try {
 			{if(doLog) {Log.i(LOG_ID, "Sent read security challenge");};};
-			if(!BLELogincharacteristic.setValue(bArr)) {
-				var mess="BLELogincharacteristic.setValue";
-				wrotepass[1] = System.currentTimeMillis();
-				handshake = mess;
-				Log.e(LOG_ID,SerialNumber+" "+mess);
-				var gatt= mBluetoothGatt;
-				if(gatt!=null)
-					requestDisconnect(gatt, 0L);
-				return;
-				}
-			if(!mBluetoothGatt.writeCharacteristic(BLELogincharacteristic)) {
+			if (!writeLogin(mBluetoothGatt, bArr)) {
 				var mess="writeCharacteristic(BLELogincharacteristic)";
 				Log.e(LOG_ID,SerialNumber+" "+mess);
 				handshake = mess;
@@ -449,19 +440,22 @@ public class Libre2GattCallback extends SuperGattCallback {
 
 		}
 	}
-static void showCharacter(String label, BluetoothGattCharacteristic characteristic) {
-	byte[] value=characteristic.getValue();
-        {if(doLog){Log.showbytes(label + " UUID: " + characteristic.getUuid().toString(), value);};}
+    @SuppressLint("MissingPermission")
+    private boolean writeLogin(BluetoothGatt gatt, byte[] value) {
+        var login = BLELogincharacteristic;
+        return gatt != null && login != null
+                && gatt.writeCharacteristic(login, value, login.getWriteType()) == BluetoothStatusCodes.SUCCESS;
     }
+
 @Override // android.bluetooth.BluetoothGattCallback
 	public synchronized void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
 		libre2Diag("descriptor-write", "status=" + status);
 		super.onDescriptorWrite(bluetoothGatt, bluetoothGattDescriptor, status);
-		if(doLog)  {
-		   BluetoothGattCharacteristic characteristic = bluetoothGattDescriptor.getCharacteristic();
-			showCharacter(SerialNumber+" onDescriptorWrite status="+status, characteristic);
-          }
+        if (doLog && bluetoothGattDescriptor != null) {
+            Log.d(LOG_ID, SerialNumber + " onDescriptorWrite status=" + status
+                    + " UUID=" + bluetoothGattDescriptor.getCharacteristic().getUuid());
+        }
       if(status!=GATT_SUCCESS ) {
 				final var ch = bluetoothGattDescriptor == null ? null : bluetoothGattDescriptor.getCharacteristic();
 				Log.e(LOG_ID, SerialNumber + " descriptor write failed, status:" + status
@@ -608,27 +602,15 @@ private boolean connected=false;
 					byte[] key = Natives.sensorUnlockKey(dataptr);
 					if (key != null) {
 						conphase = 5;
-						if(BLELogincharacteristic.setValue(key)) {
-							if(mBluetoothGatt.writeCharacteristic(BLELogincharacteristic)) {
-								if(doLog) {
-									{if(doLog) {Log.v(LOG_ID, SerialNumber + " writeCharacteristic passcode");};};
-									}
-								return true;
-								}
-							else {
-								Log.e(LOG_ID,SerialNumber + " writeCharacteristic failed passcode");
-								wrotepass[1] = tim;
-								handshake="writeCharacteristic";
-								return false;
-								}
-
-							}
-						else {
-							wrotepass[1] = tim;
-							handshake="setValue";
-						Log.e(LOG_ID,SerialNumber + " setValue failed: passcode");
-							return false;
-							}
+                        if (writeLogin(mBluetoothGatt, key)) {
+                            if (doLog)
+                                Log.v(LOG_ID, SerialNumber + " writeCharacteristic passcode");
+                            return true;
+                        }
+                        Log.e(LOG_ID, SerialNumber + " writeCharacteristic failed passcode");
+                        wrotepass[1] = tim;
+                        handshake = "writeCharacteristic";
+                        return false;
 						} 
 					else {
 						wrotepass[1] = tim;
@@ -727,10 +709,8 @@ private   boolean failedbefore=false;
                 (characteristic = service.getCharacteristic(mCharacteristicUUID_CompositeRawData)) != null &&
                 bluetoothGatt.setCharacteristicNotification(characteristic, true) &&
                 (descriptor = characteristic.getDescriptor(mCharacteristicConfigDescriptor)) != null) {
-                        if(!descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-                            Log.e(LOG_ID,"descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)  failed");
-                            }
-                        success = bluetoothGatt.writeDescriptor(descriptor);
+                        success = bluetoothGatt.writeDescriptor(descriptor,
+                                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) == BluetoothStatusCodes.SUCCESS;
                         } 
             else success = false;
 			if (!success) {
@@ -787,11 +767,8 @@ private static PowerManager.WakeLock getwakelock() {
 private boolean setDescriptor(BluetoothGattCharacteristic ch, byte[] type) {
        var gatt=mBluetoothGatt;
         BluetoothGattDescriptor descriptor = ch.getDescriptor(mCharacteristicConfigDescriptor);
-        if(!descriptor.setValue(type)) {
-            Log.e(LOG_ID, SerialNumber + " " + "descriptor.setValue())  failed");
-            return false;
-        }
-        return gatt.writeDescriptor(descriptor);
+        return gatt != null && descriptor != null
+                && gatt.writeDescriptor(descriptor, type) == BluetoothStatusCodes.SUCCESS;
         }
 private long datatime=0L;
 private	void oldonCharacteristicChanged(byte[] value) {
@@ -923,11 +900,10 @@ private	void oldonCharacteristicChanged(byte[] value) {
 				}
 //            this.f14472dGb = new byte[25];
 		    mBLELoginHandler = forCurrentGatt(() -> {
-			BLELogincharacteristic.setValue(a);
             var gatt = mBluetoothGatt;
             if(gatt==null)
                 return;
-			if(!gatt.writeCharacteristic(BLELogincharacteristic)) {
+			if (!writeLogin(gatt, a)) {
 			    var mess = "phase2 retry=" + BLELoginposted + " writeCharacteristic(BLELogincharacteristic)";
 			    Log.e(LOG_ID, SerialNumber+" "+mess);
 			    handshake = mess;
@@ -1024,9 +1000,8 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 	}
 
 @Override // android.bluetooth.BluetoothGattCallback
-public synchronized void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic) {
+public synchronized void onCharacteristicChanged(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, byte[] value) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
-	byte[] value = bluetoothGattCharacteristic.getValue();
 	var uuid=bluetoothGattCharacteristic.getUuid();
 	var uuidstr=uuid.toString();
 	if(sensorgen != 2) {

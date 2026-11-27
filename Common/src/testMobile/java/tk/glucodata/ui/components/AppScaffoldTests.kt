@@ -34,7 +34,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /** The bar of a pushed screen marks itself off from content exactly while some is under it. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w411dp-h900dp-xhdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w411dp-h900dp-xhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AppScaffoldTests {
     @get:Rule val compose = createComposeRule()

@@ -47,7 +47,7 @@ import tk.glucodata.logic.TrendEngine
 
 /** Real Compose measurement: a pure layout-policy test cannot detect SubcomposeLayout crashes. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w640dp-h800dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w640dp-h800dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class HeroSensorPairLayoutTests {
     @get:Rule val compose = createComposeRule()

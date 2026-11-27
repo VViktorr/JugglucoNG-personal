@@ -287,8 +287,7 @@ public class Floating extends View {
 
         final int floatingheight = (int) (density * nrdens), floatingwidth = floatingheight * 2;
         floatPaint.setTextSize(floatingheight);
-        final var type = (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) ? WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
-                : WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        final var type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final var flags = FLAG_NOT_FOCUSABLE;
         var params = new WindowManager.LayoutParams(floatingwidth, (int) (floatingheight), (int) floatingx,
                 (int) floatingy, type, flags, PixelFormat.TRANSLUCENT);
@@ -301,8 +300,7 @@ public class Floating extends View {
         if (asking)
             return;
         asking = true;
-        final var type = (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) ? WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
-                : WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        final var type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final var flags = FLAG_NOT_FOCUSABLE;
         final int x = isWearable ? 0 : (int) floatingx;
         final int y = isWearable ? 0 : (int) floatingy;
@@ -406,8 +404,7 @@ public class Floating extends View {
         }
         ;
 
-        var type = (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) ? WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
-                : WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        var type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         var flags = FLAG_NOT_FOCUSABLE
                 | (Natives.getfloatingTouchable() ? 0 : WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         return new WindowManager.LayoutParams(floatingwidth, (int) (floatingheight), (int) xpos, (int) ypos, type,

@@ -13,7 +13,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = {26, 33, 34}, application = Application.class)
+@Config(sdk = {34}, application = Application.class)
 public class GraphLineParcelTest {
     @Test
     @SuppressWarnings("deprecation") // Read back using the legacy client API.

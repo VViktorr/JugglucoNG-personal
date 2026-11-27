@@ -32,7 +32,7 @@ class ChartTestNatives
  * had data, which left a blank screen with no range picker for as long as the fetch took.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en", shadows = [ChartTestNatives::class])
+@Config(sdk = [34], application = Application::class, qualifiers = "en", shadows = [ChartTestNatives::class])
 class ChartWithoutReadingsTest {
     @get:Rule
     val compose = createComposeRule()

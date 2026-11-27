@@ -34,7 +34,7 @@ import tk.glucodata.logic.TrendEngine
 import tk.glucodata.ui.theme.AppTypography
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w360dp-h640dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w360dp-h640dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AlarmScreenLayoutTests {
     @get:Rule val compose = createComposeRule()

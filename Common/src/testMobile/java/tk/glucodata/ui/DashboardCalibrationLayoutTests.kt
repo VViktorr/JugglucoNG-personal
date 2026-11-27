@@ -30,7 +30,7 @@ import org.robolectric.annotation.GraphicsMode
 import tk.glucodata.ui.theme.AppTypography
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "ru-w1200dp-h1600dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "ru-w1200dp-h1600dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DashboardCalibrationLayoutTests {
     @get:Rule val compose = createComposeRule()

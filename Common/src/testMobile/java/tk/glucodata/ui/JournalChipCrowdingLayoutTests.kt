@@ -44,7 +44,7 @@ import tk.glucodata.ui.theme.AppTypography
 
 /** Screenshot-shaped dose clusters, rendered with the real chip and placement/spread solver. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w600dp-h1000dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w600dp-h1000dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class JournalChipCrowdingLayoutTests {
     @get:Rule val compose = createComposeRule()

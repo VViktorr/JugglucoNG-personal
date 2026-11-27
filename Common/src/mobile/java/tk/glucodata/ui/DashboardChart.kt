@@ -1080,19 +1080,9 @@ fun InteractiveGlucoseChart(
     val context = LocalContext.current
     // 1. Get Vibrator & Check Capabilities ONCE (Performance)
     val hapticsConfig = remember(context) {
-        val vib = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            context.getSystemService(Vibrator::class.java)
-        } else {
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        // Check if the device has an advanced haptic engine (Linear Resonant Actuator)
-        // primitive_low_tick is the best proxy for "High Quality Motor"
-        val hasCrispHaptics = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val vib = context.getSystemService(Vibrator::class.java)
+        val hasCrispHaptics =
             vib?.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_LOW_TICK) == true
-        } else {
-            false
-        }
 
         Triple(vib, hasCrispHaptics, context)
     }

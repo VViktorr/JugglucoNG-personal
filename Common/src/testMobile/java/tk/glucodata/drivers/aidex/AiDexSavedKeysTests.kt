@@ -41,7 +41,7 @@ class AiDexPausingMaterialInstall {
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class,
+@Config(sdk = [34], application = Application::class,
     shadows = [AiDexTestKeystore::class, AiDexPausingMaterialInstall::class])
 @ConscryptMode(ConscryptMode.Mode.OFF)
 class AiDexSavedKeysTests {

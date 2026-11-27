@@ -26,7 +26,7 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @ConscryptMode(ConscryptMode.Mode.OFF)
-@Config(sdk = [33], application = FoodPickerActionsTests.TestApplication::class,
+@Config(sdk = [34], application = FoodPickerActionsTests.TestApplication::class,
     qualifiers = "en-w411dp-h1000dp-night-xxhdpi")
 class FoodPickerActionsTests {
     class TestApplication : Applic() { override fun onCreate() {} }

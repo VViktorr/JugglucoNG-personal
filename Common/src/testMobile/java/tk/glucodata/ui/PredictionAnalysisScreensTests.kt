@@ -43,7 +43,7 @@ import tk.glucodata.data.prediction.analysis.RecordedForecastEntity
  * device.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-w411dp-h1400dp-xxhdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-w411dp-h1400dp-xxhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PredictionAnalysisScreensTests {
     @get:Rule val compose = createComposeRule()

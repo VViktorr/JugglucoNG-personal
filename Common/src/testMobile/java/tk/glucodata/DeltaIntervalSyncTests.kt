@@ -17,7 +17,7 @@ import tk.glucodata.settings.DisplayDeltaSettings
 import tk.glucodata.settings.SettingsRegistry
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class)
+@Config(sdk = [34], application = Application::class)
 @ConscryptMode(ConscryptMode.Mode.OFF)
 class DeltaIntervalSyncTests {
     private val base: Context = ApplicationProvider.getApplicationContext()

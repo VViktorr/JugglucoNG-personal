@@ -50,7 +50,7 @@ import tk.glucodata.ui.util.ConnectedButtonGroup
 import tk.glucodata.ui.symbols.Symbols
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "ru-w1200dp-h1600dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "ru-w1200dp-h1600dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AdaptiveLayoutTests {
     @get:Rule val compose = createComposeRule()

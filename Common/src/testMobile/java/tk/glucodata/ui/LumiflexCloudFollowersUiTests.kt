@@ -33,7 +33,7 @@ import tk.glucodata.share.lumiflex.FollowerInfo
 import tk.glucodata.ui.theme.AppTypography
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "ru-w460dp-h1200dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "ru-w460dp-h1200dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class LumiflexCloudFollowersUiTests {
     @get:Rule val compose = createComposeRule()

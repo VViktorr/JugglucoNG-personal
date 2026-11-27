@@ -34,7 +34,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "w411dp-h900dp")
+@Config(sdk = [34], application = Application::class, qualifiers = "w411dp-h900dp")
 class JournalFormAboveKeyboardTests {
     @get:Rule
     val compose = createComposeRule()

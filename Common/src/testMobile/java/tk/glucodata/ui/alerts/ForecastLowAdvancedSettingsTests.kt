@@ -38,7 +38,7 @@ import tk.glucodata.alerts.AlertType
 import tk.glucodata.ui.theme.AppTypography
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = Application::class, qualifiers = "en-rUS-w420dp-h900dp-mdpi")
+@Config(sdk = [34], application = Application::class, qualifiers = "en-rUS-w420dp-h900dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ForecastLowAdvancedSettingsTests {
     @get:Rule val compose = createComposeRule()
