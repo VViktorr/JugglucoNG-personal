@@ -29,7 +29,7 @@ kullanılır.</p>
 </p>
 ]]>
 </string>
-<string name="nearbypermission" >
+<string name="nearbypermission"  formatted="false">
 <![CDATA[
 <h1 class="western">
 Yakındaki Cihazlar İzni</h1>

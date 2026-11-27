@@ -233,7 +233,7 @@
     <string name="touchable">Хүрч болох</string>
     <string name="overlaypermission">Зөвшөөрөл шаардлагатай</string>
     <string name="overlaypermissionmessage">adb shell pm grant tk.glucodata android.permission.SYSTEM_ALERT_WINDOW</string>
-    https://www.juggluco.nl/Jugglucohelp/floatingconfig.html
+    <!-- https://www.juggluco.nl/Jugglucohelp/floatingconfig.html -->
     <string name="deletereminder">Сануулгыг устгах уу?</string>
     <string name="deletelabel">Шошгыг устгах уу?</string>
     <string name="finish">Салгах</string>
@@ -2132,7 +2132,7 @@ OK дарснаар энэ утсан дээр холболт үүсч, өөр A
     <string name="api_source_status_syncing">API эх үүсвэрийг шинэчилж байна</string>
     <string name="api_source_status_paused">API эх үүсвэр түр зогссон</string>
     <string name="api_source_status_config_needed">Эх үүсвэрийн URL оруулна уу</string>
-    <string name="api_source_status_no_readings">API уншилт хараахан алга</string>``
+    <string name="api_source_status_no_readings">API уншилт хараахан алга</string>
     <string name="api_source_status_sync_failed">API эх үүсвэрийн синк амжилтгүй</string>
     <string name="outbound_api_preset_sheet_title">Очих газрын бэлэн тохиргоо сонгох</string>
     <string name="outbound_api_preset_custom_json_desc">POST normalized glucose JSON to any endpoint</string>

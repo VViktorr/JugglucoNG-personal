@@ -241,7 +241,7 @@
 
  <string name="overlaypermission">Wuxuu u baahan yahay ogolaansho</string>
  <string name="overlaypermissionmessage">adb shell pm deeq tk.glucodata android.permission.SYSTEM_ALERT_WINDOW</string>
- https://www.juggluco.nl/Jugglucohelp/floatingconfig.html
+ <!-- https://www.juggluco.nl/Jugglucohelp/floatingconfig.html -->
  <string name="deletereminder">tirtir xasuusiye?</string>
  <string name="deletelabel">Ma tirtirtaa summada?</string>
 

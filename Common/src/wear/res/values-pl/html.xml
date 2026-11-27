@@ -15,7 +15,7 @@ To modify, change the html files in https://github.com/j-kaltes/Jugglucohelp -->
 <p style="margin-bottom: 0in"><br/></p>
 ]]>
 </string>
-<string name="nearbypermission" >
+<string name="nearbypermission"  formatted="false">
 <![CDATA[
 <h1>Uprawnienie SKANOWANIE URZĄDZEŃ W POBLIŻU</h1>
 <p style="line-height: 100%; margin-bottom: 0in">Juggluco potrzebuje uprawnień do SKANOWNIA URZĄDZEŃ W POBLIŻU do odbierania wartości glukozy przez Bluetooth z czujnik&oacute;w Freestyle Libre 2 i 3. Jeśli Juggluco otrzymuje te wartości glukozy z Juggluco działającego na innym telefonie lub zegarku, Juggluco nie potrzebuje tego pozwolenia.</p>
