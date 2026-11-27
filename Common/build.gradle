@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.plugin.compose'
-    id 'com.google.devtools.ksp' version '2.3.11'
+    id 'com.google.devtools.ksp' version '2.3.14'
 }
 
 // Optional private BloodControl inputs. Missing inputs keep ordinary/CI builds usable.
