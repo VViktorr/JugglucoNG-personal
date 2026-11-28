@@ -107,6 +107,7 @@ class SuperGattCallback {
     static class SystemClock { static long elapsedRealtime(){return Applic.scheduler.now;} }
     static class Build { static class VERSION { static int SDK_INT=37; } static class VERSION_CODES { static int M=23; } }
     static class R { static class string { static int turn_on_nearby_devices_permission=0; } }
+    static class LogPrivacy { static String sensorAlias(String serial){return "sensor-1";} }
     static class Log {
         static List<String> lines=new ArrayList<>();
         static void i(String a,String b){lines.add(b);} static void d(String a,String b){} static void e(String a,String b){}
