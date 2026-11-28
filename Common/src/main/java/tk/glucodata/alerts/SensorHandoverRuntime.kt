@@ -318,7 +318,7 @@ internal object SensorHandoverRuntime {
             }
             // Legacy native path: stop BLE processing and mark finished before
             // removing from the Java list (the same checked primitive as the remove dialog).
-            runCatching { gatt.setPause(true) }
+            runCatching { gatt.setPause(true, SuperGattCallback.LifecycleReason.SENSOR_HANDOVER) }
                 .onFailure { Log.e(LOG_ID, "pause before removal failed: ${it.message}") }
             runCatching { gatt.closeGattTransport() }
                 .onFailure { Log.e(LOG_ID, "GATT close before removal failed: ${it.message}") }

@@ -13,6 +13,7 @@ import android.os.SystemClock
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
+import tk.glucodata.SuperGattCallback.LifecycleReason
 import tk.glucodata.drivers.libre2.Libre2Gen1Crypto
 
 /** Owns the Gen1 BLE lifecycle on the shared Android GATT transport. */
@@ -39,6 +40,8 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
 
     private var disconnectingGatt: BluetoothGatt? = null
     private var retryDelayMs = 0L
+    private var closeReason: String? = null
+    private var disconnectReason = "reconnect-requested"
     private var relinkAt = 0L
     private var linkStartedAt = -1L
     private var attemptStartedAt = -1L
@@ -56,7 +59,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
     private var firstReadingPending = true
     private var historyRows = 0L
     private val frameStats = LongArray(2)
-    private val disconnectDeadline = deadline<BluetoothGatt>(::retryAfterDisconnect)
+    private val disconnectDeadline = deadline<BluetoothGatt> { retryAfterDisconnect(it, "disconnect-timeout-$disconnectReason") }
     private val streamDeadline = deadline<BluetoothGatt>(::streamSilent)
     private val escalationDeadline = deadline<Any> { hardRecover("stream-silence") }
     private val recoveryDeadline = deadline<Any> {
@@ -88,6 +91,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
     override fun onConnectionAttemptTimeout() {
         libre2Diag("connect-timeout", "")
         noteFailedAttempt()
+        closeReason = "connect-timeout"
         endAttempt("connect-timeout")
     }
 
@@ -177,17 +181,18 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
                 Natives.resetbluetooth(dataptr)
             }
             endAttempt("status=$status")
-            retryAfterDisconnect(gatt)
+            retryAfterDisconnect(gatt, "gatt-status-$status")
         } else {
-            requestDisconnect(gatt, 0L)
+            requestDisconnect(gatt, 0L, "gatt-status-$status")
         }
     }
 
-    private fun requestDisconnect(gatt: BluetoothGatt, delayMillis: Long) {
+    private fun requestDisconnect(gatt: BluetoothGatt, delayMillis: Long, reason: String = "reconnect-requested") {
         if (gatt !== mBluetoothGatt) return
         retryDelayMs = delayMillis
         if (disconnectingGatt === gatt) return
         disconnectingGatt = gatt
+        disconnectReason = reason
         handshakeDeadline.cancel()
         streamDeadline.cancel()
         disconnectDeadline.arm(gatt, 2_000L)
@@ -195,17 +200,17 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
             super.disconnect()
         } catch (error: RuntimeException) {
             Log.stack(TAG, "disconnect failed", error)
-            retryAfterDisconnect(gatt)
+            retryAfterDisconnect(gatt, "disconnect-exception")
         }
     }
 
-    private fun retryAfterDisconnect(gatt: BluetoothGatt) {
+    private fun retryAfterDisconnect(gatt: BluetoothGatt, reason: String) {
         if (gatt !== mBluetoothGatt) return
         val delay = retryDelayMs
-        endAttempt("disconnect-timeout")
+        endAttempt(reason)
         noteFailedAttempt()
         // Closing holds the relink deadline before clearing the established link.
-        closeGattTransport()
+        closeTransport(reason)
         connectDevice(delay)
     }
 
@@ -227,7 +232,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
             escalationDeadline.arm(Any(), STREAM_SILENCE_MS)
         }
         noteLossOfSignal(System.currentTimeMillis())
-        requestDisconnect(gatt, 0L)
+        requestDisconnect(gatt, 0L, "stream-silence")
     }
 
     private var escalationArmed = false
@@ -241,7 +246,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
         recoveryWakeLock = acquireWakeLock("Libre2Recovery", 15_000L)
         try {
             endAttempt("hard-recovery")
-            closeGattTransport()
+            closeTransport("hard-recovery")
             Natives.resetbluetooth(dataptr)
         } catch (error: RuntimeException) {
             Log.stack(TAG, "recovery failed", error)
@@ -448,7 +453,10 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
 
     override fun onClosingGattTransport() {
         if (linkStartedAt >= 0L) relinkAt = SystemClock.elapsedRealtime() + RELINK_DELAY_MS
-        endAttempt("closed")
+        val reason = closeReason ?: "transport-close-requested"
+        closeReason = null
+        libre2Diag("transport-close", "reason=$reason")
+        endAttempt(reason)
         linkStartedAt = -1L
         disconnectingGatt = null
         retryDelayMs = 0L
@@ -462,30 +470,62 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
     override fun disconnect() {
         cancelRecovery()
         val gatt = mBluetoothGatt
-        if (gatt == null) super.disconnect() else requestDisconnect(gatt, 0L)
+        if (gatt == null) super.disconnect() else requestDisconnect(gatt, 0L, "disconnect-requested")
     }
 
     @Synchronized
-    override fun setPause(pause: Boolean) {
+    override fun setPause(pause: Boolean) = applyPause(pause, "unspecified")
+
+    @Synchronized
+    override fun setPause(pause: Boolean, reason: LifecycleReason) =
+        applyPause(pause, reason.logName())
+
+    private fun applyPause(pause: Boolean, reason: String) {
+        val changed = stop != pause
         super.setPause(pause)
+        if (changed) libre2Diag(if (pause) "pause" else "resume", "reason=$reason")
         if (pause) {
             cancelRecovery()
-            endAttempt("paused")
+            endAttempt("paused reason=$reason")
+            closeTransport(reason)
+        }
+    }
+
+    private fun closeTransport(reason: String) {
+        closeReason = reason
+        try {
             closeGattTransport()
+        } finally {
+            closeReason = null
         }
     }
 
     @Synchronized
     override fun close() {
         cancelRecovery()
-        endAttempt("closed")
-        super.close()
+        val reason = closeReason ?: "driver-close-requested"
+        endAttempt(reason)
+        closeTransport(reason)
     }
 
-    override fun free() {
-        super.free()
-        LossOfSensorAlarm.cancelalarm()
+    @Synchronized
+    override fun free() = freeDriver("driver-freed")
+
+    @Synchronized
+    override fun free(reason: LifecycleReason) = freeDriver(reason.logName())
+
+    private fun freeDriver(reason: String) {
+        libre2Diag("driver-free", "reason=$reason")
+        closeReason = reason
+        try {
+            super.free()
+            LossOfSensorAlarm.cancelalarm()
+        } finally {
+            closeReason = null
+        }
     }
+
+    private fun LifecycleReason.logName(): String = name.lowercase(java.util.Locale.ROOT).replace('_', '-')
 
     override fun getService(): UUID = SERVICE
 
@@ -508,7 +548,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
         wrotepass[1] = System.currentTimeMillis()
         reportGen1Step(null, result)
         status?.let { setConStatus(it, false) }
-        requestDisconnect(gatt, 0L)
+        requestDisconnect(gatt, 0L, result)
     }
 
     private companion object {

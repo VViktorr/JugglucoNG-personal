@@ -278,6 +278,19 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         return false;
     }
 
+    public enum LifecycleReason {
+        USER_DISCONNECT, USER_RECONNECT, SENSOR_REMOVAL, SENSOR_HANDOVER,
+        REMOTE_OWNER, CLONE, INVENTORY_REMOVAL
+    }
+
+    public void setPause(boolean pause, LifecycleReason reason) {
+        setPause(pause);
+    }
+
+    void free(LifecycleReason reason) {
+        free();
+    }
+
     public synchronized void setPause(boolean pause) {
         this.stop = pause;
         if (pause) {

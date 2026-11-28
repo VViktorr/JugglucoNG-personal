@@ -1050,7 +1050,7 @@ public class SensorBluetooth {
                     ;
                 }
                 ;
-                gatt.free();
+                gatt.free(SuperGattCallback.LifecycleReason.SENSOR_REMOVAL);
                 gattcallbacks.remove(i);
                 rehomeCurrentSensorAfterRemoval(str);
                 if (removedSerial != null && !removedSerial.equals(str)) {
@@ -1344,7 +1344,7 @@ public class SensorBluetooth {
             if (!CloneSensorRegistry.isCloneSensor(sensorId)) return;
             for (SuperGattCallback callback : gattcallbacks) {
                 if (SensorIdentity.matches(callback.SerialNumber, sensorId)) {
-                    callback.setPause(true);
+                    callback.setPause(true, SuperGattCallback.LifecycleReason.CLONE);
                     callback.closeGattTransport();
                 }
             }
@@ -1712,7 +1712,7 @@ public class SensorBluetooth {
                 if (doLog) {
                     Log.i(LOG_ID, "remove " + removedSerial + removalReason(removed));
                 }
-                gattcallbacks.get(weg).free();
+                removed.free(SuperGattCallback.LifecycleReason.INVENTORY_REMOVAL);
                 gattcallbacks.remove(weg);
                 rehomeCurrentSensorAfterRemoval(removedSerial, allDevs);
             }

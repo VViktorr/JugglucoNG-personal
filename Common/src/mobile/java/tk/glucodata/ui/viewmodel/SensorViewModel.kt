@@ -1075,7 +1075,7 @@ class SensorViewModel : ViewModel() {
                 // Closing the GATT transport prevents a late notification from reactivating a
                 // sensor after its native finished flag has been written. It deliberately keeps
                 // dataptr alive until sensorEnded() runs after confirmation.
-                try { gatt.setPause(true) } catch (t: Throwable) {
+                try { gatt.setPause(true, SuperGattCallback.LifecycleReason.SENSOR_REMOVAL) } catch (t: Throwable) {
                     android.util.Log.e("SensorViewModel", "terminateSensor($serial) pause failed: ${t.message}", t)
                 }
                 try { gatt.closeGattTransport() } catch (t: Throwable) {
@@ -1376,13 +1376,13 @@ class SensorViewModel : ViewModel() {
                     if (wipeData && gatt.dataptr != 0L) {
                         wipeSibionicsDataIfNeeded(gatt, "reconnect/wipe")
                     }
-                    gatt.setPause(true)
+                    gatt.setPause(true, SuperGattCallback.LifecycleReason.USER_RECONNECT)
                     gatt.disconnect()
                     kotlinx.coroutines.delay(500)
                     if (gatt.dataptr != 0L) {
                         try { Natives.resetbluetooth(gatt.dataptr) } catch (_: Throwable) {}
                     }
-                    gatt.setPause(false)
+                    gatt.setPause(false, SuperGattCallback.LifecycleReason.USER_RECONNECT)
                     gatt.connectDevice(200)
                 }
                 refreshSensors()
@@ -1508,7 +1508,7 @@ class SensorViewModel : ViewModel() {
                     // Does NOT call finishSensor/sensorEnded — sensor stays in the list.
                     // Use reconnectSensor() to bring it back.
                     android.util.Log.d("SensorViewModel", "Legacy disconnect: setPause + disconnect + resetbluetooth (non-destructive)")
-                    gatt.setPause(true)
+                    gatt.setPause(true, SuperGattCallback.LifecycleReason.USER_DISCONNECT)
                     gatt.disconnect()
                     kotlinx.coroutines.delay(500)
                     if (gatt.dataptr != 0L) {

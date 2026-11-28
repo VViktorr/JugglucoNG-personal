@@ -876,7 +876,7 @@ object SensorOwnershipRuntime {
         Log.i(LOG_ID, "standing down from $serial: the other device is reading it")
         val gatt = findGatt(serial) ?: return
         runCatching {
-            gatt.setPause(true)
+            gatt.setPause(true, SuperGattCallback.LifecycleReason.REMOTE_OWNER)
             gatt.disconnect()
         }.onFailure { Log.stack(LOG_ID, "release($serial)", it) }
     }
@@ -894,7 +894,7 @@ object SensorOwnershipRuntime {
         }
         Log.i(LOG_ID, "taking $serial back: $reason")
         runCatching {
-            gatt.setPause(false)
+            gatt.setPause(false, SuperGattCallback.LifecycleReason.REMOTE_OWNER)
             gatt.connectDevice(RESUME_DELAY_MS)
         }.onFailure { Log.stack(LOG_ID, "resume($serial)", it) }
     }

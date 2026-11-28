@@ -342,7 +342,7 @@ public class bluediag {
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         try {
-                            gat.setPause(true);
+                            gat.setPause(true, SuperGattCallback.LifecycleReason.SENSOR_REMOVAL);
                             gat.closeGattTransport();
                         } catch (Throwable throwable) {
                             Log.stack(LOG_ID, "Could not finish " + serial, throwable);
