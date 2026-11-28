@@ -160,7 +160,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
     protected long sensorstartmsec;
 
     protected SuperGattCallback(String SerialNumber, long dataptr, int gen) {
-        this.SerialNumber = SerialNumber;
+        this.SerialNumber = LogPrivacy.registerSensor(SerialNumber);
         this.dataptr = dataptr;
         mActiveDeviceAddress = Natives.getDeviceAddress(dataptr, true);
         sensorstartmsec = Natives.getSensorStartmsec(dataptr);
@@ -1441,6 +1441,7 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
         mActiveBluetoothDevice = device;
         if (device != null) {
             String address = device.getAddress();
+            LogPrivacy.registerAddress(SerialNumber, address);
             {
                 if (doLog) {
                     Log.i(LOG_ID, SerialNumber + " setDevice(" + address + ")");

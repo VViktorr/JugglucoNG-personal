@@ -28,7 +28,7 @@ public final class SensorTraceRing {
 	 * megabytes here for as long as the process lives, which is the whole thing this is
 	 * supposed not to do.
 	 */
-	private static final int MAX_MESSAGE_CHARS = 256;
+	private static final int MAX_MESSAGE_CHARS = 1024;
 
 	private static final Object lock = new Object();
 	private static final long[] times = new long[CAPACITY];
@@ -62,6 +62,8 @@ public final class SensorTraceRing {
 		if (message == null) {
 			return;
 		}
+		message = LogPrivacy.sanitize(message);
+		tag = LogPrivacy.sanitize(tag);
 		final long seconds = System.currentTimeMillis() / 1000L;
 		// Only a line already over the cap pays for a copy, and the copy is the point: it lets
 		// the original be collected instead of held for the next four hundred lines.

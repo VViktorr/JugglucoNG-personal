@@ -18,6 +18,62 @@
 /*                                                                                   */
 /*      Fri Jan 27 12:37:55 CET 2023                                                 */
 
+#include "logprivacy.hpp"
+#include <string>
+#include <regex>
+#include <mutex>
+#include <map>
+
+namespace {
+struct PrivacyState {
+    std::mutex mutex;
+    std::map<std::string, std::string> identities;
+};
+
+PrivacyState &privacyState() {
+    // Other translation units log from global constructors (e.g. persimages).
+    // Construct the map before first use, not in this translation unit's init order.
+    // Keep it alive for process lifetime: global destructors also write logs.
+    static PrivacyState *const state = new PrivacyState;
+    return *state;
+}
+}
+extern "C" void privacy_log_identity(const char *identity, const char *alias) {
+    if (!identity || !*identity || !alias) return;
+    auto &state = privacyState();
+    std::lock_guard<std::mutex> lock(state.mutex);
+    state.identities[identity] = alias;
+}
+extern "C" const char *privacy_log_message(const char *message, size_t length) {
+    static thread_local std::string safe;
+    safe.assign(message ? message : "", message ? length : 0);
+    static const std::regex secret(R"(passcode|password|\buser[_ -]?token\b|authenticationdata|sensdorident|sensorident|unlockpayload|unlockkey|(?:access|refresh|auth)[_ -]?token|\btoken\b|\buid\b|\bdataptr\b|\b(?:key|auth|credentials?|authorization)\b|(?:session|shared)[_ -]?key|(?:challenge|response|payload|secret)\s*[:=]\s*(?!omitted))", std::regex::icase);
+    if (std::regex_search(safe, secret)) {
+        safe = "[sensitive log omitted]\n";
+        return safe.c_str();
+    }
+    {
+        auto &state = privacyState();
+        std::lock_guard<std::mutex> lock(state.mutex);
+        for (const auto &entry : state.identities) {
+            size_t at = 0;
+            while ((at = safe.find(entry.first, at)) != std::string::npos) {
+                safe.replace(at, entry.first.size(), entry.second);
+                at += entry.second.size();
+            }
+        }
+    }
+    static const std::regex mac(R"((?:[0-9a-f]{2}:){5}[0-9a-f]{2})", std::regex::icase);
+    static const std::regex serial(R"(\b[0-9][A-Z0-9]{10,12}\b)");
+    static const std::regex pointer(R"(0x[0-9a-f]{6,})", std::regex::icase);
+    static const std::regex hex(R"(\b[0-9a-f]{12,}\b|(?:\b[0-9a-f]{2}[ ,]){7,}[0-9a-f]{2}\b)", std::regex::icase);
+    safe = std::regex_replace(safe, mac, "[device]");
+    safe = std::regex_replace(safe, serial, "[sensor]");
+    safe = std::regex_replace(safe, pointer, "[address omitted]");
+    safe = std::regex_replace(safe, hex, "[bytes omitted]");
+    return safe.c_str();
+}
+
 #include "config.h"
 #if !defined(NOLOG )&&!defined(LOGCAT)
 //#if 1 
@@ -163,7 +219,8 @@ void logwriter(const char *buf,const int len) {
 		 if(handle==STDERR_FILENO)
 			handle=getlogfile();
 	#endif
-	       sys_write(handle,buf,len);
+	       const char *safe = privacy_log_message(buf, len);
+	       sys_write(handle,safe,strlen(safe));
        	}
 	}
 
@@ -181,7 +238,11 @@ static void logwritev(const struct iovec *iov, int iovcnt) {
 		 if(handle==STDERR_FILENO)
 			handle=getlogfile();
 	#endif
-	       writev(handle,iov,iovcnt);
+	       std::string joined;
+               for (int i = 0; i < iovcnt; ++i)
+                   joined.append(static_cast<const char *>(iov[i].iov_base), iov[i].iov_len);
+               const char *safe = privacy_log_message(joined.data(), joined.size());
+               sys_write(handle, safe, strlen(safe));
        	}
 	}
 

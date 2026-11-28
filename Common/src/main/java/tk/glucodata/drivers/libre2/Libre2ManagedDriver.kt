@@ -93,9 +93,9 @@ class Libre2Gen2BleLogin internal constructor(private val random: (ByteArray) ->
         close()
         failure = null
         if (uid == null) return failed("No ident")
-        val provisioning = Libre2Gen2Provisioning.parse(record) ?: return failed("No Auth")
+        val provisioning = Libre2Gen2Provisioning.parse(record) ?: return failed("Missing or invalid provisioning record")
         val rootSlot = provisioning.rootSlot ?: return failed("Root slot ${provisioning.storedRootSlot} unsupported")
-        val opened = Libre2Gen2Exchange.open(rootSlot, uid, ble = true) ?: return failed("No sensor key")
+        val opened = Libre2Gen2Exchange.open(rootSlot, uid, ble = true) ?: return failed("Gen2 exchange unavailable")
         val hostRandom = ByteArray(Libre2Gen2Protocol.RANDOM_BYTES).also(random)
         val request = opened.buildBleRequest(provisioning, challenge, hostRandom)
         if (request == null) {

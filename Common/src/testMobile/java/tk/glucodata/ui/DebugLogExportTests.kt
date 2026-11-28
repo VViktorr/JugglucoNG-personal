@@ -13,7 +13,7 @@ class DebugLogExportTests {
     fun `file backed log is copied after the report header`() {
         val sourceFile = File.createTempFile("juggluco-debug-export", ".log")
         try {
-            val payload = ByteArray(256 * 1024) { index -> (index % 251).toByte() }
+            val payload = "I/Libre2GattCallback stage=gatt-state status=0\n".repeat(6_000).toByteArray()
             sourceFile.outputStream().use { it.write(payload) }
             val output = ByteArrayOutputStream()
 
@@ -40,6 +40,19 @@ class DebugLogExportTests {
         )
 
         assertArrayEquals("# test build\n\nBLE error\n".toByteArray(), output.toByteArray())
+    }
+
+    @Test
+    fun `old authentication response is removed from a saved trace`() {
+        val output = ByteArrayOutputStream()
+        val oldTrace = """NightPost: readJSONObject len=59 {"UserToken":"test-only","Email":"example@example.test"}
+I/Libre2GattCallback stage=gatt-state status=0
+"""
+        writeDebugLogReport(output, "", DebugLogExportSource.TextContent(oldTrace))
+        val text = output.toString(Charsets.UTF_8.name())
+        assertFalse(text.contains("test-only"))
+        assertFalse(text.contains("example@example.test"))
+        assertTrue(text.contains("stage=gatt-state status=0"))
     }
 
     @Test

@@ -1,5 +1,6 @@
 package tk.glucodata.ui
 
+import tk.glucodata.LogPrivacy
 import java.io.File
 import java.io.OutputStream
 
@@ -15,7 +16,7 @@ internal sealed class DebugLogExportSource {
         override fun isEmpty(): Boolean = !file.exists() || file.length() == 0L
 
         override fun copyTo(output: OutputStream) {
-            file.inputStream().buffered().use { input -> input.copyTo(output) }
+            file.bufferedReader().useLines { lines -> writeSanitizedLines(output, lines) }
         }
     }
 
@@ -23,7 +24,7 @@ internal sealed class DebugLogExportSource {
         override fun isEmpty(): Boolean = text.isEmpty()
 
         override fun copyTo(output: OutputStream) {
-            output.write(text.toByteArray(Charsets.UTF_8))
+            text.reader().buffered().useLines { lines -> writeSanitizedLines(output, lines) }
         }
     }
 }
@@ -35,4 +36,13 @@ internal fun writeDebugLogReport(
 ) {
     output.write(header.toByteArray(Charsets.UTF_8))
     source.copyTo(output)
+}
+
+private fun writeSanitizedLines(output: OutputStream, lines: Sequence<String>) {
+    val writer = output.bufferedWriter()
+    lines.forEach { line ->
+        writer.write(LogPrivacy.sanitizeExportLine(line))
+        writer.newLine()
+    }
+    writer.flush()
 }

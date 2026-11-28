@@ -135,7 +135,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 	private void libre2Diag(String stage, String detail) {
 		if (!doLog && !stage.equals("hard-recovery") && !stage.equals("hard-recovery-failed")) return;
 		final long now = SystemClock.elapsedRealtime();
-		Log.i(LOG_ID, "LIBRE2_DIAG link=" + diagId + " attempt=" + diagAttempt + " gen=" + sensorgen
+		Log.i(LOG_ID, LogPrivacy.sensorAlias(SerialNumber) + " LIBRE2_DIAG link=" + diagId
+				+ " attempt=" + diagAttempt + " gen=" + sensorgen + " driver=" + (sensorgen == 2 ? "kotlin-gen2" : "gen1"))
 				+ " stage=" + stage + " phase=" + conphase + " packets=" + linkPackets
 				+ " loginRetries=" + BLELoginposted + " fragments=" + pack1 + "/" + pack2
 				+ " linkAgeMs=" + (linkConnectedAt < 0 ? -1 : now - linkConnectedAt)
@@ -450,8 +451,13 @@ public class Libre2GattCallback extends SuperGattCallback {
     @SuppressLint("MissingPermission")
     private boolean writeLogin(BluetoothGatt gatt, byte[] value) {
         var login = BLELogincharacteristic;
-        return gatt != null && login != null
-                && gatt.writeCharacteristic(login, value, login.getWriteType()) == BluetoothStatusCodes.SUCCESS;
+        if (gatt == null || login == null) {
+            libre2Diag("login-write-queued", "outcome=unavailable");
+            return false;
+        }
+        int result = gatt.writeCharacteristic(login, value, login.getWriteType());
+        libre2Diag("login-write-queued", "bytes=" + value.length + " result=" + result);
+        return result == BluetoothStatusCodes.SUCCESS;
     }
 
 @Override // android.bluetooth.BluetoothGattCallback
@@ -530,7 +536,9 @@ private boolean connected=false;
 				streamDeadline.arm(bluetoothGatt, STREAM_SILENCE_MILLIS);
 				constatchange[0] = tim;
 				setpriority(bluetoothGatt);
-				if (!bluetoothGatt.discoverServices()) {
+				final boolean discoveryQueued = bluetoothGatt.discoverServices();
+				libre2Diag("service-discovery-queued", "accepted=" + discoveryQueued);
+				if (!discoveryQueued) {
 					Log.e(LOG_ID, SerialNumber + " discoverServices() returned false");
 					requestDisconnect(bluetoothGatt, 0L);
 				}
@@ -782,6 +790,7 @@ private	void oldonCharacteristicChanged(byte[] value) {
 		justenablednotification = false;
 		int length = value.length;
 		{if(doLog) {Log.d(LOG_ID, SerialNumber + " oldonCharacteristicChanged " + length);};};
+		libre2Diag("stream-fragment", "bytes=" + length);
 		switch (length) {
 			case 20: {
 				System.arraycopy(value, 0, packet, 0, 20);
@@ -827,7 +836,11 @@ private	void oldonCharacteristicChanged(byte[] value) {
 						final long timmsec = System.currentTimeMillis();
 						final var gen2Login = managedGen2;
 						final var newpacket= sensorgen!=2?packet:(gen2Login!=null?gen2Login.decryptFrame(packet):null);
-						if(newpacket == null) libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=decrypt-failed");
+						if (newpacket == null) {
+                            String outcome = gen2Login == null || !gen2Login.getAuthenticated()
+                                    ? "session-unavailable" : "decrypt-failed";
+                            libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + outcome);
+                        }
 						if(newpacket!=null) {
 							long res = processTooth(dataptr, newpacket);
 							libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + (res == 1L ? "duplicate" : (res == 0L ? "no-result" : "handled")));
@@ -954,7 +967,9 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 
 	private void startRawDataNotifications() {
             mBLELoginHandler = forCurrentGatt(() -> {
-                if (!asknotification(CompositeRawDatacharacteristic)) {
+                boolean queued = asknotification(CompositeRawDatacharacteristic);
+                libre2Diag("stream-subscribe-queued", "accepted=" + queued);
+                if (!queued) {
                     Log.e(LOG_ID, SerialNumber+" phase3 retry=" + BLELoginposted + " enableNotification failed");
                     handshake = "Enable CompositeRawDatacharacteristic failed";
                     wrotepass[1] = System.currentTimeMillis();
@@ -988,7 +1003,8 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 			return;
 		}
 		final var reply = gen2Login.onReplyPart(value);
-		libre2Diag("gen2-reply", "bytes=" + value.length + " outcome=" + reply.name());
+		libre2Diag("gen2-reply", "bytes=" + value.length + " outcome=" + reply.name()
+				+ (reply == Libre2Gen2BleLogin.Reply.REJECTED ? " reason=" + gen2Login.getFailure() : ""));
 		if (reply == Libre2Gen2BleLogin.Reply.NEED_MORE)
 			return;
 		if (reply == Libre2Gen2BleLogin.Reply.REJECTED) {
