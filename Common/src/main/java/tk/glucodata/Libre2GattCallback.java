@@ -88,6 +88,11 @@ public class Libre2GattCallback extends SuperGattCallback {
 	private long packetGapStartedAt = -1L;
 	private int failedAttemptsWithoutPacket;
 	private long diagAttempt;
+	private boolean attemptSummaryPending, recoverySkipLogged;
+	private String lastCompletedStep = "connect-queued", lastGattResult = "none";
+	private boolean firstReadingPending;
+	private final long[] frameStats = new long[2];
+	private long historyRowsBeforeLive;
 	private long recoveryDueAt;
 	private long connectRequestedAt = -1L;
 	private static final java.util.concurrent.atomic.AtomicInteger diagIds = new java.util.concurrent.atomic.AtomicInteger();
@@ -150,6 +155,11 @@ public class Libre2GattCallback extends SuperGattCallback {
 	}
 
 	private void countAttemptWithoutPacket(String reason) {
+		if (hardRecoveryUsed && !recoveryInProgress && !recoverySkipLogged
+				&& linkPackets == 0 && canRecoverLocally()) {
+			recoverySkipLogged = true;
+			libre2Diag("recovery-skipped", "reason=already-used-in-this-packet-gap trigger=" + reason);
+		}
 		if (!isWearable && !hardRecoveryUsed && canRecoverLocally()
 				&& linkPackets == 0 && packetGapStartedAt >= 0) {
 			++failedAttemptsWithoutPacket;
@@ -229,10 +239,21 @@ public class Libre2GattCallback extends SuperGattCallback {
 		++linkPackets;
 		packetGapStartedAt = lastPacketAt;
 		failedAttemptsWithoutPacket = 0;
-		softRecoveryTried = hardRecoveryUsed = false;
+		softRecoveryTried = hardRecoveryUsed = recoverySkipLogged = false;
 		escalationDeadline.cancel();
 		streamDeadline.arm(mBluetoothGatt, STREAM_SILENCE_MILLIS);
 		clearLossOfSignalState();
+	}
+
+	private void logFirstReading(long receivedAtMs) {
+		firstReadingPending = false;
+		final long previousReadingMs = frameStats[0] * 1_000L;
+		final long gapMs = previousReadingMs > 0L && receivedAtMs >= previousReadingMs
+				? receivedAtMs - previousReadingMs : -1L;
+		final long sinceProcessStartMs = SystemClock.elapsedRealtime() - android.os.Process.getStartElapsedRealtime();
+		libre2Diag("first-live-reading", "readingGapMs=" + gapMs
+				+ " sinceProcessStartMs=" + sinceProcessStartMs + " historyRowsSaved=" + historyRowsBeforeLive);
+		historyRowsBeforeLive = 0L;
 	}
 
 	private synchronized void streamSilent(BluetoothGatt gatt) {
@@ -249,8 +270,13 @@ public class Libre2GattCallback extends SuperGattCallback {
 
 	// One line per link, also in the trace log, so it shows how long links last and whether the stream went quiet first.
 	private void logLinkEnd(String why) {
-		if (linkConnectedAt < 0L) return;
 		final long now = SystemClock.elapsedRealtime();
+		if (attemptSummaryPending) {
+			attemptSummaryPending = false;
+			libre2Diag("attempt-summary", "end=" + why + " lastCompleted=" + lastCompletedStep
+					+ " lastGattResult=" + lastGattResult);
+		}
+		if (linkConnectedAt < 0L) return;
 		Log.i(LOG_ID, SerialNumber + " link ended (" + why + ") after " + (now - linkConnectedAt) / 1000
 				+ "s, packets=" + linkPackets + ", last packet "
 				+ (lastPacketAt < 0L ? "never" : (now - lastPacketAt) / 1000 + "s ago"));
@@ -271,6 +297,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 	@Override
 	protected void onConnectionAttemptTimeout() {
 		libre2Diag("connect-timeout", "timeoutMs=" + connectionAttemptTimeoutMillis());
+		logLinkEnd("connect-timeout");
 		countAttemptWithoutPacket("connect-timeout");
 	}
 
@@ -311,8 +338,8 @@ public class Libre2GattCallback extends SuperGattCallback {
 		if (disconnectingGatt == gatt) holdRelink();
 		final long delay = reconnectDelayMillis;
 		cancelDisconnectDeadline();
-		resetConnectionState();
 		logLinkEnd("closed");
+		resetConnectionState();
 		// Retire the reference before close(), so late callbacks cannot affect its replacement.
 		closeGattTransport();
 		countAttemptWithoutPacket("gatt-retired");
@@ -372,6 +399,9 @@ public class Libre2GattCallback extends SuperGattCallback {
 		connectRequestedAt = now;
 		linkPackets = 0;
 		++diagAttempt;
+		attemptSummaryPending = firstReadingPending = true;
+		lastCompletedStep = "connect-queued";
+		lastGattResult = "none";
 		libre2Diag("connect-queued", "delayMs=" + Math.max(delayMillis, relinkWait) + " relinkWaitMs=" + relinkWait);
 		return true;
 	}
@@ -452,10 +482,12 @@ public class Libre2GattCallback extends SuperGattCallback {
     private boolean writeLogin(BluetoothGatt gatt, byte[] value) {
         var login = BLELogincharacteristic;
         if (gatt == null || login == null) {
+            lastGattResult = "login-write-unavailable";
             libre2Diag("login-write-queued", "outcome=unavailable");
             return false;
         }
         int result = gatt.writeCharacteristic(login, value, login.getWriteType());
+        lastGattResult = "login-write-" + result;
         libre2Diag("login-write-queued", "bytes=" + value.length + " result=" + result);
         return result == BluetoothStatusCodes.SUCCESS;
     }
@@ -464,6 +496,11 @@ public class Libre2GattCallback extends SuperGattCallback {
 	public synchronized void onDescriptorWrite(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor bluetoothGattDescriptor, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
 		libre2Diag("descriptor-write", "status=" + status);
+		lastGattResult = "descriptor-write-" + status;
+		if (status == GATT_SUCCESS && bluetoothGattDescriptor != null) {
+			lastCompletedStep = bluetoothGattDescriptor.getCharacteristic() == CompositeRawDatacharacteristic
+					? "stream-subscribed" : "descriptor-written";
+		}
 		super.onDescriptorWrite(bluetoothGatt, bluetoothGattDescriptor, status);
         if (doLog && bluetoothGattDescriptor != null) {
             Log.d(LOG_ID, SerialNumber + " onDescriptorWrite status=" + status
@@ -529,6 +566,7 @@ private boolean connected=false;
 				// A refused connect attempt earlier in this recovery run is over now; keeping
 				// its "Status=N" on the diagnostic status makes a working sensor look broken.
 				setConStatus(GATT_SUCCESS);
+				lastCompletedStep = "connected";
 				linkConnectedAt = SystemClock.elapsedRealtime();
 				lastPacketAt = -1L;
 				linkPackets = 0;
@@ -537,6 +575,7 @@ private boolean connected=false;
 				constatchange[0] = tim;
 				setpriority(bluetoothGatt);
 				final boolean discoveryQueued = bluetoothGatt.discoverServices();
+				lastGattResult = "discovery-request-" + discoveryQueued;
 				libre2Diag("service-discovery-queued", "accepted=" + discoveryQueued);
 				if (!discoveryQueued) {
 					Log.e(LOG_ID, SerialNumber + " discoverServices() returned false");
@@ -665,6 +704,8 @@ private boolean connected=false;
 			if (doLog) Log.i(LOG_ID, SerialNumber + " ignoring duplicate service discovery, phase=" + conphase);
 			return;
 		}
+		lastGattResult = "service-discovery-" + status;
+		if (status == GATT_SUCCESS) lastCompletedStep = "services-discovered";
 		{if(doLog) {Log.i(LOG_ID, "BLE onServicesDiscovered invoked, status: " + status);};};
 //		readrssi=9999; mBluetoothGatt.readRemoteRssi();
 		if(status != GATT_SUCCESS||! m2831x()) {
@@ -698,6 +739,8 @@ private   boolean failedbefore=false;
 	public synchronized void onCharacteristicWrite(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic bluetoothGattCharacteristic, int status) {
 		if (!acceptGattCallback(bluetoothGatt)) return;
 		libre2Diag("characteristic-write", "status=" + status);
+		lastGattResult = "characteristic-write-" + status;
+		if (status == GATT_SUCCESS) lastCompletedStep = "characteristic-written";
 		if (status != GATT_SUCCESS) {
 			Log.e(LOG_ID, SerialNumber + " characteristic write failed, status:" + status
 					+ " (" + gattStatusText(status) + ")"
@@ -842,7 +885,13 @@ private	void oldonCharacteristicChanged(byte[] value) {
                             libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + outcome);
                         }
 						if(newpacket!=null) {
-							long res = processTooth(dataptr, newpacket, null);
+							lastCompletedStep = "frame-decoded";
+							long res = processTooth(dataptr, newpacket, firstReadingPending ? frameStats : null);
+							if (firstReadingPending) historyRowsBeforeLive += frameStats[1];
+							if (res != 0L && res != 1L) {
+								lastCompletedStep = "live-reading";
+								if (firstReadingPending) logFirstReading(timmsec);
+							}
 							libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + (res == 1L ? "duplicate" : (res == 0L ? "no-result" : "handled")));
 							if(res!=1L) {
 								handleGlucoseResult(res,timmsec);
@@ -968,6 +1017,7 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 	private void startRawDataNotifications() {
             mBLELoginHandler = forCurrentGatt(() -> {
                 boolean queued = asknotification(CompositeRawDatacharacteristic);
+                lastGattResult = "stream-subscribe-request-" + queued;
                 libre2Diag("stream-subscribe-queued", "accepted=" + queued);
                 if (!queued) {
                     Log.e(LOG_ID, SerialNumber+" phase3 retry=" + BLELoginposted + " enableNotification failed");
@@ -1017,6 +1067,7 @@ private final boolean enableNotification(BluetoothGattCharacteristic bluetoothGa
 				requestDisconnect(gatt, 0L);
 			return;
 		}
+		lastCompletedStep = "gen2-session-established";
 		{if(doLog) {Log.i(LOG_ID, "Kotlin Gen2 session");};};
 		conphase = 4;
 		startRawDataNotifications();
