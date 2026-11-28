@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import java.util.Date
 import tk.glucodata.Applic
 import tk.glucodata.CalibrationAccess
 import tk.glucodata.R
+import tk.glucodata.UiRefreshBus
 import tk.glucodata.ui.WearNavigationRow
 import tk.glucodata.ui.WearSectionTitle
 
@@ -56,9 +58,8 @@ fun CalibrationScreen(
     val isMmol = remember { runCatching { Applic.unit == 1 }.getOrDefault(false) }
     val conversion = if (isMmol) 18.0182f else 1f
     val entries = remember(revision) { calibrations() }
-    val enabled = remember(revision) {
-        runCatching { tk.glucodata.CalibrationAccess.hasActiveCalibration(false, null) }.getOrDefault(false)
-    }
+    val dataRevision by UiRefreshBus.revision.collectAsState()
+    val enabled = remember(revision, dataRevision) { ReadingActions.calibrationEnabled() }
     val context = LocalContext.current
     val formatter = remember(context) { DateFormat.getDateFormat(context) }
     val timeFormatter = remember(context) { DateFormat.getTimeFormat(context) }

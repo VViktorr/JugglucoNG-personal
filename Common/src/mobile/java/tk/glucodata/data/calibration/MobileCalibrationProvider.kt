@@ -13,6 +13,9 @@ import tk.glucodata.CalibrationProvider
  * defaults in release builds.
  */
 object MobileCalibrationProvider : CalibrationProvider {
+    override fun isEnabledForMode(isRawMode: Boolean, sensorId: String?): Boolean =
+        CalibrationManager.isEnabledForMode(isRawMode, sensorId)
+
     override fun hasActiveCalibration(isRawMode: Boolean, sensorId: String?): Boolean =
         CalibrationManager.hasActiveCalibration(isRawMode, sensorId)
 

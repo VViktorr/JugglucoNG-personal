@@ -48,6 +48,8 @@ data class WearCalibrationPayload(
     val rawTuning: tk.glucodata.data.calibration.CalibrationTuning = tuning,
     /** Unit in which the phone fitted [tuning], expressed as mg/dL per unit. */
     val sourceUnitMgdlPerUnit: Double = 1.0,
+    val autoEnabled: Boolean = auto.anchorsMgdl.isNotEmpty(),
+    val rawEnabled: Boolean = raw.anchorsMgdl.isNotEmpty(),
 ) {
     companion object {
         private const val VERSION = 4
@@ -60,6 +62,9 @@ data class WearCalibrationPayload(
         // payload; no version bump is needed.
         private const val FLAG_AUTO_INTEGRATED = 1 shl 3
         private const val FLAG_RAW_INTEGRATED = 1 shl 4
+        private const val FLAG_HAS_ENABLEMENT = 1 shl 5
+        private const val FLAG_AUTO_ENABLED = 1 shl 6
+        private const val FLAG_RAW_ENABLED = 1 shl 7
         private const val FLAG_VALUES_PRECALIBRATED = 1
         private const val FLAG_HIDE_INITIAL = 1 shl 1
         private const val MAX_SERIAL_BYTES = 255
@@ -87,7 +92,10 @@ data class WearCalibrationPayload(
                     (if (payload.hideInitialWhenCalibrated) FLAG_HIDE_INITIAL else 0) or
                     (if (payload.overwriteSensorValues) FLAG_OVERWRITE_SENSOR_VALUES else 0) or
                     (if (payload.autoIntegratedByDriver) FLAG_AUTO_INTEGRATED else 0) or
-                    (if (payload.rawIntegratedByDriver) FLAG_RAW_INTEGRATED else 0)
+                    (if (payload.rawIntegratedByDriver) FLAG_RAW_INTEGRATED else 0) or
+                    FLAG_HAS_ENABLEMENT or
+                    (if (payload.autoEnabled) FLAG_AUTO_ENABLED else 0) or
+                    (if (payload.rawEnabled) FLAG_RAW_ENABLED else 0)
             validateTuning(payload.tuning)
             validateTuning(payload.rawTuning)
             val buffer = ByteBuffer.allocate(
@@ -153,6 +161,8 @@ data class WearCalibrationPayload(
             val rawIntegration =
                 if (version >= VERSION) getMode(buffer) ?: return null else WearCalibrationMode(DoubleArray(0))
             if (buffer.hasRemaining()) return null
+            // Older phones only sent active anchors. Preserve that fallback.
+            val hasEnablement = flags and FLAG_HAS_ENABLEMENT != 0
             WearCalibrationPayload(
                 sensorId = sensorId,
                 revision = revision,
@@ -168,6 +178,8 @@ data class WearCalibrationPayload(
                 raw = raw,
                 autoIntegration = autoIntegration,
                 rawIntegration = rawIntegration,
+                autoEnabled = if (hasEnablement) flags and FLAG_AUTO_ENABLED != 0 else auto.anchorsMgdl.isNotEmpty(),
+                rawEnabled = if (hasEnablement) flags and FLAG_RAW_ENABLED != 0 else raw.anchorsMgdl.isNotEmpty(),
             )
         }.getOrNull()
 

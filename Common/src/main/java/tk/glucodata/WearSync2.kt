@@ -376,6 +376,8 @@ object WearSync2 {
             tuning = CalibrationAccess.tuningForMode(false),
             rawTuning = CalibrationAccess.tuningForMode(true),
             sourceUnitMgdlPerUnit = if (Applic.unit == 1) MGDL_PER_MMOL else 1.0,
+            autoEnabled = CalibrationAccess.isEnabledForMode(false, serial),
+            rawEnabled = CalibrationAccess.isEnabledForMode(true, serial),
             auto = WearCalibrationMode(canonicalAnchors(serial, false)),
             raw = WearCalibrationMode(canonicalAnchors(serial, true)),
             // Only for a lane the driver integrates: these are the anchors the

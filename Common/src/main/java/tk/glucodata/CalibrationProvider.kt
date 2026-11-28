@@ -19,6 +19,9 @@ import tk.glucodata.data.calibration.CalibrationTuning
  * the call; their default `false` is the old "method not found" answer.
  */
 interface CalibrationProvider {
+    fun isEnabledForMode(isRawMode: Boolean, sensorId: String?): Boolean =
+        hasActiveCalibration(isRawMode, sensorId)
+
     fun hasActiveCalibration(isRawMode: Boolean, sensorId: String?): Boolean
 
     fun getCalibratedValue(

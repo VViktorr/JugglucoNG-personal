@@ -27,7 +27,7 @@ object ReadingActions {
      * packed as [sensorValue, userValue, timestamp] triples in canonical mg/dL.
      */
     @JvmStatic
-    fun resolve(timestampMs: Long, isRawMode: Boolean = false): ReadingAction {
+    fun resolve(timestampMs: Long, isRawMode: Boolean = isRawMode()): ReadingAction {
         if (timestampMs <= 0L) return ReadingAction()
         // Anchors come from the shared snapshot when it has them: one row per
         // reading meant one native call per row, repeated on every scroll.
@@ -61,6 +61,16 @@ object ReadingActions {
     @JvmStatic
     fun journalAvailable(): Boolean =
         runCatching { tk.glucodata.WearJournalSync.cached().enabled }.getOrDefault(false)
+
+    fun calibrationEnabled(): Boolean {
+        val sensor = WearGlucoseStore.currentSensor()
+        return CalibrationAccess.isEnabledForMode(isRawMode(), sensor)
+    }
+
+    private fun isRawMode(): Boolean {
+        val viewMode = WearGlucoseStore.viewMode()
+        return viewMode == 1 || viewMode == 3
+    }
 
     /** Readings for the History screen: a longer window than the home list. */
     @JvmStatic

@@ -65,6 +65,11 @@ object SyncedWearCalibrationProvider : CalibrationProvider {
         UiRefreshBus.requestDataRefresh()
     }
 
+    override fun isEnabledForMode(isRawMode: Boolean, sensorId: String?): Boolean {
+        val payload = matchingPayload(sensorId) ?: return false
+        return if (isRawMode) payload.rawEnabled else payload.autoEnabled
+    }
+
     override fun hasActiveCalibration(isRawMode: Boolean, sensorId: String?): Boolean {
         val current = matchingPayload(sensorId) ?: return false
         return mode(current, isRawMode).anchorsMgdl.isNotEmpty()

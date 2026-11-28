@@ -18,14 +18,10 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import tk.glucodata.R
 
-/**
- * What the phone shows when a reading is tapped and the journal is on: add a
- * journal item against that reading, or calibrate it. With the journal off the
- * caller skips this and goes straight to calibration.
- */
 @Composable
 fun ReadingActionChooser(
     hasCalibration: Boolean,
+    calibrationEnabled: Boolean,
     onAddJournal: () -> Unit,
     onCalibrate: () -> Unit,
 ) {
@@ -48,18 +44,20 @@ fun ReadingActionChooser(
                 label = { Text(stringResource(R.string.wear_journal_add)) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Button(
-                onClick = onCalibrate,
-                label = {
-                    Text(
-                        stringResource(
-                            if (hasCalibration) R.string.wear_calibration_edit
-                            else R.string.calibrate_action,
-                        ),
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-            )
+            if (calibrationEnabled) {
+                Button(
+                    onClick = onCalibrate,
+                    label = {
+                        Text(
+                            stringResource(
+                                if (hasCalibration) R.string.wear_calibration_edit
+                                else R.string.calibrate_action,
+                            ),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                )
+            }
         }
     }
 }

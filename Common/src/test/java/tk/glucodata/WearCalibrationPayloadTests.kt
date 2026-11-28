@@ -49,6 +49,30 @@ class WearCalibrationPayloadTests {
     }
 
     @Test
+    fun enablementRoundTripDoesNotDependOnAnchors() {
+        val payload = WearCalibrationPayload(
+            sensorId = "sensor",
+            revision = 1L,
+            valuesPrecalibrated = false,
+            hideInitialWhenCalibrated = false,
+            auto = WearCalibrationMode(doubleArrayOf(100.0, 110.0, 1_700_000_000_000.0)),
+            raw = WearCalibrationMode(DoubleArray(0)),
+            autoEnabled = false,
+            rawEnabled = true,
+        )
+        val encoded = WearCalibrationPayload.encode(payload)
+        val decoded = requireNotNull(WearCalibrationPayload.decode(encoded))
+        assertFalse(decoded.autoEnabled)
+        assertTrue(decoded.rawEnabled)
+
+        // An older phone does not populate the three enablement bits.
+        encoded[1] = (encoded[1].toInt() and 0x1F).toByte()
+        val legacy = requireNotNull(WearCalibrationPayload.decode(encoded))
+        assertTrue(legacy.autoEnabled)
+        assertFalse(legacy.rawEnabled)
+    }
+
+    @Test
     fun watchRunsCalibrationInThePhonesSourceUnit() {
         val timestamp = 1_786_358_640_000L
         val scale = 18.0182
