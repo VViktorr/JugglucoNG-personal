@@ -383,7 +383,7 @@ scanstate *newstate,uint32_t startsincebase,uint32_t nutime,int warmup,int wear,
 
 extern bool addStreamHistory(const jniHistory &hist,time_t nutime,int nuid, SensorGlucoseData &save) ;
 
-const AlgorithmResults *  libre2stream::processTooth(data_t * bluedata, scanstate *newstate,uint32_t nutime) {
+const AlgorithmResults *  libre2stream::processTooth(data_t * bluedata, scanstate *newstate,uint32_t nutime, bool &historySaved) {
 hist->lastPacketTime = nutime;
 const data_t *ident=getident();
 #ifdef HASP1
@@ -459,7 +459,7 @@ if(alg) {
 #endif
             if(saved) {
                 if(streamHistory()) {
-                         addStreamHistory(alg->history(), nutime,gid, *hist) ;
+                         historySaved = addStreamHistory(alg->history(), nutime,gid, *hist);
                     }
                 return alg;
                 }
@@ -473,7 +473,7 @@ if(alg) {
             // The frame decrypted and passed its checksum; only its newest minute has no value.
             // Keep the history it carries and the state it advanced.
             if(streamHistory())
-                addStreamHistory(alg->history(), nutime,gid, *hist) ;
+                historySaved = addStreamHistory(alg->history(), nutime,gid, *hist);
             delete alg;
             LOGGER("no current value: quality=%d value=%d\n", qual, gluc);
             // Gaps during the warm-up are expected and must not count toward "Sensor error" or

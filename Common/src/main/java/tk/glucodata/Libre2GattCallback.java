@@ -842,7 +842,7 @@ private	void oldonCharacteristicChanged(byte[] value) {
                             libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + outcome);
                         }
 						if(newpacket!=null) {
-							long res = processTooth(dataptr, newpacket);
+							long res = processTooth(dataptr, newpacket, null);
 							libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + (res == 1L ? "duplicate" : (res == 0L ? "no-result" : "handled")));
 							if(res!=1L) {
 								handleGlucoseResult(res,timmsec);

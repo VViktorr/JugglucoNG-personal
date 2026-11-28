@@ -189,7 +189,7 @@ void renewstate() {
 	delete tmpstate;
 	}
 
-const AlgorithmResults *  processTooth(data_t * bluedata, scanstate *newstate,uint32_t nutime) ;
+const AlgorithmResults *  processTooth(data_t * bluedata, scanstate *newstate,uint32_t nutime, bool &historySaved) ;
 };
 extern pathconcat sensorbasedir;
 inline  static  const AlgorithmResults  __attribute__((unused)) *Initialized=reinterpret_cast<const AlgorithmResults *>(1ul);

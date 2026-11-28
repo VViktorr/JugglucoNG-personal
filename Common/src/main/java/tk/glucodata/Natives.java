@@ -160,7 +160,7 @@ public class Natives {
         public static native void resetbluetooth(long dataptr);
         // public static native void saveState(long dataptr);
 
-        public static native long processTooth(long dataptr, byte[] bluetoothdata);
+        public static native long processTooth(long dataptr, byte[] bluetoothdata, long[] frameStats);
 
         // public static native boolean iswaiting(long dataptr);
         // public static native void setwaiting(long dataptr,boolean val);

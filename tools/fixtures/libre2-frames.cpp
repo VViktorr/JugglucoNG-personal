@@ -18,7 +18,13 @@
 #define LOGSTRING(...) ((void)0)
 #define setthreadname(x) ((void)0)
 #define NORAWSTREAM
-using jlong = int64_t; using jbyte = int8_t; using JNIEnv = int; using jclass = void *; using jbyteArray = void *;
+using jlong = int64_t; using jbyte = int8_t; using jlongArray = jlong *;
+struct JNIEnv {
+    int GetArrayLength(jlongArray) { return 2; }
+    void SetLongArrayRegion(jlongArray out, int pos, int count, const jlong *values) {
+        for (int i = 0; i < count; ++i) out[pos + i] = values[i];
+    }
+}; using jclass = void *; using jbyteArray = void *;
 constexpr float convfactordL = 18.f;
 
 static time_t clock_now;
@@ -68,7 +74,10 @@ template <class B, class M, class... Ts> B *locknew(M &mu, Ts &&...args) {
 }
 
 struct Info { int warmup = 60, wearduration = 14 * 24 * 60; };
+struct ScanData { uint32_t t = 0; };
 struct SensorGlucoseData {
+    ScanData latest;
+    const ScanData *lastpoll() const { return latest.t ? &latest : nullptr; }
     std::mutex mutex;
     Info info;
     int polls = 0;
@@ -78,13 +87,13 @@ struct SensorGlucoseData {
     uint32_t getstarttime() const { return 100000; }
     int getWarmupSEC() const { return 60 * 60; }
     bool isDexcom() const { return false; }
-    bool savepoll(uint32_t, int, int, int, float) { ++polls; return true; }
+    bool savepoll(uint32_t time, int, int, int, float) { latest.t = time; ++polls; return true; }
 /* SENSOR_METHODS */
 };
 static std::pair<int, int> patchtimevalues(const data_t *) { return {60, 14 * 24 * 60}; }
 static bool streamHistory() { return true; }
 static int histories;
-static void addStreamHistory(const jniHistory &, time_t, int, SensorGlucoseData &) { ++histories; }
+static bool addStreamHistory(const jniHistory &, time_t, int, SensorGlucoseData &) { ++histories; return true; }
 
 struct libre2stream {
     SensorGlucoseData *hist;
@@ -96,7 +105,7 @@ struct libre2stream {
     const data_t *getident() const { return nullptr; }
     const data_t *getinfo() const { return nullptr; }
     void setstate(scanstate *next) { delete state; state = next; }
-    const AlgorithmResults *processTooth(data_t *, scanstate *, uint32_t);
+    const AlgorithmResults *processTooth(data_t *, scanstate *, uint32_t, bool &);
 };
 enum Verdict { Refused, PastWear, NoValue, Reading };
 static Verdict verdict;
@@ -118,10 +127,11 @@ static jlong glucoseback(uint32_t, uint32_t value, float, SensorGlucoseData *) {
 
 /* FRAME_METHODS */
 
-static jlong frame(libre2stream &s, Verdict v) {
+static jlong frame(libre2stream &s, Verdict v, jlongArray stats = nullptr) {
     clock_now += 60;
     verdict = v;
-    return processTooth(nullptr, nullptr, reinterpret_cast<jlong>(&s), nullptr);
+    JNIEnv env;
+    return processTooth(&env, nullptr, reinterpret_cast<jlong>(&s), nullptr, stats);
 }
 static int refused_frames() {
     // A frame the backend refuses says nothing about the sensor, in the warm-up or after it.
@@ -201,7 +211,22 @@ static int past_wear() {
     CHECK(!h.isScanNeeded(clock_now), "a scan asked for a sensor past its wear");
     return 0;
 }
+static int frame_statistics() {
+    clock_now = 100000 + 2 * 3600;
+    disk = Usable;
+    SensorGlucoseData h;
+    libre2stream s(&h);
+    jlong stats[2] = {-1, -1};
+    CHECK(frame(s, Reading, stats) > 1 && stats[0] == 0 && stats[1] == 1,
+          "first live frame did not report its saved history");
+    const auto previous = clock_now;
+    CHECK(frame(s, NoValue, stats) == 0 && stats[0] == previous && stats[1] == 1,
+          "history-only frame did not report the saved row and previous live timestamp");
+    CHECK(frame(s, Refused, stats) == 0 && stats[0] == previous && stats[1] == 0,
+          "refused frame reported history or changed the previous live timestamp");
+    return 0;
+}
 int main() {
-    if(refused_frames() || unusable_state() || past_wear()) return 1;
+    if(refused_frames() || unusable_state() || past_wear() || frame_statistics()) return 1;
     std::puts("PASS: Libre 2 refused frames, state rebuilt under a running stream, frames past the wear");
 }

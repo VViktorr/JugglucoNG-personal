@@ -2561,7 +2561,7 @@ void wakewithcurrent() {
 #endif
 }
 extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
-    JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray bluetoothdata) {
+    JNIEnv *envin, jclass cl, jlong dataptr, jbyteArray bluetoothdata, jlongArray frameStats) {
   //    setbuffer(mystatus);
   setthreadname("processTooth");
   LOGGER("processTooth %ld\n", syscall(SYS_gettid));
@@ -2581,7 +2581,14 @@ extern "C" JNIEXPORT jlong JNICALL fromjava(processTooth)(
 #endif
   //    scanstate *newstate=new scanstate(sdata->hist->getsensordir(),nu);
   scanstate *newstate = new scanstate(defaultscanstate);
-  const AlgorithmResults *algres = sdata->processTooth(bluedata, newstate, nu);
+  const auto *previousPoll = frameStats ? sdata->hist->lastpoll() : nullptr;
+  const jlong previousPollTime = previousPoll ? previousPoll->t : 0;
+  bool historySaved = false;
+  const AlgorithmResults *algres = sdata->processTooth(bluedata, newstate, nu, historySaved);
+  if (frameStats && envin->GetArrayLength(frameStats) >= 2) {
+    const jlong stats[] = {previousPollTime, historySaved ? 1 : 0};
+    envin->SetLongArrayRegion(frameStats, 0, 2, stats);
+  }
 
   data_t::deleteex(bluedata);
   //    delete newstate;
