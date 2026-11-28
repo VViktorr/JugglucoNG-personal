@@ -298,17 +298,16 @@ object CalibrationManager {
         dao = database.calibrationDao()
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         if (!prefs.contains(KEY_ENABLED_BY_DEFAULT)) {
-            val freshInstall = runCatching {
-                val info = context.packageManager.getPackageInfo(context.packageName, 0)
-                info.firstInstallTime == info.lastUpdateTime
-            }.getOrDefault(false)
-            val hasSavedEnablement = listOf(
-                KEY_ENABLED_RAW, KEY_ENABLED_AUTO, KEY_SENSOR_ENABLEMENT_MIGRATED,
-                KEY_DISABLED_RAW_SENSOR_IDS, KEY_DISABLED_AUTO_SENSOR_IDS,
-            ).any(prefs::contains)
-            prefs.edit().putBoolean(KEY_ENABLED_BY_DEFAULT, !freshInstall || hasSavedEnablement).apply()
+            // An app update alone is no evidence that calibration was enabled.
+            // Keep the old default only for saved settings that used it.
+            val usesLegacyDefault = prefs.getBoolean(KEY_ENABLED_RAW, false) ||
+                prefs.getBoolean(KEY_ENABLED_AUTO, false) ||
+                prefs.getBoolean(KEY_SENSOR_ENABLEMENT_MIGRATED, false) ||
+                prefs.contains(KEY_DISABLED_RAW_SENSOR_IDS) ||
+                prefs.contains(KEY_DISABLED_AUTO_SENSOR_IDS)
+            prefs.edit().putBoolean(KEY_ENABLED_BY_DEFAULT, usesLegacyDefault).apply()
         }
-        enabledByDefault = prefs.getBoolean(KEY_ENABLED_BY_DEFAULT, true)
+        enabledByDefault = prefs.getBoolean(KEY_ENABLED_BY_DEFAULT, false)
         _rawEnablementOverrides.value = readSensorIdSet(enablementOverrideKey(isRawMode = true))
         _autoEnablementOverrides.value = readSensorIdSet(enablementOverrideKey(isRawMode = false))
         _hideInitialWhenCalibrated.value = prefs.getBoolean(KEY_HIDE_INITIAL_WHEN_CALIBRATED, true)
