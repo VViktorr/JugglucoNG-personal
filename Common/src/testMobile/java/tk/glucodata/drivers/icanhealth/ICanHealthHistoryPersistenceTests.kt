@@ -500,7 +500,7 @@ class ICanHealthHistoryPersistenceTests {
         .apply { isAccessible = true }.set(manager, value)
 }
 
-@Implements(value = BluetoothGatt::class, callThroughByDefault = false)
+@Implements(BluetoothGatt::class)
 class ICanHistoryGatt {
     var service: BluetoothGattService? = null
     var disconnects = 0

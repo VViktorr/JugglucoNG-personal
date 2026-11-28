@@ -144,7 +144,7 @@ class ICanHealthWearHistoryTests {
         .apply { isAccessible = true }.set(manager, value)
 }
 
-@Implements(value = Natives::class, callThroughByDefault = false)
+@Implements(Natives::class)
 class ICanWearHistoryNatives {
     companion object {
         var refuses: (Long) -> Boolean = { false }
