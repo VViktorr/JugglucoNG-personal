@@ -1919,7 +1919,7 @@ public class SensorBluetooth {
                 }
             }
         }
-        if (Libre2Gen1DriverSettings.enabled(Applic.app) && Natives.getsensorgen(dataptr) == 1) {
+        if (Natives.getsensorgen(dataptr) == 1) {
             return new Libre2Gen1KotlinGattCallback(name, dataptr);
         }
         return new Libre2GattCallback(name, dataptr);

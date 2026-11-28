@@ -6,23 +6,8 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothStatusCodes
-import android.content.Context
 import java.util.concurrent.TimeUnit
 import tk.glucodata.drivers.libre2.Libre2Gen1Crypto
-
-/** Local to the device that owns the sensor. A new callback reads the selection at creation. */
-internal object Libre2Gen1DriverSettings {
-    private const val PREFS = "libre2_gen1_driver"
-    private const val KOTLIN = "kotlin"
-
-    @JvmStatic
-    fun enabled(context: Context): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KOTLIN, false)
-
-    fun setEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KOTLIN, enabled).apply()
-    }
-}
 
 /** Owns the Gen1 handshake and stream on the shared Libre 2 GATT transport. */
 @SuppressLint("MissingPermission")
