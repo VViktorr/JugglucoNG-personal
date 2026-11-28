@@ -163,18 +163,6 @@ public class Libre2GattCallback extends SuperGattCallback {
         return gatt.discoverServices();
     }
 
-    protected final void reportGen1Step(String step, String result) {
-        if (step != null) lastCompletedStep = step;
-        lastGattResult = result;
-        libre2Diag("gen1-operation", "result=" + result);
-    }
-
-    protected final void gen1SubscriptionQueued() {
-        justenablednotification = true;
-        conphase = 4;
-        wrotepass[0] = System.currentTimeMillis();
-    }
-
     private void countAttemptWithoutPacket(String reason) {
 		if (hardRecoveryUsed && !recoveryInProgress && !recoverySkipLogged
 				&& linkPackets == 0 && canRecoverLocally()) {
