@@ -48,9 +48,9 @@ base_methods = '\n'.join(method(base, signature) for signature in [
 ])
 libre_methods = '\n'.join(method(libre, signature) for signature in [
     'protected boolean useAutoConnect(', 'protected long connectionAttemptTimeoutMillis(',
-    'private boolean streaming(', 'private boolean acceptGattCallback(', 'private void cancelDisconnectDeadline(',
+    'private boolean streaming(', 'protected final boolean acceptGattCallback(', 'private void cancelDisconnectDeadline(',
     'private void resetConnectionState(', 'private synchronized void retryAfterDisconnect(',
-    'private synchronized void requestDisconnect(', 'public synchronized void disconnect(',
+    'protected final synchronized void requestDisconnect(', 'public synchronized void disconnect(',
     'public synchronized boolean connectDevice(', 'public synchronized boolean reconnect(',
     'public synchronized void setPause(', 'public synchronized void onConnectionStateChange(',
     'public synchronized void onServicesDiscovered(', 'public synchronized void onDescriptorWrite(',
@@ -59,7 +59,7 @@ libre_methods = '\n'.join(method(libre, signature) for signature in [
     'private Runnable forCurrentGatt(', 'private void runPendingBleStep(', 'private void endBLEHandler(',
     'private void streamPacketReceived(', 'private synchronized void streamSilent(',
     'private void logLinkEnd(', 'private void holdRelink(', 'protected void onClosingGattTransport(',
-    'private boolean canRecoverLocally(', 'private void libre2Diag(', 'private void countAttemptWithoutPacket(',
+    'private boolean canRecoverLocally(', 'protected final void libre2Diag(', 'protected String driverLabel(', 'protected boolean discoverLibreServices(', 'private void countAttemptWithoutPacket(',
     'private synchronized void hardRecoverGatt()', 'private void hardRecoverGatt(String',
     'private synchronized void resumeRecovery(', 'private void releaseRecoveryWakeLock(',
     'private void cancelRecovery(', 'protected void onConnectionAttemptTimeout(',

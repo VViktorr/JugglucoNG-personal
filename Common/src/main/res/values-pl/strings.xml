@@ -3479,4 +3479,6 @@
     <string name="wear_app_update_available">Dostępna aktualizacja: %1$s</string>
     <string name="wear_app_update_confirm">Potwierdź instalację na zegarku.</string>
     <string name="wear_app_update_installer_unavailable">Jeśli zegarek nie otwiera instalatora, zaktualizuj go przez ADB po Wi-Fi.</string>
+    <string name="settings_libre2_gen1_kotlin">Libre 2 Gen1 · Kotlin (testowy)</string>
+    <string name="settings_libre2_gen1_kotlin_desc">Wybrany sterownik zostanie użyty po ponownym uruchomieniu aplikacji na tym urządzeniu.</string>
 </resources>

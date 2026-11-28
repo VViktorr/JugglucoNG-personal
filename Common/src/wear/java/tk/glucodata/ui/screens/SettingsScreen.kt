@@ -36,6 +36,7 @@ fun SettingsScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val deltaSettings = androidx.compose.runtime.remember(context) { tk.glucodata.settings.DisplayDeltaSettings(context) }
     val deltaState by deltaSettings.state.collectAsState(tk.glucodata.settings.DisplayDeltaSettings.State())
+    var libre2Kotlin by remember(context) { androidx.compose.runtime.mutableStateOf(tk.glucodata.Libre2Gen1DriverSettings.enabled(context)) }
     var ongoingIconMode by remember(context) { mutableIntStateOf(WearOngoingActivity.iconMode(context)) }
     DisposableEffect(context) {
         val prefs = WearOngoingActivity.iconPreferences(context)
@@ -104,6 +105,18 @@ fun SettingsScreen(
                         deltaSettings.setWearEnabled(on)
                     },
                     label = { Text(stringResource(R.string.display_show_delta_title)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            item {
+                androidx.wear.compose.material3.SwitchButton(
+                    checked = libre2Kotlin,
+                    onCheckedChange = { enabled ->
+                        tk.glucodata.Libre2Gen1DriverSettings.setEnabled(context, enabled)
+                        libre2Kotlin = enabled
+                    },
+                    label = { Text(stringResource(R.string.settings_libre2_gen1_kotlin)) },
+                    secondaryLabel = { Text(stringResource(R.string.settings_libre2_gen1_kotlin_desc)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

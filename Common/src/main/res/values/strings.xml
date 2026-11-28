@@ -3743,4 +3743,6 @@ Pressing OK will generate a connection on this phone and display a QR code that 
     <string name="wear_app_update_available">Update available: %1$s</string>
     <string name="wear_app_update_confirm">Confirm the installation on your watch.</string>
     <string name="wear_app_update_installer_unavailable">If this watch cannot open the installer, update it over Wi-Fi using ADB.</string>
+    <string name="settings_libre2_gen1_kotlin">Libre 2 Gen1 · Kotlin (experimental)</string>
+    <string name="settings_libre2_gen1_kotlin_desc">Uses the selected driver after restarting the app on this device.</string>
 </resources>

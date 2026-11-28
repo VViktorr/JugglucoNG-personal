@@ -43,6 +43,7 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
     var handoverAction by remember { mutableStateOf(SensorConnectionSettings.handoverOldAction(context)) }
     var showHandoverActionDialog by remember { mutableStateOf(false) }
     var highPriority by remember { mutableStateOf(SensorConnectionSettings.highPriority) }
+    var libre2Kotlin by remember(context) { mutableStateOf(tk.glucodata.Libre2Gen1DriverSettings.enabled(context)) }
     var autoConnect by remember { mutableStateOf(SensorConnectionSettings.autoConnect) }
 
     AppScaffold(
@@ -125,9 +126,21 @@ fun SensorConnectionSettingsScreen(navController: NavController) {
                         checked = autoConnect,
                         icon = Symbols.AutorenewFilled,
                         iconTint = bluetoothColor,
-                        position = CardPosition.BOTTOM,
+                        position = CardPosition.MIDDLE,
                         searchAnchor = SettingsSearchAnchors.AUTOCONNECT,
                         onCheckedChange = { SensorConnectionSettings.autoConnect = it; autoConnect = it }
+                    )
+                    SettingsSwitchItem(
+                        title = stringResource(R.string.settings_libre2_gen1_kotlin),
+                        subtitle = stringResource(R.string.settings_libre2_gen1_kotlin_desc),
+                        checked = libre2Kotlin,
+                        icon = Symbols.AutorenewFilled,
+                        iconTint = bluetoothColor,
+                        position = CardPosition.BOTTOM,
+                        onCheckedChange = { enabled ->
+                            tk.glucodata.Libre2Gen1DriverSettings.setEnabled(context, enabled)
+                            libre2Kotlin = enabled
+                        },
                     )
                 }
             }

@@ -137,11 +137,11 @@ public class Libre2GattCallback extends SuperGattCallback {
 				&& !SensorOwnershipRuntime.blocksLocalConnection(SerialNumber);
 	}
 
-	private void libre2Diag(String stage, String detail) {
+	protected final void libre2Diag(String stage, String detail) {
 		if (!doLog && !stage.equals("hard-recovery") && !stage.equals("hard-recovery-failed")) return;
 		final long now = SystemClock.elapsedRealtime();
 		Log.i(LOG_ID, LogPrivacy.sensorAlias(SerialNumber) + " LIBRE2_DIAG link=" + diagId
-				+ " attempt=" + diagAttempt + " gen=" + sensorgen + " driver=" + (sensorgen == 2 ? "kotlin-gen2" : "gen1")
+				+ " attempt=" + diagAttempt + " gen=" + sensorgen + " driver=" + driverLabel()
 				+ " stage=" + stage + " phase=" + conphase + " packets=" + linkPackets
 				+ " loginRetries=" + BLELoginposted + " fragments=" + pack1 + "/" + pack2
 				+ " linkAgeMs=" + (linkConnectedAt < 0 ? -1 : now - linkConnectedAt)
@@ -154,7 +154,28 @@ public class Libre2GattCallback extends SuperGattCallback {
 				+ " recovering=" + recoveryInProgress + " " + detail);
 	}
 
-	private void countAttemptWithoutPacket(String reason) {
+	protected String driverLabel() {
+        return sensorgen == 2 ? "kotlin-gen2" : "gen1";
+    }
+
+    @SuppressLint("MissingPermission")
+    protected boolean discoverLibreServices(BluetoothGatt gatt) {
+        return gatt.discoverServices();
+    }
+
+    protected final void reportGen1Step(String step, String result) {
+        if (step != null) lastCompletedStep = step;
+        lastGattResult = result;
+        libre2Diag("gen1-operation", "result=" + result);
+    }
+
+    protected final void gen1SubscriptionQueued() {
+        justenablednotification = true;
+        conphase = 4;
+        wrotepass[0] = System.currentTimeMillis();
+    }
+
+    private void countAttemptWithoutPacket(String reason) {
 		if (hardRecoveryUsed && !recoveryInProgress && !recoverySkipLogged
 				&& linkPackets == 0 && canRecoverLocally()) {
 			recoverySkipLogged = true;
@@ -306,7 +327,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 				&& SystemClock.elapsedRealtime() - lastPacketAt < STREAM_SILENCE_MILLIS;
 	}
 
-	private boolean acceptGattCallback(BluetoothGatt gatt) {
+	protected final boolean acceptGattCallback(BluetoothGatt gatt) {
 		return gatt != null && gatt == mBluetoothGatt && disconnectingGatt == null && !stop && !recoveryInProgress;
 	}
 
@@ -346,7 +367,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 		connectDevice(delay);
 	}
 
-	private synchronized void requestDisconnect(BluetoothGatt gatt, long delayMillis) {
+	protected final synchronized void requestDisconnect(BluetoothGatt gatt, long delayMillis) {
 		if (gatt == null || gatt != mBluetoothGatt) return;
 		// Retain the latest reconnect delay without restarting an in-progress disconnect.
 		reconnectDelayMillis = delayMillis;
@@ -574,7 +595,7 @@ private boolean connected=false;
 				streamDeadline.arm(bluetoothGatt, STREAM_SILENCE_MILLIS);
 				constatchange[0] = tim;
 				setpriority(bluetoothGatt);
-				final boolean discoveryQueued = bluetoothGatt.discoverServices();
+				final boolean discoveryQueued = discoverLibreServices(bluetoothGatt);
 				lastGattResult = "discovery-request-" + discoveryQueued;
 				libre2Diag("service-discovery-queued", "accepted=" + discoveryQueued);
 				if (!discoveryQueued) {
@@ -828,6 +849,41 @@ private boolean setDescriptor(BluetoothGattCharacteristic ch, byte[] type) {
         return gatt != null && descriptor != null
                 && gatt.writeDescriptor(descriptor, type) == BluetoothStatusCodes.SUCCESS;
         }
+    /** Consume the original air frame. Gen1 decryption remains in the native parser. */
+    protected final void processCompleteFrame(byte[] frame) {
+        justenablednotification = false;
+        streamPacketReceived();
+        final var wakeLock = Natives.hasRootcheck() ? getwakelock() : null;
+        if (wakeLock != null) {
+            wakeLock.setReferenceCounted(false);
+            wakeLock.acquire(Applic.GLUCOSE_WAKELOCK_TIMEOUT_MS);
+        }
+        try {
+            final long now = System.currentTimeMillis();
+            final var gen2Login = managedGen2;
+            final byte[] payload = sensorgen != 2 ? frame : (gen2Login == null ? null : gen2Login.decryptFrame(frame));
+            if (payload == null) {
+                final String outcome = gen2Login == null || !gen2Login.getAuthenticated()
+                        ? "session-unavailable" : "decrypt-failed";
+                libre2Diag("ble-frame", "bytes=" + frame.length + " outcome=" + outcome);
+            } else {
+                lastCompletedStep = "frame-decoded";
+                final long result = processTooth(dataptr, payload, firstReadingPending ? frameStats : null);
+                if (firstReadingPending) historyRowsBeforeLive += frameStats[1];
+                if (result != 0L && result != 1L) {
+                    lastCompletedStep = "live-reading";
+                    if (firstReadingPending) logFirstReading(now);
+                }
+                libre2Diag("ble-frame", "bytes=" + frame.length + " outcome="
+                        + (result == 1L ? "duplicate" : (result == 0L ? "no-result" : "handled")));
+                if (result != 1L) handleGlucoseResult(result, now);
+            }
+            datatime = now;
+        } finally {
+            Applic.releasewakelock(wakeLock);
+        }
+    }
+
 private long datatime=0L;
 private	void oldonCharacteristicChanged(byte[] value) {
 		justenablednotification = false;
@@ -852,56 +908,9 @@ private	void oldonCharacteristicChanged(byte[] value) {
 			break;
 			case 8: {
 				if (pack1 && pack2) {
-					streamPacketReceived();
-					final var wakeLock=Natives.hasRootcheck()?getwakelock():null;
-					if(wakeLock!=null) {
-						wakeLock.setReferenceCounted(false);
-						wakeLock.acquire(Applic.GLUCOSE_WAKELOCK_TIMEOUT_MS);
-						}
-                        /*
-                    if(isWearable) {
-                        if(Natives.getDisconnectSensor()) {
-                            Log.i(LOG_ID,"enableNotification(mBluetoothGatt, characteristic)");
-                            setDescriptor(characteristic,  BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-                            Applic.scheduler.schedule(()-> {
-                                if(connected) {
-                                   setDescriptor(characteristic,  BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                    }
-                                    }, 30, TimeUnit.SECONDS);
-
-                            }
-                        } */
-
-					try {
-						pack1 = false;
-						pack2 = false;
-						System.arraycopy(value, 0, packet, 38, 8);
-						final long timmsec = System.currentTimeMillis();
-						final var gen2Login = managedGen2;
-						final var newpacket= sensorgen!=2?packet:(gen2Login!=null?gen2Login.decryptFrame(packet):null);
-						if (newpacket == null) {
-                            String outcome = gen2Login == null || !gen2Login.getAuthenticated()
-                                    ? "session-unavailable" : "decrypt-failed";
-                            libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + outcome);
-                        }
-						if(newpacket!=null) {
-							lastCompletedStep = "frame-decoded";
-							long res = processTooth(dataptr, newpacket, firstReadingPending ? frameStats : null);
-							if (firstReadingPending) historyRowsBeforeLive += frameStats[1];
-							if (res != 0L && res != 1L) {
-								lastCompletedStep = "live-reading";
-								if (firstReadingPending) logFirstReading(timmsec);
-							}
-							libre2Diag("ble-frame", "bytes=" + packet.length + " outcome=" + (res == 1L ? "duplicate" : (res == 0L ? "no-result" : "handled")));
-							if(res!=1L) {
-								handleGlucoseResult(res,timmsec);
-								}
-							}
-						datatime=timmsec;
-						}
-					finally {
-						Applic.releasewakelock(wakeLock);
-						}
+                    pack1 = pack2 = false;
+                    System.arraycopy(value, 0, packet, 38, 8);
+                    processCompleteFrame(packet);
                   /*  if(isWearable) {
                         if(Natives.getDisconnectSensor()&&!autoconnect) {
                             disconnect();  
