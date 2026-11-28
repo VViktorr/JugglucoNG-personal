@@ -156,6 +156,7 @@ public class Natives {
         // public static native void backupstream(long dataptr);
 
         public static native byte[] sensorUnlockKey(long dataptr);
+        public static native boolean reserveLibre2Gen1Unlock(long dataptr, byte[] uid, byte[] patch, int[] parameters);
 
         public static native void resetbluetooth(long dataptr);
         // public static native void saveState(long dataptr);

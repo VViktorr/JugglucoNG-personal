@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import java.util.concurrent.TimeUnit
+import tk.glucodata.drivers.libre2.Libre2Gen1Crypto
 
 /** Local to the device that owns the sensor. A new callback reads the selection at creation. */
 internal object Libre2Gen1DriverSettings {
@@ -32,6 +33,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
     private var phase = Phase.IDLE
     private var rawCharacteristic: BluetoothGattCharacteristic? = null
     @Volatile private var streamingGatt: BluetoothGatt? = null
+    private var frameUid: ByteArray? = null
     private val frames = Libre2Gen1FrameAssembler()
     private val handshakeDeadline = GattConnectDeadline<BluetoothGatt>(
         this,
@@ -67,11 +69,19 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
             fail(gatt, "characteristics-unavailable")
             return
         }
-        val unlock = Natives.sensorUnlockKey(dataptr)
+        val uid = ByteArray(8)
+        val patch = ByteArray(6)
+        val parameters = IntArray(2)
+        val unlock = if (Natives.reserveLibre2Gen1Unlock(dataptr, uid, patch, parameters)) {
+            Libre2Gen1Crypto.streamingUnlockPayload(uid, patch, parameters[0], parameters[1])
+        } else {
+            null
+        }
         if (unlock == null) {
             fail(gatt, "unlock-unavailable")
             return
         }
+        frameUid = uid
         phase = Phase.LOGIN
         val result = gatt.writeCharacteristic(login, unlock, login.writeType)
         reportGen1Step(null, "login-write-$result")
@@ -126,6 +136,13 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
         val frame = frames.append(value) ?: return
         // Some Android stacks deliver the first notification before the descriptor callback.
         streamingGatt = gatt
+        frameUid?.let { uid ->
+            if (Log.doLog) {
+                val valid = Libre2Gen1Crypto.decryptBle(uid, frame) != null
+                libre2Diag("gen1-kotlin-checksum", "valid=$valid")
+            }
+            frameUid = null
+        }
         processCompleteFrame(frame)
     }
 
@@ -148,6 +165,7 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
         phase = Phase.IDLE
         streamingGatt = null
         rawCharacteristic = null
+        frameUid = null
         frames.reset()
     }
 

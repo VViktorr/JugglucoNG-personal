@@ -1236,6 +1236,30 @@ fromjava(sensorUnlockKey)(JNIEnv *envin, jclass cl, jlong dataptr) {
   LOGAR("unlockKeySensor==null");
   return nullptr;
 }
+// Reserve the same persisted counter as the legacy Gen1 path. Kotlin only
+// takes over payload generation; switching drivers must never reuse a counter.
+extern "C" JNIEXPORT jboolean JNICALL fromjava(reserveLibre2Gen1Unlock)(
+    JNIEnv *env, jclass, jlong dataptr, jbyteArray uidOut, jbyteArray patchOut, jintArray parametersOut) {
+  const auto *stream = reinterpret_cast<streamdata *>(dataptr);
+  if (!stream || stream->libreversion != 2 || !stream->hist ||
+      stream->hist->getsensorgen() != 1 ||
+      !uidOut || env->GetArrayLength(uidOut) != 8 ||
+      !patchOut || env->GetArrayLength(patchOut) != 6 ||
+      !parametersOut || env->GetArrayLength(parametersOut) != 2) {
+    return false;
+  }
+  auto *history = stream->hist;
+  const auto [enabledAt, patch] = history->getbluedata();
+  const auto *uid = history->getsensorident();
+  if (!uid || uid->size() != 8 || !patch || patch->size() != 6) return false;
+  env->SetByteArrayRegion(uidOut, 0, 8, uid->data());
+  env->SetByteArrayRegion(patchOut, 0, 6, patch->data());
+  if (env->ExceptionCheck()) return false;
+  const jint parameters[] = {static_cast<jint>(enabledAt - basesecs), history->nextlock()};
+  env->SetIntArrayRegion(parametersOut, 0, 2, parameters);
+  return !env->ExceptionCheck();
+}
+
 extern "C" JNIEXPORT jbyteArray JNICALL
 fromjava(getsensorident)(JNIEnv *envin, jclass cl, jlong dataptr) {
   streamdata *streamptr = reinterpret_cast<streamdata *>(dataptr);
