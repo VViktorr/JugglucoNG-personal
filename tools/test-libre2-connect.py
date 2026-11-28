@@ -30,7 +30,7 @@ def field(source, name, end):
 
 
 base_methods = '\n'.join(method(base, signature) for signature in [
-    'private void connectionAttemptExpired(', 'protected final void watchConnectionAttempt(',
+    'protected BluetoothGatt openGatt(', 'private void connectionAttemptExpired(', 'protected final void watchConnectionAttempt(',
     'protected final synchronized boolean acceptConnectionAttemptCallback(',
     'private Runnable getConnectDevice(', 'public synchronized boolean connectDevice(',
     'private synchronized void markConnectRunnableStarted(', 'private synchronized void clearPendingConnect(',

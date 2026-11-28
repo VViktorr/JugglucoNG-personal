@@ -117,6 +117,14 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
                 return () -> future.cancel(false);
             }, this::connectionAttemptExpired);
 
+    @SuppressLint("MissingPermission")
+    protected BluetoothGatt openGatt(BluetoothDevice device) {
+        if (isWearable || Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return device.connectGatt(Applic.app, useAutoConnect(), this, BluetoothDevice.TRANSPORT_LE);
+        }
+        return device.connectGatt(Applic.app, useAutoConnect(), this);
+    }
+
     /** Opt in only for drivers whose silent connect failure is covered by this deadline. */
     protected long connectionAttemptTimeoutMillis() { return 0L; }
 
@@ -1709,18 +1717,8 @@ public abstract class SuperGattCallback extends BluetoothGattCallback {
             }
             try {
                 cb.armConnectCallbackLatency();
-                if (isWearable) {
-                    cb.mBluetoothGatt = device.connectGatt(Applic.app, cb.useAutoConnect(), cb,
-                            BluetoothDevice.TRANSPORT_LE);
-                    cb.setGattOptions(cb.mBluetoothGatt);
-                } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        cb.mBluetoothGatt = device.connectGatt(Applic.app, cb.useAutoConnect(), cb,
-                                BluetoothDevice.TRANSPORT_LE);
-                    } else {
-                        cb.mBluetoothGatt = device.connectGatt(Applic.app, cb.useAutoConnect(), cb);
-                    }
-                }
+                cb.mBluetoothGatt = cb.openGatt(device);
+                if (isWearable) cb.setGattOptions(cb.mBluetoothGatt);
 
                 watchConnectionAttempt(cb.mBluetoothGatt);
                 // requestConnectionPriority() needs an established connection (and registered

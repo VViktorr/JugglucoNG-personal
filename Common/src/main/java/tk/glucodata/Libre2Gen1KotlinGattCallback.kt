@@ -1,6 +1,7 @@
 package tk.glucodata
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
@@ -45,6 +46,9 @@ internal class Libre2Gen1KotlinGattCallback(serial: String, nativeStream: Long) 
     )
 
     override fun driverLabel(): String = "kotlin-gen1"
+
+    override fun openGatt(device: BluetoothDevice): BluetoothGatt? =
+        device.connectGatt(Applic.app, false, this, BluetoothDevice.TRANSPORT_LE)
 
     override fun discoverLibreServices(gatt: BluetoothGatt): Boolean {
         clearSession()
