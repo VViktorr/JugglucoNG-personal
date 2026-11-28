@@ -141,7 +141,7 @@ public class Libre2GattCallback extends SuperGattCallback {
 		if (!doLog && !stage.equals("hard-recovery") && !stage.equals("hard-recovery-failed")) return;
 		final long now = SystemClock.elapsedRealtime();
 		Log.i(LOG_ID, LogPrivacy.sensorAlias(SerialNumber) + " LIBRE2_DIAG link=" + diagId
-				+ " attempt=" + diagAttempt + " gen=" + sensorgen + " driver=" + (sensorgen == 2 ? "kotlin-gen2" : "gen1"))
+				+ " attempt=" + diagAttempt + " gen=" + sensorgen + " driver=" + (sensorgen == 2 ? "kotlin-gen2" : "gen1")
 				+ " stage=" + stage + " phase=" + conphase + " packets=" + linkPackets
 				+ " loginRetries=" + BLELoginposted + " fragments=" + pack1 + "/" + pack2
 				+ " linkAgeMs=" + (linkConnectedAt < 0 ? -1 : now - linkConnectedAt)
